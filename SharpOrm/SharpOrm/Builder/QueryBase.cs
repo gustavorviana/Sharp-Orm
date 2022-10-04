@@ -1,15 +1,16 @@
 ﻿using SharpOrm.Errors;
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm.Builder
 {
     public class QueryBase : IDisposable
     {
-        #region Fields
+        #region Fields\Const
+        internal const string AND = "AND";
+        internal const string OR = "OR";
+
         private bool _disposed = false;
         protected internal readonly QueryInfo info;
         #endregion
@@ -19,12 +20,10 @@ namespace SharpOrm.Builder
 
         public bool Disposed => this._disposed;
         public bool Distinct { get; set; }
-        public string From { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
-        public string SafeFrom => this.From.AlphaNumericOnly(' ');
 
-        public virtual string[] AvailableOperations { get; } = {
+        protected virtual string[] AvailableOperations { get; } = {
             "=",
             ">",
             "<",
@@ -38,6 +37,7 @@ namespace SharpOrm.Builder
             "in",
             "between",
             "not in",
+            "not like",
             "not between"
         };
         #endregion
@@ -67,17 +67,17 @@ namespace SharpOrm.Builder
 
         #endregion
 
-        #region Protected Write Expression
-
-        protected void WriteExpression(StringBuilder builder, SqlExpression expression, string type)
+        #region Where
+        internal QueryBase WriteWhere(string rawSqlExpression, string type)
         {
-            if (builder.Length != 0)
-                builder.Append($" {type} ");
+            if (this.info.Wheres.Length != 0)
+                this.info.Wheres.Append($" {type} ");
 
-            builder.Append(expression);
+            this.info.Wheres.Append(rawSqlExpression);
+            return this;
         }
 
-        protected virtual void WriteExpression(StringBuilder builder, object column, string operation, object value, string type)
+        internal QueryBase WriteWhere(object column, string operation, object value, string type)
         {
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
@@ -89,33 +89,62 @@ namespace SharpOrm.Builder
             string rawValue;
 
             if (value is SqlExpression valExp) rawValue = (string)valExp;
-            else this.RegisterParameterValue(out rawValue, value);
+            else rawValue = this.RegisterParameterValue(value);
 
-            this.WriteExpression(builder, new SqlExpression($"{rawColumn} {operation} {rawValue}"), type);
+            return this.WriteWhere($"{rawColumn} {operation} {rawValue}", type);
+        }
+
+        public QueryBase Where(SqlExpression expression)
+        {
+            return this.WriteWhere((string)expression, AND);
+        }
+
+        public QueryBase Where(string column, string operation, object value)
+        {
+            return this.WriteWhere(column, operation, value, AND);
+        }
+
+        public QueryBase Where(QueryCallback callback)
+        {
+            var query = new QueryBase(this);
+            callback(query);
+
+            if (query.info.Wheres.Length > 0)
+                return this.WriteWhere($"({query.info.Wheres})", AND);
+
+            return this;
         }
         #endregion
 
-        #region Where
-        public void Where(string name, string operation, object value, string type)
+        #region OrWhere
+        public QueryBase OrWhere(SqlExpression expression)
         {
-            this.WriteExpression(this.info.Wheres, name, operation, value, type);
+            return this.WriteWhere((string)expression, OR);
         }
 
-        public void Where(Column column, string operation, object value, string type)
+        public QueryBase OrWhere(string column, string operation, object value)
         {
-            this.WriteExpression(this.info.Wheres, column, operation, value, type);
+            return this.WriteWhere(column, operation, value, OR);
         }
 
-        public void Where(SqlExpression expression, string type)
+        public QueryBase OrWhere(QueryCallback callback)
         {
-            this.WriteExpression(this.info.Wheres, expression, type);
+            var query = new QueryBase(this);
+            callback(query);
+
+            if (query.info.Wheres.Length > 0)
+                return this.WriteWhere($"({query.info.Wheres})", OR);
+
+            return this;
         }
         #endregion
 
-        public virtual void RegisterParameterValue(out string name, object value)
+        public virtual string RegisterParameterValue(object value)
         {
-            name = $"@p{this.Command.Parameters.Count}";
+            string name = $"@p{this.Command.Parameters.Count}";
             this.Command.Parameters.Add(this.CreateParameter(name, value));
+
+            return name;
         }
 
         protected virtual DbParameter CreateParameter(string name, object value)

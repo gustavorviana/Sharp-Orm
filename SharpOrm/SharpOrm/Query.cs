@@ -1,8 +1,6 @@
 ﻿using SharpOrm.Builder;
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 
 namespace SharpOrm
 {
@@ -15,16 +13,18 @@ namespace SharpOrm
 
         #region Query
 
-        public Query(DbConnection connection, string table) : base(connection)
+        public Query(DbConnection connection, string table, string alias = "") : base(connection)
         {
             this.connection = connection;
-            this.From = table;
+            this.info.Alias = alias;
+            this.info.From = table;
         }
 
-        public Query(DbTransaction transaction, string table) : base(transaction)
+        public Query(DbTransaction transaction, string table, string alias = "") : base(transaction)
         {
             this.connection = transaction.Connection;
-            this.From = table;
+            this.info.Alias = alias;
+            this.info.From = table;
         }
 
         #endregion
@@ -39,45 +39,73 @@ namespace SharpOrm
 
         public Query Join(string table, string column1, string operation, string column2)
         {
-            var join = new JoinQuery(this) { From = table };
+            JoinQuery join = new JoinQuery(this);
+            ApplyTableName(join, table);
 
-            join.Where(new Column(column1), operation, new Column(column2), "AND");
+            join.WriteWhere(new Column(column1), operation, new Column(column2), "AND");
 
             this.info.Joins.Add(join);
             return this;
         }
 
-        public Query Join(QueryCallback operation)
+        public Query Join(string table, QueryCallback operation)
         {
-            var join = new JoinQuery(this);
+            JoinQuery join = new JoinQuery(this);
+            ApplyTableName(join, table);
             operation(join);
             this.info.Joins.Add(join);
             return this;
+        }
+
+        private void ApplyTableName(QueryBase query, string fullName)
+        {
+            if (!fullName.Contains(" "))
+            {
+                query.info.From = fullName;
+                return;
+            }
+
+            var splits = fullName.Split(' ');
+            if (splits.Length > 3)
+                throw new ArgumentException("O nome da tabela é inválido");
+
+            query.info.From = splits[0];
+
+            if (splits.Length == 2)
+            {
+                query.info.Alias = splits[1];
+                return;
+            }
+
+            if (splits[2].ToLower() != "as")
+                throw new ArgumentException("O nome da tabela é inválido");
+
+            query.info.Alias = splits[2];
         }
 
         #endregion
 
         public DbDataReader ExecuteReader()
         {
-            using (var cmd = this.Grammar.CreateSelect(this))
+            using (DbCommand cmd = this.Grammar.CreateSelect(this))
                 return cmd.ExecuteReader();
         }
 
         public bool Update(params Cell[] cells)
         {
-            using (var cmd = this.Grammar.CreateUpdate(this, cells))
+            using (DbCommand cmd = this.Grammar.CreateUpdate(this, cells))
                 return cmd.ExecuteNonQuery() > 0;
         }
 
         public void Insert(params Cell[] cells)
         {
-            using (var cmd = this.Grammar.CreateUpdate(this, cells))
+            using (DbCommand cmd = this.Grammar.CreateInsert(this, cells))
                 cmd.ExecuteNonQuery();
         }
 
         public bool Delete()
         {
-            using (var cmd = this.Grammar.CreateDelete(this))
+            using (DbCommand cmd = this.Grammar.CreateDelete(this))
                 return cmd.ExecuteNonQuery() > 0;
         }
     }

@@ -8,93 +8,46 @@ namespace SharpOrm
     public static class QueryExtension
     {
         #region Where
-        public static QueryBase Where(this QueryBase qBase, string column, string operation, object value)
-        {
-            qBase.Where(column, operation, value, "AND");
-            return qBase;
-        }
-
         public static QueryBase Where(this QueryBase qBase, string column, string operation, SqlExpression value)
         {
-            qBase.Where(column, operation, value, "AND");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "AND");
         }
 
         public static QueryBase Where(this QueryBase qBase, Column column, string operation, SqlExpression value)
         {
-            qBase.Where(column, operation, value, "AND");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "AND");
         }
 
         public static QueryBase Where(this QueryBase qBase, Column column, string operation, object value)
         {
-            qBase.Where(column, operation, value, "AND");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "AND");
         }
 
         public static QueryBase Where(this QueryBase qBase, Column column1, string operation, Column column2)
         {
-            qBase.Where(column1, operation, column2, "AND");
-            return qBase;
+            return qBase.WriteWhere(column1, operation, column2, "AND");
         }
-
-        public static QueryBase Where(this QueryBase qBase, QueryCallback callback)
-        {
-            var query = new QueryBase(qBase);
-            callback(query);
-            return qBase.Where((SqlExpression)query.info.Wheres);
-        }
-
-        public static QueryBase Where(this QueryBase qBase, SqlExpression expression)
-        {
-            qBase.Where(expression, "AND");
-            return qBase;
-        }
-
         #endregion
 
         #region Or
-        public static QueryBase Or(this QueryBase qBase, string column, string operation, object value)
+        public static QueryBase OrWhere(this QueryBase qBase, string column, string operation, SqlExpression value)
         {
-            qBase.Where(column, operation, value, "OR");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "OR");
         }
 
-        public static QueryBase Or(this QueryBase qBase, string column, string operation, SqlExpression value)
+        public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, SqlExpression value)
         {
-            qBase.Where(column, operation, value, "OR");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "OR");
         }
 
-        public static QueryBase Or(this QueryBase qBase, Column column, string operation, SqlExpression value)
+        public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, object value)
         {
-            qBase.Where(column, operation, value, "OR");
-            return qBase;
+            return qBase.WriteWhere(column, operation, value, "OR");
         }
 
-        public static QueryBase Or(this QueryBase qBase, Column column, string operation, object value)
+        public static QueryBase OrWhere(this QueryBase qBase, Column column1, string operation, Column column2)
         {
-            qBase.Where(column, operation, value, "OR");
-            return qBase;
-        }
-
-        public static QueryBase Or(this QueryBase qBase, Column column1, string operation, Column column2)
-        {
-            qBase.Where(column1, operation, column2, "OR");
-            return qBase;
-        }
-
-        public static QueryBase Or(this QueryBase qBase, QueryCallback callback)
-        {
-            var query = new QueryBase(qBase);
-            callback(query);
-            return qBase.Or((SqlExpression)query.info.Wheres);
-        }
-
-        public static QueryBase Or(this QueryBase qBase, SqlExpression expression)
-        {
-            qBase.Where(expression, "OR");
-            return qBase;
+            return qBase.WriteWhere(column1, operation, column2, "OR");
         }
         #endregion
 

@@ -14,6 +14,9 @@ namespace SharpOrm.Builder
         public List<ColumnOrder> Orders { get; } = new List<ColumnOrder>();
         public List<Column> Select { get; } = new List<Column>(new Column[] { Column.All });
 
+        public string From { get; set; }
+        public string Alias { get; set; }
+
         public QueryInfo(DbCommand command)
         {
             this.Command = command;
