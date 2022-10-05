@@ -8,7 +8,7 @@ namespace SharpOrm.Builder
 {
     public class Grammar
     {
-        public virtual DbCommand CreateSelect(QueryBase query)
+        public virtual DbCommand SelectCommand(QueryBase query)
         {
             if (string.IsNullOrEmpty(query.info.From))
                 throw new ArgumentNullException(nameof(query.info.From));
@@ -53,17 +53,38 @@ namespace SharpOrm.Builder
             builder.Append($" JOIN {this.GetTableName(join, true)} ON {join.GetInfo().Wheres}");
         }
 
-        public virtual DbCommand CreateInsert(QueryBase query, Cell[] cells)
+        public virtual DbCommand InsertCommand(QueryBase query, Cell[] cells)
         {
             StringBuilder builder = new StringBuilder("INSERT INTO ");
             builder.Append(this.GetTableName(query, false));
             builder.AppendFormat(
                 " ({0}) VALUES ({1})",
                 string.Join(", ", cells.Select(c => c.Name)),
-                string.Join(", ", this.RegisterValuesParameters(query, cells))
+                this.EncapsulateCells(query, cells)
             );
 
             return query.GetInfo().SetCommandText(builder);
+        }
+
+        public virtual DbCommand BulkInsert(QueryBase query, Row[] rows)
+        {
+            StringBuilder builder = new StringBuilder("INSERT INTO ");
+            builder.Append(this.GetTableName(query, false));
+            builder.AppendFormat(
+                " ({0}) VALUES ({1})",
+                string.Join(", ", rows[0].Select(c => c.Name)),
+                this.EncapsulateCells(query, rows[0].Cells)
+            );
+
+            for (int i = 1; i < rows.Length; i++)
+                builder.AppendFormat(", ({0})", this.EncapsulateCells(query, rows[i].Cells));
+
+            return query.GetInfo().SetCommandText(builder);
+        }
+
+        private string EncapsulateCells(QueryBase query, Cell[] cells)
+        {
+            return string.Join(", ", this.RegisterValuesParameters(query, cells));
         }
 
         private IEnumerable<string> RegisterValuesParameters(QueryBase query, Cell[] cells)
@@ -72,7 +93,7 @@ namespace SharpOrm.Builder
                 yield return query.RegisterParameterValue(cell.Value);
         }
 
-        public virtual DbCommand CreateUpdate(QueryBase query, Cell[] cells)
+        public virtual DbCommand UpdateCommand(QueryBase query, Cell[] cells)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendFormat("UPDATE {0} SET ", this.GetTableName(query, false));
@@ -82,7 +103,7 @@ namespace SharpOrm.Builder
             return query.GetInfo().SetCommandText(builder);
         }
 
-        public virtual DbCommand CreateDelete(QueryBase query)
+        public virtual DbCommand DeledeCommand(QueryBase query)
         {
             StringBuilder builder = new StringBuilder("DELETE FROM ");
             builder.Append(this.GetTableName(query, false));

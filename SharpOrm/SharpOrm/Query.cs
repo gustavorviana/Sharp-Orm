@@ -4,25 +4,37 @@ using System.Data.Common;
 
 namespace SharpOrm
 {
-    public class Query : QueryBase
+    public class Query : QueryBase, ICloneable
     {
         #region Fields\Properties
         protected readonly DbConnection connection;
-        protected virtual Grammar Grammar { get; } = new Grammar();
+        protected virtual Grammar Grammar { get; }
         #endregion
 
         #region Query
 
-        public Query(DbConnection connection, string table, string alias = "") : base(connection)
+        public Query(DbConnection connection, string table, string alias = "") : this(connection, new Grammar(), table, alias)
+        {
+        }
+
+        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, new Grammar(), table, alias)
+        {
+        }
+
+        public Query(DbConnection connection, Grammar grammar, string table, string alias = "") : base(connection)
         {
             this.connection = connection;
+            this.Grammar = grammar;
+
             this.info.Alias = alias;
             this.info.From = table;
         }
 
-        public Query(DbTransaction transaction, string table, string alias = "") : base(transaction)
+        public Query(DbTransaction transaction, Grammar grammar, string table, string alias = "") : base(transaction)
         {
             this.connection = transaction.Connection;
+            this.Grammar = grammar;
+
             this.info.Alias = alias;
             this.info.From = table;
         }
@@ -87,26 +99,52 @@ namespace SharpOrm
 
         public DbDataReader ExecuteReader()
         {
-            using (DbCommand cmd = this.Grammar.CreateSelect(this))
+            using (DbCommand cmd = this.Grammar.SelectCommand(this))
                 return cmd.ExecuteReader();
         }
 
         public bool Update(params Cell[] cells)
         {
-            using (DbCommand cmd = this.Grammar.CreateUpdate(this, cells))
+            using (DbCommand cmd = this.Grammar.UpdateCommand(this, cells))
                 return cmd.ExecuteNonQuery() > 0;
         }
 
         public void Insert(params Cell[] cells)
         {
-            using (DbCommand cmd = this.Grammar.CreateInsert(this, cells))
+            using (DbCommand cmd = this.Grammar.InsertCommand(this, cells))
                 cmd.ExecuteNonQuery();
+        }
+
+        public void BulkInsert(params Row[] rows)
+        {
+            using (DbCommand cmd = this.Grammar.BulkInsert(this, rows))
+                cmd.ExecuteScalar();
         }
 
         public bool Delete()
         {
-            using (DbCommand cmd = this.Grammar.CreateDelete(this))
+            using (DbCommand cmd = this.Grammar.DeledeCommand(this))
                 return cmd.ExecuteNonQuery() > 0;
+        }
+
+        public int Count()
+        {
+            using (DbCommand cmd = this.Grammar.SelectCommand(this))
+                return (int)cmd.ExecuteScalar();
+        }
+
+        public object Clone()
+        {
+            return this.Clone(true);
+        }
+
+        public Query Clone(bool withWhere)
+        {
+            Query query = new Query(this.connection, this.Grammar, this.info.From, this.info.Alias);
+            if (withWhere)
+                query.info.LoadFrom(this.info);
+
+            return query;
         }
     }
 }

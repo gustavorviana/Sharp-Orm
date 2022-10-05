@@ -52,7 +52,6 @@ namespace SharpOrm
         #endregion
 
         #region Query
-
         public static Cell GetCell(this DbDataReader reader, int index)
         {
             if (index < 0 || index > reader.FieldCount)
@@ -93,6 +92,27 @@ namespace SharpOrm
             return null;
         }
 
+        public static bool Any(this Query query)
+        {
+            return query.Count() > 0;
+        }
+
+        /// <summary>
+        /// Cria ou atualiza uma linha no banco de dados.
+        /// </summary>
+        /// <param name="query">Query com a conexão que deverá ser utilizada.</param>
+        /// <param name="row">Linha que deverá ser atualizada.</param>
+        /// <param name="toCheckColumns">Colunas que deverão ser verificadas para atualizar as linhas do banco de dados.</param>
+        public static void InsertOrUpdate(this Query query, Row row, params string[] toCheckColumns)
+        {
+            query = query.Clone(false);
+
+            foreach (var column in toCheckColumns)
+                query.Where(column, "=", row[column]);
+
+            if (query.Any()) query.Update(row.Cells);
+            else query.Insert(row.Cells);
+        }
         #endregion
     }
 }

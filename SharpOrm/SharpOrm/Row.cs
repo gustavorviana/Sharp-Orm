@@ -50,6 +50,11 @@ namespace SharpOrm
 
         public int Count => cells.Length;
 
+        public Cell[] GetOrdenedCells()
+        {
+            return this.cells.OrderBy(c => c.Name).ToArray();
+        }
+
         public IEnumerator<Cell> GetEnumerator() => cells.AsEnumerable().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => cells.GetEnumerator();
