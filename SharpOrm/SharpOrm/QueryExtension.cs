@@ -52,24 +52,6 @@ namespace SharpOrm
         #endregion
 
         #region Query
-        public static Cell GetCell(this DbDataReader reader, int index)
-        {
-            if (index < 0 || index > reader.FieldCount)
-                throw new ArgumentOutOfRangeException();
-
-            return new Cell(reader.GetName(index), reader[index]);
-        }
-
-        public static Row GetRow(this DbDataReader reader)
-        {
-            Cell[] cells = new Cell[reader.FieldCount];
-
-            for (int i = 0; i < cells.Length; i++)
-                cells[i] = reader.GetCell(i);
-
-            return new Row(cells);
-        }
-
         public static Row[] ReadRows(this Query query)
         {
             List<Row> rows = new List<Row>();
@@ -113,6 +95,42 @@ namespace SharpOrm
             if (query.Any()) query.Update(row.Cells);
             else query.Insert(row.Cells);
         }
+        #endregion
+
+        #region DbDataReader
+        public static bool Contains(this DbDataReader reader, string name)
+        {
+            return reader.GetOrdinal(name) >= 0;
+        }
+
+        public static T GetByName<T>(this DbDataReader reader, string name)
+        {
+            return (T)reader.GetByName(name);
+        }
+
+        public static object GetByName(this DbDataReader reader, string name)
+        {
+            return reader.GetValue(reader.GetOrdinal(name));
+        }
+
+        public static Cell GetCell(this DbDataReader reader, int index)
+        {
+            if (index < 0 || index > reader.FieldCount)
+                throw new ArgumentOutOfRangeException();
+
+            return new Cell(reader.GetName(index), reader[index]);
+        }
+
+        public static Row GetRow(this DbDataReader reader)
+        {
+            Cell[] cells = new Cell[reader.FieldCount];
+
+            for (int i = 0; i < cells.Length; i++)
+                cells[i] = reader.GetCell(i);
+
+            return new Row(cells);
+        }
+
         #endregion
     }
 }
