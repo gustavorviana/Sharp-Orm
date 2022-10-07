@@ -66,7 +66,7 @@ namespace SharpOrm.Builder
             return query.GetInfo().SetCommandText(builder);
         }
 
-        public virtual DbCommand BulkInsert(QueryBase query, Row[] rows)
+        public virtual DbCommand BulkInsertCommand(QueryBase query, Row[] rows)
         {
             StringBuilder builder = new StringBuilder("INSERT INTO ");
             builder.Append(this.GetTableName(query, false));

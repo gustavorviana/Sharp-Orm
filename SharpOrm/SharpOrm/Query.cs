@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Data.Common;
+using System.Linq;
 
 namespace SharpOrm
 {
@@ -42,10 +43,17 @@ namespace SharpOrm
 
         #endregion
 
-        public void Select(params Column[] columns)
+        public Query Select(params string[] columns)
+        {
+            return this.Select(columns.Select(name => new Column(name)).ToArray());
+        }
+
+        public Query Select(params Column[] columns)
         {
             this.info.Select.Clear();
             this.info.Select.AddRange(columns);
+
+            return this;
         }
 
         #region Join
@@ -118,7 +126,7 @@ namespace SharpOrm
 
         public void BulkInsert(params Row[] rows)
         {
-            using (DbCommand cmd = this.Grammar.BulkInsert(this, rows))
+            using (DbCommand cmd = this.Grammar.BulkInsertCommand(this, rows))
                 cmd.ExecuteScalar();
         }
 

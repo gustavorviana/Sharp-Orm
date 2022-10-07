@@ -102,6 +102,11 @@ namespace SharpOrm.Builder
             return this.WriteWhere((string)expression, AND);
         }
 
+        public QueryBase Where(string column, object value)
+        {
+            return this.Where(column, "=", value);
+        }
+
         public QueryBase Where(string column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, AND);

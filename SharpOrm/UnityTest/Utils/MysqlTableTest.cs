@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MySql.Data.MySqlClient;
+using SharpOrm;
+using SharpOrm.Builder;
 using System;
 using System.IO;
 
@@ -7,7 +9,16 @@ namespace Teste.Utils
 {
     public class MysqlTableTest : BaseTest
     {
-        public const string TABLE = "TestTable";
+        protected static Grammar Grammar;
+
+        #region Consts
+        protected const string TABLE = "TestTable";
+
+        protected const string ID = "id";
+        protected const string NAME = "name";
+        protected const string CREATEDAT = "record_created";
+        #endregion
+
         protected static MySqlConnection connection;
 
         #region Class Init/Clean
@@ -19,6 +30,18 @@ namespace Teste.Utils
             using var cmd = connection.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
+
+            if (Grammar != null)
+                return;
+
+            try
+            {
+                Grammar = new Grammar();
+                //Utilizado para carregar as bibliotecas para reduzir o tempo de execução "falso" do código.
+                Grammar.SelectCommand(NewQuery().Where("column", "=", "value"));
+            }
+            catch
+            { }
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
@@ -30,6 +53,11 @@ namespace Teste.Utils
             cmd.ExecuteNonQuery();
         }
         #endregion
+
+        protected static Query NewQuery()
+        {
+            return new Query(connection, TABLE);
+        }
 
         #region Connection management
         protected static void ReloadConnection()
@@ -70,9 +98,9 @@ namespace Teste.Utils
         private static string GetCreateTableSql()
         {
             return $@"CREATE TABLE IF NOT EXISTS {TABLE} (
-                  id INT NOT NULL PRIMARY KEY,
-                  name VARCHAR(256) NOT NULL,
-                  record_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                  {ID} INT NOT NULL PRIMARY KEY,
+                  {NAME} VARCHAR(256) NOT NULL,
+                  {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
         }
         #endregion
