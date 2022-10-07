@@ -1,14 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Teste.Utils;
 
 namespace UnityTest
 {
     [TestClass]
-    public class MyTestClass : MysqlTableTest
+    public class InsertBuilder : MysqlTableTest
     {
         [TestMethod]
         public void BulkInsert()

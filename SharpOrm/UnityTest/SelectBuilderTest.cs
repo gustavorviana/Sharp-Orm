@@ -1,9 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Teste.Utils;
 
 namespace Teste

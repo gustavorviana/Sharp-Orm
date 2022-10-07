@@ -56,6 +56,9 @@ namespace SharpOrm.Builder
 
         public QueryBase(DbCommand command)
         {
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
             this.info = new QueryInfo(command);
         }
 

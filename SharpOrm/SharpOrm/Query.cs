@@ -7,7 +7,7 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Fields\Properties
-        protected readonly DbConnection connection;
+        public DbConnection Connection { get; }
         protected virtual Grammar Grammar { get; }
         #endregion
 
@@ -23,8 +23,10 @@ namespace SharpOrm
 
         public Query(DbConnection connection, Grammar grammar, string table, string alias = "") : base(connection)
         {
-            this.connection = connection;
-            this.Grammar = grammar;
+            this.Grammar = grammar ?? throw new ArgumentNullException(nameof(grammar)); ;
+
+            if (string.IsNullOrEmpty(table))
+                throw new ArgumentNullException(nameof(table));
 
             this.info.Alias = alias;
             this.info.From = table;
@@ -32,7 +34,6 @@ namespace SharpOrm
 
         public Query(DbTransaction transaction, Grammar grammar, string table, string alias = "") : base(transaction)
         {
-            this.connection = transaction.Connection;
             this.Grammar = grammar;
 
             this.info.Alias = alias;
@@ -140,7 +141,7 @@ namespace SharpOrm
 
         public Query Clone(bool withWhere)
         {
-            Query query = new Query(this.connection, this.Grammar, this.info.From, this.info.Alias);
+            Query query = new Query(this.Connection, this.Grammar, this.info.From, this.info.Alias);
             if (withWhere)
                 query.info.LoadFrom(this.info);
 
