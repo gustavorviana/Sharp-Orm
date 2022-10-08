@@ -9,8 +9,7 @@ namespace Teste.Utils
 {
     public class MysqlTableTest : BaseTest
     {
-        protected static Grammar Grammar;
-
+        private static bool hasFirstLoad = false;
         #region Consts
         protected const string TABLE = "TestTable";
 
@@ -31,14 +30,21 @@ namespace Teste.Utils
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
 
-            if (Grammar != null)
+            if (hasFirstLoad)
                 return;
+
+            hasFirstLoad = true;
 
             try
             {
-                Grammar = new Grammar();
+                var QueryConfig = new DefaultQueryConfig();
                 //Utilizado para carregar as bibliotecas para reduzir o tempo de execução "falso" do código.
-                Grammar.SelectCommand(NewQuery().Where("column", "=", "value"));
+
+                using var q = NewQuery();
+                q.Where("column", "=", "value");
+
+                using var g = QueryConfig.NewGrammar(q);
+                using (_ = g.GetSelectCommand()) { }
             }
             catch
             { }
@@ -47,12 +53,18 @@ namespace Teste.Utils
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
+            ReloadConnection();
             using var con = connection;
             using var cmd = con.CreateCommand();
-            cmd.CommandText = $"DROP TABLE {TABLE}";
+            cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();
         }
         #endregion
+
+        protected static Row NewRow(int id, string name)
+        {
+            return new Row(new Cell[] { new Cell("id", id), new Cell("name", name) });
+        }
 
         protected static Query NewQuery()
         {

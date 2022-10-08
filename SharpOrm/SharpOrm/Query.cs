@@ -7,35 +7,41 @@ namespace SharpOrm
 {
     public class Query : QueryBase, ICloneable
     {
-        #region Fields\Properties
+        protected IQueryConfig Config { get; }
+
         public DbConnection Connection { get; }
-        protected virtual Grammar Grammar { get; }
-        #endregion
+        public DbTransaction Transaction { get; set; }
 
         #region Query
 
-        public Query(DbConnection connection, string table, string alias = "") : this(connection, new Grammar(), table, alias)
+        public Query(DbConnection connection, string table, string alias = "") : this(connection, new DefaultQueryConfig(), table, alias)
         {
         }
 
-        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, new Grammar(), table, alias)
+        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, new DefaultQueryConfig(), table, alias)
         {
         }
 
-        public Query(DbConnection connection, Grammar grammar, string table, string alias = "") : base(connection)
+        public Query(DbConnection connection, IQueryConfig config, string table, string alias = "")
         {
-            this.Grammar = grammar ?? throw new ArgumentNullException(nameof(grammar)); ;
+            if (config == null)
+                throw new ArgumentNullException(nameof(config)); ;
 
             if (string.IsNullOrEmpty(table))
                 throw new ArgumentNullException(nameof(table));
+
+            this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            this.Config = config ?? throw new ArgumentNullException(nameof(config));
 
             this.info.Alias = alias;
             this.info.From = table;
         }
 
-        public Query(DbTransaction transaction, Grammar grammar, string table, string alias = "") : base(transaction)
+        public Query(DbTransaction transaction, IQueryConfig config, string table, string alias = "")
         {
-            this.Grammar = grammar;
+            this.Config = config ?? throw new ArgumentNullException(nameof(config));
+            this.Connection = transaction.Connection;
+            this.Transaction = transaction;
 
             this.info.Alias = alias;
             this.info.From = table;
@@ -60,7 +66,7 @@ namespace SharpOrm
 
         public Query Join(string table, string column1, string operation, string column2)
         {
-            JoinQuery join = new JoinQuery(this);
+            JoinQuery join = new JoinQuery();
             ApplyTableName(join, table);
 
             join.WriteWhere(new Column(column1), operation, new Column(column2), "AND");
@@ -71,7 +77,7 @@ namespace SharpOrm
 
         public Query Join(string table, QueryCallback operation)
         {
-            JoinQuery join = new JoinQuery(this);
+            JoinQuery join = new JoinQuery();
             ApplyTableName(join, table);
             operation(join);
             this.info.Joins.Add(join);
@@ -108,38 +114,44 @@ namespace SharpOrm
 
         public DbDataReader ExecuteReader()
         {
-            using (DbCommand cmd = this.Grammar.SelectCommand(this))
+            using (Grammar grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetSelectCommand())
                 return cmd.ExecuteReader();
         }
 
         public bool Update(params Cell[] cells)
         {
-            using (DbCommand cmd = this.Grammar.UpdateCommand(this, cells))
+            using (Grammar grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetUpdateCommand(cells))
                 return cmd.ExecuteNonQuery() > 0;
         }
 
         public void Insert(params Cell[] cells)
         {
-            using (DbCommand cmd = this.Grammar.InsertCommand(this, cells))
+            using (Grammar grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetInsertCommand(cells))
                 cmd.ExecuteNonQuery();
         }
 
         public void BulkInsert(params Row[] rows)
         {
-            using (DbCommand cmd = this.Grammar.BulkInsertCommand(this, rows))
+            using (Grammar grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetBulkInsertCommand(rows))
                 cmd.ExecuteScalar();
         }
 
         public bool Delete()
         {
-            using (DbCommand cmd = this.Grammar.DeledeCommand(this))
+            using (Grammar grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetDeleteCommand())
                 return cmd.ExecuteNonQuery() > 0;
         }
 
-        public int Count()
+        public long Count()
         {
-            using (DbCommand cmd = this.Grammar.SelectCommand(this))
-                return (int)cmd.ExecuteScalar();
+            using (Grammar grammar = this.Config.NewGrammar(this.Clone(true).Select(Column.CountAll)))
+            using (DbCommand cmd = grammar.GetSelectCommand())
+                return Convert.ToInt64(cmd.ExecuteScalar());
         }
 
         public object Clone()
@@ -149,11 +161,18 @@ namespace SharpOrm
 
         public Query Clone(bool withWhere)
         {
-            Query query = new Query(this.Connection, this.Grammar, this.info.From, this.info.Alias);
+            Query query = new Query(this.Connection, this.Config, this.info.From, this.info.Alias);
             if (withWhere)
                 query.info.LoadFrom(this.info);
 
             return query;
+        }
+
+        public override string ToString()
+        {
+            using (var grammar = this.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetSelectCommand(false))
+                return cmd.CommandText;
         }
     }
 }

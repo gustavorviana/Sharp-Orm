@@ -7,6 +7,7 @@ namespace SharpOrm
     public class Column : SqlExpression, IEquatable<Column>, IEquatable<string>
     {
         public static Column All => new Column { value = "*" };
+        public static Column CountAll => new Column { value = "COUNT(*)" };
 
         protected Column() : base("")
         {

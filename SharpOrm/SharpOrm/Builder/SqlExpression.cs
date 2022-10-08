@@ -6,6 +6,11 @@ namespace SharpOrm.Builder
     {
         protected string value;
 
+        protected SqlExpression()
+        {
+
+        }
+
         public SqlExpression(string value)
         {
             this.value = value;

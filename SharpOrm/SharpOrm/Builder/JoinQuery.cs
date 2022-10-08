@@ -4,7 +4,7 @@
     {
         public string Type { get; set; }
 
-        public JoinQuery(QueryBase parentQuery) : base(parentQuery)
+        public JoinQuery()
         {
         }
     }

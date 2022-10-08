@@ -1,127 +1,166 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
+using System.Collections;
 using System.Linq;
+using System.Data.Common;
 using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class Grammar
+    public abstract class Grammar : IDisposable
     {
-        public virtual DbCommand SelectCommand(QueryBase query)
+        private DbCommand _command = null;
+
+        private bool _disposed = false;
+        private int whereCount;
+        private int valuesCount;
+
+        protected StringBuilder QueryBuilder { get; } = new StringBuilder();
+        protected Query Query { get; }
+        protected QueryInfo Info => this.Query.info;
+        protected DbCommand Command => this._command;
+
+        public Grammar(Query query)
         {
-            if (string.IsNullOrEmpty(query.info.From))
-                throw new ArgumentNullException(nameof(query.info.From));
-
-            StringBuilder builder = new StringBuilder("SELECT ");
-            if (query.Distinct)
-                builder.Append("DISTINCT ");
-
-            builder.Append(string.Join(", ", query.GetInfo().Select));
-            builder.AppendFormat(" FROM {0}", this.GetTableName(query, true));
-
-            this.ApplyJoins(builder, query);
-            this.WriteWhere(builder, query);
-
-            if (query.GetInfo().GroupsBy.Length > 0)
-                builder.AppendFormat(" GROUP BY {0}", query.GetInfo().GroupsBy);
-
-            if (query.Limit != null)
-                builder.AppendFormat(" LIMIT {0}", query.Limit);
-
-            if (query.Offset != null)
-                builder.AppendFormat(" OFFSET {0}", query.Offset);
-
-            if (query.GetInfo().Orders.Count > 0)
-                builder.AppendFormat(" ORDER BY {0}", string.Join(", ", query.GetInfo().Orders.Select(col => $"{col.Name} {col.Order}")));
-
-            return query.GetInfo().SetCommandText(builder);
+            this.Query = query;
+            this.Reset();
         }
 
-        private void ApplyJoins(StringBuilder builder, QueryBase query)
+        public DbCommand GetSelectCommand(bool configureWhereParams = true)
         {
-            if (query.GetInfo().Joins.Count > 0)
-                foreach (var join in query.GetInfo().Joins)
-                    this.WriteJoin(builder, join);
+            this.Reset();
+            this.ConfigureSelect(configureWhereParams);
+            return this.BuildCommand();
         }
 
-        protected virtual void WriteJoin(StringBuilder builder, JoinQuery join)
-        {
-            if (!string.IsNullOrEmpty(join.Type))
-                builder.Append($" {join.Type}");
+        protected abstract void ConfigureSelect(bool configureWhereParams);
 
-            builder.Append($" JOIN {this.GetTableName(join, true)} ON {join.GetInfo().Wheres}");
+        public DbCommand GetInsertCommand(Cell[] cells)
+        {
+            this.Reset();
+            this.ConfigureInsert(cells);
+            return this.BuildCommand();
         }
 
-        public virtual DbCommand InsertCommand(QueryBase query, Cell[] cells)
-        {
-            StringBuilder builder = new StringBuilder("INSERT INTO ");
-            builder.Append(this.GetTableName(query, false));
-            builder.AppendFormat(
-                " ({0}) VALUES ({1})",
-                string.Join(", ", cells.Select(c => c.Name)),
-                this.EncapsulateCells(query, cells)
-            );
+        protected abstract void ConfigureInsert(Cell[] cells);
 
-            return query.GetInfo().SetCommandText(builder);
+        public DbCommand GetBulkInsertCommand(Row[] rows)
+        {
+            this.Reset();
+            this.ConfigureBulkInsert(rows);
+            return this.BuildCommand();
         }
 
-        public virtual DbCommand BulkInsertCommand(QueryBase query, Row[] rows)
+        protected abstract void ConfigureBulkInsert(Row[] rows);
+
+        public DbCommand GetUpdateCommand(Cell[] cells)
         {
-            StringBuilder builder = new StringBuilder("INSERT INTO ");
-            builder.Append(this.GetTableName(query, false));
-            builder.AppendFormat(
-                " ({0}) VALUES ({1})",
-                string.Join(", ", rows[0].Select(c => c.Name)),
-                this.EncapsulateCells(query, rows[0].Cells)
-            );
-
-            for (int i = 1; i < rows.Length; i++)
-                builder.AppendFormat(", ({0})", this.EncapsulateCells(query, rows[i].Cells));
-
-            return query.GetInfo().SetCommandText(builder);
+            this.Reset();
+            this.ConfigureUpdate(cells);
+            return this.BuildCommand();
         }
 
-        private string EncapsulateCells(QueryBase query, Cell[] cells)
+        protected abstract void ConfigureUpdate(Cell[] cells);
+
+        public DbCommand GetDeleteCommand()
         {
-            return string.Join(", ", this.RegisterValuesParameters(query, cells));
+            this.Reset();
+            this.ConfigureDelete();
+            return this.BuildCommand();
         }
 
-        private IEnumerable<string> RegisterValuesParameters(QueryBase query, Cell[] cells)
+        protected abstract void ConfigureDelete();
+
+        protected string RegisterClausuleParameter(object value)
         {
-            foreach (var cell in cells)
-                yield return query.RegisterParameterValue(cell.Value);
+            if (value is ICollection col)
+                return string.Format("({0})", this.RegisterCollectionParameters(col));
+
+            this.whereCount++;
+            return this.RegisterParameter($"@c{this.whereCount}", value).ParameterName;
         }
 
-        public virtual DbCommand UpdateCommand(QueryBase query, Cell[] cells)
+        protected string RegisterCollectionParameters(ICollection collection)
         {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendFormat("UPDATE {0} SET ", this.GetTableName(query, false));
-            builder.Append(string.Join(", ", cells.Select(c => $"{c.Name} = {query.RegisterParameterValue(c.Value)}")));
-
-            this.WriteWhere(builder, query);
-            return query.GetInfo().SetCommandText(builder);
+            return string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
         }
 
-        public virtual DbCommand DeledeCommand(QueryBase query)
+        protected string RegisterValueParam(object value)
         {
-            StringBuilder builder = new StringBuilder("DELETE FROM ");
-            builder.Append(this.GetTableName(query, false));
-
-            this.WriteWhere(builder, query);
-            return query.GetInfo().SetCommandText(builder);
+            this.valuesCount++;
+            return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
         }
 
-        private void WriteWhere(StringBuilder builder, QueryBase query)
+        protected virtual DbParameter RegisterParameter(string name, object value)
         {
-            if (query.info.Wheres.Length > 0)
-                builder.AppendFormat(" WHERE {0}", query.info.Wheres);
+            var p = this.Command.CreateParameter();
+            p.ParameterName = name;
+            p.Value = value;
+
+            this.Command.Parameters.Add(p);
+            return p;
         }
 
-        protected virtual string GetTableName(QueryBase query, bool withAlias)
+        protected void Reset()
         {
-            string name = query.info.From.AlphaNumericOnly(' ');
-            return !withAlias || string.IsNullOrEmpty(query.info.Alias) ? name : $"{name} {query.info.Alias.AlphaNumericOnly()}";
+            if (this.Command != null)
+            {
+                this.Command.Parameters.Clear();
+                this.Command.Dispose();
+            }
+
+            this._command = this.Query.Connection.CreateCommand();
+            this._command.Transaction = this.Query.Transaction;
+
+            this.QueryBuilder.Clear();
+            this.whereCount = 0;
+            this.valuesCount = 0;
         }
+
+        protected virtual string GetTableName(bool withAlias)
+        {
+            string name = Info.From.AlphaNumericOnly(' ');
+            return !withAlias || string.IsNullOrEmpty(Info.Alias) ? name : $"{name} {Info.Alias.AlphaNumericOnly()}";
+        }
+
+        private DbCommand BuildCommand()
+        {
+            this.Command.CommandText = this.QueryBuilder.ToString();
+            return this.Command;
+        }
+
+        protected static QueryInfo GetQueryInfo(Query query)
+        {
+            return query.info;
+        }
+
+        #region IDisposable
+        ~Grammar()
+        {
+            this.Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed)
+                return;
+
+            this.Reset();
+            if (disposing)
+            {
+                this.Command.Dispose();
+            }
+
+            this._disposed = true;
+        }
+
+        public void Dispose()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(this.GetType().Name);
+
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

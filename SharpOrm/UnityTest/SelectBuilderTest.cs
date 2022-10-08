@@ -3,7 +3,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using Teste.Utils;
 
-namespace Teste
+namespace UnityTest
 {
     [TestClass]
     public class SelectBuilderTest : MysqlTableTest
@@ -11,8 +11,11 @@ namespace Teste
         [TestMethod]
         public void BasicSelect()
         {
-            using var query = new Query(connection, TABLE);
-            Assert.AreEqual("SELECT * FROM TestTable", Grammar.SelectCommand(query).CommandText);
+            using var query = NewQuery();
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable", cmd.CommandText);
         }
 
         [TestMethod]
@@ -20,7 +23,10 @@ namespace Teste
         {
             using var query = NewQuery();
             query.Select("Id", "Name");
-            Assert.AreEqual("SELECT Id, Name FROM TestTable", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT Id, Name FROM TestTable", cmd.CommandText);
         }
 
         [TestMethod]
@@ -28,7 +34,10 @@ namespace Teste
         {
             using var query = NewQuery();
             query.Select(new Column("Id"), new Column("Name", "meuNome"));
-            Assert.AreEqual("SELECT Id, Name AS meuNome FROM TestTable", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT Id, Name AS meuNome FROM TestTable", cmd.CommandText);
         }
 
         [TestMethod]
@@ -36,42 +45,87 @@ namespace Teste
         {
             using var query = NewQuery();
             query.Select(new Column("Id"), new Column(new SqlExpression("TOLOWER(Name)"), "meuNome"));
-            Assert.AreEqual("SELECT Id, TOLOWER(Name) AS meuNome FROM TestTable", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT Id, TOLOWER(Name) AS meuNome FROM TestTable", cmd.CommandText);
         }
 
         [TestMethod]
         public void SelectWithLimit()
         {
             using var query = new Query(connection, TABLE) { Limit = 10 };
-            Assert.AreEqual("SELECT * FROM TestTable LIMIT 10", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable LIMIT 10", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereIn()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Where("id", "IN", new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE id IN (@c1, @c2, @c3, @c4, @c5, @c6, @c7, @c8, @c9)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereInQuery()
+        {
+            using var query = NewQuery();
+            query.Where("id", "IN", this.CreateQueryForWhere());
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE id IN (SELECT Id FROM TestIds WHERE Type = @c1)", cmd.CommandText);
+        }
+
+        private Query CreateQueryForWhere()
+        {
+            return (Query)new Query(connection, "TestIds").Select("Id").Where("Type", "=", "Unity");
         }
 
         [TestMethod]
         public void SelectWithOffset()
         {
             using var query = new Query(connection, TABLE) { Offset = 10 };
-            Assert.AreEqual("SELECT * FROM TestTable OFFSET 10", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable OFFSET 10", cmd.CommandText);
         }
 
         [TestMethod]
         public void SelectWithOffsetLimit()
         {
             using var query = new Query(connection, TABLE) { Offset = 10, Limit = 10 };
-            Assert.AreEqual("SELECT * FROM TestTable LIMIT 10 OFFSET 10", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable LIMIT 10 OFFSET 10", cmd.CommandText);
         }
 
         [TestMethod]
         public void SelectWithDistinct()
         {
             using var query = new Query(connection, TABLE) { Distinct = true };
-            Assert.AreEqual("SELECT DISTINCT * FROM TestTable", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT DISTINCT * FROM TestTable", cmd.CommandText);
         }
 
         [TestMethod]
         public void SelectWithOffsetLimitDistinct()
         {
             using var query = new Query(connection, TABLE) { Offset = 10, Limit = 10, Distinct = true };
-            Assert.AreEqual("SELECT DISTINCT * FROM TestTable LIMIT 10 OFFSET 10", Grammar.SelectCommand(query).CommandText);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT DISTINCT * FROM TestTable LIMIT 10 OFFSET 10", cmd.CommandText);
         }
 
         [TestMethod]
@@ -79,8 +133,10 @@ namespace Teste
         {
             using var query = new Query(connection, TABLE);
             query.Where("column", "=", "value");
-            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @p0", Grammar.SelectCommand(query).CommandText);
-            Assert.AreEqual(1, query.GetInfo().Command.Parameters.Count);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @c1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -88,8 +144,10 @@ namespace Teste
         {
             using var query = new Query(connection, TABLE) { Limit = 10 };
             query.Where("column", "=", "value");
-            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @p0 LIMIT 10", Grammar.SelectCommand(query).CommandText);
-            Assert.AreEqual(1, query.GetInfo().Command.Parameters.Count);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @c1 LIMIT 10", cmd.CommandText);
         }
 
         [TestMethod]
@@ -97,9 +155,10 @@ namespace Teste
         {
             using var query = new Query(connection, TABLE);
             query.Where(e => e.Where("column", "=", "value"));
+            using var g = new MysqlGrammar(query);
 
-            Assert.AreEqual("SELECT * FROM TestTable WHERE (column = @p0)", Grammar.SelectCommand(query).CommandText);
-            Assert.AreEqual(1, query.GetInfo().Command.Parameters.Count);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE (column = @c1)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -108,9 +167,10 @@ namespace Teste
             using var query = new Query(connection, TABLE);
             query.Where("column1", "=", "value1");
             query.Where(e => e.Where("column2", "=", "value2"));
+            using var g = new MysqlGrammar(query);
 
-            Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = @p0 AND (column2 = @p1)", Grammar.SelectCommand(query).CommandText);
-            Assert.AreEqual(2, query.GetInfo().Command.Parameters.Count);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = @c1 AND (column2 = @c2)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -119,9 +179,10 @@ namespace Teste
             using var query = new Query(connection, TABLE);
             query.Where("column", "=", "teste")
                 .OrWhere("column", "=", "value");
+            using var g = new MysqlGrammar(query);
 
-            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @p0 OR column = @p1", Grammar.SelectCommand(query).CommandText);
-            Assert.AreEqual(2, query.GetInfo().Command.Parameters.Count);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column = @c1 OR column = @c2", cmd.CommandText);
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using SharpOrm.Errors;
 using System;
-using System.Data.Common;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -12,12 +11,10 @@ namespace SharpOrm.Builder
         internal const string OR = "OR";
 
         private bool _disposed = false;
-        protected internal readonly QueryInfo info;
+        protected internal readonly QueryInfo info = new QueryInfo();
         #endregion
 
         #region Properties
-        protected DbCommand Command => info.Command;
-
         public bool Disposed => this._disposed;
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
@@ -40,34 +37,6 @@ namespace SharpOrm.Builder
             "not like",
             "not between"
         };
-        #endregion
-
-        #region QueryBase
-
-        public QueryBase(DbTransaction transaction) : this(transaction.Connection)
-        {
-            this.Command.Transaction = transaction;
-        }
-
-        public QueryBase(DbConnection connection) : this(connection.CreateCommand())
-        {
-
-        }
-
-        public QueryBase(DbCommand command)
-        {
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
-
-            this.info = new QueryInfo(command);
-        }
-
-        internal QueryBase(QueryBase query)
-        {
-            this.info = new QueryInfo(query.info.Command);
-            this._disposed = true;
-        }
-
         #endregion
 
         #region Where
@@ -114,11 +83,14 @@ namespace SharpOrm.Builder
 
         public QueryBase Where(QueryCallback callback)
         {
-            var query = new QueryBase(this);
+            var query = new QueryBase();
             callback(query);
 
             if (query.info.Wheres.Length > 0)
+            {
+                this.info.WhereObjs.AddRange(query.info.WhereObjs);
                 return this.WriteWhere($"({query.info.Wheres})", AND);
+            }
 
             return this;
         }
@@ -137,30 +109,33 @@ namespace SharpOrm.Builder
 
         public QueryBase OrWhere(QueryCallback callback)
         {
-            var query = new QueryBase(this);
+            var query = new QueryBase();
             callback(query);
 
             if (query.info.Wheres.Length > 0)
+            {
+                this.info.WhereObjs.AddRange(query.info.WhereObjs);
                 return this.WriteWhere($"({query.info.Wheres})", OR);
+            }
 
             return this;
         }
         #endregion
 
-        public virtual string RegisterParameterValue(object value)
+        private string RegisterParameterValue(object value)
         {
-            string name = $"@p{this.Command.Parameters.Count}";
-            this.Command.Parameters.Add(this.CreateParameter(name, value));
+            if (value is Query query)
+                return this.RegisterQuery(query);
 
-            return name;
+            this.info.WhereObjs.Add(value);
+            return "?";
         }
 
-        protected virtual DbParameter CreateParameter(string name, object value)
+        private string RegisterQuery(Query query)
         {
-            var parameter = this.Command.CreateParameter();
-            parameter.ParameterName = name;
-            parameter.Value = value;
-            return parameter;
+            this.info.WhereObjs.AddRange(query.info.WhereObjs);
+
+            return $"({query})";
         }
 
         #region IDisposed
@@ -174,9 +149,6 @@ namespace SharpOrm.Builder
         {
             if (this._disposed)
                 return;
-
-            if (disposing)
-                this.info.Command?.Dispose();
 
             this._disposed = true;
         }
