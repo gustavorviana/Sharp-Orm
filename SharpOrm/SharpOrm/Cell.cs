@@ -22,6 +22,37 @@ namespace SharpOrm
             return new Cell(this.Name, this.Value);
         }
 
+        public override string ToString()
+        {
+            return string.Format("Column ({0}: {1})", this.Name, this.Value);
+        }
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Cell);
+        }
+
+        public bool Equals(Cell other)
+        {
+            return other != null &&
+                   Name == other.Name &&
+                   EqualityComparer<object>.Default.Equals(Value, other.Value);
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = -244751520;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            hashCode = hashCode * -1521134295 + EqualityComparer<object>.Default.GetHashCode(Value);
+            return hashCode;
+        }
+
+        #endregion
+
+        #region Explicit operator
+
         public static explicit operator string(Cell cell)
         {
             return cell.Value?.ToString();
@@ -47,29 +78,6 @@ namespace SharpOrm
             return (int)cell == 1;
         }
 
-        public override string ToString()
-        {
-            return string.Format("Column ({0}: {1})", this.Name, this.Value);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Cell);
-        }
-
-        public bool Equals(Cell other)
-        {
-            return other != null &&
-                   Name == other.Name &&
-                   EqualityComparer<object>.Default.Equals(Value, other.Value);
-        }
-
-        public override int GetHashCode()
-        {
-            int hashCode = -244751520;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
-            hashCode = hashCode * -1521134295 + EqualityComparer<object>.Default.GetHashCode(Value);
-            return hashCode;
-        }
+        #endregion
     }
 }

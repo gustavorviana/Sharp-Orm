@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SharpOrm
 {
-    public class Row : IReadOnlyList<Cell>
+    public class Row : IReadOnlyList<Cell>, IEquatable<Row>
     {
         private readonly Cell[] cells;
         private readonly string[] names;
@@ -69,5 +69,35 @@ namespace SharpOrm
 
             return builder.ToString();
         }
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Row);
+        }
+
+        public bool Equals(Row other)
+        {
+            return other != null &&
+                   EqualityComparer<Cell[]>.Default.Equals(cells, other.cells) &&
+                   EqualityComparer<string[]>.Default.Equals(names, other.names) &&
+                   EqualityComparer<Cell[]>.Default.Equals(Cells, other.Cells) &&
+                   EqualityComparer<string[]>.Default.Equals(ColumnNames, other.ColumnNames) &&
+                   Count == other.Count;
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 1707470412;
+            hashCode = hashCode * -1521134295 + EqualityComparer<Cell[]>.Default.GetHashCode(cells);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(names);
+            hashCode = hashCode * -1521134295 + EqualityComparer<Cell[]>.Default.GetHashCode(Cells);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(ColumnNames);
+            hashCode = hashCode * -1521134295 + Count.GetHashCode();
+            return hashCode;
+        }
+
+        #endregion
     }
 }

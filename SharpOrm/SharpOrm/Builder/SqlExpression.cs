@@ -1,8 +1,10 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class SqlExpression
+    public class SqlExpression : IEquatable<SqlExpression>
     {
         protected string value;
 
@@ -19,6 +21,22 @@ namespace SharpOrm.Builder
         public override string ToString()
         {
             return this.value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as SqlExpression);
+        }
+
+        public bool Equals(SqlExpression other)
+        {
+            return other != null &&
+                   value == other.value;
+        }
+
+        public override int GetHashCode()
+        {
+            return -1584136870 + EqualityComparer<string>.Default.GetHashCode(value);
         }
 
         public static explicit operator SqlExpression(StringBuilder builder)

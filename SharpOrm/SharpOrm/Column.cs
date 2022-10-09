@@ -7,6 +7,7 @@ namespace SharpOrm
 {
     public class Column : IExpressionConversion, IEquatable<Column>, IEquatable<string>
     {
+        #region Fields\Properties
         private readonly SqlExpression expression;
 
         public string Name { get; }
@@ -14,6 +15,7 @@ namespace SharpOrm
 
         public static Column All => new Column(new SqlExpression("*"));
         public static Column CountAll => new Column(new SqlExpression("COUNT(*)"));
+        #endregion
 
         protected Column()
         {
@@ -35,33 +37,6 @@ namespace SharpOrm
             this.expression = expression;
         }
 
-        public static explicit operator Column(string rawColumn)
-        {
-            return new Column(new SqlExpression(rawColumn));
-        }
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Column);
-        }
-
-        public bool Equals(Column other)
-        {
-            return other != null &&
-                   Name == other.Name;
-        }
-
-        public override int GetHashCode()
-        {
-            return -1584136870 + EqualityComparer<string>.Default.GetHashCode(Name);
-        }
-
-        public bool Equals(string other)
-        {
-            return other != null &&
-                   Name == other;
-        }
-
         public virtual SqlExpression ToExpression(QueryBase query)
         {
             if (this.expression != null)
@@ -78,5 +53,38 @@ namespace SharpOrm
 
             return (SqlExpression)builder;
         }
+
+        public static explicit operator Column(string rawColumn)
+        {
+            return new Column(new SqlExpression(rawColumn));
+        }
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Column);
+        }
+
+        public bool Equals(Column other)
+        {
+            return other != null &&
+                   Name == other.Name &&
+                   Alias == other.Alias &&
+                   expression.Equals(other.expression);
+        }
+
+        public override int GetHashCode()
+        {
+            return -1584136870 + EqualityComparer<string>.Default.GetHashCode(Name);
+        }
+
+        public bool Equals(string other)
+        {
+            return other != null &&
+                   Name == other;
+        }
+
+        #endregion
     }
 }
