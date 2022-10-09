@@ -44,7 +44,7 @@ namespace UnityTest
         public void SelectRawColumn()
         {
             using var query = NewQuery();
-            query.Select(new Column("Id"), new Column(new SqlExpression("TOLOWER(Name)"), "meuNome"));
+            query.Select(new Column("Id"), new Column(new SqlExpression("TOLOWER(Name) AS meuNome")));
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();

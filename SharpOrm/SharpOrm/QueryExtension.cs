@@ -52,6 +52,11 @@ namespace SharpOrm
         #endregion
 
         #region Query
+        /// <summary>
+        /// Returns all rows of the table
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         public static Row[] ReadRows(this Query query)
         {
             List<Row> rows = new List<Row>();
@@ -63,7 +68,12 @@ namespace SharpOrm
             return rows.ToArray();
         }
 
-        public static Row FirstOrDefault(this Query query)
+        /// <summary>
+        /// Returns the first row of the table (if the table returns no value, null will be returned).
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public static Row FirstRow(this Query query)
         {
             query.Offset = 0;
             query.Limit = 1;
@@ -74,45 +84,79 @@ namespace SharpOrm
             return null;
         }
 
+        /// <summary>
+        /// Checks if there is any value in the table.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
         public static bool Any(this Query query)
         {
             return query.Count() > 0;
         }
 
         /// <summary>
-        /// Cria ou atualiza uma linha no banco de dados.
+        /// Creates a row if it does not exist or updates the value if it already exists.
         /// </summary>
-        /// <param name="query">Query com a conexão que deverá ser utilizada.</param>
-        /// <param name="row">Linha que deverá ser atualizada.</param>
-        /// <param name="toCheckColumns">Colunas que deverão ser verificadas para atualizar as linhas do banco de dados.</param>
-        public static void InsertOrUpdate(this Query query, Row row, params string[] toCheckColumns)
+        /// <param name="query"></param>
+        /// <param name="row">Query with the connection that should be used.</param>
+        /// <param name="toCheckColumns">Columns that must be checked to update the database rows.</param>
+        public static void Upsert(this Query query, Row row, string[] toCheckColumns)
         {
-            query = query.Clone(false);
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException("At least one column name must be entered.", nameof(toCheckColumns));
 
-            foreach (var column in toCheckColumns)
-                query.Where(column, "=", row[column]);
+            using (query = query.Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, row[column]);
 
-            if (query.Any()) query.Update(row.Cells);
-            else query.Insert(row.Cells);
+                if (query.Any()) query.Update(row.Cells);
+                else query.Insert(row.Cells);
+            }
         }
         #endregion
 
         #region DbDataReader
+        /// <summary>
+        /// Check if column name exists.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static bool Contains(this DbDataReader reader, string name)
         {
             return reader.GetOrdinal(name) >= 0;
         }
 
+        /// <summary>
+        /// Get value by column name.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="reader"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static T GetByName<T>(this DbDataReader reader, string name)
         {
             return (T)reader.GetByName(name);
         }
 
+        /// <summary>
+        /// Get value by column name.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static object GetByName(this DbDataReader reader, string name)
         {
             return reader.GetValue(reader.GetOrdinal(name));
         }
 
+        /// <summary>
+        /// Get Cell by column index.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public static Cell GetCell(this DbDataReader reader, int index)
         {
             if (index < 0 || index > reader.FieldCount)
@@ -121,6 +165,11 @@ namespace SharpOrm
             return new Cell(reader.GetName(index), reader[index]);
         }
 
+        /// <summary>
+        /// Get row of current reader.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
         public static Row GetRow(this DbDataReader reader)
         {
             Cell[] cells = new Cell[reader.FieldCount];

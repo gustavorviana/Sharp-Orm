@@ -133,6 +133,11 @@ namespace SharpOrm.Builder
             return query.info;
         }
 
+        protected virtual void WriteColumns()
+        {
+            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Query))));
+        }
+
         #region IDisposable
         ~Grammar()
         {

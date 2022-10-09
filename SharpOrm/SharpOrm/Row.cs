@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm
 {
@@ -58,5 +59,15 @@ namespace SharpOrm
         public IEnumerator<Cell> GetEnumerator() => cells.AsEnumerable().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => cells.GetEnumerator();
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder("Row");
+
+            foreach (var cell in this.cells)
+                builder.AppendFormat(" ({0}: {1})", cell.Name, cell.Value);
+
+            return builder.ToString();
+        }
     }
 }

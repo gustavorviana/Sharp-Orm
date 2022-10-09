@@ -46,7 +46,7 @@ namespace SharpOrm.Builder
             if (this.Query.Distinct)
                 this.QueryBuilder.Append("DISTINCT ");
 
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Select));
+            this.WriteColumns();
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();

@@ -3,9 +3,9 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    internal static class StringBuilderExt
+    public static class BuilderExt
     {
-        public static StringBuilder Replace(this StringBuilder builder, char c, Func<int, string> func)
+        internal static StringBuilder Replace(this StringBuilder builder, char c, Func<int, string> func)
         {
             int count = 0;
             for (int i = 0; i < builder.Length; i++)
@@ -18,6 +18,11 @@ namespace SharpOrm.Builder
             }
 
             return builder;
+        }
+
+        public static QueryInfo GetInfo(this QueryBase query)
+        {
+            return query.info;
         }
     }
 }

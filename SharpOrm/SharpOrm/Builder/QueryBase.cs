@@ -1,9 +1,13 @@
 ﻿using SharpOrm.Errors;
 using System;
+using System.Data.Common;
 using System.Linq;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// SQL clause creator
+    /// </summary>
     public class QueryBase : IDisposable
     {
         #region Fields\Const
@@ -14,12 +18,7 @@ namespace SharpOrm.Builder
         protected internal readonly QueryInfo info = new QueryInfo();
         #endregion
 
-        #region Properties
         public bool Disposed => this._disposed;
-        public bool Distinct { get; set; }
-        public int? Limit { get; set; }
-        public int? Offset { get; set; }
-
         protected virtual string[] AvailableOperations { get; } = {
             "=",
             ">",
@@ -37,7 +36,6 @@ namespace SharpOrm.Builder
             "not like",
             "not between"
         };
-        #endregion
 
         #region Where
         internal QueryBase WriteWhere(string rawSqlExpression, string type)
@@ -55,32 +53,81 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(column));
 
             if (!this.AvailableOperations.Contains(operation.ToLower()))
-                throw new DatabaseException("Operação SQL inválida: " + operation);
+                throw new DatabaseException("Invalid SQL operation: " + operation);
 
-            string rawColumn = column is SqlExpression exp ? ((string)exp) : column?.ToString().RemoveInvalidNameChars();
-            string rawValue;
-
-            if (value is SqlExpression valExp) rawValue = (string)valExp;
-            else rawValue = this.RegisterParameterValue(value);
-
-            return this.WriteWhere($"{rawColumn} {operation} {rawValue}", type);
+            return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
         }
 
+        /// <summary>
+        /// Turns the column object into a sql value.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        protected string ParseColumn(object column)
+        {
+            if (column is string strColumn)
+                return strColumn.RemoveInvalidNameChars();
+
+            if (column is SqlExpression exp)
+                return exp.ToString();
+
+            if (column is IExpressionConversion expConvert)
+                return expConvert.ToExpression(this).ToString();
+
+            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+        }
+
+        /// <summary>
+        /// Loads the value object and converts it to a sql expression.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        protected string ParseValue(object value)
+        {
+            if (value is SqlExpression raw)
+                return raw.ToString();
+
+            return this.RegisterParameterValue(value);
+        }
+
+        /// <summary>
+        /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "AND" is inserted before the new clause)
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
         public QueryBase Where(SqlExpression expression)
         {
             return this.WriteWhere((string)expression, AND);
         }
 
+        /// <summary>
+        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to compare</param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public QueryBase Where(string column, object value)
         {
             return this.Where(column, "=", value);
         }
 
+        /// <summary>
+        /// Adds a clause to "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to check.</param>
+        /// <param name="operation">Clause operator.</param>
+        /// <param name="value">Value to check.</param>
+        /// <returns></returns>
         public QueryBase Where(string column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, AND);
         }
 
+        /// <summary>
+        /// Add a clause in parentheses (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="callback">Callback where the clause should be builded.</param>
+        /// <returns></returns>
         public QueryBase Where(QueryCallback callback)
         {
             var query = new QueryBase();
@@ -97,16 +144,44 @@ namespace SharpOrm.Builder
         #endregion
 
         #region OrWhere
+        /// <summary>
+        /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "OR" is inserted before the new clause)
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
         public QueryBase OrWhere(SqlExpression expression)
         {
             return this.WriteWhere((string)expression, OR);
         }
 
+        /// <summary>
+        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to compare</param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public QueryBase OrWhere(string column, object value)
+        {
+            return this.OrWhere(column, "=", value);
+        }
+
+        /// <summary>
+        /// Adds a clause to "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to check.</param>
+        /// <param name="operation">Clause operator.</param>
+        /// <param name="value">Value to check.</param>
+        /// <returns></returns>
         public QueryBase OrWhere(string column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, OR);
         }
 
+        /// <summary>
+        /// Add a clause in parentheses (If there are any previous clauses, "OR" is entered before the new clause).
+        /// </summary>
+        /// <param name="callback">Callback where the clause should be builded.</param>
+        /// <returns></returns>
         public QueryBase OrWhere(QueryCallback callback)
         {
             var query = new QueryBase();

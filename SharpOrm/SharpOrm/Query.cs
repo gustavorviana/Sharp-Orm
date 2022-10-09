@@ -1,24 +1,31 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Errors;
 using System;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm
 {
     public class Query : QueryBase, ICloneable
     {
+        #region Properties
+        /// <summary>
+        /// Configurations for query
+        /// </summary>
         protected IQueryConfig Config { get; }
 
+        public bool Distinct { get; set; }
+        public int? Limit { get; set; }
+        public int? Offset { get; set; }
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; set; }
+
+        #endregion
 
         #region Query
 
         public Query(DbConnection connection, string table, string alias = "") : this(connection, new DefaultQueryConfig(), table, alias)
-        {
-        }
-
-        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, new DefaultQueryConfig(), table, alias)
         {
         }
 
@@ -37,23 +44,25 @@ namespace SharpOrm
             this.info.From = table;
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, string table, string alias = "")
-        {
-            this.Config = config ?? throw new ArgumentNullException(nameof(config));
-            this.Connection = transaction.Connection;
-            this.Transaction = transaction;
-
-            this.info.Alias = alias;
-            this.info.From = table;
-        }
-
         #endregion
 
+        #region Selection
+
+        /// <summary>
+        /// Select columns of table by name.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
         public Query Select(params string[] columns)
         {
             return this.Select(columns.Select(name => new Column(name)).ToArray());
         }
 
+        /// <summary>
+        /// Select column of table by Column object.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
         public Query Select(params Column[] columns)
         {
             this.info.Select.Clear();
@@ -61,6 +70,8 @@ namespace SharpOrm
 
             return this;
         }
+
+        #endregion
 
         #region Join
 
@@ -112,6 +123,37 @@ namespace SharpOrm
 
         #endregion
 
+        #region DbCommand\DbDataReader
+
+        /// <summary>
+        /// Create DbCommand using connection and transaction.
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <returns></returns>
+        public DbCommand CreateCommand(StringBuilder builder)
+        {
+            return this.CreateCommand(builder.ToString());
+        }
+
+        /// <summary>
+        /// Create DbCommand using connection and transaction.
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <returns></returns>
+        public DbCommand CreateCommand(string sql)
+        {
+            using (var cmd = this.Connection.CreateCommand())
+            {
+                cmd.Transaction = Transaction;
+                cmd.CommandText = sql;
+                return cmd;
+            }
+        }
+
+        /// <summary>
+        /// Execute SQL Select command and return DataReader.
+        /// </summary>
+        /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
             using (Grammar grammar = this.Config.NewGrammar(this))
@@ -119,13 +161,27 @@ namespace SharpOrm
                 return cmd.ExecuteReader();
         }
 
+        #endregion
+
+        #region DML SQL commands
+        /// <summary>
+        /// Update rows on table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns></returns>
         public bool Update(params Cell[] cells)
         {
+            this.CheckIsSafeOperation();
+
             using (Grammar grammar = this.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.GetUpdateCommand(cells))
                 return cmd.ExecuteNonQuery() > 0;
         }
 
+        /// <summary>
+        /// Inserts one row into the table.
+        /// </summary>
+        /// <param name="cells"></param>
         public void Insert(params Cell[] cells)
         {
             using (Grammar grammar = this.Config.NewGrammar(this))
@@ -133,6 +189,10 @@ namespace SharpOrm
                 cmd.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
         public void BulkInsert(params Row[] rows)
         {
             using (Grammar grammar = this.Config.NewGrammar(this))
@@ -140,26 +200,47 @@ namespace SharpOrm
                 cmd.ExecuteScalar();
         }
 
+        /// <summary>
+        /// Removes rows from database
+        /// </summary>
+        /// <returns></returns>
         public bool Delete()
         {
+            this.CheckIsSafeOperation();
+
             using (Grammar grammar = this.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.GetDeleteCommand())
                 return cmd.ExecuteNonQuery() > 0;
         }
 
+        /// <summary>
+        /// Counts the amount of results available. 
+        /// </summary>
+        /// <returns></returns>
         public long Count()
         {
             using (Grammar grammar = this.Config.NewGrammar(this.Clone(true).Select(Column.CountAll)))
             using (DbCommand cmd = grammar.GetSelectCommand())
                 return Convert.ToInt64(cmd.ExecuteScalar());
         }
+        #endregion
 
+        #region Clone and safety
+        /// <summary>
+        /// Clones the Query object with the parameters of "WHERE".
+        /// </summary>
+        /// <returns></returns>
         public object Clone()
         {
             return this.Clone(true);
         }
 
-        public Query Clone(bool withWhere)
+        /// <summary>
+        /// Clones the Query object.
+        /// </summary>
+        /// <param name="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
+        /// <returns></returns>
+        public virtual Query Clone(bool withWhere)
         {
             Query query = new Query(this.Connection, this.Config, this.info.From, this.info.Alias);
             if (withWhere)
@@ -167,6 +248,16 @@ namespace SharpOrm
 
             return query;
         }
+
+        /// <summary>
+        /// Throws an error if only operations with "WHERE" are allowed and there are none configured.
+        /// </summary>
+        protected void CheckIsSafeOperation()
+        {
+            if (this.Config.OnlySafeModifications && this.info.Wheres.Length == 0)
+                throw new UnsafeDbOperation();
+        }
+        #endregion
 
         public override string ToString()
         {

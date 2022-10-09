@@ -1,8 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Teste.Utils;
 
 namespace UnityTest
@@ -28,7 +25,7 @@ namespace UnityTest
 
             query.Insert(NewRow(Id, Name).Cells);
 
-            var row = query.FirstOrDefault();
+            var row = query.FirstRow();
 
             Assert.IsNotNull(row);
             Assert.AreEqual(Id, row["id"]);
@@ -36,6 +33,7 @@ namespace UnityTest
         }
 
         [TestCleanup]
+        [TestInitialize]
         public void CleanupTest()
         {
             using var query = NewQuery();
@@ -66,6 +64,18 @@ namespace UnityTest
 
             using var query2 = NewQuery();
             Assert.AreEqual(1, query2.Count());
+        }
+
+        [TestMethod]
+        public void Upsert()
+        {
+            using var query = NewQuery();
+
+            query.Upsert(NewRow(1, "A1"), new[] { "id" });
+            Assert.AreEqual(1, query.FirstRow()["id"]);
+
+            query.Upsert(NewRow(1, "Josh"), new[] { "id" });
+            Assert.AreEqual("Josh", query.FirstRow()["name"]);
         }
     }
 }
