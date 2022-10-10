@@ -1,6 +1,5 @@
 ﻿using SharpOrm.Errors;
 using System;
-using System.Data.Common;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -66,7 +65,7 @@ namespace SharpOrm.Builder
         protected string ParseColumn(object column)
         {
             if (column is string strColumn)
-                return strColumn.RemoveInvalidNameChars();
+                return this.info.ApplyColumnConfig(strColumn.RemoveInvalidNameChars());
 
             if (column is SqlExpression exp)
                 return exp.ToString();
@@ -86,6 +85,9 @@ namespace SharpOrm.Builder
         {
             if (value is SqlExpression raw)
                 return raw.ToString();
+
+            if (value is Column column)
+                return column.ToExpression(this).ToString();
 
             return this.RegisterParameterValue(value);
         }

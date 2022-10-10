@@ -3,6 +3,8 @@
     public class DefaultQueryConfig : IQueryConfig
     {
         public bool OnlySafeModifications { get; }
+        public string ColumnPrefix { get; set; }
+        public string ColumnSuffix { get; set; }
 
         public DefaultQueryConfig()
         {

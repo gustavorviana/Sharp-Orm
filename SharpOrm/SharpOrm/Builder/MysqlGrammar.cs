@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -16,7 +14,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "INSERT INTO {0} ({1}) VALUES ({2})",
                 this.GetTableName(false),
-                string.Join(", ", rows[0].Select(c => c.Name)),
+                string.Join(", ", rows[0].Select(c => this.Info.ApplyColumnConfig(c.Name))),
                 string.Join(", ", rows[0].Cells.Select(c => this.RegisterValueParam(c.Value)))
             );
 
@@ -35,7 +33,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "INSERT INTO {0} ({1}) VALUES ({2})",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => c.Name)),
+                string.Join(", ", cells.Select(c => this.Info.ApplyColumnConfig(c.Name))),
                 string.Join(", ", cells.Select(c => this.RegisterValueParam(c.Value)))
             );
         }
@@ -46,7 +44,7 @@ namespace SharpOrm.Builder
             if (this.Query.Distinct)
                 this.QueryBuilder.Append("DISTINCT ");
 
-            this.WriteColumns();
+            this.WriteSelectColumns();
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();
@@ -85,7 +83,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => $"{c.Name} = {RegisterValueParam(c.Value)}"))
+                string.Join(", ", cells.Select(c => $"{this.Info.ApplyColumnConfig(c.Name)}={RegisterValueParam(c.Value)}"))
             );
             this.WriteWhere();
         }
@@ -101,6 +99,7 @@ namespace SharpOrm.Builder
                 where.Replace('?', (count) => this.RegisterClausuleParameter(this.Info.WhereObjs[count - 1]));
 
             this.QueryBuilder.AppendFormat(" WHERE {0}", where);
+            where.Clear();
         }
     }
 }

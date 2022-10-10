@@ -10,6 +10,7 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Properties
+
         /// <summary>
         /// Configurations for query
         /// </summary>
@@ -32,7 +33,7 @@ namespace SharpOrm
         public Query(DbConnection connection, IQueryConfig config, string table, string alias = "")
         {
             if (config == null)
-                throw new ArgumentNullException(nameof(config)); ;
+                throw new ArgumentNullException(nameof(config));
 
             if (string.IsNullOrEmpty(table))
                 throw new ArgumentNullException(nameof(table));

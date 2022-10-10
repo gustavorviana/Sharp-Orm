@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
-using System.Linq;
 using System.Data.Common;
+using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -133,7 +133,7 @@ namespace SharpOrm.Builder
             return query.info;
         }
 
-        protected virtual void WriteColumns()
+        protected virtual void WriteSelectColumns()
         {
             this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Query))));
         }

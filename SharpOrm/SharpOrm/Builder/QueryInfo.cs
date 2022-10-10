@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -19,6 +17,9 @@ namespace SharpOrm.Builder
         public string From { get; set; }
         public string Alias { get; set; }
 
+        public string ColumnPrefix { get; set; }
+        public string ColumnSuffix { get; set; }
+
         internal void LoadFrom(QueryInfo info)
         {
             this.Wheres.Append(info.Wheres);
@@ -28,6 +29,19 @@ namespace SharpOrm.Builder
             this.Select.AddRange(info.Select);
 
             this.WhereObjs.AddRange(info.WhereObjs);
+        }
+
+        /// <summary>
+        /// Apply column prefix and suffix.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public string ApplyColumnConfig(string name)
+        {
+            string prefix = this.ColumnPrefix ?? "";
+            string suffix = this.ColumnSuffix ?? "";
+
+            return $"{prefix}{name}{suffix}";
         }
     }
 }

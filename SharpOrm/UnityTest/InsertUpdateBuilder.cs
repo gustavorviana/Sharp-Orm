@@ -36,7 +36,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(q);
 
             using var cmd = g.GetUpdateCommand(new Cell[] { new Cell("name", "MyTestName"), new Cell("alias", "Test") });
-            Assert.AreEqual("UPDATE TestTable SET name = @v1, alias = @v2", cmd.CommandText);
+            Assert.AreEqual("UPDATE TestTable SET name=@v1, alias=@v2", cmd.CommandText);
         }
 
         [TestMethod]
@@ -47,7 +47,7 @@ namespace UnityTest
             q.Where("id", "=", 1);
 
             using var cmd = g.GetUpdateCommand(new Cell[] { new Cell("name", 2) });
-            Assert.AreEqual("UPDATE TestTable SET name = @v1 WHERE id = @c1", cmd.CommandText);
+            Assert.AreEqual("UPDATE TestTable SET name=@v1 WHERE id = @c1", cmd.CommandText);
         }
     }
 }

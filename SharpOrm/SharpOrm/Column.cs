@@ -46,7 +46,7 @@ namespace SharpOrm
             if (!string.IsNullOrEmpty(query.info.Alias))
                 builder.AppendFormat("{0}.", query.info.Alias);
 
-            builder.Append(this.Name);
+            builder.Append(query.info.ApplyColumnConfig(this.Name));
 
             if (!string.IsNullOrEmpty(this.Alias))
                 builder.AppendFormat(" AS {0}", this.Alias);
