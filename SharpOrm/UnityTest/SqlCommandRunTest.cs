@@ -32,14 +32,6 @@ namespace UnityTest
             Assert.AreEqual(Name, row["name"]);
         }
 
-        [TestCleanup]
-        [TestInitialize]
-        public void CleanupTest()
-        {
-            using var query = NewQuery();
-            query.Delete();
-        }
-
         [TestMethod]
         public void Update()
         {
@@ -76,6 +68,14 @@ namespace UnityTest
 
             query.Upsert(NewRow(1, "Josh"), new[] { "id" });
             Assert.AreEqual("Josh", query.FirstRow()["name"]);
+        }
+
+        [TestCleanup]
+        [TestInitialize]
+        public void CleanupTest()
+        {
+            using var query = NewQuery();
+            query.Delete();
         }
     }
 }
