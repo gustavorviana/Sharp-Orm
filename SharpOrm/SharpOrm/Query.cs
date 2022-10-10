@@ -26,15 +26,22 @@ namespace SharpOrm
 
         #region Query
 
-        public Query(DbConnection connection, string table, string alias = "") : this(connection, new DefaultQueryConfig(), table, alias)
+        /// <summary>
+        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in SharpOrm.QueryDefaults.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="alias">Table alias.</param>
+        public Query(string table, string alias = "") : this(QueryDefaults.Connection, QueryDefaults.Config, table, alias)
+        {
+
+        }
+
+        public Query(DbConnection connection, string table, string alias = "") : this(connection, QueryDefaults.Config, table, alias)
         {
         }
 
         public Query(DbConnection connection, IQueryConfig config, string table, string alias = "")
         {
-            if (config == null)
-                throw new ArgumentNullException(nameof(config));
-
             if (string.IsNullOrEmpty(table))
                 throw new ArgumentNullException(nameof(table));
 
@@ -43,6 +50,9 @@ namespace SharpOrm
 
             this.info.Alias = alias;
             this.info.From = table;
+
+            this.info.ColumnPrefix = config.ColumnPrefix;
+            this.info.ColumnSuffix = config.ColumnSuffix;
         }
 
         #endregion

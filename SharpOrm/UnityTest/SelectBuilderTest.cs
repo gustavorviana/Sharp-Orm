@@ -184,5 +184,64 @@ namespace UnityTest
             using var cmd = g.GetSelectCommand();
             Assert.AreEqual("SELECT * FROM TestTable WHERE column = @c1 OR column = @c2", cmd.CommandText);
         }
+
+        [TestMethod]
+        public void SelectWhereWithColumnPrefixSuffix()
+        {
+            QueryDefaults.Config.ColumnPrefix = "`";
+            QueryDefaults.Config.ColumnSuffix = "`";
+
+            using var query = new Query(connection, TABLE);
+            query.Select("Id").Where("column", "=", "value");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT `Id` FROM TestTable WHERE `column` = @c1", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereColumnsEquals()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Where("column1", "=", new Column("column2"))
+                .Where(new Column("column2"), "=", new Column("column3"));
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = column2 AND column2 = column3", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereSqlExpression()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Where(new SqlExpression("column1 = 1"));
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = 1", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereRawColumn()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Where((Column)"UPPER(column1)", "=", "ABC");
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE UPPER(column1) = @c1", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereRawValue()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Where("column1", "=", (SqlExpression)"UPPER(column2)");
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = UPPER(column2)", cmd.CommandText);
+        }
     }
 }

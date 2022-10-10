@@ -15,6 +15,7 @@ namespace Teste.Utils
 
         protected const string ID = "id";
         protected const string NAME = "name";
+        protected const string NICK = "nick";
         protected const string CREATEDAT = "record_created";
         #endregion
 
@@ -63,12 +64,19 @@ namespace Teste.Utils
 
         protected static Row NewRow(int id, string name)
         {
-            return new Row(new Cell[] { new Cell("id", id), new Cell("name", name) });
+            return new Row(new Cell[] { new Cell(ID, id), new Cell(NAME, name) });
         }
 
         protected static Query NewQuery()
         {
             return new Query(connection, TABLE);
+        }
+
+        [TestInitialize]
+        public void ResetDefaultsOnTestInitialize()
+        {
+            QueryDefaults.Config = new DefaultQueryConfig();
+            QueryDefaults.Connection = null;
         }
 
         #region Connection management
@@ -112,6 +120,7 @@ namespace Teste.Utils
             return $@"CREATE TABLE IF NOT EXISTS {TABLE} (
                   {ID} INT NOT NULL PRIMARY KEY,
                   {NAME} VARCHAR(256) NOT NULL,
+                  {NICK} VARCHAR(256) NULL,
                   {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
         }

@@ -83,7 +83,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => $"{this.Info.ApplyColumnConfig(c.Name)}={RegisterValueParam(c.Value)}"))
+                string.Join(", ", cells.Select(c => $"{this.Info.ApplyColumnConfig(c.Name)} = {RegisterValueParam(c.Value)}"))
             );
             this.WriteWhere();
         }

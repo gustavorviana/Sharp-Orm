@@ -28,8 +28,8 @@ namespace UnityTest
             var row = query.FirstRow();
 
             Assert.IsNotNull(row);
-            Assert.AreEqual(Id, row["id"]);
-            Assert.AreEqual(Name, row["name"]);
+            Assert.AreEqual(Id, row[ID]);
+            Assert.AreEqual(Name, row[NAME]);
         }
 
         [TestMethod]
@@ -39,8 +39,8 @@ namespace UnityTest
             using var query = NewQuery();
             query.Insert(NewRow(Id, "Name1").Cells);
 
-            query.Where("id", Id);
-            query.Update(new Cell("name", "Name2"));
+            query.Where(ID, Id);
+            query.Update(new Cell(NAME, "Name2"));
         }
 
         [TestMethod]
@@ -51,7 +51,7 @@ namespace UnityTest
 
             Assert.AreEqual(2, query.Count());
 
-            query.Where("name", "B");
+            query.Where(NAME, "B");
             query.Delete();
 
             using var query2 = NewQuery();
@@ -63,11 +63,22 @@ namespace UnityTest
         {
             using var query = NewQuery();
 
-            query.Upsert(NewRow(1, "A1"), new[] { "id" });
-            Assert.AreEqual(1, query.FirstRow()["id"]);
+            query.Upsert(NewRow(1, "A1"), new[] { ID });
+            Assert.AreEqual(1, query.FirstRow()[ID]);
 
-            query.Upsert(NewRow(1, "Josh"), new[] { "id" });
-            Assert.AreEqual("Josh", query.FirstRow()["name"]);
+            query.Upsert(NewRow(1, "Josh"), new[] { ID });
+            Assert.AreEqual("Josh", query.FirstRow()[NAME]);
+        }
+
+        [TestMethod]
+        public void UpdateWhereIsNull()
+        {
+            const int Id = 1;
+            using var query = NewQuery();
+            query.Insert(NewRow(Id, "Name1").Cells);
+
+            query.Where(NICK, null);
+            query.Update(new Cell(NICK, "Name2"));
         }
 
         [TestCleanup]
