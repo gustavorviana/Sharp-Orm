@@ -2,7 +2,7 @@
 using SharpOrm;
 using SharpOrm.Errors;
 using System;
-using Teste.Utils;
+using UnityTest.Utils;
 
 namespace UnityTest
 {

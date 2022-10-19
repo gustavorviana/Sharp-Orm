@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Teste.Utils
+namespace UnityTest.Utils
 {
     public abstract class BaseTest
     {

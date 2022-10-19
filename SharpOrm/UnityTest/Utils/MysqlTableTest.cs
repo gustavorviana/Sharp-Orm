@@ -1,13 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MySql.Data.MySqlClient;
 using SharpOrm;
 using SharpOrm.Builder;
-using System;
-using System.IO;
 
-namespace Teste.Utils
+namespace UnityTest.Utils
 {
-    public class MysqlTableTest : BaseTest
+    public class MysqlTableTest : MysqlConnectionTest
     {
         private static bool hasFirstLoad = false;
         #region Consts
@@ -19,14 +16,10 @@ namespace Teste.Utils
         protected const string CREATEDAT = "record_created";
         #endregion
 
-        protected static MySqlConnection connection;
-
         #region Class Init/Clean
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
-        public static void InitConnection(TestContext context)
+        public static void OnMysqlTableTestInit(TestContext context)
         {
-            ReloadConnection();
-
             using var cmd = connection.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
@@ -69,7 +62,7 @@ namespace Teste.Utils
 
         protected static Query NewQuery()
         {
-            return new Query(connection, TABLE);
+            return NewQuery(TABLE);
         }
 
         [TestInitialize]
@@ -77,42 +70,6 @@ namespace Teste.Utils
         {
             QueryDefaults.Config = new DefaultQueryConfig();
             QueryDefaults.Connection = null;
-        }
-
-        #region Connection management
-        protected static void ReloadConnection()
-        {
-            CloseConnection();
-            connection = new MySqlConnection(GetConnectionString());
-            connection.Open();
-        }
-
-        private static void CloseConnection()
-        {
-            try
-            {
-                if (connection != null)
-                    connection.Dispose();
-
-                connection = null;
-            }
-            catch
-            {
-            }
-        }
-
-        private static string GetConnectionString()
-        {
-            string file = "Connection.txt";
-            if (!File.Exists(file))
-                File.WriteAllText(file, "Persist Security Info=False;server=localhost;database=Cadastro;uid=root;server=localhost;database=Cadastro;uid=root;pwd=root");
-
-            var connString = File.ReadAllText(file);
-
-            if (string.IsNullOrEmpty(connString))
-                throw new Exception("O arquivo Connection.txt deve conter a string de conexão.");
-
-            return connString;
         }
 
         private static string GetCreateTableSql()
@@ -124,6 +81,5 @@ namespace Teste.Utils
                   {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
         }
-        #endregion
     }
 }
