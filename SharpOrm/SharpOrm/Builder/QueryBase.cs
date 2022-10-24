@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
 
-            this.CheckISAvailableOperation(operation);
+            this.CheckIsAvailableOperation(operation);
 
             return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
         }
@@ -60,7 +60,7 @@ namespace SharpOrm.Builder
         /// Checks whether the inserted operation has been recorded in "this.AvailableOperations".
         /// </summary>
         /// <param name="operation"></param>
-        protected void CheckISAvailableOperation(string operation)
+        protected void CheckIsAvailableOperation(string operation)
         {
             if (!this.AvailableOperations.Contains(operation.ToLower()))
                 throw new DatabaseException("Invalid SQL operation: " + operation);
@@ -162,7 +162,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase WhereColumn(string column1, string operation, string column2)
         {
-            this.CheckISAvailableOperation(operation);
+            this.CheckIsAvailableOperation(operation);
 
             column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
             column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());
@@ -234,7 +234,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhereColumn(string column1, string operation, string column2)
         {
-            this.CheckISAvailableOperation(operation);
+            this.CheckIsAvailableOperation(operation);
 
             column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
             column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());

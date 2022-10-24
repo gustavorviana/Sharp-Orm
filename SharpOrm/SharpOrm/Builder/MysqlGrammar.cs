@@ -19,7 +19,7 @@ namespace SharpOrm.Builder
             );
 
             for (int i = 1; i < rows.Length; i++)
-                this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[1].Cells.Select(c => this.RegisterValueParam(c.Value))));
+                this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[i].Cells.Select(c => this.RegisterValueParam(c.Value))));
         }
 
         protected override void ConfigureDelete()

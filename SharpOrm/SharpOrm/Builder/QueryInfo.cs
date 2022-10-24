@@ -22,6 +22,14 @@ namespace SharpOrm.Builder
 
         internal void LoadFrom(QueryInfo info)
         {
+            this.Wheres.Clear();
+            this.GroupsBy.Clear();
+            this.Joins.Clear();
+            this.Orders.Clear();
+            this.Select.Clear();
+
+            this.WhereObjs.Clear();
+
             this.Wheres.Append(info.Wheres);
             this.GroupsBy.AddRange(info.GroupsBy);
             this.Joins.AddRange(info.Joins);

@@ -60,6 +60,17 @@ namespace UnityTest.Utils
             return new Row(new Cell[] { new Cell(ID, id), new Cell(NAME, name) });
         }
 
+        protected static void InsertRows(int count)
+        {
+            Row[] rows = new Row[count];
+
+            for (int i = 1; i <= count; i++)
+                rows[i - 1] = NewRow(i, $"User {i}");
+
+            using var q = NewQuery();
+            q.BulkInsert(rows);
+        }
+
         protected static Query NewQuery()
         {
             return NewQuery(TABLE);
