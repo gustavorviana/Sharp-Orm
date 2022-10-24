@@ -243,5 +243,60 @@ namespace UnityTest
             using var cmd = g.GetSelectCommand();
             Assert.AreEqual("SELECT * FROM TestTable WHERE column1 = UPPER(column2)", cmd.CommandText);
         }
+
+        [TestMethod]
+        public void SelectInnerJoin()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Join("TAB2", "TAB2.id", "=", $"{TABLE}.idTab2");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable INNER JOIN TestTable ON TAB2.id = TestTable.idTab2", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectLeftJoin()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Join("TAB2", "TAB2.id", "=", $"{TABLE}.idTab2", "LEFT");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable LEFT JOIN TestTable ON TAB2.id = TestTable.idTab2", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectJoinWithWhere()
+        {
+            using var query = new Query(connection, TABLE);
+            query.Join("TAB2", q => q.WhereColumn("TAB2.id", "=", $"{TABLE}.idTab2").OrWhereColumn("TAB2.id", "=", $"{TABLE}.idTab3"), "LEFT");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable LEFT JOIN TestTable ON TAB2.id = TestTable.idTab2 OR TAB2.id = TestTable.idTab3", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectGroupByColumnName()
+        {
+            using var query = new Query(connection, TABLE);
+            query.GroupBy("Col1", "Col2");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable GROUP BY Col1, Col2", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectGroupByColumnObj()
+        {
+            using var query = new Query(connection, TABLE);
+            query.GroupBy(new Column("Col1"), new Column(new SqlExpression("LOWER(Col2)")));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM TestTable GROUP BY Col1, LOWER(Col2)", cmd.CommandText);
+        }
     }
 }

@@ -50,8 +50,7 @@ namespace SharpOrm.Builder
             this.ApplyJoins();
             this.WriteWhere();
 
-            if (this.Info.GroupsBy.Length > 0)
-                this.QueryBuilder.AppendFormat(" GROUP BY {0}", this.Info.GroupsBy);
+            this.WriteGroupBy();
 
             if (this.Query.Limit != null)
                 this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);

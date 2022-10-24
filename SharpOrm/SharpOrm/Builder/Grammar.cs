@@ -138,6 +138,14 @@ namespace SharpOrm.Builder
             this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Query))));
         }
 
+        protected virtual void WriteGroupBy()
+        {
+            if (this.Info.GroupsBy.Count == 0)
+                return;
+
+            this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Query))));
+        }
+
         #region IDisposable
         ~Grammar()
         {

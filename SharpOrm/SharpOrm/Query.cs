@@ -62,11 +62,11 @@ namespace SharpOrm
         /// <summary>
         /// Select columns of table by name.
         /// </summary>
-        /// <param name="columns"></param>
+        /// <param name="columnNames"></param>
         /// <returns></returns>
-        public Query Select(params string[] columns)
+        public Query Select(params string[] columnNames)
         {
-            return this.Select(columns.Select(name => new Column(name)).ToArray());
+            return this.Select(columnNames.Select(name => new Column(name)).ToArray());
         }
 
         /// <summary>
@@ -86,20 +86,23 @@ namespace SharpOrm
 
         #region Join
 
-        public Query Join(string table, string column1, string operation, string column2)
+        public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery();
+            JoinQuery join = new JoinQuery { Type = type };
             ApplyTableName(join, table);
 
-            join.WriteWhere(new Column(column1), operation, new Column(column2), "AND");
+            join.WhereColumn(column1, operation, column2);
 
             this.info.Joins.Add(join);
             return this;
         }
 
-        public Query Join(string table, QueryCallback operation)
+        public Query Join(string table, QueryCallback operation, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery();
+            JoinQuery join = new JoinQuery
+            {
+                Type = type
+            };
             ApplyTableName(join, table);
             operation(join);
             this.info.Joins.Add(join);
@@ -130,6 +133,23 @@ namespace SharpOrm
                 throw new ArgumentException("O nome da tabela é inválido");
 
             query.info.Alias = splits[2];
+        }
+
+        #endregion
+
+        #region GroupBy
+
+        public Query GroupBy(params string[] columnNames)
+        {
+            return this.GroupBy(columnNames.Select(name => new Column(name)).ToArray());
+        }
+
+        public Query GroupBy(params Column[] columns)
+        {
+            this.info.GroupsBy.Clear();
+            this.info.GroupsBy.AddRange(columns);
+
+            return this;
         }
 
         #endregion

@@ -37,7 +37,7 @@ namespace SharpOrm.Builder
         };
 
         #region Where
-        internal QueryBase WriteWhere(string rawSqlExpression, string type)
+        internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
         {
             if (this.info.Wheres.Length != 0)
                 this.info.Wheres.Append($" {type} ");
@@ -46,15 +46,24 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        internal QueryBase WriteWhere(object column, string operation, object value, string type)
+        internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
         {
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
 
-            if (!this.AvailableOperations.Contains(operation.ToLower()))
-                throw new DatabaseException("Invalid SQL operation: " + operation);
+            this.CheckISAvailableOperation(operation);
 
             return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
+        }
+
+        /// <summary>
+        /// Checks whether the inserted operation has been recorded in "this.AvailableOperations".
+        /// </summary>
+        /// <param name="operation"></param>
+        protected void CheckISAvailableOperation(string operation)
+        {
+            if (!this.AvailableOperations.Contains(operation.ToLower()))
+                throw new DatabaseException("Invalid SQL operation: " + operation);
         }
 
         /// <summary>
@@ -143,6 +152,24 @@ namespace SharpOrm.Builder
 
             return this;
         }
+
+        /// <summary>
+        /// adds a value comparison clause between columns in "WHERE"
+        /// </summary>
+        /// <param name="column1">Column 1 to compare value.</param>
+        /// <param name="operation">Operation</param>
+        /// <param name="column2">Column 2 to compare value.</param>
+        /// <returns></returns>
+        public QueryBase WhereColumn(string column1, string operation, string column2)
+        {
+            this.CheckISAvailableOperation(operation);
+
+            column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
+            column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());
+
+            return this.WriteWhere($"{column1} {operation} {column2}", AND);
+        }
+
         #endregion
 
         #region OrWhere
@@ -197,6 +224,24 @@ namespace SharpOrm.Builder
 
             return this;
         }
+
+        /// <summary>
+        /// adds a value comparison clause between columns in "WHERE"
+        /// </summary>
+        /// <param name="column1">Column 1 to compare value.</param>
+        /// <param name="operation">Operation</param>
+        /// <param name="column2">Column 2 to compare value.</param>
+        /// <returns></returns>
+        public QueryBase OrWhereColumn(string column1, string operation, string column2)
+        {
+            this.CheckISAvailableOperation(operation);
+
+            column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
+            column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());
+
+            return this.WriteWhere($"{column1} {operation} {column2}", OR);
+        }
+
         #endregion
 
         private string RegisterParameterValue(object value)
