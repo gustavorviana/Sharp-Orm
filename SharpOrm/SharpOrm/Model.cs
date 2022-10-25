@@ -96,6 +96,5 @@ namespace SharpOrm
         {
             return this.changed.Contains(name.ToLower());
         }
-
     }
 }

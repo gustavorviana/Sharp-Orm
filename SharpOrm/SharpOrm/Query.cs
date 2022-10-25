@@ -173,12 +173,10 @@ namespace SharpOrm
         /// <returns></returns>
         public DbCommand CreateCommand(string sql)
         {
-            using (var cmd = this.Connection.CreateCommand())
-            {
-                cmd.Transaction = Transaction;
-                cmd.CommandText = sql;
-                return cmd;
-            }
+            var cmd = this.Connection.CreateCommand();
+            cmd.Transaction = Transaction;
+            cmd.CommandText = sql;
+            return cmd;
         }
 
         /// <summary>

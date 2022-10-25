@@ -64,57 +64,6 @@ namespace UnityTest
             this.AreEqualsParameter(cmd.Parameters[1], "@c1", 1);
         }
 
-        [TestMethod]
-        public void InsertWithPrefixSuffix()
-        {
-            this.ApplyDefaultColumnPrefixSuffix();
-
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
-
-            using var cmd = g.GetInsertCommand(NewRow(1, "T1").Cells);
-            Assert.AreEqual("INSERT INTO TestTable (`id`, `name`) VALUES (@v1, @v2)", cmd.CommandText);
-
-            this.TestBulkInsertParams(cmd, new[] { NewRow(1, "T1") });
-        }
-
-        [TestMethod]
-        public void BulkInsertWithPrefixSuffix()
-        {
-            this.ApplyDefaultColumnPrefixSuffix();
-
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
-            var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
-
-            using var cmd = g.GetBulkInsertCommand(rows);
-            Assert.AreEqual("INSERT INTO TestTable (`id`, `name`) VALUES (@v1, @v2), (@v3, @v4), (@v5, @v6), (@v7, @v8), (@v9, @v10)", cmd.CommandText);
-
-            this.TestBulkInsertParams(cmd, rows);
-        }
-
-        [TestMethod]
-        public void UpdateWithPrefixSuffix()
-        {
-            this.ApplyDefaultColumnPrefixSuffix();
-
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
-
-            var row = new Row(new Cell[] { new Cell("name", "MyTestName"), new Cell("alias", "Test") });
-            using var cmd = g.GetUpdateCommand(row.Cells);
-            Assert.AreEqual("UPDATE TestTable SET `name` = @v1, `alias` = @v2", cmd.CommandText);
-
-            this.AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
-            this.AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
-        }
-
-        private void ApplyDefaultColumnPrefixSuffix()
-        {
-            QueryDefaults.Config.ColumnPrefix = "`";
-            QueryDefaults.Config.ColumnSuffix = "`";
-        }
-
         private void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);

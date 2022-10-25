@@ -10,8 +10,8 @@ namespace SharpOrm
         #region Fields\Properties
         private readonly SqlExpression expression;
 
-        public string Name { get; }
-        public string Alias { get; }
+        public string Name { get; protected set; }
+        public string Alias { get; protected set; }
 
         public static Column All => new Column(new SqlExpression("*"));
         public static Column CountAll => new Column(new SqlExpression("COUNT(*)"));

@@ -11,12 +11,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureBulkInsert(Row[] rows)
         {
-            this.QueryBuilder.AppendFormat(
-                "INSERT INTO {0} ({1}) VALUES ({2})",
-                this.GetTableName(false),
-                string.Join(", ", rows[0].Select(c => this.Info.ApplyColumnConfig(c.Name))),
-                string.Join(", ", rows[0].Cells.Select(c => this.RegisterValueParam(c.Value)))
-            );
+            this.ConfigureInsert(rows[0].Cells);
 
             for (int i = 1; i < rows.Length; i++)
                 this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[i].Cells.Select(c => this.RegisterValueParam(c.Value))));
@@ -59,7 +54,7 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
 
             if (this.Info.Orders.Count > 0)
-                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Name} {col.Order}")));
+                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
         }
 
         private void ApplyJoins()

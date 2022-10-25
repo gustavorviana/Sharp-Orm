@@ -53,7 +53,10 @@ namespace SharpOrm
                 this.AddColumn(reader, model, i);
 
             if (model is QueryableModel qm)
+            {
                 qm.Connection = this.Connection;
+                qm.IsNewModel = false;
+            }
 
             return model;
         }

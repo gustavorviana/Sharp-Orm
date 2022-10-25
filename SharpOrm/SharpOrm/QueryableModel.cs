@@ -8,6 +8,7 @@ namespace SharpOrm
         protected virtual internal DbConnection Connection { get; set; }
         protected abstract string TableName { get; }
         protected virtual string[] PrimaryKeys { get; set; } = new string[] { "Id" };
+        public bool IsNewModel { get; internal set; } = true;
 
         public bool Save(DbTransaction transaction = null)
         {
@@ -17,7 +18,7 @@ namespace SharpOrm
             using (var query = this.Query(transaction: transaction))
             {
                 this.ApplyPrimaryKeys(query);
-                if (query.Any())
+                if (!this.IsNewModel)
                     return query.Update(this.GetChangedCells());
 
                 query.Insert(this.GetCells());
@@ -53,7 +54,7 @@ namespace SharpOrm
             return new Query(connection, this.TableName, alias) { Transaction = transaction };
         }
 
-        protected ModelQuery<T> GetQuery<T>(string alias = "", DbTransaction transaction = null) where T : Model, new()
+        protected ModelQuery<T> GetQuery<T>(string alias = "", DbTransaction transaction = null) where T : QueryableModel, new()
         {
             DbConnection connection = this.Connection ?? QueryDefaults.Connection;
 
