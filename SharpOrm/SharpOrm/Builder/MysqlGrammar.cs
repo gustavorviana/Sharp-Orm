@@ -20,7 +20,7 @@ namespace SharpOrm.Builder
         protected override void ConfigureDelete()
         {
             this.QueryBuilder.AppendFormat("DELETE FROM {0}", this.GetTableName(false));
-            this.WriteWhere();
+            this.WriteWhere(true);
         }
 
         protected override void ConfigureInsert(Cell[] cells)
@@ -43,7 +43,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();
-            this.WriteWhere();
+            this.WriteWhere(configureWhereParams);
 
             this.WriteGroupBy();
 
@@ -66,10 +66,10 @@ namespace SharpOrm.Builder
 
         protected virtual void WriteJoin(JoinQuery join)
         {
-            if (!string.IsNullOrEmpty(join.Type))
-                this.QueryBuilder.Append($" {join.Type}");
+            if (string.IsNullOrEmpty(join.Type))
+                join.Type = "INNER";
 
-            this.QueryBuilder.Append($" JOIN {this.GetTableName(true)} ON {join.info.Wheres}");
+            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.info, true)} ON {join.info.Wheres}");
         }
 
         protected override void ConfigureUpdate(Cell[] cells)
@@ -79,10 +79,10 @@ namespace SharpOrm.Builder
                 this.GetTableName(false),
                 string.Join(", ", cells.Select(c => $"{this.Info.ApplyColumnConfig(c.Name)} = {RegisterValueParam(c.Value)}"))
             );
-            this.WriteWhere();
+            this.WriteWhere(true);
         }
 
-        private void WriteWhere(bool configureParameters = true)
+        private void WriteWhere(bool configureParameters)
         {
             if (this.Info.Wheres.Length == 0)
                 return;

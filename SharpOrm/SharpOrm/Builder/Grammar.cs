@@ -116,10 +116,15 @@ namespace SharpOrm.Builder
             this.valuesCount = 0;
         }
 
-        protected virtual string GetTableName(bool withAlias)
+        protected string GetTableName(bool withAlias)
         {
-            string name = Info.From.AlphaNumericOnly(' ');
-            return !withAlias || string.IsNullOrEmpty(Info.Alias) ? name : $"{name} {Info.Alias.AlphaNumericOnly()}";
+            return this.GetTableName(this.Info, withAlias);
+        }
+
+        protected virtual string GetTableName(QueryInfo info, bool withAlias)
+        {
+            string name = info.From.AlphaNumericOnly(' ');
+            return !withAlias || string.IsNullOrEmpty(info.Alias) ? name : $"{name} {info.Alias.AlphaNumericOnly()}";
         }
 
         private DbCommand BuildCommand()

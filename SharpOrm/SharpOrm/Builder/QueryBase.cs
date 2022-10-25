@@ -33,7 +33,9 @@ namespace SharpOrm.Builder
             "between",
             "not in",
             "not like",
-            "not between"
+            "not between",
+            "is",
+            "is not"
         };
 
         #region Where
@@ -92,6 +94,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         protected string ParseValue(object value)
         {
+            if (value == null)
+                return "NULL";
+
             if (value is SqlExpression raw)
                 return raw.ToString();
 
@@ -119,7 +124,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(string column, object value)
         {
-            return this.Where(column, "=", value);
+            return this.Where(column, value == null ? "IS" : "=", value);
         }
 
         /// <summary>
@@ -191,7 +196,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(string column, object value)
         {
-            return this.OrWhere(column, "=", value);
+            return this.OrWhere(column, value == null ? "IS" : "=", value);
         }
 
         /// <summary>

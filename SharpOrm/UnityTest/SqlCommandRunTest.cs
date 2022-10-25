@@ -41,6 +41,10 @@ namespace UnityTest
 
             query.Where(ID, Id);
             query.Update(new Cell(NAME, "Name2"));
+
+            var row = query.FirstRow();
+            Assert.IsNotNull(row);
+            Assert.AreEqual("Name2", row[NAME]);
         }
 
         [TestMethod]
@@ -78,7 +82,15 @@ namespace UnityTest
             query.Insert(NewRow(Id, "Name1").Cells);
 
             query.Where(NICK, null);
-            query.Update(new Cell(NICK, "Name2"));
+            bool changed = query.Update(new Cell(NICK, "Name2"));
+            Assert.IsTrue(changed);
+
+            using var query2 = NewQuery();
+            query2.Where(ID, Id);
+
+            var row = query2.FirstRow();
+            Assert.IsNotNull(row);
+            Assert.AreEqual("Name2", row[NICK]);
         }
 
         [TestCleanup]
