@@ -28,7 +28,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "INSERT INTO {0} ({1}) VALUES ({2})",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => this.Info.ApplyColumnConfig(c.Name))),
+                string.Join(", ", cells.Select(c => this.ApplyTableColumnConfig(c.Name))),
                 string.Join(", ", cells.Select(c => this.RegisterValueParam(c.Value)))
             );
         }
@@ -69,7 +69,7 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.info, true)} ON {join.info.Wheres}");
+            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.Info, true)} ON {join.Info.Wheres}");
         }
 
         protected override void ConfigureUpdate(Cell[] cells)
@@ -77,7 +77,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => $"{this.Info.ApplyColumnConfig(c.Name)} = {RegisterValueParam(c.Value)}"))
+                string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {RegisterValueParam(c.Value)}"))
             );
             this.WriteWhere(true);
         }

@@ -22,7 +22,7 @@ namespace SharpOrm.Builder
 
         public static QueryInfo GetInfo(this QueryBase query)
         {
-            return query.info;
+            return query.Info;
         }
     }
 }

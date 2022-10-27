@@ -31,7 +31,7 @@ namespace UnityTest.Utils
 
             try
             {
-                var QueryConfig = new DefaultQueryConfig();
+                var QueryConfig = new MysqlQueryConfig();
                 //Utilizado para carregar as bibliotecas para reduzir o tempo de execução "falso" do código.
 
                 using var q = NewQuery();
@@ -79,7 +79,7 @@ namespace UnityTest.Utils
         [TestInitialize]
         public void ResetDefaultsOnTestInitialize()
         {
-            QueryDefaults.Config = new DefaultQueryConfig();
+            QueryDefaults.Config = new MysqlQueryConfig();
             QueryDefaults.Connection = null;
         }
 

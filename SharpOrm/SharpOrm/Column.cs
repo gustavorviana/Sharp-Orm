@@ -24,12 +24,12 @@ namespace SharpOrm
 
         public Column(string name, string alias) : this(name)
         {
-            this.Alias = alias.AlphaNumericOnly('_');
+            this.Alias = alias;
         }
 
         public Column(string name)
         {
-            this.Name = name.RemoveInvalidNameChars();
+            this.Name = name;
         }
 
         public Column(SqlExpression expression)
@@ -43,10 +43,10 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(query.info.Alias))
-                builder.AppendFormat("{0}.", query.info.Alias);
+            if (!string.IsNullOrEmpty(query.Info.Alias))
+                builder.AppendFormat("{0}.", query.Info.Alias);
 
-            builder.Append(query.info.ApplyColumnConfig(this.Name));
+            builder.Append(query.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(this.Name));
 
             if (!string.IsNullOrEmpty(this.Alias))
                 builder.AppendFormat(" AS {0}", this.Alias);

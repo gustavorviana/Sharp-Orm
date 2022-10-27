@@ -13,7 +13,7 @@ namespace SharpOrm
         /// <summary>
         /// IQueryConfig defaults to "Query". The default object is "DefaultQueryConfig"
         /// </summary>
-        public static IQueryConfig Config { get; set; } = new DefaultQueryConfig();
+        public static IQueryConfig Config { get; set; } = new MysqlQueryConfig();
 
         /// <summary>
         /// Default connection to a Query object. The default connection is null.

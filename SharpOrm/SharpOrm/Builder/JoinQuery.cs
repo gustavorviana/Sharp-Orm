@@ -4,7 +4,7 @@
     {
         public string Type { get; set; }
 
-        public JoinQuery()
+        public JoinQuery(IQueryConfig config) : base(config)
         {
         }
     }

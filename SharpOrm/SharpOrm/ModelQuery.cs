@@ -104,9 +104,9 @@ namespace SharpOrm
 
         public override Query Clone(bool withWhere)
         {
-            ModelQuery<T> query = new ModelQuery<T>(this.Connection, this.Config, this.info.From, this.info.Alias);
+            ModelQuery<T> query = new ModelQuery<T>(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias);
             if (withWhere)
-                query.info.LoadFrom(this.info);
+                query.Info.LoadFrom(this.Info);
 
             return query;
         }

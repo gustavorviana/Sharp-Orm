@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
         internal const string OR = "OR";
 
         private bool _disposed = false;
-        protected internal readonly QueryInfo info = new QueryInfo();
+        protected internal QueryInfo Info { get; }
         #endregion
 
         public bool Disposed => this._disposed;
@@ -38,13 +38,18 @@ namespace SharpOrm.Builder
             "is not"
         };
 
+        public QueryBase(IQueryConfig config)
+        {
+            this.Info = new QueryInfo(config);
+        }
+
         #region Where
         internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
         {
-            if (this.info.Wheres.Length != 0)
-                this.info.Wheres.Append($" {type} ");
+            if (this.Info.Wheres.Length != 0)
+                this.Info.Wheres.Append($" {type} ");
 
-            this.info.Wheres.Append(rawSqlExpression);
+            this.Info.Wheres.Append(rawSqlExpression);
             return this;
         }
 
@@ -76,7 +81,7 @@ namespace SharpOrm.Builder
         protected string ParseColumn(object column)
         {
             if (column is string strColumn)
-                return this.info.ApplyColumnConfig(strColumn.RemoveInvalidNameChars());
+                return this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(strColumn);
 
             if (column is SqlExpression exp)
                 return exp.ToString();
@@ -146,13 +151,13 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(QueryCallback callback)
         {
-            var query = new QueryBase();
+            var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.info.Wheres.Length > 0)
+            if (query.Info.Wheres.Length > 0)
             {
-                this.info.WhereObjs.AddRange(query.info.WhereObjs);
-                return this.WriteWhere($"({query.info.Wheres})", AND);
+                this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
+                return this.WriteWhere($"({query.Info.Wheres})", AND);
             }
 
             return this;
@@ -169,8 +174,8 @@ namespace SharpOrm.Builder
         {
             this.CheckIsAvailableOperation(operation);
 
-            column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
-            column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());
+            column1 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column1);
+            column2 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column2);
 
             return this.WriteWhere($"{column1} {operation} {column2}", AND);
         }
@@ -218,13 +223,13 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(QueryCallback callback)
         {
-            var query = new QueryBase();
+            var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.info.Wheres.Length > 0)
+            if (query.Info.Wheres.Length > 0)
             {
-                this.info.WhereObjs.AddRange(query.info.WhereObjs);
-                return this.WriteWhere($"({query.info.Wheres})", OR);
+                this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
+                return this.WriteWhere($"({query.Info.Wheres})", OR);
             }
 
             return this;
@@ -241,8 +246,8 @@ namespace SharpOrm.Builder
         {
             this.CheckIsAvailableOperation(operation);
 
-            column1 = this.info.ApplyColumnConfig(column1.RemoveInvalidNameChars());
-            column2 = this.info.ApplyColumnConfig(column2.RemoveInvalidNameChars());
+            column1 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column1);
+            column2 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column2);
 
             return this.WriteWhere($"{column1} {operation} {column2}", OR);
         }
@@ -254,13 +259,13 @@ namespace SharpOrm.Builder
             if (value is Query query)
                 return this.RegisterQuery(query);
 
-            this.info.WhereObjs.Add(value);
+            this.Info.WhereObjs.Add(value);
             return "?";
         }
 
         private string RegisterQuery(Query query)
         {
-            this.info.WhereObjs.AddRange(query.info.WhereObjs);
+            this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
 
             return $"({query})";
         }

@@ -16,7 +16,7 @@ namespace SharpOrm.Builder
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
         protected Query Query { get; }
-        protected QueryInfo Info => this.Query.info;
+        protected QueryInfo Info => this.Query.Info;
         protected DbCommand Command => this._command;
 
         public Grammar(Query query)
@@ -123,8 +123,8 @@ namespace SharpOrm.Builder
 
         protected virtual string GetTableName(QueryInfo info, bool withAlias)
         {
-            string name = info.From.AlphaNumericOnly(' ');
-            return !withAlias || string.IsNullOrEmpty(info.Alias) ? name : $"{name} {info.Alias.AlphaNumericOnly()}";
+            string name = this.ApplyTableColumnConfig(info.From);
+            return !withAlias || string.IsNullOrEmpty(info.Alias) ? name : $"{name} {this.ApplyTableColumnConfig(info.Alias)}";
         }
 
         private DbCommand BuildCommand()
@@ -135,7 +135,7 @@ namespace SharpOrm.Builder
 
         protected static QueryInfo GetQueryInfo(Query query)
         {
-            return query.info;
+            return query.Info;
         }
 
         protected virtual void WriteSelectColumns()
@@ -149,6 +149,16 @@ namespace SharpOrm.Builder
                 return;
 
             this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Query))));
+        }
+
+        /// <summary>
+        /// Apply column prefix and suffix.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        protected string ApplyTableColumnConfig(string name)
+        {
+            return this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(name);
         }
 
         #region IDisposable

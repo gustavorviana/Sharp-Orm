@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -14,11 +15,15 @@ namespace SharpOrm.Builder
         public List<ColumnOrder> Orders { get; } = new List<ColumnOrder>();
         public List<Column> Select { get; } = new List<Column>(new Column[] { Column.All });
 
+        public IQueryConfig Config { get; }
+
         public string From { get; set; }
         public string Alias { get; set; }
 
-        public string ColumnPrefix { get; set; }
-        public string ColumnSuffix { get; set; }
+        public QueryInfo(IQueryConfig config)
+        {
+            this.Config = config ?? throw new ArgumentNullException(nameof(config));
+        }
 
         internal void LoadFrom(QueryInfo info)
         {
@@ -37,19 +42,6 @@ namespace SharpOrm.Builder
             this.Select.AddRange(info.Select);
 
             this.WhereObjs.AddRange(info.WhereObjs);
-        }
-
-        /// <summary>
-        /// Apply column prefix and suffix.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public string ApplyColumnConfig(string name)
-        {
-            string prefix = this.ColumnPrefix ?? "";
-            string suffix = this.ColumnSuffix ?? "";
-
-            return $"{prefix}{name}{suffix}";
         }
     }
 }
