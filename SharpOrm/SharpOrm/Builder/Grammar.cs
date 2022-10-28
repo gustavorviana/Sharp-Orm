@@ -8,6 +8,7 @@ namespace SharpOrm.Builder
 {
     public abstract class Grammar : IDisposable
     {
+        #region Fields\Properties
         private DbCommand _command = null;
 
         private bool _disposed = false;
@@ -18,12 +19,15 @@ namespace SharpOrm.Builder
         protected Query Query { get; }
         protected QueryInfo Info => this.Query.Info;
         protected DbCommand Command => this._command;
+        #endregion
 
         public Grammar(Query query)
         {
             this.Query = query;
             this.Reset();
         }
+
+        #region DML
 
         public DbCommand GetSelectCommand(bool configureWhereParams = true)
         {
@@ -70,6 +74,9 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureDelete();
 
+        #endregion
+
+        #region Parameters
         protected string RegisterClausuleParameter(object value)
         {
             if (value is ICollection col)
@@ -99,6 +106,7 @@ namespace SharpOrm.Builder
             this.Command.Parameters.Add(p);
             return p;
         }
+        #endregion
 
         protected void Reset()
         {
