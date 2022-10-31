@@ -53,15 +53,20 @@ namespace SharpOrm.Builder
             if (this.Query.Offset != null)
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
 
-            if (this.Info.Orders.Count > 0)
-                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
+            this.ApplyOrderBy();    
         }
 
-        private void ApplyJoins()
+        protected void ApplyJoins()
         {
             if (this.Info.Joins.Count > 0)
                 foreach (var join in this.Info.Joins)
                     this.WriteJoin(join);
+        }
+
+        protected virtual void ApplyOrderBy()
+        {
+            if (this.Info.Orders.Count > 0)
+                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
         }
 
         protected virtual void WriteJoin(JoinQuery join)
@@ -82,7 +87,7 @@ namespace SharpOrm.Builder
             this.WriteWhere(true);
         }
 
-        private void WriteWhere(bool configureParameters)
+        protected void WriteWhere(bool configureParameters)
         {
             if (this.Info.Wheres.Length == 0)
                 return;

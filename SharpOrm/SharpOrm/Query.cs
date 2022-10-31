@@ -145,6 +145,54 @@ namespace SharpOrm
 
         #endregion
 
+        #region OrderBy
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="column">Column that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderBy(string column)
+        {
+            return this.OrderBy(new Column(column), SharpOrm.OrderBy.Asc);
+        }
+
+        /// <summary>
+        /// Applies descending sort.
+        /// </summary>
+        /// <param name="column">Column that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderByDesc(string column)
+        {
+            return this.OrderBy(new Column(column), SharpOrm.OrderBy.Desc);
+        }
+
+        /// <summary>
+        /// Signals which field should be ordered and sorting.
+        /// </summary>
+        /// <param name="column">Column that must be ordered.</param>
+        /// <param name="order">Field ordering.</param>
+        /// <returns></returns>
+        public Query OrderBy(Column column, OrderBy order)
+        {
+            return this.OrderBy(new ColumnOrder(column, order));
+        }
+
+        /// <summary>
+        /// Signals which fields should be ordered and sorting.
+        /// </summary>
+        /// <param name="orders"></param>
+        /// <returns></returns>
+        public Query OrderBy(params ColumnOrder[] orders)
+        {
+            this.Info.Orders.Clear();
+            this.Info.Orders.AddRange(orders);
+
+            return this;
+        }
+
+        #endregion
+
         #region DbCommand\DbDataReader
 
         /// <summary>

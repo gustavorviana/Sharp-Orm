@@ -1,14 +1,17 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MySql.Data.MySqlClient;
 using SharpOrm;
+using SharpOrm.Builder;
 using System;
+using System.Data.Common;
+using System.Data.SqlClient;
 using System.IO;
 
 namespace UnityTest.Utils
 {
-    public abstract class MysqlConnectionTest : BaseTest
+    public class SqlServerTest : BaseTest
     {
-        protected static MySqlConnection connection;
+        protected static SqlServerQueryConfig config = new SqlServerQueryConfig(false);
+        protected static DbConnection connection;
 
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void InitConnection(TestContext context)
@@ -19,7 +22,7 @@ namespace UnityTest.Utils
         protected static void ReloadConnection()
         {
             CloseConnection();
-            connection = new MySqlConnection(GetConnectionString());
+            connection = new SqlConnection(GetConnectionString());
             connection.Open();
         }
 
@@ -39,21 +42,21 @@ namespace UnityTest.Utils
 
         private static string GetConnectionString()
         {
-            string file = "Connection.txt";
+            string file = "SqlServerConnection.txt";
             if (!File.Exists(file))
-                File.WriteAllText(file, "Persist Security Info=False;server=localhost;database=Cadastro;uid=root;server=localhost;database=Cadastro;uid=root;pwd=root");
+                File.WriteAllText(file, @"Data Source=localhost\SQLEXPRESS;Initial Catalog=SharpOrm;Integrated Security=True;");
 
             var connString = File.ReadAllText(file);
 
             if (string.IsNullOrEmpty(connString))
-                throw new Exception("O arquivo Connection.txt deve conter a string de conexão.");
+                throw new Exception($"O arquivo {file} deve conter a string de conexão.");
 
             return connString;
         }
 
         protected static Query NewQuery(string table, string alias = "")
         {
-            return new Query(connection, table, alias);
+            return new Query(connection, config, table, alias);
         }
     }
 }

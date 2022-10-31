@@ -8,7 +8,7 @@ using System.Linq;
 namespace UnityTest
 {
     [TestClass]
-    public class InsertUpdateBuilderTest : MysqlTableTest
+    public class InsertUpdateDeleteBuilderTest : MysqlTableTest
     {
         [TestMethod]
         public void Insert()
@@ -62,6 +62,29 @@ namespace UnityTest
 
             this.AreEqualsParameter(cmd.Parameters[0], "@v1", 2);
             this.AreEqualsParameter(cmd.Parameters[1], "@c1", 1);
+        }
+
+        [TestMethod]
+        public void Delete()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.GetDeleteCommand();
+            Assert.AreEqual("DELETE FROM `TestTable`", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void DeleteWhere()
+        {
+            using var q = NewQuery();
+            q.Where("id", "=", 1);
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.GetDeleteCommand();
+            Assert.AreEqual("DELETE FROM `TestTable` WHERE `id` = @c1", cmd.CommandText);
+
+            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
         }
 
         private void AreEqualsParameter(DbParameter param, string name, object value)

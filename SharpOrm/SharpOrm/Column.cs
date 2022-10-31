@@ -44,7 +44,7 @@ namespace SharpOrm
 
             StringBuilder builder = new StringBuilder();
             if (!string.IsNullOrEmpty(query.Info.Alias))
-                builder.AppendFormat("{0}.", query.Info.Alias);
+                builder.AppendFormat("{0}.", query.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(query.Info.Alias));
 
             builder.Append(query.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(this.Name));
 
