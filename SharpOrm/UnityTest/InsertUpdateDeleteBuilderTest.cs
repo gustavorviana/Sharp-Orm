@@ -2,8 +2,8 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using System.Data.Common;
-using UnityTest.Utils;
 using System.Linq;
+using UnityTest.Utils;
 
 namespace UnityTest
 {

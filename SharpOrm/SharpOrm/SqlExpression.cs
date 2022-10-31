@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SharpOrm.Builder
+namespace SharpOrm
 {
     public class SqlExpression : IEquatable<SqlExpression>
     {

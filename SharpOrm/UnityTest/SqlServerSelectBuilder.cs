@@ -1,10 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm;
-using SharpOrm.Builder;
-using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 using UnityTest.Utils;
 
 namespace UnityTest

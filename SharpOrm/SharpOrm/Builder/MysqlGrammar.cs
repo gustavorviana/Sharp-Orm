@@ -53,7 +53,7 @@ namespace SharpOrm.Builder
             if (this.Query.Offset != null)
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
 
-            this.ApplyOrderBy();    
+            this.ApplyOrderBy();
         }
 
         protected void ApplyJoins()
