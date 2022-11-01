@@ -11,17 +11,18 @@ namespace SharpOrm
 
         protected abstract string TableName { get; }
         protected virtual string[] PrimaryKeys { get; set; } = new string[] { "Id" };
-        public bool IsNewModel { get; internal set; } = true;
+        internal bool _isNewModel = true;
+        public bool IsNewModel() => this._isNewModel;
 
         public bool Save(DbTransaction transaction = null, IQueryConfig config = null)
         {
-            if (!this.HasChanges)
+            if (!this.HasChanges())
                 return false;
 
             using (var query = this.Query(transaction: transaction, config: config))
             {
                 this.ApplyPrimaryKeys(query);
-                if (!this.IsNewModel)
+                if (!this.IsNewModel())
                     return query.Update(this.GetChangedCells());
 
                 query.Insert(this.GetCells());

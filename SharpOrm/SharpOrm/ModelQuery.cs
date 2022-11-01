@@ -67,7 +67,7 @@ namespace SharpOrm
             {
                 qm.Config = this.Info.Config;
                 qm.Connection = this.Connection;
-                qm.IsNewModel = false;
+                qm._isNewModel = false;
             }
 
             return model;

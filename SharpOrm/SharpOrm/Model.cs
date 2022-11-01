@@ -13,7 +13,7 @@ namespace SharpOrm
         internal readonly HashSet<string> changed = new HashSet<string>();
         internal readonly Dictionary<string, object> columns = new Dictionary<string, object>();
 
-        public bool HasChanges => this.changed.Count > 0;
+        public bool HasChanges() => this.changed.Count > 0;
         #endregion
 
         #region Columns Get
