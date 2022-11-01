@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpOrm.Mysql\SharpOrm.Mysql.csproj" />
     <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
   </ItemGroup>
 
