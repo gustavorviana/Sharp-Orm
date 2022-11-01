@@ -10,7 +10,7 @@ namespace UnityTest
         [TestMethod]
         public void Select()
         {
-            using var query = NewQuery("TestTable");
+            using var query = NewQuery(TABLE);
             using var g = config.NewGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -20,7 +20,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectAndOrderBy()
         {
-            using var query = NewQuery("TestTable");
+            using var query = NewQuery(TABLE);
             using var g = config.NewGrammar(query.OrderBy("Id"));
 
             using var cmd = g.GetSelectCommand();
@@ -30,7 +30,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectOffset()
         {
-            using var query = NewQuery("TestTable");
+            using var query = NewQuery(TABLE);
             query.OrderBy("Id").Offset = 1;
             using var g = config.NewGrammar(query);
 
@@ -41,7 +41,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectLimit()
         {
-            using var query = NewQuery("TestTable");
+            using var query = NewQuery(TABLE);
             query.Limit = 1;
             using var g = config.NewGrammar(query);
 
@@ -52,7 +52,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhere()
         {
-            using var query = NewQuery("TestTable");
+            using var query = NewQuery(TABLE);
             query.Where("Id", 1);
             using var g = config.NewGrammar(query);
 
@@ -64,7 +64,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectAndPaginate()
         {
-            using var query = NewQuery("TestTable", "table");
+            using var query = NewQuery(TABLE, "table");
             query.OrderByDesc("Id").Select("Id", "Name");
             query.Offset = 1;
             query.Limit = 10;

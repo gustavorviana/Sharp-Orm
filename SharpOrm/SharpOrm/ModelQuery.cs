@@ -16,7 +16,16 @@ namespace SharpOrm
         {
         }
 
+        public ModelQuery(DbTransaction transaction, string table, string alias = "") : base(transaction, QueryDefaults.Config, table, alias)
+        {
+
+        }
+
         public ModelQuery(DbConnection connection, IQueryConfig config, string table, string alias = "") : base(connection, config, table, alias)
+        {
+        }
+
+        public ModelQuery(DbTransaction transaction, IQueryConfig config, string table, string alias = "") : base(transaction, config, table, alias)
         {
         }
 

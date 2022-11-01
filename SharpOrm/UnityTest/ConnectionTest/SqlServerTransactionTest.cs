@@ -6,9 +6,10 @@ using UnityTest.Utils;
 namespace UnityTest.ConnectionTest
 {
     [TestClass]
-    public class MysqlTransactionTest : MysqlTableTest
+    public class SqlServerTransactionTest : SqlServerTest
     {
         [TestMethod]
+        [TestProperty("clearDb", "")]
         public void SimpleSelect()
         {
             try
@@ -33,6 +34,7 @@ namespace UnityTest.ConnectionTest
         }
 
         [TestMethod]
+        [TestProperty("clearDb", "")]
         public void MultipleInsert()
         {
             QueryDefaults.ExecuteTransaction(() =>
@@ -48,14 +50,6 @@ namespace UnityTest.ConnectionTest
 
             using var q = new Query(TABLE);
             Assert.AreEqual(4, q.Count());
-        }
-
-        [TestCleanup]
-        [TestInitialize]
-        public void CleanupTest()
-        {
-            using var query = NewQuery();
-            query.Delete();
         }
     }
 }

@@ -15,7 +15,7 @@ namespace SharpOrm
         public int? Limit { get; set; }
         public int? Offset { get; set; }
         public DbConnection Connection { get; }
-        public DbTransaction Transaction { get; set; }
+        public DbTransaction Transaction { get; }
 
         #endregion
 
@@ -35,12 +35,32 @@ namespace SharpOrm
         {
         }
 
+        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, QueryDefaults.Config, table, alias)
+        {
+
+        }
+
         public Query(DbConnection connection, IQueryConfig config, string table, string alias = "") : base(config)
         {
             if (string.IsNullOrEmpty(table))
                 throw new ArgumentNullException(nameof(table));
 
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+
+            if (QueryDefaults.Connection == connection)
+                this.Transaction = QueryDefaults.Transaction;
+
+            this.Info.Alias = alias;
+            this.Info.From = table;
+        }
+
+        public Query(DbTransaction transaction, IQueryConfig config, string table, string alias = "") : base(config)
+        {
+            if (string.IsNullOrEmpty(table))
+                throw new ArgumentNullException(nameof(table));
+
+            this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+            this.Connection = transaction.Connection;
 
             this.Info.Alias = alias;
             this.Info.From = table;

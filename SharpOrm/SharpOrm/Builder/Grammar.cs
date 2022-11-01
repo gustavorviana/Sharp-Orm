@@ -138,6 +138,7 @@ namespace SharpOrm.Builder
         private DbCommand BuildCommand()
         {
             this.Command.CommandText = this.QueryBuilder.ToString();
+            this.Command.Transaction = this.Query.Transaction;
             return this.Command;
         }
 

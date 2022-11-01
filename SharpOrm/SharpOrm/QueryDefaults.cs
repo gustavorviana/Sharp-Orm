@@ -24,6 +24,9 @@ namespace SharpOrm
 
         public static void ExecuteTransaction(Action action)
         {
+            if (Connection == null)
+                throw new ArgumentNullException(nameof(Connection), "A default connection has not been set.");
+
             if (Transaction != null)
                 throw new DatabaseException("A transaction has already been started.");
 
