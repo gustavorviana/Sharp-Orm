@@ -8,6 +8,7 @@ namespace SharpOrm
 {
     public class ModelQuery<T> : Query where T : Model, new()
     {
+        #region ModelQuery
         public ModelQuery(string table, string alias = "") : base(table, alias)
         {
         }
@@ -28,6 +29,7 @@ namespace SharpOrm
         public ModelQuery(DbTransaction transaction, IQueryConfig config, string table, string alias = "") : base(transaction, config, table, alias)
         {
         }
+        #endregion
 
         #region DML
 
@@ -63,6 +65,7 @@ namespace SharpOrm
 
             if (model is QueryableModel qm)
             {
+                qm.Config = this.Info.Config;
                 qm.Connection = this.Connection;
                 qm.IsNewModel = false;
             }
@@ -109,11 +112,20 @@ namespace SharpOrm
             base.BulkInsert(models.Select(m => new Row(m.GetCells())).ToArray());
         }
 
+        public Pager<T> Paginate(int peerPage, int currentPage)
+        {
+            return Pager<T>.FromBuilder(this, peerPage, currentPage);
+        }
+
         #endregion
 
         public override Query Clone(bool withWhere)
         {
-            ModelQuery<T> query = new ModelQuery<T>(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias);
+            ModelQuery<T> query = new ModelQuery<T>(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias)
+            {
+                Transaction = Transaction
+            };
+
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
 

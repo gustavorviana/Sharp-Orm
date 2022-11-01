@@ -15,7 +15,7 @@ namespace SharpOrm
         public int? Limit { get; set; }
         public int? Offset { get; set; }
         public DbConnection Connection { get; }
-        public DbTransaction Transaction { get; }
+        public DbTransaction Transaction { get; protected set; }
 
         #endregion
 
@@ -330,7 +330,11 @@ namespace SharpOrm
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = new Query(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias);
+            Query query = new Query(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias)
+            {
+                Transaction = Transaction
+            };
+
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
 
