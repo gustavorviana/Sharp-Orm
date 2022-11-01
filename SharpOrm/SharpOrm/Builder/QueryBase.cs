@@ -81,7 +81,7 @@ namespace SharpOrm.Builder
         protected string ParseColumn(object column)
         {
             if (column is string strColumn)
-                return this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(strColumn);
+                return this.Info.Config.ApplyNomenclature(strColumn);
 
             if (column is SqlExpression exp)
                 return exp.ToString();
@@ -174,8 +174,8 @@ namespace SharpOrm.Builder
         {
             this.CheckIsAvailableOperation(operation);
 
-            column1 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column1);
-            column2 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column2);
+            column1 = this.Info.Config.ApplyNomenclature(column1);
+            column2 = this.Info.Config.ApplyNomenclature(column2);
 
             return this.WriteWhere($"{column1} {operation} {column2}", AND);
         }
@@ -246,8 +246,8 @@ namespace SharpOrm.Builder
         {
             this.CheckIsAvailableOperation(operation);
 
-            column1 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column1);
-            column2 = this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(column2);
+            column1 = this.Info.Config.ApplyNomenclature(column1);
+            column2 = this.Info.Config.ApplyNomenclature(column2);
 
             return this.WriteWhere($"{column1} {operation} {column2}", OR);
         }

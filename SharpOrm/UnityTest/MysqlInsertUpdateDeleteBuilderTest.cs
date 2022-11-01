@@ -8,7 +8,7 @@ using UnityTest.Utils;
 namespace UnityTest
 {
     [TestClass]
-    public class InsertUpdateDeleteBuilderTest : MysqlTableTest
+    public class MysqlInsertUpdateDeleteBuilderTest : MysqlTableTest
     {
         [TestMethod]
         public void Insert()

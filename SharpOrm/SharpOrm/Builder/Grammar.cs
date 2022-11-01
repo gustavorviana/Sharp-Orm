@@ -167,7 +167,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         protected string ApplyTableColumnConfig(string name)
         {
-            return this.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(name);
+            return this.Info.Config.ApplyNomenclature(name);
         }
 
         #region IDisposable

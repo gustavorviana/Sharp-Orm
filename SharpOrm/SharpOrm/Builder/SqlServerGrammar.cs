@@ -42,8 +42,8 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
-            this.QueryBuilder.AppendFormat(") {0} ", this.GetTableNameIfNoAlias());
             this.WriteGroupBy();
+            this.QueryBuilder.AppendFormat(") {0} ", this.GetTableNameIfNoAlias());
             this.ApplyPagination();
         }
 

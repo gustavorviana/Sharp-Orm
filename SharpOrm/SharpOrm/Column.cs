@@ -44,12 +44,12 @@ namespace SharpOrm
 
             StringBuilder builder = new StringBuilder();
             if (!string.IsNullOrEmpty(query.Info.Alias))
-                builder.AppendFormat("{0}.", query.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(query.Info.Alias));
+                builder.AppendFormat("{0}.", query.Info.Config.ApplyNomenclature(query.Info.Alias));
 
-            builder.Append(query.Info.Config.ApplyNomenclatureableOfColumnAliasConfig(this.Name));
+            builder.Append(query.Info.Config.ApplyNomenclature(this.Name));
 
             if (!string.IsNullOrEmpty(this.Alias))
-                builder.AppendFormat(" AS {0}", this.Alias);
+                builder.AppendFormat(" AS {0}", query.Info.Config.ApplyNomenclature(this.Alias));
 
             return (SqlExpression)builder;
         }

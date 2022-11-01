@@ -19,7 +19,7 @@
             return new MysqlGrammar(query);
         }
 
-        public string ApplyNomenclatureableOfColumnAliasConfig(string name)
+        public string ApplyNomenclature(string name)
         {
             return $"`{string.Join("`.`", name.AlphaNumericOnly('_', '.').Split('.'))}`";
         }

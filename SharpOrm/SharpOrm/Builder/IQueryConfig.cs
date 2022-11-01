@@ -19,6 +19,6 @@
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        string ApplyNomenclatureableOfColumnAliasConfig(string name);
+        string ApplyNomenclature(string name);
     }
 }

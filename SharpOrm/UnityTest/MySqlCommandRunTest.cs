@@ -5,7 +5,7 @@ using UnityTest.Utils;
 namespace UnityTest
 {
     [TestClass]
-    public class SqlCommandRunTest : MysqlTableTest
+    public class MySqlCommandRunTest : MysqlTableTest
     {
         [TestMethod]
         public void Insert()

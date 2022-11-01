@@ -7,7 +7,7 @@ using UnityTest.Utils;
 namespace UnityTest
 {
     [TestClass]
-    public class SelectBuilderTest : MysqlTableTest
+    public class MysqlSelectBuilderTest : MysqlTableTest
     {
         [TestMethod]
         public void BasicSelect()
@@ -38,7 +38,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
-            Assert.AreEqual("SELECT `Id`, `Name` AS meuNome FROM `TestTable`", cmd.CommandText);
+            Assert.AreEqual("SELECT `Id`, `Name` AS `meuNome` FROM `TestTable`", cmd.CommandText);
         }
 
         [TestMethod]
