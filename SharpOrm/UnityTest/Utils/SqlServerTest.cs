@@ -56,8 +56,7 @@ namespace UnityTest.Utils
             connection = new SqlConnection(GetConnectionString());
             connection.Open();
 
-            QueryDefaults.Config = config;
-            QueryDefaults.Connection = connection;
+            QueryDefaults.Default = new QueryDefaults(config, connection);
         }
 
         private static void CloseConnection()

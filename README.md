@@ -14,12 +14,9 @@ using SharpOrm;
 using SharpOrm.Builder;
 
 //For Mysql and Sqlite
-QueryDefaults.Config = new MysqlQueryConfig()
+QueryDefaults.Default = new QueryDefaults(new MysqlQueryConfig(), connection);
 //For Microsoft Sql Server
-QueryDefaults.Config = new SqlServerQueryConfig()
-
-//Configure the connection that should be used globally
-QueryDefaults.Connection = ...
+QueryDefaults.Default = new QueryDefaults(new SqlServerQueryConfig(), connection);
 ```
 
 ### Using global configuration

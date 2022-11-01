@@ -15,7 +15,7 @@
         Grammar NewGrammar(Query query);
 
         /// <summary>
-        /// Apply column prefix and suffix.
+        /// Fix table name, column and alias for SQL.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>

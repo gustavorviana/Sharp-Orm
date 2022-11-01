@@ -17,7 +17,7 @@ namespace SharpOrm
         {
         }
 
-        public ModelQuery(DbTransaction transaction, string table, string alias = "") : base(transaction, QueryDefaults.Config, table, alias)
+        public ModelQuery(DbTransaction transaction, string table, string alias = "") : base(transaction, QueryDefaults.Default.Config, table, alias)
         {
 
         }
@@ -60,8 +60,7 @@ namespace SharpOrm
         {
             T model = new T();
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                this.AddColumn(reader, model, i);
+            model.LoadFromDataReader(reader);
 
             if (model is QueryableModel qm)
             {
@@ -71,11 +70,6 @@ namespace SharpOrm
             }
 
             return model;
-        }
-
-        private void AddColumn(DbDataReader reader, T model, int index)
-        {
-            model.columns[reader.GetName(index)] = reader.IsDBNull(index) ? null : reader[index];
         }
 
         /// <summary>

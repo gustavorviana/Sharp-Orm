@@ -22,20 +22,20 @@ namespace SharpOrm
         #region Query
 
         /// <summary>
-        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in SharpOrm.QueryDefaults.
+        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in SharpOrm.QueryDefaults.Default.
         /// </summary>
         /// <param name="table">Name of the table to be used.</param>
         /// <param name="alias">Table alias.</param>
-        public Query(string table, string alias = "") : this(QueryDefaults.Connection, QueryDefaults.Config, table, alias)
+        public Query(string table, string alias = "") : this(QueryDefaults.Default.Connection, QueryDefaults.Default.Config, table, alias)
         {
 
         }
 
-        public Query(DbConnection connection, string table, string alias = "") : this(connection, QueryDefaults.Config, table, alias)
+        public Query(DbConnection connection, string table, string alias = "") : this(connection, QueryDefaults.Default.Config, table, alias)
         {
         }
 
-        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, QueryDefaults.Config, table, alias)
+        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, QueryDefaults.Default.Config, table, alias)
         {
 
         }
@@ -47,8 +47,11 @@ namespace SharpOrm
 
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
-            if (QueryDefaults.Connection == connection)
-                this.Transaction = QueryDefaults.Transaction;
+            if (connection.State != System.Data.ConnectionState.Open)
+                connection.Open();
+
+            if (QueryDefaults.Default.Connection == connection)
+                this.Transaction = QueryDefaults.Default.Transaction;
 
             this.Info.Alias = alias;
             this.Info.From = table;

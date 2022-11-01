@@ -79,8 +79,7 @@ namespace UnityTest.Utils
         [TestInitialize]
         public void ResetDefaultsOnTestInitialize()
         {
-            QueryDefaults.Config = new MysqlQueryConfig();
-            QueryDefaults.Connection = connection;
+            QueryDefaults.Default = new QueryDefaults(new MysqlQueryConfig(), connection);
         }
 
         private static string GetCreateTableSql()
