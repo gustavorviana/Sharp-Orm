@@ -84,6 +84,29 @@ namespace SharpOrm
             return null;
         }
 
+        public static T[] GetAll<T>(this Query query) where T : new()
+        {
+            if (Query.DefaultTranslator == null)
+                throw new NullReferenceException($"The \"{nameof(Query.DefaultTranslator)}\" property must be set");
+
+            List<T> rows = new List<T>();
+
+            using (var reader = query.ExecuteReader())
+                while (reader.Read())
+                    rows.Add(Query.DefaultTranslator.ParseFromReader<T>(reader));
+
+            return rows.ToArray();
+        }
+
+        public static T FirstOrDefault<T>(this Query query) where T : new()
+        {
+            if (Query.DefaultTranslator == null)
+                throw new NullReferenceException($"The \"{nameof(Query.DefaultTranslator)}\" property must be set");
+
+            using (var reader = query.ExecuteReader())
+                return reader.Read() ? Query.DefaultTranslator.ParseFromReader<T>(reader) : default;
+        }
+
         /// <summary>
         /// Checks if there is any value in the table.
         /// </summary>

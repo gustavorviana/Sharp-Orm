@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace SharpOrm
 {
-    public class Pager<T> : IReadOnlyList<T> where T : Model, new()
+    public class Pager<T> : IReadOnlyList<T> where T : new()
     {
-        protected readonly ModelQuery<T> query;
+        protected readonly Query query;
         private T[] items = new T[0];
 
         private int currentPage;
@@ -19,16 +19,16 @@ namespace SharpOrm
         public int Pages => this.pagesQtd;
         public long Total => this.total;
 
-        protected Pager(ModelQuery<T> query, int peerPage, int page = 1)
+        protected Pager(Query query, int peerPage, int page = 1)
         {
             this.query = query;
             this.peerPage = peerPage;
             this.currentPage = page;
         }
 
-        public static Pager<T> FromBuilder(ModelQuery<T> builder, int peerPage, int currentPage)
+        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage)
         {
-            Pager<T> list = new Pager<T>((ModelQuery<T>)builder.Clone(true), peerPage, currentPage);
+            Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage);
 
             list.Refresh();
 

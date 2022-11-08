@@ -1,6 +1,8 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -10,6 +12,7 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Properties
+        public static IObjectTranslator DefaultTranslator { get; set; } = new ObjectTranslator();
 
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
@@ -81,6 +84,11 @@ namespace SharpOrm
         public Query Select(params string[] columnNames)
         {
             return this.Select(columnNames.Select(name => new Column(name)).ToArray());
+        }
+
+        internal IEnumerable<T> All<T>()
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
