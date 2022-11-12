@@ -100,7 +100,7 @@ namespace SharpOrm
 
         protected virtual IEnumerable<T> GetItems()
         {
-            return this.query.All();
+            return this.query.All<T>();
         }
     }
 }

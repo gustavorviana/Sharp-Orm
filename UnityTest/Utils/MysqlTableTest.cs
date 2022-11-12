@@ -20,7 +20,7 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void OnMysqlTableTestInit(TestContext context)
         {
-            using var cmd = connection.CreateCommand();
+            using var cmd = Connection.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
 
@@ -48,7 +48,7 @@ namespace UnityTest.Utils
         public static void CleanupDbConnection()
         {
             ReloadConnection();
-            using var con = connection;
+            using var con = Connection;
             using var cmd = con.CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();
@@ -79,7 +79,7 @@ namespace UnityTest.Utils
         [TestInitialize]
         public void ResetDefaultsOnTestInitialize()
         {
-            QueryDefaults.Default = new QueryDefaults(new MysqlQueryConfig(), connection);
+            QueryDefaults.Default = new QueryDefaults(new MysqlQueryConfig(), Connection);
         }
 
         private static string GetCreateTableSql()

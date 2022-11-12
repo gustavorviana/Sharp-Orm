@@ -13,10 +13,10 @@ namespace UnityTest
         {
             InsertRows(1);
 
-            using var q = new ModelQuery<TestTable>(connection, TABLE);
+            using var q = new Query(Connection, TABLE);
             q.Where(ID, 1);
 
-            var model = q.FirstOrDefault();
+            var model = q.FirstOrDefault<TestTable>();
             Assert.AreEqual(1, model.Id);
             Assert.AreEqual("User 1", model.Name);
             Assert.IsNull(model.Nick);

@@ -55,7 +55,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWithLimit()
         {
-            using var query = new Query(connection, TABLE) { Limit = 10 };
+            using var query = new Query(Connection, TABLE) { Limit = 10 };
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -65,7 +65,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereIn()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             int[] list = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             query.Where("id", "IN", list);
             using var g = new MysqlGrammar(query);
@@ -95,13 +95,13 @@ namespace UnityTest
 
         private Query CreateQueryForWhere()
         {
-            return (Query)new Query(connection, "TestIds").Select("Id").Where("Type", "=", "Unity");
+            return (Query)new Query(Connection, "TestIds").Select("Id").Where("Type", "=", "Unity");
         }
 
         [TestMethod]
         public void SelectWithOffset()
         {
-            using var query = new Query(connection, TABLE) { Offset = 10 };
+            using var query = new Query(Connection, TABLE) { Offset = 10 };
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -111,7 +111,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWithOffsetLimit()
         {
-            using var query = new Query(connection, TABLE) { Offset = 10, Limit = 10 };
+            using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10 };
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -121,7 +121,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWithDistinct()
         {
-            using var query = new Query(connection, TABLE) { Distinct = true };
+            using var query = new Query(Connection, TABLE) { Distinct = true };
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -131,7 +131,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWithOffsetLimitDistinct()
         {
-            using var query = new Query(connection, TABLE) { Offset = 10, Limit = 10, Distinct = true };
+            using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10, Distinct = true };
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.GetSelectCommand();
@@ -141,7 +141,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectBasicWhere()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where("column", "=", "value");
             using var g = new MysqlGrammar(query);
 
@@ -153,7 +153,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectLimitWhere()
         {
-            using var query = new Query(connection, TABLE) { Limit = 10 };
+            using var query = new Query(Connection, TABLE) { Limit = 10 };
             query.Where("column", "=", "value");
             using var g = new MysqlGrammar(query);
 
@@ -165,7 +165,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereCallbackQuery()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where(e => e.Where("column", "=", "value"));
             using var g = new MysqlGrammar(query);
 
@@ -177,7 +177,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectMultipleWhere()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where("column1", "=", "value1");
             query.Where(e => e.Where("column2", "=", "value2"));
             using var g = new MysqlGrammar(query);
@@ -191,7 +191,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereOr()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where("column", "=", "teste")
                 .OrWhere("column", "=", "value");
             using var g = new MysqlGrammar(query);
@@ -205,7 +205,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereColumnsEquals()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where("column1", "=", new Column("column2"))
                 .Where(new Column("column2"), "=", new Column("column3"));
 
@@ -217,7 +217,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereSqlExpression()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where(new SqlExpression("column1 = 1"));
 
             using var g = new MysqlGrammar(query);
@@ -228,7 +228,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereRawColumn()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where((Column)"UPPER(column1)", "=", "ABC");
 
             using var g = new MysqlGrammar(query);
@@ -240,7 +240,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereRawValue()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Where("column1", "=", (SqlExpression)"UPPER(column2)");
 
             using var g = new MysqlGrammar(query);
@@ -251,7 +251,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectInnerJoin()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Join("TAB2", "TAB2.id", "=", $"{TABLE}.idTab2");
             using var g = new MysqlGrammar(query);
 
@@ -262,7 +262,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectLeftJoin()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Join("TAB2 tab2", "tab2.id", "=", $"{TABLE}.idTab2", "LEFT");
             using var g = new MysqlGrammar(query);
 
@@ -273,7 +273,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectJoinWithWhere()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Join("TAB2", q => q.WhereColumn("TAB2.id", "=", $"{TABLE}.idTab2").OrWhereColumn("TAB2.id", "=", $"{TABLE}.idTab3"), "LEFT");
             using var g = new MysqlGrammar(query);
 
@@ -284,7 +284,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectGroupByColumnName()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.GroupBy("Col1", "Col2");
             using var g = new MysqlGrammar(query);
 
@@ -295,7 +295,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectGroupByColumnObj()
         {
-            using var query = new Query(connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.GroupBy(new Column("Col1"), new Column(new SqlExpression("LOWER(Col2)")));
             using var g = new MysqlGrammar(query);
 

@@ -10,8 +10,9 @@ namespace UnityTest.Utils
 {
     public class SqlServerTest : BaseTest
     {
-        protected static SqlServerQueryConfig config = new SqlServerQueryConfig(false);
-        protected static DbConnection connection;
+        protected static readonly SqlServerQueryConfig config = new(false);
+        private static DbConnection _connection;
+        protected static DbConnection Connection => _connection;
 
         #region Consts
         protected const string TABLE = "TestTable";
@@ -34,7 +35,7 @@ namespace UnityTest.Utils
             if (q.Count() > 0)
                 return;
 
-            using var cmd = connection.CreateCommand();
+            using var cmd = Connection.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
         }
@@ -43,7 +44,7 @@ namespace UnityTest.Utils
         public static void CleanupDbConnection()
         {
             ReloadConnection();
-            using var con = connection;
+            using var con = Connection;
             using var cmd = con.CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();
@@ -53,20 +54,18 @@ namespace UnityTest.Utils
         protected static void ReloadConnection()
         {
             CloseConnection();
-            connection = new SqlConnection(GetConnectionString());
-            connection.Open();
+            _connection = new SqlConnection(GetConnectionString());
+            Connection.Open();
 
-            QueryDefaults.Default = new QueryDefaults(config, connection);
+            QueryDefaults.Default = new QueryDefaults(config, Connection);
         }
 
         private static void CloseConnection()
         {
             try
             {
-                if (connection != null)
-                    connection.Dispose();
-
-                connection = null;
+                Connection?.Dispose();
+                _connection = null;
             }
             catch
             {
@@ -89,7 +88,7 @@ namespace UnityTest.Utils
 
         protected static Query NewQuery(string table, string alias = "")
         {
-            return new Query(connection, config, table, alias);
+            return new Query(Connection, config, table, alias);
         }
 
         protected static Row NewRow(int id, string name)

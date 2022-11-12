@@ -8,7 +8,9 @@ namespace UnityTest.Utils
 {
     public abstract class MysqlConnectionTest : BaseTest
     {
-        protected static MySqlConnection connection;
+        private static MySqlConnection _connection;
+        protected static MySqlConnection Connection => _connection;
+
 
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void InitConnection(TestContext context)
@@ -19,18 +21,16 @@ namespace UnityTest.Utils
         protected static void ReloadConnection()
         {
             CloseConnection();
-            connection = new MySqlConnection(GetConnectionString());
-            connection.Open();
+            _connection = new MySqlConnection(GetConnectionString());
+            Connection.Open();
         }
 
         private static void CloseConnection()
         {
             try
             {
-                if (connection != null)
-                    connection.Dispose();
-
-                connection = null;
+                Connection?.Dispose();
+                _connection = null;
             }
             catch
             {
@@ -41,7 +41,7 @@ namespace UnityTest.Utils
         {
             string file = "Connection.txt";
             if (!File.Exists(file))
-                File.WriteAllText(file, "Persist Security Info=False;server=localhost;database=Cadastro;uid=root;server=localhost;database=Cadastro;uid=root;pwd=root");
+                File.WriteAllText(file, "Persist Security Info=False;server=localhost;database=SharpOrm;uid=root;server=localhost;uid=root;pwd=root");
 
             var connString = File.ReadAllText(file);
 
@@ -53,7 +53,7 @@ namespace UnityTest.Utils
 
         protected static Query NewQuery(string table, string alias = "")
         {
-            return new Query(connection, table, alias);
+            return new Query(Connection, table, alias);
         }
     }
 }

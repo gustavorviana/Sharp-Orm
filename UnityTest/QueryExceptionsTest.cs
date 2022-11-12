@@ -19,13 +19,13 @@ namespace UnityTest
         [TestMethod]
         public void OnQueryNullTable()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new Query(connection, null));
+            Assert.ThrowsException<ArgumentNullException>(() => new Query(Connection, null));
         }
 
         [TestMethod]
         public void OnQueryNullConfig()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new Query(connection, null, "SomeTable"));
+            Assert.ThrowsException<ArgumentNullException>(() => new Query(Connection, null, "SomeTable"));
         }
 
         [TestMethod]
