@@ -15,6 +15,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
         {
+            if (typeof(T) == typeof(Row))
+                return (T)(object)reader.GetRow();
+
             T obj = new T();
             if (obj is Model model)
             {
@@ -38,6 +41,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         public Row ToRow(object obj)
         {
+            if (obj is Row row)
+                return row;
+
             if (obj is Model model)
                 return new Row(model.GetCells());
 
