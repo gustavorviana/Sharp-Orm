@@ -2,6 +2,7 @@
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -9,6 +10,82 @@ using System.Text;
 
 namespace SharpOrm
 {
+    public class Query<T> : Query where T : new()
+    {
+        public Query(string alias = "") : base(ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        public Query(DbConnection connection, string alias = "") : base(connection, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        public Query(DbTransaction transaction, string alias = "") : base(transaction, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        public Query(DbConnection connection, IQueryConfig config, string alias = "") : base(connection, config, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        /// <summary>
+        /// Get first result.
+        /// </summary>
+        /// <returns></returns>
+        public T FirstOrDefault()
+        {
+            return this.TempOnlyFirstSelection(this.ReadResults<T>().FirstOrDefault);
+        }
+
+        /// <summary>
+        /// Get all available results.
+        /// </summary>
+        /// <returns></returns>
+        public T[] Get()
+        {
+            return this.ReadResults<T>().ToArray();
+        }
+
+        /// <summary>
+        /// Inserts one row into the table.
+        /// </summary>
+        /// <param name="obj"></param>
+        public void Insert(T obj)
+        {
+            this.Insert(DefaultTranslator.ToRow(obj).Cells);
+        }
+
+        /// <summary>
+        /// Inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
+        public void BulkInsert(params T[] objs)
+        {
+            this.BulkInsert(objs.Select(obj => DefaultTranslator.ToRow(obj)).ToArray());
+        }
+
+        public override Query Clone(bool withWhere)
+        {
+            Query query = this.Transaction == null ?
+                new Query<T>(ConnectionCreator.NewFromType(this.Connection), this.Info.Config, this.Info.Alias) :
+                 new Query<T>(this.Transaction, this.Info.Config, this.Info.Alias);
+
+            if (withWhere)
+                query.Info.LoadFrom(this.Info);
+
+            return query;
+        }
+    }
+
     public class Query : QueryBase, ICloneable
     {
         #region Properties
@@ -18,8 +95,7 @@ namespace SharpOrm
         public int? Limit { get; set; }
         public int? Offset { get; set; }
         public DbConnection Connection { get; }
-        public DbTransaction Transaction { get; protected set; }
-
+        public DbTransaction Transaction { get; }
         #endregion
 
         #region Query
@@ -29,16 +105,16 @@ namespace SharpOrm
         /// </summary>
         /// <param name="table">Name of the table to be used.</param>
         /// <param name="alias">Table alias.</param>
-        public Query(string table, string alias = "") : this(QueryDefaults.Default.Connection, QueryDefaults.Default.Config, table, alias)
+        public Query(string table, string alias = "") : this(ConnectionCreator.Default.OpenConnection(), ConnectionCreator.Default.Config, table, alias)
         {
 
         }
 
-        public Query(DbConnection connection, string table, string alias = "") : this(connection, QueryDefaults.Default.Config, table, alias)
+        public Query(DbConnection connection, string table, string alias = "") : this(connection, ConnectionCreator.Default.Config, table, alias)
         {
         }
 
-        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, QueryDefaults.Default.Config, table, alias)
+        public Query(DbTransaction transaction, string table, string alias = "") : this(transaction, ConnectionCreator.Default.Config, table, alias)
         {
 
         }
@@ -52,9 +128,6 @@ namespace SharpOrm
 
             if (connection.State != System.Data.ConnectionState.Open)
                 connection.Open();
-
-            if (QueryDefaults.Default.Connection == connection)
-                this.Transaction = QueryDefaults.Default.Transaction;
 
             this.Info.Alias = alias;
             this.Info.From = table;
@@ -86,11 +159,6 @@ namespace SharpOrm
             return this.Select(columnNames.Select(name => new Column(name)).ToArray());
         }
 
-        internal IEnumerable<T> All<T>()
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Select column of table by Column object.
         /// </summary>
@@ -98,8 +166,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Select(params Column[] columns)
         {
-            this.Info.Select.Clear();
-            this.Info.Select.AddRange(columns);
+            this.Info.Select = columns;
 
             return this;
         }
@@ -168,8 +235,7 @@ namespace SharpOrm
 
         public Query GroupBy(params Column[] columns)
         {
-            this.Info.GroupsBy.Clear();
-            this.Info.GroupsBy.AddRange(columns);
+            this.Info.GroupsBy = columns;
 
             return this;
         }
@@ -216,8 +282,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
-            this.Info.Orders.Clear();
-            this.Info.Orders.AddRange(orders);
+            this.Info.Orders = orders;
 
             return this;
         }
@@ -318,9 +383,17 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this.Clone(true).Select(Column.CountAll)))
-            using (DbCommand cmd = grammar.GetSelectCommand())
-                return Convert.ToInt64(cmd.ExecuteScalar());
+            Column[] lastSelect = this.Info.Select;
+            try
+            {
+                using (Grammar grammar = this.Info.Config.NewGrammar(this.Select(Column.CountAll)))
+                using (DbCommand cmd = grammar.GetSelectCommand())
+                    return Convert.ToInt64(cmd.ExecuteScalar());
+            }
+            finally
+            {
+                this.Select(lastSelect);
+            }
         }
         #endregion
 
@@ -341,10 +414,9 @@ namespace SharpOrm
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = new Query(this.Connection, this.Info.Config, this.Info.From, this.Info.Alias)
-            {
-                Transaction = Transaction
-            };
+            Query query = this.Transaction == null ?
+                new Query(ConnectionCreator.NewFromType(this.Connection), this.Info.Config, this.Info.From, this.Info.Alias) :
+                 new Query(this.Transaction, this.Info.Config, this.Info.From, this.Info.Alias);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -360,7 +432,40 @@ namespace SharpOrm
             if (this.Info.Config.OnlySafeModifications && this.Info.Wheres.Length == 0)
                 throw new UnsafeDbOperation();
         }
+
         #endregion
+
+        /// <summary>
+        /// Signals to the class that code must be executed for the first item and that upon execution, the boundary and offset must be reset.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        internal T TempOnlyFirstSelection<T>(Func<T> action)
+        {
+            int? lastLimit = this.Limit;
+            int? lastOffset = this.Offset;
+
+            this.Limit = null;
+            this.Offset = null;
+            try
+            {
+                return action();
+            }
+            finally
+            {
+                this.Limit = lastLimit;
+                this.Offset = lastOffset;
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing && this.Transaction == null)
+                this.Connection.Dispose();
+        }
 
         public override string ToString()
         {

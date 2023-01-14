@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MySql.Data.MySqlClient;
 using SharpOrm;
+using SharpOrm.Builder;
 using System;
 using System.IO;
 
@@ -8,32 +9,14 @@ namespace UnityTest.Utils
 {
     public abstract class MysqlConnectionTest : BaseTest
     {
-        private static MySqlConnection _connection;
-        protected static MySqlConnection Connection => _connection;
-
-
-        [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
-        public static void InitConnection(TestContext context)
+        protected static MySqlConnection Connection
         {
-            ReloadConnection();
-        }
-
-        protected static void ReloadConnection()
-        {
-            CloseConnection();
-            _connection = new MySqlConnection(GetConnectionString());
-            Connection.Open();
-        }
-
-        private static void CloseConnection()
-        {
-            try
+            get
             {
-                Connection?.Dispose();
-                _connection = null;
-            }
-            catch
-            {
+                if (ConnectionCreator.Default is not ConnectionCreator<MySqlConnection>)
+                    ConnectionCreator.Default = new ConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false), GetConnectionString());
+
+                return (MySqlConnection)ConnectionCreator.Default.OpenConnection();
             }
         }
 

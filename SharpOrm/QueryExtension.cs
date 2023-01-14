@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 
 namespace SharpOrm
 {
@@ -59,13 +60,7 @@ namespace SharpOrm
         /// <returns></returns>
         public static Row[] ReadRows(this Query query)
         {
-            List<Row> rows = new List<Row>();
-
-            using (var reader = query.ExecuteReader())
-                while (reader.Read())
-                    rows.Add(reader.GetRow());
-
-            return rows.ToArray();
+            return query.ReadResults<Row>().ToArray();
         }
 
         /// <summary>
@@ -75,36 +70,22 @@ namespace SharpOrm
         /// <returns></returns>
         public static Row FirstRow(this Query query)
         {
-            query.Offset = 0;
-            query.Limit = 1;
-            using (var reader = query.ExecuteReader())
-                if (reader.Read())
-                    return reader.GetRow();
-
-            return null;
+            return query.TempOnlyFirstSelection(query.ReadResults<Row>().FirstOrDefault);
         }
 
-        public static T[] GetAll<T>(this Query query) where T : new()
+        internal static IEnumerable<T> ReadResults<T>(this Query query) where T : new()
         {
-            if (Query.DefaultTranslator == null)
-                throw new NullReferenceException($"The \"{nameof(Query.DefaultTranslator)}\" property must be set");
-
-            List<T> rows = new List<T>();
+            ValidateTranslator();
 
             using (var reader = query.ExecuteReader())
                 while (reader.Read())
-                    rows.Add(Query.DefaultTranslator.ParseFromReader<T>(reader));
-
-            return rows.ToArray();
+                    yield return Query.DefaultTranslator.ParseFromReader<T>(reader);
         }
 
-        public static T FirstOrDefault<T>(this Query query) where T : new()
+        internal static void ValidateTranslator()
         {
             if (Query.DefaultTranslator == null)
                 throw new NullReferenceException($"The \"{nameof(Query.DefaultTranslator)}\" property must be set");
-
-            using (var reader = query.ExecuteReader())
-                return reader.Read() ? Query.DefaultTranslator.ParseFromReader<T>(reader) : default;
         }
 
         /// <summary>
@@ -202,7 +183,6 @@ namespace SharpOrm
 
             return new Row(cells);
         }
-
         #endregion
     }
 }

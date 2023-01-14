@@ -9,11 +9,11 @@ namespace SharpOrm.Builder
         public StringBuilder Wheres { get; } = new StringBuilder();
         public List<object> WhereObjs { get; } = new List<object>();
 
-        public List<Column> GroupsBy { get; } = new List<Column>();
+        public Column[] GroupsBy { get; set; } = new Column[0];
         public List<JoinQuery> Joins { get; } = new List<JoinQuery>();
 
-        public List<ColumnOrder> Orders { get; } = new List<ColumnOrder>();
-        public List<Column> Select { get; } = new List<Column>(new Column[] { Column.All });
+        public ColumnOrder[] Orders { get; set; } = new ColumnOrder[0];
+        public Column[] Select { get; set; } = new Column[] { Column.All };
 
         public IQueryConfig Config { get; }
 
@@ -28,18 +28,15 @@ namespace SharpOrm.Builder
         internal void LoadFrom(QueryInfo info)
         {
             this.Wheres.Clear();
-            this.GroupsBy.Clear();
             this.Joins.Clear();
-            this.Orders.Clear();
-            this.Select.Clear();
 
             this.WhereObjs.Clear();
 
             this.Wheres.Append(info.Wheres);
-            this.GroupsBy.AddRange(info.GroupsBy);
+            this.GroupsBy = (Column[])info.GroupsBy.Clone();
             this.Joins.AddRange(info.Joins);
-            this.Orders.AddRange(info.Orders);
-            this.Select.AddRange(info.Select);
+            this.Orders = (ColumnOrder[])info.Orders.Clone();
+            this.Select = (Column[])info.Select.Clone();
 
             this.WhereObjs.AddRange(info.WhereObjs);
         }

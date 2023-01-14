@@ -65,7 +65,7 @@ namespace SharpOrm.Builder
 
         protected virtual void ApplyOrderBy()
         {
-            if (this.Info.Orders.Count > 0)
+            if (this.Info.Orders.Length > 0)
                 this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
         }
 

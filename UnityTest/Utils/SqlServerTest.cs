@@ -11,8 +11,16 @@ namespace UnityTest.Utils
     public class SqlServerTest : BaseTest
     {
         protected static readonly SqlServerQueryConfig config = new(false);
-        private static DbConnection _connection;
-        protected static DbConnection Connection => _connection;
+        protected static DbConnection Connection
+        {
+            get
+            {
+                if (ConnectionCreator.Default is not ConnectionCreator<SqlConnection>)
+                    ConnectionCreator.Default = new ConnectionCreator<SqlConnection>(new SqlServerQueryConfig(false), GetConnectionString());
+
+                return ConnectionCreator.Default.OpenConnection();
+            }
+        }
 
         #region Consts
         protected const string TABLE = "TestTable";
@@ -28,14 +36,13 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void InitConnection(TestContext context)
         {
-            ReloadConnection();
-
             using var q = NewQuery("sysobjects");
             q.Where("NAME", TABLE).Where("xtype", "U");
             if (q.Count() > 0)
                 return;
 
-            using var cmd = Connection.CreateCommand();
+            using var conn = Connection;
+            using var cmd = conn.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
         }
@@ -43,34 +50,12 @@ namespace UnityTest.Utils
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            ReloadConnection();
             using var con = Connection;
             using var cmd = con.CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();
         }
         #endregion
-
-        protected static void ReloadConnection()
-        {
-            CloseConnection();
-            _connection = new SqlConnection(GetConnectionString());
-            Connection.Open();
-
-            QueryDefaults.Default = new QueryDefaults(config, Connection);
-        }
-
-        private static void CloseConnection()
-        {
-            try
-            {
-                Connection?.Dispose();
-                _connection = null;
-            }
-            catch
-            {
-            }
-        }
 
         private static string GetConnectionString()
         {

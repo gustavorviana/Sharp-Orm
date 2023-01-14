@@ -13,12 +13,12 @@ namespace UnityTest.ConnectionTest
         {
             try
             {
-                QueryDefaults.ExecuteTransaction(() =>
+                ConnectionCreator.ExecuteTransaction((transaction) =>
                 {
-                    using var q = new Query(TABLE);
+                    using var q = new Query(transaction, TABLE);
                     q.Insert(NewRow(1, "User 1").Cells);
 
-                    using var qSelect = new Query(TABLE);
+                    using var qSelect = new Query(transaction, TABLE);
 
                     Assert.AreEqual(1, qSelect.Count());
                     throw new DatabaseException();
@@ -35,9 +35,9 @@ namespace UnityTest.ConnectionTest
         [TestMethod]
         public void MultipleInsert()
         {
-            QueryDefaults.ExecuteTransaction(() =>
+            ConnectionCreator.ExecuteTransaction((transaction) =>
             {
-                using var q = new Query(TABLE);
+                using var q = new Query(transaction, TABLE);
                 q.Insert(NewRow(1, "User 1").Cells);
                 q.Insert(NewRow(2, "User 2").Cells);
                 q.Insert(NewRow(3, "User 3").Cells);

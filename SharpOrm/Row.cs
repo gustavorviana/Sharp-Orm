@@ -28,6 +28,11 @@ namespace SharpOrm
             }
         }
 
+        public Row()
+        {
+
+        }
+
         public Row(Cell[] cells)
         {
             this.names = cells.Select(column => column.Name).ToArray();

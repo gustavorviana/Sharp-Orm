@@ -1,12 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Builder;
 
 namespace UnityTest.Utils
 {
     public class MysqlTableTest : MysqlConnectionTest
     {
-        private static bool hasFirstLoad = false;
         #region Consts
         protected const string TABLE = "TestTable";
 
@@ -20,34 +18,15 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void OnMysqlTableTestInit(TestContext context)
         {
-            using var cmd = Connection.CreateCommand();
+            using var con = Connection;
+            using var cmd = con.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();
-
-            if (hasFirstLoad)
-                return;
-
-            hasFirstLoad = true;
-
-            try
-            {
-                var QueryConfig = new MysqlQueryConfig();
-                //Utilizado para carregar as bibliotecas para reduzir o tempo de execução "falso" do código.
-
-                using var q = NewQuery();
-                q.Where("column", "=", "value");
-
-                using var g = QueryConfig.NewGrammar(q);
-                using (_ = g.GetSelectCommand()) { }
-            }
-            catch
-            { }
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            ReloadConnection();
             using var con = Connection;
             using var cmd = con.CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
@@ -74,12 +53,6 @@ namespace UnityTest.Utils
         protected static Query NewQuery()
         {
             return NewQuery(TABLE);
-        }
-
-        [TestInitialize]
-        public void ResetDefaultsOnTestInitialize()
-        {
-            QueryDefaults.Default = new QueryDefaults(new MysqlQueryConfig(), Connection);
         }
 
         private static string GetCreateTableSql()

@@ -115,10 +115,6 @@ namespace SharpOrm.Builder.DataTranslation
                 if (value is DateTime || value is TimeSpan || value is DBNull || type.IsPrimitive)
                     return value;
 
-                object objPk = GetPrimaryKeyOfType(type);
-                if (objPk?.GetType()?.IsPrimitive ?? false)
-                    return objPk;
-
                 throw new NotSupportedException($"Column type \"{GetColumnName(property)}\" is not supported");
             }
 

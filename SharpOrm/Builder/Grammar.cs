@@ -154,7 +154,7 @@ namespace SharpOrm.Builder
 
         protected virtual void WriteGroupBy()
         {
-            if (this.Info.GroupsBy.Count == 0)
+            if (this.Info.GroupsBy.Length == 0)
                 return;
 
             this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Query))));

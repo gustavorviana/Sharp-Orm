@@ -1,13 +1,14 @@
-﻿using SharpOrm;
-using System;
+﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace UnityTest.Utils
 {
-    public class TestTable : Model
+    public class TestTable
     {
-        public int Id => this.GetValueOrDefault<int>("id");
-        public string Name => this.GetStringOrDefault("name");
-        public string Nick => this.GetStringOrDefault("nick");
-        public DateTime CreatedAt => this.GetValueOrDefault<DateTime>("record_created");
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Nick { get; set; }
+        [Column("record_created")]
+        public DateTime CreatedAt { get; set; }
     }
 }

@@ -19,10 +19,5 @@ namespace SharpOrm.Builder
 
             return builder;
         }
-
-        public static QueryInfo GetInfo(this QueryBase query)
-        {
-            return query.Info;
-        }
     }
 }

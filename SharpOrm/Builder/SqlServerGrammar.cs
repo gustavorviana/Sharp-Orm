@@ -65,7 +65,7 @@ namespace SharpOrm.Builder
 
         private void WriteRowNumber()
         {
-            if (this.Info.Orders.Count == 0)
+            if (this.Info.Orders.Length == 0)
                 throw new InvalidOperationException("You cannot page the result without a field for ordering.");
 
             this.QueryBuilder.Append("SELECT ROW_NUMBER() OVER(ORDER BY ");
