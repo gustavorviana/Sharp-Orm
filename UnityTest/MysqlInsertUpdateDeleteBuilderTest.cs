@@ -17,7 +17,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(q);
 
             using var cmd = g.GetInsertCommand(NewRow(1, "T1").Cells);
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2)", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
             AreEqualsParameter(cmd.Parameters[1], "@v2", "T1");

@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MySqlX.XDevAPI.Relational;
 using SharpOrm;
 using UnityTest.Utils;
 
@@ -30,6 +31,20 @@ namespace UnityTest
             Assert.IsNotNull(row);
             Assert.AreEqual(Id, row[ID]);
             Assert.AreEqual(Name, row[NAME]);
+        }
+
+        [TestMethod]
+        public void SelectByValidPk()
+        {
+            const int Id = 1;
+            const string Name = "User 1";
+            using var query = new Query<TestTable>();
+
+            query.Insert(NewRow(Id, Name).Cells);
+
+            var value = query.Find(Id);
+
+            Assert.IsNotNull(value);
         }
 
         [TestMethod]

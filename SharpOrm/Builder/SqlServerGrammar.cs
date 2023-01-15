@@ -15,6 +15,14 @@ namespace SharpOrm.Builder
             else this.WriteSelectWithoutPagination(configureWhereParams);
         }
 
+        protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
+        {
+            base.ConfigureInsert(cells, false);
+
+            if (getGeneratedId)
+                this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
+        }
+
         private void WriteSelectWithoutPagination(bool configureWhereParams)
         {
             this.QueryBuilder.Append("SELECT ");

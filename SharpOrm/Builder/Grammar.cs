@@ -41,11 +41,11 @@ namespace SharpOrm.Builder
         public DbCommand GetInsertCommand(Cell[] cells)
         {
             this.Reset();
-            this.ConfigureInsert(cells);
+            this.ConfigureInsert(cells, true);
             return this.BuildCommand();
         }
 
-        protected abstract void ConfigureInsert(Cell[] cells);
+        protected abstract void ConfigureInsert(Cell[] cells, bool getGeneratedId);
 
         public DbCommand GetBulkInsertCommand(Row[] rows)
         {

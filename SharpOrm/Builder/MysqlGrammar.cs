@@ -11,7 +11,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureBulkInsert(Row[] rows)
         {
-            this.ConfigureInsert(rows[0].Cells);
+            this.ConfigureInsert(rows[0].Cells, false);
 
             for (int i = 1; i < rows.Length; i++)
                 this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[i].Cells.Select(c => this.RegisterValueParam(c.Value))));
@@ -23,7 +23,7 @@ namespace SharpOrm.Builder
             this.WriteWhere(true);
         }
 
-        protected override void ConfigureInsert(Cell[] cells)
+        protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
         {
             this.QueryBuilder.AppendFormat(
                 "INSERT INTO {0} ({1}) VALUES ({2})",
@@ -31,6 +31,9 @@ namespace SharpOrm.Builder
                 string.Join(", ", cells.Select(c => this.ApplyTableColumnConfig(c.Name))),
                 string.Join(", ", cells.Select(c => this.RegisterValueParam(c.Value)))
             );
+
+            if (getGeneratedId)
+                this.QueryBuilder.Append("; SELECT LAST_INSERT_ID();");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)

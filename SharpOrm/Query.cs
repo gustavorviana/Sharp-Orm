@@ -49,6 +49,31 @@ namespace SharpOrm
             return this.TempOnlyFirstSelection(this.ReadResults<T>().FirstOrDefault);
         }
 
+        public T Find(object primaryKey)
+        {
+            string pkColumn = this.GetAndValidatePrimaryKey(primaryKey);
+            using (var query = (Query<T>)this.Clone(false))
+            {
+                query.Where(pkColumn, primaryKey);
+                return query.FirstOrDefault();
+            }
+        }
+
+        private string GetAndValidatePrimaryKey(object pkToCheck)
+        {
+            if (pkToCheck == null)
+                throw new ArgumentNullException(nameof(pkToCheck));
+
+            var property = ObjectTranslator.GetPrimaryKeyOfType(typeof(T));
+            if (property == null)
+                throw new DatabaseException("No primary key has been configured in the model.");
+
+            if (property.PropertyType != pkToCheck.GetType())
+                throw new InvalidCastException("Inserted type is not the same as defined in the primary key column of the model.");
+
+            return ObjectTranslator.GetColumnName(property);
+        }
+
         /// <summary>
         /// Get all available results.
         /// </summary>
@@ -62,9 +87,9 @@ namespace SharpOrm
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="obj"></param>
-        public void Insert(T obj)
+        public int Insert(T obj)
         {
-            this.Insert(DefaultTranslator.ToRow(obj).Cells);
+            return this.Insert(DefaultTranslator.ToRow(obj).Cells);
         }
 
         /// <summary>
@@ -349,11 +374,17 @@ namespace SharpOrm
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="cells"></param>
-        public void Insert(params Cell[] cells)
+        public int Insert(params Cell[] cells)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.GetInsertCommand(cells))
-                cmd.ExecuteNonQuery();
+            {
+                object result = cmd.ExecuteScalar();
+                if (result is DBNull)
+                    return 0;
+
+                return Convert.ToInt32(result);
+            }
         }
 
         /// <summary>

@@ -20,6 +20,18 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectWhereNull()
+        {
+            using var query = NewQuery();
+            query.Where("Column", null);
+
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.GetSelectCommand();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void SelectColumnsName()
         {
             using var query = NewQuery();
