@@ -38,6 +38,16 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
+        internal DbCommand GetInsertQueryCommand(Query query, string[] columnNames)
+        {
+            this.Reset();
+
+            this.ConfigureInsertQuery(query, columnNames);
+            return this.BuildCommand();
+        }
+
+        protected abstract void ConfigureInsertQuery(Query query, string[] columnNames);
+
         public DbCommand GetInsertCommand(Cell[] cells)
         {
             this.Reset();

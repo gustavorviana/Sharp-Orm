@@ -33,7 +33,7 @@ namespace UnityTest
             using var cmd = g.GetBulkInsertCommand(rows);
             Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2), (@v3, @v4), (@v5, @v6), (@v7, @v8), (@v9, @v10)", cmd.CommandText);
 
-            this.TestBulkInsertParams(cmd, rows);
+            TestBulkInsertParams(cmd, rows);
         }
 
         [TestMethod]
@@ -46,8 +46,8 @@ namespace UnityTest
             using var cmd = g.GetUpdateCommand(row.Cells);
             Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2", cmd.CommandText);
 
-            this.AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
-            this.AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
+            AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
+            AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
         }
 
         [TestMethod]
@@ -60,8 +60,8 @@ namespace UnityTest
             using var cmd = g.GetUpdateCommand(new Cell[] { new Cell("name", 2) });
             Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1 WHERE `id` = @c1", cmd.CommandText);
 
-            this.AreEqualsParameter(cmd.Parameters[0], "@v1", 2);
-            this.AreEqualsParameter(cmd.Parameters[1], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[0], "@v1", 2);
+            AreEqualsParameter(cmd.Parameters[1], "@c1", 1);
         }
 
         [TestMethod]
@@ -84,24 +84,41 @@ namespace UnityTest
             using var cmd = g.GetDeleteCommand();
             Assert.AreEqual("DELETE FROM `TestTable` WHERE `id` = @c1", cmd.CommandText);
 
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
         }
 
-        private void AreEqualsParameter(DbParameter param, string name, object value)
+        [TestMethod]
+        public void InsertByBasicSelect()
+        {
+            using var selectQuery = new Query("User");
+            selectQuery
+                .Select(new Column("Id"), (Column)"1")
+                .Where("id", 1);
+
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.GetInsertQueryCommand(selectQuery, new[] { "UserId", "Status" });
+            Assert.AreEqual("INSERT INTO `TestTable` (UserId,Status) SELECT `Id`, 1 FROM `User` WHERE `id` = @c1", cmd.CommandText);
+
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+        }
+
+        private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);
             Assert.AreEqual(value, param.Value);
         }
 
-        private void TestBulkInsertParams(DbCommand command, Row[] rows)
+        private static void TestBulkInsertParams(DbCommand command, Row[] rows)
         {
             var dbParams = command.Parameters.OfType<DbParameter>().Where(p => p.ParameterName.StartsWith("@v")).ToArray();
 
             for (int i = 0; i < rows.Length; i++)
             {
                 var row = rows[i];
-                this.AreEqualsParameter(dbParams[i * 2], $"@v{(i * 2) + 1}", row[ID]);
-                this.AreEqualsParameter(dbParams[(i * 2) + 1], $"@v{(i * 2) + 2}", row[NAME]);
+                AreEqualsParameter(dbParams[i * 2], $"@v{(i * 2) + 1}", row[ID]);
+                AreEqualsParameter(dbParams[(i * 2) + 1], $"@v{(i * 2) + 2}", row[NAME]);
             }
         }
     }

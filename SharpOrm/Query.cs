@@ -2,6 +2,7 @@
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -385,6 +386,18 @@ namespace SharpOrm
 
                 return Convert.ToInt32(result);
             }
+        }
+
+        /// <summary>
+        /// Insert a lot of values ​​using the result of a table (select command);
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="columnNames"></param>
+        public void Insert(Query query, params string[] columnNames)
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.GetInsertQueryCommand(query, columnNames))
+                cmd.ExecuteNonQuery();
         }
 
         /// <summary>

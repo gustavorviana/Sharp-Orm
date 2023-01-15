@@ -9,6 +9,18 @@ namespace SharpOrm.Builder
         {
         }
 
+        protected override void ConfigureInsertQuery(Query query, string[] columnNames)
+        {
+            this.QueryBuilder.AppendFormat(
+                "INSERT INTO {0} ({1}) {2}",
+                this.GetTableName(false),
+                string.Join(",", columnNames),
+                query
+            );
+
+            this.QueryBuilder.Replace('?', (count) => this.RegisterClausuleParameter(query.Info.WhereObjs[count - 1]));
+        }
+
         protected override void ConfigureBulkInsert(Row[] rows)
         {
             this.ConfigureInsert(rows[0].Cells, false);
