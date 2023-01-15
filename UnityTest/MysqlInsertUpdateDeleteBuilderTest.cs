@@ -42,7 +42,7 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            var row = new Row(new Cell[] { new Cell("name", "MyTestName"), new Cell("alias", "Test") });
+            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"));
             using var cmd = g.GetUpdateCommand(row.Cells);
             Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2", cmd.CommandText);
 

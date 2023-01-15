@@ -40,10 +40,13 @@ namespace UnityTest
             const string Name = "User 1";
             using var query = new Query<TestTable>();
 
-            query.Insert(NewRow(Id, Name).Cells);
+            query.Insert(new TestTable
+            {
+                Id = Id,
+                Name = Name
+            });
 
             var value = query.Find(Id);
-
             Assert.IsNotNull(value);
         }
 

@@ -78,7 +78,7 @@ namespace UnityTest.Utils
 
         protected static Row NewRow(int id, string name)
         {
-            return new Row(new Cell[] { new Cell(ID, id), new Cell(NAME, name) });
+            return new Row(new Cell(ID, id), new Cell(NAME, name));
         }
 
         private static string GetCreateTableSql()

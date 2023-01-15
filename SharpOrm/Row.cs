@@ -33,7 +33,7 @@ namespace SharpOrm
 
         }
 
-        public Row(Cell[] cells)
+        public Row(params Cell[] cells)
         {
             this.names = cells.Select(column => column.Name).ToArray();
             this.cells = cells;

@@ -104,7 +104,7 @@ namespace SharpOrm.Builder.DataTranslation
             public object GetColumnValue(object owner, PropertyInfo property)
             {
                 object value = property.GetValue(owner);
-                if (value == null)
+                if (value == null || value is DBNull)
                     return DBNull.Value;
 
                 Type type = value.GetType();
@@ -112,7 +112,7 @@ namespace SharpOrm.Builder.DataTranslation
                 if (type.IsEnum)
                     return Convert.ToInt32(value);
 
-                if (value is DateTime || value is TimeSpan || value is DBNull || type.IsPrimitive)
+                if (value is DateTime || value is TimeSpan || value is string || type.IsPrimitive)
                     return value;
 
                 throw new NotSupportedException($"Column type \"{GetColumnName(property)}\" is not supported");

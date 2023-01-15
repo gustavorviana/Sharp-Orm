@@ -11,6 +11,6 @@ namespace UnityTest.Utils
         public string Name { get; set; }
         public string Nick { get; set; }
         [Column("record_created")]
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }
