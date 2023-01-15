@@ -46,10 +46,10 @@ namespace SharpOrm.Builder
         #region Where
         internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
         {
-            if (this.Info.Wheres.Length != 0)
-                this.Info.Wheres.Append($" {type} ");
+            if (this.Info.Where.Length != 0)
+                this.Info.Where.Append($" {type} ");
 
-            this.Info.Wheres.Append(rawSqlExpression);
+            this.Info.Where.Append(rawSqlExpression);
             return this;
         }
 
@@ -87,7 +87,7 @@ namespace SharpOrm.Builder
                 return exp.ToString();
 
             if (column is IExpressionConversion expConvert)
-                return expConvert.ToExpression(this).ToString();
+                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
 
             throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
         }
@@ -106,7 +106,7 @@ namespace SharpOrm.Builder
                 return raw.ToString();
 
             if (value is Column column)
-                return column.ToExpression(this).ToString();
+                return column.ToExpression(this.Info.ToReadOnly()).ToString();
 
             return this.RegisterParameterValue(value);
         }
@@ -154,10 +154,10 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Wheres.Length > 0)
+            if (query.Info.Where.Length > 0)
             {
                 this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
-                return this.WriteWhere($"({query.Info.Wheres})", AND);
+                return this.WriteWhere($"({query.Info.Where})", AND);
             }
 
             return this;
@@ -226,10 +226,10 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Wheres.Length > 0)
+            if (query.Info.Where.Length > 0)
             {
                 this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
-                return this.WriteWhere($"({query.Info.Wheres})", OR);
+                return this.WriteWhere($"({query.Info.Where})", OR);
             }
 
             return this;

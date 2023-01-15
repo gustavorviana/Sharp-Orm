@@ -81,7 +81,7 @@ namespace SharpOrm.Builder
         protected virtual void ApplyOrderBy()
         {
             if (this.Info.Orders.Length > 0)
-                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
+                this.QueryBuilder.AppendFormat(" ORDER BY {0}", string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Info.ToReadOnly())} {col.Order}")));
         }
 
         protected virtual void WriteJoin(JoinQuery join)
@@ -89,7 +89,7 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.Info, true)} ON {join.Info.Wheres}");
+            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.Info, true)} ON {join.Info.Where}");
         }
 
         protected override void ConfigureUpdate(Cell[] cells)
@@ -104,10 +104,10 @@ namespace SharpOrm.Builder
 
         protected void WriteWhere(bool configureParameters)
         {
-            if (this.Info.Wheres.Length == 0)
+            if (this.Info.Where.Length == 0)
                 return;
 
-            var where = new StringBuilder(this.Info.Wheres.ToString());
+            var where = new StringBuilder(this.Info.Where.ToString());
 
             if (configureParameters)
                 where.Replace('?', (count) => this.RegisterClausuleParameter(this.Info.WhereObjs[count - 1]));

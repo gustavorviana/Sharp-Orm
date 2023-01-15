@@ -2,6 +2,6 @@
 {
     public interface IExpressionConversion
     {
-        SqlExpression ToExpression(QueryBase query);
+        SqlExpression ToExpression(IReadonlyQueryInfo info);
     }
 }

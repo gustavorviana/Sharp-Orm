@@ -37,19 +37,19 @@ namespace SharpOrm
             this.expression = expression;
         }
 
-        public virtual SqlExpression ToExpression(QueryBase query)
+        public virtual SqlExpression ToExpression(IReadonlyQueryInfo info)
         {
             if (this.expression != null)
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(query.Info.Alias))
-                builder.AppendFormat("{0}.", query.Info.Config.ApplyNomenclature(query.Info.Alias));
+            if (!string.IsNullOrEmpty(info.Alias))
+                builder.AppendFormat("{0}.", info.Config.ApplyNomenclature(info.Alias));
 
-            builder.Append(query.Info.Config.ApplyNomenclature(this.Name));
+            builder.Append(info.Config.ApplyNomenclature(this.Name));
 
             if (!string.IsNullOrEmpty(this.Alias))
-                builder.AppendFormat(" AS {0}", query.Info.Config.ApplyNomenclature(this.Alias));
+                builder.AppendFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
 
             return (SqlExpression)builder;
         }

@@ -6,7 +6,9 @@ namespace SharpOrm.Builder
 {
     public class QueryInfo
     {
-        public StringBuilder Wheres { get; } = new StringBuilder();
+        private IReadonlyQueryInfo _queryInfo;
+
+        public StringBuilder Where { get; } = new StringBuilder();
         public List<object> WhereObjs { get; } = new List<object>();
 
         public Column[] GroupsBy { get; set; } = new Column[0];
@@ -27,18 +29,42 @@ namespace SharpOrm.Builder
 
         internal void LoadFrom(QueryInfo info)
         {
-            this.Wheres.Clear();
+            this.Where.Clear();
             this.Joins.Clear();
 
             this.WhereObjs.Clear();
 
-            this.Wheres.Append(info.Wheres);
+            this.Where.Append(info.Where);
             this.GroupsBy = (Column[])info.GroupsBy.Clone();
             this.Joins.AddRange(info.Joins);
             this.Orders = (ColumnOrder[])info.Orders.Clone();
             this.Select = (Column[])info.Select.Clone();
 
             this.WhereObjs.AddRange(info.WhereObjs);
+        }
+
+        public IReadonlyQueryInfo ToReadOnly()
+        {
+            if (this._queryInfo == null)
+                this._queryInfo = new ReadonlyInfo(this);
+
+            return this._queryInfo;
+        }
+
+        private class ReadonlyInfo : IReadonlyQueryInfo
+        {
+            private readonly QueryInfo info;
+
+            public ReadonlyInfo(QueryInfo info)
+            {
+                this.info = info;
+            }
+
+            public IQueryConfig Config => this.info.Config;
+
+            public string From => this.info.From;
+
+            public string Alias => this.info.Alias;
         }
     }
 }

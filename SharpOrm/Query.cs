@@ -476,7 +476,7 @@ namespace SharpOrm
         /// </summary>
         protected void CheckIsSafeOperation()
         {
-            if (this.Info.Config.OnlySafeModifications && this.Info.Wheres.Length == 0)
+            if (this.Info.Config.OnlySafeModifications && this.Info.Where.Length == 0)
                 throw new UnsafeDbOperation();
         }
         #endregion

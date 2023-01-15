@@ -159,7 +159,7 @@ namespace SharpOrm.Builder
 
         protected virtual void WriteSelectColumns()
         {
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Query))));
+            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
         }
 
         protected virtual void WriteGroupBy()
@@ -167,7 +167,7 @@ namespace SharpOrm.Builder
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Query))));
+            this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
         }
 
         /// <summary>

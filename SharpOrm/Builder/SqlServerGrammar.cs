@@ -77,7 +77,7 @@ namespace SharpOrm.Builder
                 throw new InvalidOperationException("You cannot page the result without a field for ordering.");
 
             this.QueryBuilder.Append("SELECT ROW_NUMBER() OVER(ORDER BY ");
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Query)} {col.Order}")));
+            this.QueryBuilder.Append(string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Info.ToReadOnly())} {col.Order}")));
             this.QueryBuilder.Append(") AS [grammar_rownum], ");
         }
     }
