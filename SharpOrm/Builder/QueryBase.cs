@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Errors;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -30,10 +31,8 @@ namespace SharpOrm.Builder
             "!<",
             "like",
             "in",
-            "between",
             "not in",
             "not like",
-            "not between",
             "is",
             "is not"
         };
@@ -44,72 +43,6 @@ namespace SharpOrm.Builder
         }
 
         #region Where
-        internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
-        {
-            if (this.Info.Where.Length != 0)
-                this.Info.Where.Append($" {type} ");
-
-            this.Info.Where.Append(rawSqlExpression);
-            return this;
-        }
-
-        internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
-        {
-            if (column == null)
-                throw new ArgumentNullException(nameof(column));
-
-            this.CheckIsAvailableOperation(operation);
-
-            return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
-        }
-
-        /// <summary>
-        /// Checks whether the inserted operation has been recorded in "this.AvailableOperations".
-        /// </summary>
-        /// <param name="operation"></param>
-        protected void CheckIsAvailableOperation(string operation)
-        {
-            if (!this.AvailableOperations.Contains(operation.ToLower()))
-                throw new DatabaseException("Invalid SQL operation: " + operation);
-        }
-
-        /// <summary>
-        /// Turns the column object into a sql value.
-        /// </summary>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        protected string ParseColumn(object column)
-        {
-            if (column is string strColumn)
-                return this.Info.Config.ApplyNomenclature(strColumn);
-
-            if (column is SqlExpression exp)
-                return exp.ToString();
-
-            if (column is IExpressionConversion expConvert)
-                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
-
-            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
-        }
-
-        /// <summary>
-        /// Loads the value object and converts it to a sql expression.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        protected string ParseValue(object value)
-        {
-            if (value == null)
-                return "NULL";
-
-            if (value is SqlExpression raw)
-                return raw.ToString();
-
-            if (value is Column column)
-                return column.ToExpression(this.Info.ToReadOnly()).ToString();
-
-            return this.RegisterParameterValue(value);
-        }
 
         /// <summary>
         /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "AND" is inserted before the new clause)
@@ -178,6 +111,16 @@ namespace SharpOrm.Builder
             column2 = this.Info.Config.ApplyNomenclature(column2);
 
             return this.WriteWhere($"{column1} {operation} {column2}", AND);
+        }
+
+        public QueryBase WhereBetween(object toCheck, object arg1, object arg2)
+        {
+            return this.WriteBetween(toCheck, arg1, arg2, false, AND);
+        }
+
+        public QueryBase WhereNotBetween(object toCheck, object arg1, object arg2)
+        {
+            return this.WriteBetween(toCheck, arg1, arg2, true, AND);
         }
 
         #endregion
@@ -252,14 +195,130 @@ namespace SharpOrm.Builder
             return this.WriteWhere($"{column1} {operation} {column2}", OR);
         }
 
+        public QueryBase OrWhereBetween(object toCheck, object arg1, object arg2)
+        {
+            return this.WriteBetween(toCheck, arg1, arg2, false, OR);
+        }
+
+        public QueryBase OrWhereNotBetween(object toCheck, object arg1, object arg2)
+        {
+            return this.WriteBetween(toCheck, arg1, arg2, true, OR);
+        }
+
         #endregion
+
+        #region Where builder
+
+        private QueryBase WriteBetween(object toCheck, object arg1, object arg2, bool isNot, string whereType)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append(ParseBetweenArgument(toCheck));
+            if (isNot)
+                builder.Append(" NOT ");
+
+            builder.Append(" BETWEEN ");
+            builder.Append(ParseBetweenArgument(arg1));
+            builder.Append(" AND ");
+            builder.Append(ParseBetweenArgument(arg2));
+
+            return this.WriteWhere(builder.ToString(), whereType);
+        }
+
+        private string ParseBetweenArgument(object arg)
+        {
+            if (arg == null)
+                throw new ArgumentNullException(nameof(arg));
+
+            if (arg is string strColumn)
+                return this.Info.Config.ApplyNomenclature(strColumn);
+
+            if (arg is SqlExpression exp)
+                return exp.ToString();
+
+            if (arg is IExpressionConversion expConvert)
+                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
+
+            if (arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive)
+                return this.RegisterParameterValue(arg);
+
+            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+        }
+
+        internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
+        {
+            if (column == null)
+                throw new ArgumentNullException(nameof(column));
+
+            this.CheckIsAvailableOperation(operation);
+
+            return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
+        }
+
+        /// <summary>
+        /// Checks whether the inserted operation has been recorded in "this.AvailableOperations".
+        /// </summary>
+        /// <param name="operation"></param>
+        protected void CheckIsAvailableOperation(string operation)
+        {
+            if (!this.AvailableOperations.Contains(operation.ToLower()))
+                throw new DatabaseException("Invalid SQL operation: " + operation);
+        }
+
+        /// <summary>
+        /// Turns the column object into a sql value.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        protected string ParseColumn(object column)
+        {
+            if (column is string strColumn)
+                return this.Info.Config.ApplyNomenclature(strColumn);
+
+            if (column is SqlExpression exp)
+                return exp.ToString();
+
+            if (column is IExpressionConversion expConvert)
+                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
+
+            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+        }
+
+        /// <summary>
+        /// Loads the value object and converts it to a sql expression.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        protected string ParseValue(object value)
+        {
+            if (value == null)
+                return "NULL";
+
+            if (value is SqlExpression raw)
+                return raw.ToString();
+
+            if (value is IExpressionConversion expConvert)
+                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
+
+            return this.RegisterParameterValue(value);
+        }
+
+        internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
+        {
+            if (this.Info.Where.Length != 0)
+                this.Info.Where.Append($" {type} ");
+
+            this.Info.Where.Append(rawSqlExpression);
+            return this;
+        }
 
         private string RegisterParameterValue(object value)
         {
             if (value is Query query)
                 return this.RegisterQuery(query);
 
-            this.Info.WhereObjs.Add(value);
+            if (value is Enum) this.Info.WhereObjs.Add(Convert.ToInt32(value));
+            else this.Info.WhereObjs.Add(value);
+
             return "?";
         }
 
@@ -269,6 +328,8 @@ namespace SharpOrm.Builder
 
             return $"({query})";
         }
+
+        #endregion
 
         #region IDisposed
 
