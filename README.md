@@ -93,7 +93,7 @@ using SharpOrm.Builder;
 using(Query<User> query = new Query<User>())
 {
     //Single insert
-    query.Insert(new TestTable
+    query.Insert(new User
     {
         Id = 1,
         Name = "My name",
@@ -103,9 +103,9 @@ using(Query<User> query = new Query<User>())
 
     //Multiple insert
     query.BulkInsert(
-        new TestTable{ ... },
-        new TestTable{ ... },
-        new TestTable{ ... }
+        new User{ ... },
+        new User{ ... },
+        new User{ ... }
     );
 }
 ```
