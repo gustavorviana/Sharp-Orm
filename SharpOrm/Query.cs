@@ -2,8 +2,6 @@
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Errors;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -35,6 +33,11 @@ namespace SharpOrm
         public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
+        }
+
+        public Pager<T> Paginate(int peerPage, int currentPage)
+        {
+            return Pager<T>.FromBuilder(this, peerPage, currentPage);
         }
 
         /// <summary>
@@ -432,7 +435,6 @@ namespace SharpOrm
             if (this.Info.Config.OnlySafeModifications && this.Info.Wheres.Length == 0)
                 throw new UnsafeDbOperation();
         }
-
         #endregion
 
         /// <summary>

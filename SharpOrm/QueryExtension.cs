@@ -53,6 +53,12 @@ namespace SharpOrm
         #endregion
 
         #region Query
+
+        public static Pager<Row> PaginateRows(this Query query, int peerPage, int currentPage)
+        {
+            return Pager<Row>.FromBuilder(query, peerPage, currentPage);
+        }
+
         /// <summary>
         /// Returns all rows of the table
         /// </summary>
@@ -118,6 +124,7 @@ namespace SharpOrm
                 else query.Insert(row.Cells);
             }
         }
+
         #endregion
 
         #region DbDataReader

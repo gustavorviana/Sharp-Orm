@@ -1,8 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace UnityTest
 {
