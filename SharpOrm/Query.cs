@@ -350,7 +350,7 @@ namespace SharpOrm
         public DbDataReader ExecuteReader()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetSelectCommand())
+            using (DbCommand cmd = grammar.Select())
                 return cmd.ExecuteReader();
         }
 
@@ -367,7 +367,7 @@ namespace SharpOrm
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetUpdateCommand(cells))
+            using (DbCommand cmd = grammar.Update(cells))
                 return cmd.ExecuteNonQuery() > 0;
         }
 
@@ -378,7 +378,7 @@ namespace SharpOrm
         public int Insert(params Cell[] cells)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetInsertCommand(cells))
+            using (DbCommand cmd = grammar.Insert(cells))
             {
                 object result = cmd.ExecuteScalar();
                 if (result is DBNull)
@@ -396,7 +396,7 @@ namespace SharpOrm
         public void Insert(Query query, params string[] columnNames)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetInsertQueryCommand(query, columnNames))
+            using (DbCommand cmd = grammar.InsertQuery(query, columnNames))
                 cmd.ExecuteNonQuery();
         }
 
@@ -407,7 +407,7 @@ namespace SharpOrm
         public void BulkInsert(params Row[] rows)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetBulkInsertCommand(rows))
+            using (DbCommand cmd = grammar.BulkInsert(rows))
                 cmd.ExecuteScalar();
         }
 
@@ -420,7 +420,7 @@ namespace SharpOrm
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetDeleteCommand())
+            using (DbCommand cmd = grammar.Delete())
                 return cmd.ExecuteNonQuery() > 0;
         }
 
@@ -434,7 +434,7 @@ namespace SharpOrm
             try
             {
                 using (Grammar grammar = this.Info.Config.NewGrammar(this.Select(Column.CountAll)))
-                using (DbCommand cmd = grammar.GetSelectCommand())
+                using (DbCommand cmd = grammar.Select())
                     return Convert.ToInt64(cmd.ExecuteScalar());
             }
             finally
@@ -516,7 +516,7 @@ namespace SharpOrm
         public override string ToString()
         {
             using (var grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.GetSelectCommand(false))
+            using (DbCommand cmd = grammar.Select(false))
                 return cmd.CommandText;
         }
     }

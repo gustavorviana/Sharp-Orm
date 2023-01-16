@@ -29,7 +29,7 @@ namespace SharpOrm.Builder
 
         #region DML
 
-        public DbCommand GetSelectCommand(bool configureWhereParams = true)
+        public DbCommand Select(bool configureWhereParams = true)
         {
             this.Reset();
             this.ConfigureSelect(configureWhereParams);
@@ -38,7 +38,7 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
-        internal DbCommand GetInsertQueryCommand(Query query, string[] columnNames)
+        internal DbCommand InsertQuery(Query query, string[] columnNames)
         {
             this.Reset();
 
@@ -48,7 +48,7 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureInsertQuery(Query query, string[] columnNames);
 
-        public DbCommand GetInsertCommand(Cell[] cells)
+        public DbCommand Insert(Cell[] cells)
         {
             this.Reset();
             this.ConfigureInsert(cells, true);
@@ -57,7 +57,7 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureInsert(Cell[] cells, bool getGeneratedId);
 
-        public DbCommand GetBulkInsertCommand(Row[] rows)
+        public DbCommand BulkInsert(Row[] rows)
         {
             this.Reset();
             this.ConfigureBulkInsert(rows);
@@ -66,7 +66,7 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureBulkInsert(Row[] rows);
 
-        public DbCommand GetUpdateCommand(Cell[] cells)
+        public DbCommand Update(Cell[] cells)
         {
             this.Reset();
             this.ConfigureUpdate(cells);
@@ -75,7 +75,7 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureUpdate(Cell[] cells);
 
-        public DbCommand GetDeleteCommand()
+        public DbCommand Delete()
         {
             this.Reset();
             this.ConfigureDelete();

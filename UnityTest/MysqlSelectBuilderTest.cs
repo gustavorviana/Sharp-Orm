@@ -15,7 +15,7 @@ namespace UnityTest
             using var query = NewQuery();
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable`", cmd.CommandText);
         }
 
@@ -27,7 +27,7 @@ namespace UnityTest
 
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL", cmd.CommandText);
         }
 
@@ -38,7 +38,7 @@ namespace UnityTest
             query.Select("Id", "Name");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT `Id`, `Name` FROM `TestTable`", cmd.CommandText);
         }
 
@@ -49,7 +49,7 @@ namespace UnityTest
             query.Select(new Column("Id"), new Column("Name", "meuNome"));
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT `Id`, `Name` AS `meuNome` FROM `TestTable`", cmd.CommandText);
         }
 
@@ -60,7 +60,7 @@ namespace UnityTest
             query.Select(new Column("Id"), new Column(new SqlExpression("TOLOWER(Name) AS meuNome")));
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT `Id`, TOLOWER(Name) AS meuNome FROM `TestTable`", cmd.CommandText);
         }
 
@@ -70,7 +70,7 @@ namespace UnityTest
             using var query = new Query(Connection, TABLE) { Limit = 10 };
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` LIMIT 10", cmd.CommandText);
         }
 
@@ -82,7 +82,7 @@ namespace UnityTest
             query.Where("id", "IN", list);
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (@c1, @c2, @c3, @c4, @c5, @c6, @c7, @c8, @c9)", cmd.CommandText);
             this.TestListParameters(cmd.Parameters, list);
         }
@@ -100,7 +100,7 @@ namespace UnityTest
             query.Where("id", "IN", this.CreateQueryForWhere());
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (SELECT `Id` FROM `TestIds` WHERE `Type` = @c1)", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "Unity");
         }
@@ -116,7 +116,7 @@ namespace UnityTest
             using var query = new Query(Connection, TABLE) { Offset = 10 };
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` OFFSET 10", cmd.CommandText);
         }
 
@@ -126,7 +126,7 @@ namespace UnityTest
             using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10 };
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` LIMIT 10 OFFSET 10", cmd.CommandText);
         }
 
@@ -136,7 +136,7 @@ namespace UnityTest
             using var query = new Query(Connection, TABLE) { Distinct = true };
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT DISTINCT * FROM `TestTable`", cmd.CommandText);
         }
 
@@ -146,7 +146,7 @@ namespace UnityTest
             using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10, Distinct = true };
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT DISTINCT * FROM `TestTable` LIMIT 10 OFFSET 10", cmd.CommandText);
         }
 
@@ -157,7 +157,7 @@ namespace UnityTest
             query.Where("column", "=", "value");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
@@ -169,7 +169,7 @@ namespace UnityTest
             query.Where("column", "=", "value");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 LIMIT 10", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
@@ -181,7 +181,7 @@ namespace UnityTest
             query.Where(e => e.Where("column", "=", "value"));
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`column` = @c1)", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
@@ -194,7 +194,7 @@ namespace UnityTest
             query.Where(e => e.Where("column2", "=", "value2"));
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = @c1 AND (`column2` = @c2)", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value1");
             this.AreEqualsParameter(cmd.Parameters[1], "@c2", "value2");
@@ -208,7 +208,7 @@ namespace UnityTest
                 .OrWhere("column", "=", "value");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 OR `column` = @c2", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "teste");
             this.AreEqualsParameter(cmd.Parameters[1], "@c2", "value");
@@ -222,7 +222,7 @@ namespace UnityTest
                 .Where(new Column("column2"), "=", new Column("column3"));
 
             using var g = new MysqlGrammar(query);
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = `column2` AND `column2` = `column3`", cmd.CommandText);
         }
 
@@ -233,7 +233,7 @@ namespace UnityTest
             query.Where(new SqlExpression("column1 = 1"));
 
             using var g = new MysqlGrammar(query);
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE column1 = 1", cmd.CommandText);
         }
 
@@ -244,7 +244,7 @@ namespace UnityTest
             query.Where((Column)"UPPER(column1)", "=", "ABC");
 
             using var g = new MysqlGrammar(query);
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE UPPER(column1) = @c1", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", "ABC");
         }
@@ -256,7 +256,7 @@ namespace UnityTest
             query.Where("column1", "=", (SqlExpression)"UPPER(column2)");
 
             using var g = new MysqlGrammar(query);
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = UPPER(column2)", cmd.CommandText);
         }
 
@@ -267,7 +267,7 @@ namespace UnityTest
             query.Join("TAB2", "TAB2.id", "=", $"{TABLE}.idTab2");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` INNER JOIN `TAB2` ON `TAB2`.`id` = `TestTable`.`idTab2`", cmd.CommandText);
         }
 
@@ -278,7 +278,7 @@ namespace UnityTest
             query.Join("TAB2 tab2", "tab2.id", "=", $"{TABLE}.idTab2", "LEFT");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` LEFT JOIN `TAB2` `tab2` ON `tab2`.`id` = `TestTable`.`idTab2`", cmd.CommandText);
         }
 
@@ -289,7 +289,7 @@ namespace UnityTest
             query.Join("TAB2", q => q.WhereColumn("TAB2.id", "=", $"{TABLE}.idTab2").OrWhereColumn("TAB2.id", "=", $"{TABLE}.idTab3"), "LEFT");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` LEFT JOIN `TAB2` ON `TAB2`.`id` = `TestTable`.`idTab2` OR `TAB2`.`id` = `TestTable`.`idTab3`", cmd.CommandText);
         }
 
@@ -300,7 +300,7 @@ namespace UnityTest
             query.GroupBy("Col1", "Col2");
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` GROUP BY `Col1`, `Col2`", cmd.CommandText);
         }
 
@@ -311,8 +311,24 @@ namespace UnityTest
             query.GroupBy(new Column("Col1"), new Column(new SqlExpression("LOWER(Col2)")));
             using var g = new MysqlGrammar(query);
 
-            using var cmd = g.GetSelectCommand();
+            using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` GROUP BY `Col1`, LOWER(Col2)", cmd.CommandText);
+        }
+
+
+        [TestMethod]
+        public void MyTestMethod()
+        {
+            using var q = new Query("ProdutoPauta");
+            q.Insert(SelectProduto(1, ""));
+        }
+
+        private static Query SelectProduto(int idPauta, string ean)
+        {
+            var q = new Query("Produto");
+            q.Select(new Column("Id"), (Column)idPauta.ToString())
+                .Where("Ean", ean);
+            return q;
         }
 
         private void AreEqualsParameter(DbParameter param, string name, object value)

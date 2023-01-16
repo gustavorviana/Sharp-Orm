@@ -16,7 +16,7 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            using var cmd = g.GetInsertCommand(NewRow(1, "T1").Cells);
+            using var cmd = g.Insert(NewRow(1, "T1").Cells);
             Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
@@ -30,7 +30,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(q);
             var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
 
-            using var cmd = g.GetBulkInsertCommand(rows);
+            using var cmd = g.BulkInsert(rows);
             Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2), (@v3, @v4), (@v5, @v6), (@v7, @v8), (@v9, @v10)", cmd.CommandText);
 
             TestBulkInsertParams(cmd, rows);
@@ -43,7 +43,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(q);
 
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"));
-            using var cmd = g.GetUpdateCommand(row.Cells);
+            using var cmd = g.Update(row.Cells);
             Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
@@ -57,7 +57,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(q);
             q.Where("id", "=", 1);
 
-            using var cmd = g.GetUpdateCommand(new Cell[] { new Cell("name", 2) });
+            using var cmd = g.Update(new Cell[] { new Cell("name", 2) });
             Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1 WHERE `id` = @c1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", 2);
@@ -70,7 +70,7 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            using var cmd = g.GetDeleteCommand();
+            using var cmd = g.Delete();
             Assert.AreEqual("DELETE FROM `TestTable`", cmd.CommandText);
         }
 
@@ -81,7 +81,7 @@ namespace UnityTest
             q.Where("id", "=", 1);
             using var g = new MysqlGrammar(q);
 
-            using var cmd = g.GetDeleteCommand();
+            using var cmd = g.Delete();
             Assert.AreEqual("DELETE FROM `TestTable` WHERE `id` = @c1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
@@ -98,7 +98,7 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            using var cmd = g.GetInsertQueryCommand(selectQuery, new[] { "UserId", "Status" });
+            using var cmd = g.InsertQuery(selectQuery, new[] { "UserId", "Status" });
             Assert.AreEqual("INSERT INTO `TestTable` (UserId,Status) SELECT `Id`, 1 FROM `User` WHERE `id` = @c1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
