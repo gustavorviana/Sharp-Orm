@@ -315,22 +315,6 @@ namespace UnityTest
             Assert.AreEqual("SELECT * FROM `TestTable` GROUP BY `Col1`, LOWER(Col2)", cmd.CommandText);
         }
 
-
-        [TestMethod]
-        public void MyTestMethod()
-        {
-            using var q = new Query("ProdutoPauta");
-            q.Insert(SelectProduto(1, ""));
-        }
-
-        private static Query SelectProduto(int idPauta, string ean)
-        {
-            var q = new Query("Produto");
-            q.Select(new Column("Id"), (Column)idPauta.ToString())
-                .Where("Ean", ean);
-            return q;
-        }
-
         private void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);

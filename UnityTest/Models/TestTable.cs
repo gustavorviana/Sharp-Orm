@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace UnityTest.Utils
+namespace UnityTest.Models
 {
     public class TestTable
     {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MySqlX.XDevAPI.Relational;
 using SharpOrm;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -83,15 +84,13 @@ namespace UnityTest
         [TestMethod]
         public void Upsert()
         {
-            using (var query = NewQuery())
-            {
+            using var query = NewQuery();
 
-                query.Upsert(NewRow(1, "A1"), new[] { ID });
-                Assert.AreEqual(1, query.FirstRow()[ID]);
+            query.Upsert(NewRow(1, "A1"), new[] { ID });
+            Assert.AreEqual(1, query.FirstRow()[ID]);
 
-                query.Upsert(NewRow(1, "Josh"), new[] { ID });
-                Assert.AreEqual("Josh", query.FirstRow()[NAME]);
-            }
+            query.Upsert(NewRow(1, "Josh"), new[] { ID });
+            Assert.AreEqual("Josh", query.FirstRow()[NAME]);
         }
 
         [TestMethod]

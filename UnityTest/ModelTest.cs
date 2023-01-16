@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using System;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest
