@@ -15,7 +15,7 @@ namespace UnityTest.Utils
                 if (ConnectionCreator.Default is not ConnectionCreator<MySqlConnection>)
                     ConnectionCreator.Default = new ConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false), GetConnectionString());
 
-                return (MySqlConnection)ConnectionCreator.Default.OpenConnection();
+                return (MySqlConnection)ConnectionCreator.Default.GetConnection();
             }
         }
 

@@ -16,6 +16,10 @@ namespace SharpOrm
             QueryExtension.ValidateTranslator();
         }
 
+        public Query(ConnectionCreator creator, string alias = "") : this(creator.GetConnection(), creator.Config, alias)
+        {
+        }
+
         public Query(DbConnection connection, string alias = "") : base(connection, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
@@ -105,7 +109,7 @@ namespace SharpOrm
         public override Query Clone(bool withWhere)
         {
             Query query = this.Transaction == null ?
-                new Query<T>(ConnectionCreator.NewFromType(this.Connection), this.Info.Config, this.Info.Alias) :
+                new Query<T>(this.Creator, this.Info.Alias) :
                  new Query<T>(this.Transaction, this.Info.Config, this.Info.Alias);
 
             if (withWhere)
@@ -123,6 +127,8 @@ namespace SharpOrm
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
+        private readonly ConnectionCreator _creator;
+        public ConnectionCreator Creator => this._creator ?? ConnectionCreator.Default;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         #endregion
@@ -134,9 +140,14 @@ namespace SharpOrm
         /// </summary>
         /// <param name="table">Name of the table to be used.</param>
         /// <param name="alias">Table alias.</param>
-        public Query(string table, string alias = "") : this(ConnectionCreator.Default.OpenConnection(), ConnectionCreator.Default.Config, table, alias)
+        public Query(string table, string alias = "") : this(ConnectionCreator.Default, table, alias)
         {
 
+        }
+
+        public Query(ConnectionCreator creator, string table, string alias = "") : this(creator.GetConnection(), creator.Config, table, alias)
+        {
+            this._creator = creator;
         }
 
         public Query(DbConnection connection, string table, string alias = "") : this(connection, ConnectionCreator.Default.Config, table, alias)
@@ -462,7 +473,7 @@ namespace SharpOrm
         public virtual Query Clone(bool withWhere)
         {
             Query query = this.Transaction == null ?
-                new Query(ConnectionCreator.NewFromType(this.Connection), this.Info.Config, this.Info.From, this.Info.Alias) :
+                new Query(this.Creator, this.Info.From, this.Info.Alias) :
                  new Query(this.Transaction, this.Info.Config, this.Info.From, this.Info.Alias);
 
             if (withWhere)
@@ -510,7 +521,7 @@ namespace SharpOrm
             base.Dispose(disposing);
 
             if (disposing && this.Transaction == null)
-                this.Connection.Dispose();
+                this.Creator.SafeDisposeConnection(this.Connection);
         }
 
         public override string ToString()

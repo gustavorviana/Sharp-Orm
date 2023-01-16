@@ -1,25 +1,48 @@
 ﻿using SharpOrm.Builder;
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 
 namespace SharpOrm
 {
-    public sealed class ConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
+    public class ConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
         private readonly string _connectionString;
+        private DbConnection connection;
 
         public ConnectionCreator(IQueryConfig config, string connectionString) : base(config)
         {
             _connectionString = connectionString;
         }
 
-        protected override DbConnection CreateConnection()
+        public override DbConnection GetConnection()
         {
-            return new T
+            if (connection == null)
             {
-                ConnectionString = _connectionString
-            };
+                connection = new T { ConnectionString = _connectionString };
+                connection.Disposed += OnConnectionDisposed;
+            }
+
+            if (this.connection.State == System.Data.ConnectionState.Closed)
+                this.connection.Open();
+
+            return this.connection;
+        }
+
+        private void OnConnectionDisposed(object sender, EventArgs e)
+        {
+            this.connection = null;
+        }
+
+        public override void SafeDisposeConnection(DbConnection connection)
+        {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+                this.connection?.Dispose();
         }
     }
 
@@ -28,7 +51,6 @@ namespace SharpOrm
     /// </summary>
     public abstract class ConnectionCreator : IDisposable
     {
-        private static readonly Dictionary<DbConnection, ConnectionCreator> _activeConnections = new Dictionary<DbConnection, ConnectionCreator>();
         private bool _disposed;
 
         public static ConnectionCreator Default { get; set; }
@@ -43,42 +65,14 @@ namespace SharpOrm
             this.Config = config;
         }
 
-        #region Connection management
-        /// <summary>
-        /// Create new connection and open to a Query object. The default connection is null.
-        /// </summary>
-        /// <returns></returns>
-        public DbConnection OpenConnection()
-        {
-            var connection = this.CreateConnection();
-            connection.Disposed += Connection_Disposed;
-            _activeConnections[connection] = this;
-            connection.Open();
-            return connection;
-        }
+        public abstract DbConnection GetConnection();
 
-        protected abstract DbConnection CreateConnection();
-
-        private void Connection_Disposed(object sender, EventArgs e)
-        {
-            if (!(sender is DbConnection conn))
-                return;
-
-            conn.Disposed -= Connection_Disposed;
-            if (_activeConnections.ContainsKey(conn))
-                _activeConnections.Remove(conn);
-        }
-
-        internal static DbConnection NewFromType(DbConnection toClone)
-        {
-            return _activeConnections[toClone].OpenConnection();
-        }
-        #endregion
+        public abstract void SafeDisposeConnection(DbConnection connection);
 
         #region Transaction
         public static void ExecuteTransaction(TransactionCall call)
         {
-            DbConnection connection = Default.OpenConnection();
+            DbConnection connection = Default.GetConnection();
             var transaction = connection.BeginTransaction();
 
             try
@@ -94,7 +88,7 @@ namespace SharpOrm
             finally
             {
                 transaction.Dispose();
-                connection.Dispose();
+                Default.SafeDisposeConnection(connection);
             }
         }
 
@@ -110,23 +104,10 @@ namespace SharpOrm
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    foreach (var con in _activeConnections.Keys)
-                    {
-                        try
-                        {
-                            con.Dispose();
-                        }
-                        catch
-                        { }
-                    }
-                }
+            if (_disposed)
+                return;
 
-                _disposed = true;
-            }
+            _disposed = true;
         }
 
         ~ConnectionCreator()

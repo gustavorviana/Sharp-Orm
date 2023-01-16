@@ -18,7 +18,7 @@ namespace UnityTest.Utils
                 if (ConnectionCreator.Default is not ConnectionCreator<SqlConnection>)
                     ConnectionCreator.Default = new ConnectionCreator<SqlConnection>(new SqlServerQueryConfig(false), GetConnectionString());
 
-                return ConnectionCreator.Default.OpenConnection();
+                return ConnectionCreator.Default.GetConnection();
             }
         }
 
