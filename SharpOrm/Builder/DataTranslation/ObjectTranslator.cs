@@ -118,7 +118,10 @@ namespace SharpOrm.Builder.DataTranslation
                 if (type.IsEnum)
                     return Convert.ToInt32(value);
 
-                if (value is DateTime || value is TimeSpan || value is string || type.IsPrimitive)
+                if (value is DateTime date)
+                    return date == DateTime.MinValue ? DBNull.Value : value;
+
+                if (value is TimeSpan || value is string || type.IsPrimitive)
                     return value;
 
                 throw new NotSupportedException($"Column type \"{GetColumnName(property)}\" is not supported");
@@ -132,12 +135,21 @@ namespace SharpOrm.Builder.DataTranslation
 
             private bool CanUpdateValue(PropertyInfo property, object value)
             {
-                return (!(value is DBNull) && value != null) || !property.PropertyType.IsValueType || property.PropertyType == typeof(Nullable<>);
+                return value is DBNull || 
+                    value == null || 
+                    property.PropertyType.IsValueType || 
+                    property.PropertyType == typeof(Nullable<>) || 
+                    property.PropertyType.IsPrimitive || 
+                    property.PropertyType == typeof(string);
             }
 
             private object LoadValueForColumn(PropertyInfo property, object value)
             {
-                if (value == null || value is DBNull)
+                bool isNull = value == null || value is DBNull;
+                if (property.PropertyType == typeof(DateTime) && isNull)
+                    return DateTime.MinValue;
+
+                if (isNull)
                     return null;
 
                 if (property.PropertyType.IsEnum)
