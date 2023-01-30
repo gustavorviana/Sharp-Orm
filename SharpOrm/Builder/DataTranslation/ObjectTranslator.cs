@@ -53,7 +53,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (obj is Model model)
                 return new Row(model.GetCells());
 
-            return new Row(this.GetLoader(obj.GetType()).GetCells(obj));
+            return new Row(this.GetLoader(obj.GetType()).GetCells(obj).ToArray());
         }
 
         private ObjectLoader GetLoader(Type type)
@@ -78,26 +78,45 @@ namespace SharpOrm.Builder.DataTranslation
             return property.Name;
         }
 
-        public static PropertyInfo GetPrimaryKeyOfType(Type type)
+        public static IEnumerable<PropertyInfo> GetPrimaryKeyOfType(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .FirstOrDefault(p => p.GetCustomAttribute<KeyAttribute>() != null);
+                .Where(p => p.GetCustomAttribute<KeyAttribute>() != null);
         }
 
         protected internal class ObjectLoader
         {
             private readonly Type type;
+            private readonly string[] primaryKeys;
             public readonly Dictionary<string, PropertyInfo> Properties = new Dictionary<string, PropertyInfo>();
 
             public ObjectLoader(Type type)
             {
                 this.type = type;
                 this.LoadProperties();
+                this.primaryKeys = GetPrimaryKeyOfType(type).Select(pk => GetColumnName(pk)).ToArray();
             }
 
-            public Cell[] GetCells(object owner)
+            public IEnumerable<Cell> GetCells(object owner)
             {
-                return this.Properties.Select(kvp => new Cell(kvp.Key, this.GetColumnValue(owner, kvp.Value))).ToArray();
+                foreach (var item in this.Properties)
+                {
+                    object value = this.GetColumnValue(owner, item.Value);
+                    if (this.IsPrimaryKey(item.Key) && this.IsInvalidPk(value))
+                        continue;
+
+                    yield return new Cell(item.Key, value);
+                }
+            }
+
+            private bool IsPrimaryKey(string column)
+            {
+                return this.primaryKeys.Contains(column);
+            }
+
+            private bool IsInvalidPk(object value)
+            {
+                return value is null || value is DBNull || value is int intVal && intVal == 0;
             }
 
             private void LoadProperties()
@@ -135,11 +154,11 @@ namespace SharpOrm.Builder.DataTranslation
 
             private bool CanUpdateValue(PropertyInfo property, object value)
             {
-                return value is DBNull || 
-                    value == null || 
-                    property.PropertyType.IsValueType || 
-                    property.PropertyType == typeof(Nullable<>) || 
-                    property.PropertyType.IsPrimitive || 
+                return value is DBNull ||
+                    value == null ||
+                    property.PropertyType.IsValueType ||
+                    property.PropertyType == typeof(Nullable<>) ||
+                    property.PropertyType.IsPrimitive ||
                     property.PropertyType == typeof(string);
             }
 

@@ -2,6 +2,7 @@
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -53,9 +54,14 @@ namespace SharpOrm
             return this.TempOnlyFirstSelection(this.ReadResults<T>().FirstOrDefault);
         }
 
+        /// <summary>
+        /// Search a row in the database by the primary key.
+        /// </summary>
+        /// <param name="primaryKeys"></param>
+        /// <returns></returns>
         public T Find(object primaryKey)
         {
-            string pkColumn = this.GetAndValidatePrimaryKey(primaryKey);
+            string pkColumn = this.GetAndValidatePrimaryKey(primaryKey).First();
             using (var query = (Query<T>)this.Clone(false))
             {
                 query.Where(pkColumn, primaryKey);
@@ -63,19 +69,23 @@ namespace SharpOrm
             }
         }
 
-        private string GetAndValidatePrimaryKey(object pkToCheck)
+        private IEnumerable<string> GetAndValidatePrimaryKey(params object[] pksToCheck)
         {
-            if (pkToCheck == null)
-                throw new ArgumentNullException(nameof(pkToCheck));
+            if ((pksToCheck?.Length ?? 0) == 0)
+                throw new ArgumentNullException(nameof(pksToCheck));
 
-            var property = ObjectTranslator.GetPrimaryKeyOfType(typeof(T));
-            if (property == null)
+            var properties = ObjectTranslator.GetPrimaryKeyOfType(typeof(T)).ToArray();
+            if (properties.Length == 0)
                 throw new DatabaseException("No primary key has been configured in the model.");
 
-            if (property.PropertyType != pkToCheck.GetType())
-                throw new InvalidCastException("Inserted type is not the same as defined in the primary key column of the model.");
+            if (properties.Length != pksToCheck.Length)
+                throw new ArgumentException("The number of inserted values ​​is not the same number of primary keys.", nameof(pksToCheck));
 
-            return ObjectTranslator.GetColumnName(property);
+            for (int i = 0; i < properties.Length; i++)
+                if (properties[i].PropertyType != pksToCheck[i].GetType())
+                    throw new InvalidCastException("Inserted type is not the same as defined in the primary key column of the model.");
+
+            return properties.Select(pk => ObjectTranslator.GetColumnName(pk));
         }
 
         /// <summary>
