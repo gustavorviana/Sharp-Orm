@@ -11,6 +11,12 @@ namespace SharpOrm.Builder.DataTranslation
 {
     public class ObjectTranslator : IObjectTranslator
     {
+        static ObjectTranslator()
+        {
+            if (AnnotationsAssemblyRedirector.NeedLoad())
+                AnnotationsAssemblyRedirector.LoadRedirector();
+        }
+
         private readonly Dictionary<Type, ObjectLoader> cachedLoaders = new Dictionary<Type, ObjectLoader>();
 
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
