@@ -80,8 +80,24 @@ namespace SharpOrm.Builder.DataTranslation
 
         public static IEnumerable<PropertyInfo> GetPrimaryKeyOfType(Type type)
         {
-            return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            var props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.GetCustomAttribute<KeyAttribute>() != null);
+            
+            if (props.Any())
+                return props;
+
+            if (type.GetProperty("Id", BindingFlags.Instance | BindingFlags.Public) is PropertyInfo idProperty)
+                return new[] { idProperty };
+
+            return Array.Empty<PropertyInfo>();
+        }
+
+        public static SqlValueConversor GetConversorOf(PropertyInfo property)
+        {
+            if (property.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
+                return (SqlValueConversor)Activator.CreateInstance(attribute.Type);
+
+            return null;
         }
 
         protected internal class ObjectLoader
@@ -89,6 +105,7 @@ namespace SharpOrm.Builder.DataTranslation
             private readonly Type type;
             private readonly string[] primaryKeys;
             public readonly Dictionary<string, PropertyInfo> Properties = new Dictionary<string, PropertyInfo>();
+            private readonly Dictionary<string, SqlValueConversor> conversors = new Dictionary<string, SqlValueConversor>();
 
             public ObjectLoader(Type type)
             {
@@ -101,7 +118,7 @@ namespace SharpOrm.Builder.DataTranslation
             {
                 foreach (var item in this.Properties)
                 {
-                    object value = this.GetColumnValue(owner, item.Value);
+                    object value = this.GetColumnValue(item.Key, owner, item.Value);
                     if (this.IsPrimaryKey(item.Key) && this.IsInvalidPk(value))
                         continue;
 
@@ -122,13 +139,25 @@ namespace SharpOrm.Builder.DataTranslation
             private void LoadProperties()
             {
                 foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                    if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
-                        this.Properties[GetColumnName(prop)] = prop;
+                {
+                    if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
+                        continue;
+
+                    string column = GetColumnName(prop);
+                    this.Properties[column] = prop;
+
+                    if (GetConversorOf(prop) is SqlValueConversor conversor)
+                        this.conversors[column] = conversor;
+                }
             }
 
-            public object GetColumnValue(object owner, PropertyInfo property)
+            public object GetColumnValue(string column, object owner, PropertyInfo property)
             {
                 object value = property.GetValue(owner);
+
+                if (this.conversors.TryGetValue(column, out var conversor) && conversor != null)
+                    return conversor.ToDb(value, property.DeclaringType, column);
+
                 if (value == null || value is DBNull)
                     return DBNull.Value;
 
@@ -149,7 +178,7 @@ namespace SharpOrm.Builder.DataTranslation
             public void SetColumnValue(object owner, PropertyInfo property, object value)
             {
                 if (CanUpdateValue(property, value))
-                    property.SetValue(owner, this.LoadValueForColumn(property, value));
+                    property.SetValue(owner, this.LoadValueFromDb(property, value));
             }
 
             private bool CanUpdateValue(PropertyInfo property, object value)
@@ -162,8 +191,12 @@ namespace SharpOrm.Builder.DataTranslation
                     property.PropertyType == typeof(string);
             }
 
-            private object LoadValueForColumn(PropertyInfo property, object value)
+            private object LoadValueFromDb(PropertyInfo property, object value)
             {
+                string name = GetColumnName(property);
+                if (this.conversors.TryGetValue(name, out var conversor) && conversor != null)
+                    return conversor.FromDb(value, property.DeclaringType, name);
+
                 bool isNull = value == null || value is DBNull;
                 if (property.PropertyType == typeof(DateTime) && isNull)
                     return DateTime.MinValue;

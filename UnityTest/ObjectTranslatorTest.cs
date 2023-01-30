@@ -20,7 +20,7 @@ namespace UnityTest
             var prop = loader.Properties[propName];
 
             Assert.IsNotNull(prop);
-            Assert.AreEqual(expected, loader.GetColumnValue(objOwner, prop));
+            Assert.AreEqual(expected, loader.GetColumnValue(GetColumnName(prop), objOwner, prop));
         }
 
         private class TestClass
