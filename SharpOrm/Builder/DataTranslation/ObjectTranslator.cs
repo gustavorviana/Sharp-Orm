@@ -82,7 +82,7 @@ namespace SharpOrm.Builder.DataTranslation
         {
             var props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.GetCustomAttribute<KeyAttribute>() != null);
-            
+
             if (props.Any())
                 return props;
 
@@ -98,6 +98,33 @@ namespace SharpOrm.Builder.DataTranslation
                 return (SqlValueConversor)Activator.CreateInstance(attribute.Type);
 
             return null;
+        }
+
+        public static object ToSqlValue(object value, string notSupportedMessage)
+        {
+            if (value == null || value is DBNull)
+                return DBNull.Value;
+
+            Type type = value.GetType();
+
+            if (type.IsEnum)
+                return Convert.ToInt32(value);
+
+            if (value is DateTime date)
+                return date == DateTime.MinValue ? DBNull.Value : value;
+
+            if (value is TimeSpan || value is string || type.IsPrimitive)
+                return value;
+
+            throw new NotSupportedException(notSupportedMessage);
+        }
+
+        protected static object FromSqlValue(object value)
+        {
+            if (value is DBNull)
+                return null;
+
+            return value;
         }
 
         protected internal class ObjectLoader
@@ -154,37 +181,22 @@ namespace SharpOrm.Builder.DataTranslation
             public object GetColumnValue(string column, object owner, PropertyInfo property)
             {
                 object value = property.GetValue(owner);
-
                 if (this.conversors.TryGetValue(column, out var conversor) && conversor != null)
-                    return conversor.ToDb(value, property.DeclaringType, column);
+                    value = conversor.ToSqlValue(value, property.DeclaringType, column);
 
-                if (value == null || value is DBNull)
-                    return DBNull.Value;
-
-                Type type = value.GetType();
-
-                if (type.IsEnum)
-                    return Convert.ToInt32(value);
-
-                if (value is DateTime date)
-                    return date == DateTime.MinValue ? DBNull.Value : value;
-
-                if (value is TimeSpan || value is string || type.IsPrimitive)
-                    return value;
-
-                throw new NotSupportedException($"Column type \"{GetColumnName(property)}\" is not supported");
+                return ToSqlValue(value, $"Type of Column \"{GetColumnName(property)}\" is not supported");
             }
 
             public void SetColumnValue(object owner, PropertyInfo property, object value)
             {
+                value = FromSqlValue(value);
                 if (CanUpdateValue(property, value))
                     property.SetValue(owner, this.LoadValueFromDb(property, value));
             }
 
             private bool CanUpdateValue(PropertyInfo property, object value)
             {
-                return value is DBNull ||
-                    value == null ||
+                return value == null ||
                     property.PropertyType.IsValueType ||
                     property.PropertyType == typeof(Nullable<>) ||
                     property.PropertyType.IsPrimitive ||
@@ -195,14 +207,10 @@ namespace SharpOrm.Builder.DataTranslation
             {
                 string name = GetColumnName(property);
                 if (this.conversors.TryGetValue(name, out var conversor) && conversor != null)
-                    return conversor.FromDb(value, property.DeclaringType, name);
+                    return conversor.FromSqlValue(value, property.DeclaringType, name);
 
-                bool isNull = value == null || value is DBNull;
-                if (property.PropertyType == typeof(DateTime) && isNull)
+                if (property.PropertyType == typeof(DateTime) && value == null)
                     return DateTime.MinValue;
-
-                if (isNull)
-                    return null;
 
                 if (property.PropertyType.IsEnum)
                     return Enum.ToObject(property.PropertyType, value);

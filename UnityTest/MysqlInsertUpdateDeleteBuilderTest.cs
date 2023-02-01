@@ -1,8 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using System;
 using System.Data.Common;
 using System.Linq;
+using System.Xml.Linq;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -16,11 +20,12 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            using var cmd = g.Insert(NewRow(1, "T1").Cells);
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
+            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`, `value`) VALUES (@v1, @v2, @v3); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
             AreEqualsParameter(cmd.Parameters[1], "@v2", "T1");
+            IsDbNullParam(cmd.Parameters[2], "@v3");
         }
 
         [TestMethod]
@@ -42,12 +47,14 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
-            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"));
+            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2", cmd.CommandText);
+            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2, `value` = @v3, `status` = @v4", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
             AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
+            IsDbNullParam(cmd.Parameters[2], "@v3");
+            AreEqualsParameter(cmd.Parameters[3], "@v4", (int)Status.Success);
         }
 
         [TestMethod]
@@ -108,6 +115,12 @@ namespace UnityTest
         {
             Assert.AreEqual(name, param.ParameterName);
             Assert.AreEqual(value, param.Value);
+        }
+
+        private static void IsDbNullParam(DbParameter param, string name)
+        {
+            Assert.AreEqual(name, param.ParameterName);
+            Assert.IsTrue(param.Value is DBNull);
         }
 
         private static void TestBulkInsertParams(DbCommand command, Row[] rows)

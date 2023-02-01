@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.DataTranslation;
+using System;
 using System.Collections;
 using System.Data.Common;
 using System.Linq;
@@ -111,7 +112,7 @@ namespace SharpOrm.Builder
         {
             var p = this.Command.CreateParameter();
             p.ParameterName = name;
-            p.Value = value;
+            p.Value = ObjectTranslator.ToSqlValue(value, $"Type \"{value?.GetType().FullName ?? "NULL"}\" is not supported");
 
             this.Command.Parameters.Add(p);
             return p;
