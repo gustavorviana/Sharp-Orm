@@ -85,13 +85,13 @@ namespace SharpOrm
 
             using (var reader = query.ExecuteReader())
                 while (reader.Read())
-                    yield return Query.DefaultTranslator.ParseFromReader<T>(reader);
+                    yield return Query.Translator.ParseFromReader<T>(reader);
         }
 
         internal static void ValidateTranslator()
         {
-            if (Query.DefaultTranslator == null)
-                throw new NullReferenceException($"The \"{nameof(Query.DefaultTranslator)}\" property must be set");
+            if (Query.Translator == null)
+                throw new NullReferenceException($"The \"{nameof(Query.Translator)}\" property must be set");
         }
 
         /// <summary>

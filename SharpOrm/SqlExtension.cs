@@ -19,7 +19,7 @@ namespace SharpOrm
         internal static void LoadFromDataReader(this Model model, DbDataReader reader)
         {
             for (int i = 0; i < reader.FieldCount; i++)
-                model.columns[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader[i];
+                model.columns[reader.GetName(i)] = Query.Translator.Config.FromSql(reader[i], reader[i]?.GetType());
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using System;
+using UnityTest.Models;
 
 namespace UnityTest.Utils
 {
@@ -12,6 +14,9 @@ namespace UnityTest.Utils
         protected const string NAME = "name";
         protected const string NICK = "nick";
         protected const string CREATEDAT = "record_created";
+        protected const string NUMBER = "number";
+        protected const string GUIDID = "custom_id";
+        protected const string STATUS = "custom_status";
         #endregion
 
         #region Class Init/Clean
@@ -36,7 +41,7 @@ namespace UnityTest.Utils
 
         protected static Row NewRow(int id, string name)
         {
-            return new Row(new Cell(ID, id), new Cell(NAME, name));
+            return new Row(new Cell(ID, id), new Cell(NAME, name), new Cell(NUMBER, 0M), new Cell(GUIDID, Guid.NewGuid().ToString()), new Cell(STATUS, Status.Unknow));
         }
 
         protected static void InsertRows(int count)
@@ -61,7 +66,10 @@ namespace UnityTest.Utils
                   {ID} INT NOT NULL PRIMARY KEY,
                   {NAME} VARCHAR(256) NOT NULL,
                   {NICK} VARCHAR(256) NULL,
-                  {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                  {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  {NUMBER} DECIMAL(13,2) NOT NULL,
+                  {GUIDID} VARCHAR(36) NULL,
+                  {STATUS} INT NOT NULL
                 )";
         }
     }

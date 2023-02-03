@@ -41,6 +41,11 @@ namespace UnityTest
             TestBulkInsertParams(cmd, rows);
         }
 
+        private static new Row NewRow(int id, string name)
+        {
+            return new Row(new Cell(ID, id), new Cell(NAME, name));
+        }
+
         [TestMethod]
         public void Update()
         {

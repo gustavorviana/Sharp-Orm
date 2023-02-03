@@ -112,7 +112,7 @@ namespace SharpOrm.Builder
         {
             var p = this.Command.CreateParameter();
             p.ParameterName = name;
-            p.Value = ObjectTranslator.ToSqlValue(value, $"Type \"{value?.GetType().FullName ?? "NULL"}\" is not supported");
+            p.Value = Query.Translator.Config.ToSql(value);
 
             this.Command.Parameters.Add(p);
             return p;

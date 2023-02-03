@@ -12,5 +12,10 @@ namespace UnityTest.Models
         public string Nick { get; set; }
         [Column("record_created")]
         public DateTime? CreatedAt { get; set; }
+        public decimal Number { get; set; }
+        [Column("custom_id")]
+        public Guid? CustomId { get; set; }
+        [Column("custom_status")]
+        public Status CustomStatus { get; set; }
     }
 }

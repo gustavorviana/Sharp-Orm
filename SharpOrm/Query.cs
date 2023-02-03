@@ -11,7 +11,7 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public Query(string alias = "") : base(ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        public Query(string alias = "") : base(Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
         }
@@ -20,22 +20,22 @@ namespace SharpOrm
         {
         }
 
-        public Query(DbConnection connection, string alias = "") : base(connection, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbConnection connection, string alias = "") : base(connection, Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbTransaction transaction, string alias = "") : base(transaction, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbTransaction transaction, string alias = "") : base(transaction, Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbConnection connection, IQueryConfig config, string alias = "") : base(connection, config, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbConnection connection, IQueryConfig config, string alias = "") : base(connection, config, Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, ObjectTranslator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
         }
@@ -74,7 +74,7 @@ namespace SharpOrm
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
-            var properties = ObjectTranslator.GetPrimaryKeyOfType(typeof(T)).ToArray();
+            var properties = Translator.GetLoader(typeof(T)).GetAttrPrimaryKeys().ToArray();
             if (properties.Length == 0)
                 throw new DatabaseException("No primary key has been configured in the model.");
 
@@ -85,7 +85,7 @@ namespace SharpOrm
                 if (properties[i].PropertyType != pksToCheck[i].GetType())
                     throw new InvalidCastException("Inserted type is not the same as defined in the primary key column of the model.");
 
-            return properties.Select(pk => ObjectTranslator.GetColumnName(pk));
+            return properties.Select(pk => ObjectLoader.GetColumnName(pk));
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace SharpOrm
         /// <param name="obj"></param>
         public int Insert(T obj)
         {
-            return this.Insert(DefaultTranslator.ToRow(obj).Cells);
+            return this.Insert(Translator.ToRow(obj).Cells);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => DefaultTranslator.ToRow(obj)).ToArray());
+            this.BulkInsert(objs.Select(obj => Translator.ToRow(obj)).ToArray());
         }
 
         public override Query Clone(bool withWhere)
@@ -131,7 +131,7 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Properties
-        public static IObjectTranslator DefaultTranslator { get; set; } = new ObjectTranslator();
+        public static IObjectTranslator Translator { get; set; } = new ObjectTranslator(new TranslationConfig());
 
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
