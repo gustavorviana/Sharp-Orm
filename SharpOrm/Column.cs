@@ -43,7 +43,7 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(info.Alias))
+            if (!string.IsNullOrEmpty(info.Alias) && !this.Name.Contains("."))
                 builder.AppendFormat("{0}.", info.Config.ApplyNomenclature(info.Alias));
 
             builder.Append(info.Config.ApplyNomenclature(this.Name));

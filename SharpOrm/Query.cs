@@ -115,6 +115,28 @@ namespace SharpOrm
             this.BulkInsert(objs.Select(obj => Translator.ToRow(obj)).ToArray());
         }
 
+        /// <summary>
+        /// Update table columns using object values.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="columns">If filled in, only inserted columns will be updated.</param>
+        /// <returns></returns>
+        public bool Update(T obj, params string[] columns)
+        {
+            var cells = Translator
+                .GetLoader(typeof(T))
+                .GetCells(obj);
+
+            if (columns.Length > 0)
+                cells = cells.Where(c => columns.Any(cv => cv.Equals(c.Name, StringComparison.InvariantCultureIgnoreCase)));
+
+            var toUpdate = cells.ToArray();
+            if (toUpdate.Length == 0)
+                throw new InvalidOperationException("Columns inserted to be updated were not found.");
+
+            return base.Update(toUpdate);
+        }
+
         public override Query Clone(bool withWhere)
         {
             Query query = this.Transaction == null ?

@@ -315,6 +315,26 @@ namespace UnityTest
             Assert.AreEqual("SELECT * FROM `TestTable` GROUP BY `Col1`, LOWER(Col2)", cmd.CommandText);
         }
 
+        [TestMethod]
+        public void SelectOrderBy()
+        {
+            using var query = NewQuery(TABLE, "t").OrderBy("t.Name");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` `t` ORDER BY `t`.`Name` Asc", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectOrderByWithAlias()
+        {
+            using var query = NewQuery().OrderBy("Name");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` ORDER BY `Name` Asc", cmd.CommandText);
+        }
+
         private void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);

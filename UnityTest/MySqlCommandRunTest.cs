@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MySqlX.XDevAPI.Relational;
 using SharpOrm;
+using System;
 using UnityTest.Models;
 using UnityTest.Utils;
 
@@ -64,6 +65,36 @@ namespace UnityTest
             var row = query.FirstRow();
             Assert.IsNotNull(row);
             Assert.AreEqual("Name2", row[NAME]);
+        }
+
+        [TestMethod]
+        public void UpdateObject()
+        {
+            const int Id = 1;
+            using var query = new Query<TestTable>();
+            query.Insert(new TestTable
+            {
+                Id = Id,
+                Name = "Name1"
+            });
+
+            query.Where(ID, Id);
+            query.Update(new TestTable
+            {
+                Id = Id,
+                Name = "Name2"
+            });
+
+            query.Update(new TestTable
+            {
+                Nick = "Tester"
+            }, NICK);
+
+            var row = query.FirstRow();
+            Assert.IsNotNull(row);
+            Assert.AreEqual("Name2", row[NAME]);
+            Assert.AreEqual("Tester", row[NICK]);
+            Assert.ThrowsException<InvalidOperationException>(() => query.Update(new TestTable(), "Invalid"));
         }
 
         [TestMethod]
