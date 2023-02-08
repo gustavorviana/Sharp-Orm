@@ -72,11 +72,14 @@ namespace SharpOrm.Builder.DataTranslation
 
         public ObjectLoader GetLoader(Type type)
         {
-            if (this.cachedLoaders.TryGetValue(type, out var loader))
-                return loader;
+            lock (this)
+            {
+                if (this.cachedLoaders.TryGetValue(type, out var loader))
+                    return loader;
 
-            this.cachedLoaders.Add(type, loader = new ObjectLoader(type, this.Config));
-            return loader;
+                this.cachedLoaders.Add(type, loader = new ObjectLoader(type, this.Config));
+                return loader; 
+            }
         }
 
     }

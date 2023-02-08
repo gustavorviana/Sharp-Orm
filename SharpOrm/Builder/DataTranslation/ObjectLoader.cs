@@ -38,7 +38,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (type.GetProperty("Id", PropertiesFlags) is PropertyInfo idProperty)
                 return new[] { idProperty };
 
-            return Array.Empty<PropertyInfo>();
+            return new PropertyInfo[0];
         }
 
         public IEnumerable<Cell> GetCells(object owner)
