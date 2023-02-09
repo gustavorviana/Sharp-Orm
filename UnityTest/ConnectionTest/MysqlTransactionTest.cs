@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Connection;
 using SharpOrm.Errors;
 using UnityTest.Utils;
 

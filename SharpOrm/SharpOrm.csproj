@@ -7,6 +7,7 @@
 	
   <ItemGroup>
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
 	
   <ItemGroup>

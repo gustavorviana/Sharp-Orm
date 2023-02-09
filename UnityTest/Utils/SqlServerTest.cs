@@ -1,9 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 using System;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.IO;
 
 namespace UnityTest.Utils
@@ -15,8 +15,8 @@ namespace UnityTest.Utils
         {
             get
             {
-                if (ConnectionCreator.Default is not ConnectionCreator<SqlConnection>)
-                    ConnectionCreator.Default = new ConnectionCreator<SqlConnection>(new SqlServerQueryConfig(false), GetConnectionString());
+                if (ConnectionCreator.Default is not SingleConnectionCreator)
+                    ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), GetConnectionString());
 
                 return ConnectionCreator.Default.GetConnection();
             }

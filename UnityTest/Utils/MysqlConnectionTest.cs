@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 using System;
 using System.IO;
 
@@ -12,8 +13,8 @@ namespace UnityTest.Utils
         {
             get
             {
-                if (ConnectionCreator.Default is not ConnectionCreator<MySqlConnection>)
-                    ConnectionCreator.Default = new ConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false), GetConnectionString());
+                if (ConnectionCreator.Default is not SingleConnectionCreator<MySqlConnection>)
+                    ConnectionCreator.Default = new SingleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false), GetConnectionString());
 
                 return (MySqlConnection)ConnectionCreator.Default.GetConnection();
             }
