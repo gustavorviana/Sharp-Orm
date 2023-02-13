@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
@@ -20,6 +21,11 @@ namespace SharpOrm
         {
             for (int i = 0; i < reader.FieldCount; i++)
                 model.columns[reader.GetName(i)] = Query.Translator.Config.FromSql(reader[i], reader[i]?.GetType());
+        }
+
+        public static bool Contains(this IEnumerable<string> values, string toCompare, StringComparison stringComparison)
+        {
+            return values.Any(v => v.Equals(toCompare, stringComparison));
         }
     }
 }

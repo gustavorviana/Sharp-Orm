@@ -12,6 +12,8 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
+        protected internal ObjectLoader Loader => Translator.GetLoader(typeof(T));
+
         public Query(string alias = "") : base(Translator.GetTableNameOf(typeof(T)), alias)
         {
             QueryExtension.ValidateTranslator();
@@ -75,7 +77,7 @@ namespace SharpOrm
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
-            var properties = Translator.GetLoader(typeof(T)).GetAttrPrimaryKeys().ToArray();
+            var properties = this.Loader.GetAttrPrimaryKeys().ToArray();
             if (properties.Length == 0)
                 throw new DatabaseException("No primary key has been configured in the model.");
 
@@ -124,18 +126,41 @@ namespace SharpOrm
         /// <returns></returns>
         public bool Update(T obj, params string[] columns)
         {
-            var cells = Translator
-                .GetLoader(typeof(T))
-                .GetCells(obj);
+            if (columns.Length == 0)
+                return base.Update(this.Loader.GetCells(obj, true).ToArray());
 
-            if (columns.Length > 0)
-                cells = cells.Where(c => columns.Any(cv => cv.Equals(c.Name, StringComparison.InvariantCultureIgnoreCase)));
+            var cells = this.Loader
+                .GetCells(obj)
+                .Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
 
             var toUpdate = cells.ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException("Columns inserted to be updated were not found.");
 
             return base.Update(toUpdate);
+        }
+
+        public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
+            join.Info.From = Translator.GetTableNameOf(typeof(C));
+            join.Info.Alias = alias;
+
+            join.WhereColumn(column1, operation, column2);
+
+            this.Info.Joins.Add(join);
+            return this;
+        }
+
+        public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
+            join.Info.From = Translator.GetTableNameOf(typeof(C));
+            join.Info.Alias = alias;
+
+            operation(join);
+            this.Info.Joins.Add(join);
+            return this;
         }
 
         public override Query Clone(bool withWhere)
@@ -228,6 +253,12 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Select(params string[] columnNames)
         {
+            if ((columnNames?.Length ?? 0) == 0)
+                throw new ArgumentNullException(nameof(columnNames), "At least one column must be inserted.");
+
+            if (columnNames.Length == 1 && columnNames[0] == "*")
+                return this.Select((Column)"*");
+
             return this.Select(columnNames.Select(name => new Column(name)).ToArray());
         }
 
@@ -238,6 +269,9 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Select(params Column[] columns)
         {
+            if ((columns?.Length ?? 0) == 0)
+                throw new ArgumentNullException(nameof(columns), "At least one column must be inserted.");
+
             this.Info.Select = columns;
 
             return this;
@@ -409,6 +443,9 @@ namespace SharpOrm
         {
             this.CheckIsSafeOperation();
 
+            if (cells.Length == 0)
+                throw new InvalidOperationException("At least one column must be entered.");
+
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Update(cells))
                 return cmd.ExecuteNonQuery() > 0;
@@ -420,6 +457,9 @@ namespace SharpOrm
         /// <param name="cells"></param>
         public int Insert(params Cell[] cells)
         {
+            if (cells.Length == 0)
+                throw new InvalidOperationException("At least one column must be entered.");
+
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Insert(cells))
             {

@@ -104,6 +104,11 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
+        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
+        {
+            query.Upsert(Query.Translator.ToRow(obj), toCheckColumns);
+        }
+
         /// <summary>
         /// Creates a row if it does not exist or updates the value if it already exists.
         /// </summary>
