@@ -6,23 +6,25 @@ In both cases, it is necessary to define a class that implements the interface "
 
 ## Using global configuration
 
-To use a global configuration you need to create a new instance of ConnectionCreator, you can create your own class to implement custom rules but in most cases you can use **ConnectionCreator<**T**>** class.
+To use a global configuration you need to create a new instance of ConnectionCreator, you can create your own class to implement custom rules but in most cases you can use **SingleConnection** class or **MultipleConnectionCreator**.
+
+* **SingleConnection**: Uses only one connection to execute all the operations in the database.
+* **MultipleConnectionCreator**: Uses one connection to perform each operation on the database.
 
 ### Configuring the global configuration
 ```CSharp
-using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 
 //For Mysql and Sqlite
-ConnectionCreator.Default = new ConnectionCreator<SqlConnection>(new MysqlQueryConfig(false), connectionString);
+ConnectionCreator.Default = new SingleConnectionCreator(new MysqlQueryConfig(false), connectionString);
 //For Microsoft Sql Server
-ConnectionCreator.Default = new ConnectionCreator<SqlConnection>(new SqlServerQueryConfig(false), connectionString);
+ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), connectionString);
 ```
 
 ### Using global configuration
 ```CSharp
 using SharpOrm;
-using SharpOrm.Builder;
 
 //Class responsible for performing the request in the database.
 using(Query query = new Query("Users"))
@@ -77,6 +79,9 @@ using SharpOrm.Builder;
 using(Query<User> query = new Query<User>())
 {
     User user = query.Find(1);//Retrieving a user by id (to use this function, it is necessary that some property has the Key attribute)
+    //OR
+    query.Where("Id", 1);//Signals to the query that only users with id 1 should be selected (WHERE `Id` = 1).
+    query.FirstOrDefault();//Returns the first value that meets the specifications, or returns null if it does not.
 }
 ```
 

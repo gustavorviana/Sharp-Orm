@@ -4,6 +4,10 @@
     {
         public bool OnlySafeModifications { get; }
 
+        public SqlServerQueryConfig()
+        {
+        }
+
         public SqlServerQueryConfig(bool onlySafeModifications)
         {
             this.OnlySafeModifications = onlySafeModifications;
