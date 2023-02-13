@@ -46,7 +46,7 @@ namespace SharpOrm.Builder.DataTranslation
             foreach (var item in this.Properties)
             {
                 object value = this.GetColumnValue(item.Key, owner, item.Value);
-                if (this.IsPrimaryKey(item.Key) && ignorePrimaryKey)
+                if (this.IsPrimaryKey(item.Key) && (ignorePrimaryKey || this.IsInvalidPk(value)))
                     continue;
 
                 yield return new Cell(item.Key, value);
@@ -56,6 +56,11 @@ namespace SharpOrm.Builder.DataTranslation
         private bool IsPrimaryKey(string column)
         {
             return this.PrimaryKeysName.Contains(column);
+        }
+
+        private bool IsInvalidPk(object value)
+        {
+            return value is null || value is DBNull || value is int intVal && intVal == 0;
         }
 
         private void LoadProperties()

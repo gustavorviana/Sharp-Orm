@@ -2,6 +2,8 @@
 using SharpOrm;
 using SharpOrm.Builder.DataTranslation;
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using UnityTest.Models;
 
 namespace UnityTest
@@ -10,6 +12,25 @@ namespace UnityTest
     public class ObjectTranslatorTest
     {
         private static readonly ObjectLoader loader = new(typeof(TestClass), new TranslationConfig());
+
+        [TestMethod]
+        public void InvalidPk()
+        {
+            var cells = loader.GetCells(new TestClass()).ToArray();
+            Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
+            Assert.AreEqual(6, cells.Length);
+
+            cells = loader.GetCells(new TestClass { MyId = 1}).ToArray();
+            Assert.IsTrue(cells.Any(c => c.Name == nameof(TestClass.MyId)));
+            Assert.AreEqual(7, cells.Length);
+        }
+
+        [TestMethod]
+        public void IgnorePk()
+        {
+            var cells = loader.GetCells(new TestClass { MyId = 1 }, true).ToArray();
+            Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
+        }
 
         [TestMethod]
         public void EnumToSql()
@@ -105,6 +126,7 @@ namespace UnityTest
 
         private class TestClass
         {
+            [Key]
             public int MyId { get; set; }
             public string MyName { get; set; }
             public DateTime MyDate { get; set; }
