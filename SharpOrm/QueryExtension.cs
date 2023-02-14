@@ -133,16 +133,6 @@ namespace SharpOrm
         #endregion
 
         #region DbDataReader
-        /// <summary>
-        /// Check if column name exists.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static bool Contains(this DbDataReader reader, string name)
-        {
-            return reader.GetOrdinal(name) >= 0;
-        }
 
         /// <summary>
         /// Get value by column name.
@@ -195,6 +185,7 @@ namespace SharpOrm
 
             return new Row(cells);
         }
+
         #endregion
     }
 }

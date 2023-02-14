@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MySqlX.XDevAPI.Relational;
 using SharpOrm;
 using System;
 using UnityTest.Models;

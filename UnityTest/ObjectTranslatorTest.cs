@@ -20,7 +20,7 @@ namespace UnityTest
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(6, cells.Length);
 
-            cells = loader.GetCells(new TestClass { MyId = 1}).ToArray();
+            cells = loader.GetCells(new TestClass { MyId = 1 }).ToArray();
             Assert.IsTrue(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(7, cells.Length);
         }

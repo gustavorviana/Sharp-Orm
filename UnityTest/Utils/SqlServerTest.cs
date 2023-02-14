@@ -2,9 +2,8 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
-using System;
 using System.Data.Common;
-using System.IO;
+using System.Data.SqlClient;
 
 namespace UnityTest.Utils
 {
@@ -15,9 +14,7 @@ namespace UnityTest.Utils
         {
             get
             {
-                if (ConnectionCreator.Default is not SingleConnectionCreator)
-                    ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), GetConnectionString());
-
+                ConnectionStr.Boot<SqlConnection>(() => config, ConnectionStr.SqlServer);
                 return ConnectionCreator.Default.GetConnection();
             }
         }
@@ -56,20 +53,6 @@ namespace UnityTest.Utils
             cmd.ExecuteNonQuery();
         }
         #endregion
-
-        private static string GetConnectionString()
-        {
-            string file = "SqlServerConnection.txt";
-            if (!File.Exists(file))
-                File.WriteAllText(file, @"Data Source=localhost\SQLEXPRESS;Initial Catalog=SharpOrm;Integrated Security=True;");
-
-            var connString = File.ReadAllText(file);
-
-            if (string.IsNullOrEmpty(connString))
-                throw new Exception($"O arquivo {file} deve conter a string de conexão.");
-
-            return connString;
-        }
 
         protected static Query NewQuery(string table, string alias = "")
         {

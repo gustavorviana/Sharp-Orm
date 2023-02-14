@@ -8,13 +8,8 @@ namespace SharpOrm.Builder.DataTranslation
 {
     public class ObjectTranslator : IObjectTranslator
     {
-        static ObjectTranslator()
-        {
-            if (AnnotationsAssemblyRedirector.NeedLoad())
-                AnnotationsAssemblyRedirector.LoadRedirector();
-        }
-
         private readonly Dictionary<Type, ObjectLoader> cachedLoaders = new Dictionary<Type, ObjectLoader>();
+        private readonly object lockObj = new object();
 
         public TranslationConfig Config { get; }
 
@@ -39,11 +34,14 @@ namespace SharpOrm.Builder.DataTranslation
 
             foreach (var property in loader.Properties)
             {
-                int colIndex = reader.GetOrdinal(property.Key);
-                if (colIndex < 0)
-                    throw new DatabaseException($"The column \"{property.Key}\" not found in database");
-
-                loader.SetColumnValue(obj, property.Value, reader[property.Key]);
+                try
+                {
+                    loader.SetColumnValue(obj, property.Value, reader[property.Key]);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    throw new DatabaseException($"The column \"{property.Key}\" not found in database.");
+                }
             }
 
             return obj;
@@ -72,15 +70,14 @@ namespace SharpOrm.Builder.DataTranslation
 
         public ObjectLoader GetLoader(Type type)
         {
-            lock (this)
+            lock (lockObj)
             {
                 if (this.cachedLoaders.TryGetValue(type, out var loader))
                     return loader;
 
                 this.cachedLoaders.Add(type, loader = new ObjectLoader(type, this.Config));
-                return loader; 
+                return loader;
             }
         }
-
     }
 }
