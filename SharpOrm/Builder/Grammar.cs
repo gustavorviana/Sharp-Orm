@@ -149,6 +149,7 @@ namespace SharpOrm.Builder
         {
             this.Command.CommandText = this.QueryBuilder.ToString();
             this.Command.Transaction = this.Query.Transaction;
+            System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
             return this.Command;
         }
 

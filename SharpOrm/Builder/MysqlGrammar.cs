@@ -62,13 +62,23 @@ namespace SharpOrm.Builder
 
             this.WriteGroupBy();
 
+            if (this.CanWriteOrderby())
+                this.ApplyOrderBy();
+
             if (this.Query.Limit != null)
                 this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);
 
             if (this.Query.Offset != null)
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
+        }
 
-            this.ApplyOrderBy();
+        private bool CanWriteOrderby()
+        {
+            if (this.Info.Select.Length != 1)
+                return true;
+
+            string select = this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower();
+            return !select.StartsWith("count(");
         }
 
         protected void ApplyJoins()

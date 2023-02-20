@@ -9,7 +9,7 @@ namespace UnityTest.Utils
 {
     public class SqlServerTest : BaseTest
     {
-        protected static readonly SqlServerQueryConfig config = new(false);
+        protected static readonly SqlServerQueryConfig config = new(false) { UseOldPagination = true };
         protected static DbConnection Connection
         {
             get

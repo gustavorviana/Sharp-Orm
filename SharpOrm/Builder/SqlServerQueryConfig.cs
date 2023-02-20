@@ -3,6 +3,7 @@
     public class SqlServerQueryConfig : IQueryConfig
     {
         public bool OnlySafeModifications { get; }
+        public bool UseOldPagination { get; set; }
 
         public SqlServerQueryConfig()
         {

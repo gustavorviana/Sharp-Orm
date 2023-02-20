@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using System.Data.Common;
 using UnityTest.Utils;
 
@@ -49,6 +50,34 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = @c1) [TestTable] WHERE [grammar_rownum] > 1", cmd.CommandText);
+            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+        }
+
+        [TestMethod]
+        public void NewSelectOffset()
+        {
+            using var query = new Query(Connection, new SqlServerQueryConfig(false), TABLE);
+            query.OrderBy("Id").Offset = 1;
+            query.Where("Id", 1);
+            using var g = config.NewGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = @c1 ORDER BY [Id] Asc OFFSET 1 ROWS", cmd.CommandText);
+            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+        }
+
+        [TestMethod]
+        public void NewSelectOffsetLimit()
+        {
+            using var query = new Query(Connection, new SqlServerQueryConfig(false), TABLE);
+            query.OrderBy("Id");
+            query.Where("Id", 1);
+            query.Offset = 1;
+            query.Limit = 10;
+            using var g = config.NewGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = @c1 ORDER BY [Id] Asc OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", cmd.CommandText);
             this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
         }
 

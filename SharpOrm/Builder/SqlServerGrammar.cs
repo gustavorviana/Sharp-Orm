@@ -5,14 +5,15 @@ namespace SharpOrm.Builder
 {
     public class SqlServerGrammar : MysqlGrammar
     {
+        protected SqlServerQueryConfig Config => this.Info.Config as SqlServerQueryConfig;
         public SqlServerGrammar(Query query) : base(query)
         {
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            if (this.Query.Offset != null) this.WriteSelectWithPagination(configureWhereParams);
-            else this.WriteSelectWithoutPagination(configureWhereParams);
+            if (this.Query.Offset != null && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams);
+            else this.WriteSelectPagination(configureWhereParams);
         }
 
         protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
@@ -23,11 +24,11 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
         }
 
-        private void WriteSelectWithoutPagination(bool configureWhereParams)
+        private void WriteSelectPagination(bool configureWhereParams)
         {
             this.QueryBuilder.Append("SELECT ");
 
-            if (this.Query.Limit != null)
+            if (this.Query.Limit != null && this.Query.Offset == null)
                 this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
             if (this.Query.Distinct)
@@ -39,10 +40,22 @@ namespace SharpOrm.Builder
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
+
+            if (this.IsCount())
+                return;
+
             this.ApplyOrderBy();
+
+            if (this.Query.Offset == null)
+                return;
+
+            this.QueryBuilder.Append($" OFFSET {this.Query.Offset} ROWS");
+
+            if (this.Query.Limit != null)
+                this.QueryBuilder.Append($" FETCH NEXT {this.Query.Limit} ROWS ONLY");
         }
 
-        private void WriteSelectWithPagination(bool configureWhereParams)
+        private void WriteSelectWithOldPagination(bool configureWhereParams)
         {
             this.QueryBuilder.Append("SELECT * FROM (");
             this.WriteRowNumber();
@@ -53,6 +66,15 @@ namespace SharpOrm.Builder
             this.WriteGroupBy();
             this.QueryBuilder.AppendFormat(") {0} ", this.GetTableNameIfNoAlias());
             this.ApplyPagination();
+        }
+
+        private bool IsCount()
+        {
+            if (this.Info.Select.Length != 1)
+                return true;
+
+            string select = this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower();
+            return select.StartsWith("count(");
         }
 
         private string GetTableNameIfNoAlias()
