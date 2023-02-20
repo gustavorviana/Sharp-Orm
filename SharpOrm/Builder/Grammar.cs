@@ -9,6 +9,8 @@ namespace SharpOrm.Builder
     public abstract class Grammar : IDisposable
     {
         #region Fields\Properties
+        public static bool LogQuery { get; set; }
+
         private DbCommand _command = null;
 
         private bool _disposed = false;
@@ -149,7 +151,8 @@ namespace SharpOrm.Builder
         {
             this.Command.CommandText = this.QueryBuilder.ToString();
             this.Command.Transaction = this.Query.Transaction;
-            System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
+            if (Grammar.LogQuery)
+                System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
             return this.Command;
         }
 
