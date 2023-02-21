@@ -6,14 +6,17 @@ namespace SharpOrm.Builder
     public class SqlServerGrammar : MysqlGrammar
     {
         protected SqlServerQueryConfig Config => this.Info.Config as SqlServerQueryConfig;
+        protected bool HasOffset => this.Query.Offset is int offset && offset > 0;
+        protected bool HasLimit => this.Query.Limit is int limit && limit > 0;
+
         public SqlServerGrammar(Query query) : base(query)
         {
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            if (this.Query.Offset != null && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams);
-            else this.WriteSelectPagination(configureWhereParams);
+            if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams);
+            else this.WriteSelect(configureWhereParams);
         }
 
         protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
@@ -24,11 +27,11 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
         }
 
-        private void WriteSelectPagination(bool configureWhereParams)
+        private void WriteSelect(bool configureWhereParams)
         {
             this.QueryBuilder.Append("SELECT ");
 
-            if (this.Query.Limit != null && this.Query.Offset == null)
+            if (HasLimit && !HasOffset)
                 this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
             if (this.Query.Distinct)
@@ -45,13 +48,13 @@ namespace SharpOrm.Builder
                 return;
 
             this.ApplyOrderBy();
-
-            if (this.Query.Offset == null)
+            if (!HasOffset)
                 return;
 
+            this.ValidateOffsetOrderBy();
             this.QueryBuilder.Append($" OFFSET {this.Query.Offset} ROWS");
 
-            if (this.Query.Limit != null)
+            if (HasLimit)
                 this.QueryBuilder.Append($" FETCH NEXT {this.Query.Limit} ROWS ONLY");
         }
 
@@ -95,12 +98,17 @@ namespace SharpOrm.Builder
 
         private void WriteRowNumber()
         {
-            if (this.Info.Orders.Length == 0)
-                throw new InvalidOperationException("You cannot page the result without a field for ordering.");
+            this.ValidateOffsetOrderBy();
 
             this.QueryBuilder.Append("SELECT ROW_NUMBER() OVER(ORDER BY ");
             this.QueryBuilder.Append(string.Join(", ", this.Info.Orders.Select(col => $"{col.Column.ToExpression(this.Info.ToReadOnly())} {col.Order}")));
             this.QueryBuilder.Append(") AS [grammar_rownum], ");
+        }
+
+        private void ValidateOffsetOrderBy()
+        {
+            if (this.Info.Orders.Length == 0)
+                throw new InvalidOperationException("You cannot page the result without a field for ordering.");
         }
     }
 }

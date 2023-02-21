@@ -12,33 +12,35 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
+        public static string TableName => Translator.GetTableNameOf(typeof(T));
         protected internal ObjectLoader Loader => Translator.GetLoader(typeof(T));
 
-        public Query(string alias = "") : base(Translator.GetTableNameOf(typeof(T)), alias)
+        public Query(string alias = "") : base(TableName, alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(ConnectionCreator creator, string alias = "") : this(creator.GetConnection(), creator.Config, alias)
-        {
-        }
-
-        public Query(DbConnection connection, string alias = "") : base(connection, Translator.GetTableNameOf(typeof(T)), alias)
+        public Query(ConnectionCreator creator, string alias = "") : base(creator, TableName, alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbTransaction transaction, string alias = "") : base(transaction, Translator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbConnection connection, string alias = "") : base(connection, TableName, alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbConnection connection, IQueryConfig config, string alias = "") : base(connection, config, Translator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbTransaction transaction, string alias = "") : base(transaction, TableName, alias)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, Translator.GetTableNameOf(typeof(T)), alias)
+        public Query(DbConnection connection, IQueryConfig config, string alias = "") : base(connection, config, TableName, alias)
+        {
+            QueryExtension.ValidateTranslator();
+        }
+
+        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : base(transaction, config, TableName, alias)
         {
             QueryExtension.ValidateTranslator();
         }
