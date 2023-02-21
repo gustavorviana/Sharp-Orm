@@ -47,7 +47,7 @@ namespace SharpOrm.Builder.DataTranslation
             return obj;
         }
 
-        public Row ToRow(object obj)
+        public Row ToRow(object obj, Type type)
         {
             if (obj is Row row)
                 return row;
@@ -55,7 +55,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (obj is Model model)
                 return new Row(model.GetCells());
 
-            return new Row(this.GetLoader(obj.GetType()).GetCells(obj).ToArray());
+            return new Row(this.GetLoader(type).GetCells(obj).ToArray());
         }
 
         public string GetTableNameOf(Type type)

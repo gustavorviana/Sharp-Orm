@@ -106,7 +106,7 @@ namespace SharpOrm
 
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
-            query.Upsert(Query.Translator.ToRow(obj), toCheckColumns);
+            query.Upsert(Query.Translator.ToRow(obj, typeof(T)), toCheckColumns);
         }
 
         /// <summary>

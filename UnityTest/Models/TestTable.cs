@@ -4,6 +4,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace UnityTest.Models
 {
+    public class ExtendedTestTable : TestTable
+    {
+        public string ExtendedProp { get; set; }
+    }
+
     public class TestTable
     {
         [Key]

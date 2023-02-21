@@ -27,6 +27,35 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void InsertExtendedClass()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+            var table = new ExtendedTestTable
+            {
+                Id = 1,
+                CreatedAt = DateTime.Now,
+                CustomId = Guid.NewGuid(),
+                Name = "Name",
+                Number = 1,
+                ExtendedProp = "Nothing",
+                CustomStatus = Status.Success,
+                Nick = null
+            };
+
+            using var cmd = g.Insert(Query.Translator.ToRow(table, typeof(TestTable)).Cells);
+            Assert.AreEqual("INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (@v1, @v2, @v3, @v4, @v5, @v6, @v7); SELECT LAST_INSERT_ID();", cmd.CommandText);
+
+            AreEqualsParameter(cmd.Parameters[0], "@v1", table.Id);
+            AreEqualsParameter(cmd.Parameters[1], "@v2", table.Name);
+            IsDbNullParam(cmd.Parameters[2], "@v3");
+            AreEqualsParameter(cmd.Parameters[3], "@v4", table.CreatedAt);
+            AreEqualsParameter(cmd.Parameters[4], "@v5", table.Number);
+            AreEqualsParameter(cmd.Parameters[5], "@v6", table.CustomId.ToString());
+            AreEqualsParameter(cmd.Parameters[6], "@v7", (int)table.CustomStatus);
+        }
+
+        [TestMethod]
         public void BulkInsert()
         {
             using var q = NewQuery();

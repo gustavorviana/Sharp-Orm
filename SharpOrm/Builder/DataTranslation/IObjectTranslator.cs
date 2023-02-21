@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.DataTranslation
         TranslationConfig Config { get; }
         T ParseFromReader<T>(DbDataReader reader) where T : new();
 
-        Row ToRow(object obj);
+        Row ToRow(object obj, Type type);
 
         string GetTableNameOf(Type type);
 

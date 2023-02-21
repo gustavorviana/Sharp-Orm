@@ -106,7 +106,7 @@ namespace SharpOrm
         /// <param name="obj"></param>
         public int Insert(T obj)
         {
-            return this.Insert(Translator.ToRow(obj).Cells);
+            return this.Insert(Translator.ToRow(obj, typeof(T)).Cells);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => Translator.ToRow(obj)).ToArray());
+            this.BulkInsert(objs.Select(obj => Translator.ToRow(obj, typeof(T))).ToArray());
         }
 
         /// <summary>
