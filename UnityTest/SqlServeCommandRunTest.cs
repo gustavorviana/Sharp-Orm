@@ -3,11 +3,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityTest.Models;
 using UnityTest.Utils;
 
@@ -27,10 +23,11 @@ namespace UnityTest
         }
 
         [TestMethod]
+        [TestProperty("clearDb", "")]
         public void Paginate()
         {
             InsertRows(30);
-            
+
             var q = new Query<TestTable>(Creator);
             q.OrderBy("Id");
             var r = q.Paginate(5, 1);
@@ -39,6 +36,22 @@ namespace UnityTest
             Assert.AreEqual(5, r.Count);
             Assert.AreEqual(30, r.Total);
             Assert.AreEqual(1, r.CurrentPage);
+        }
+
+        [TestMethod]
+        [TestProperty("clearDb", "")]
+        public void PaginatePage2()
+        {
+            InsertRows(10);
+
+            var q = new Query<TestTable>(Creator);
+            q.OrderBy("Id");
+            var r = q.Paginate(8, 2);
+
+            Assert.IsNotNull(r);
+            Assert.AreEqual(2, r.Count);
+            Assert.AreEqual(10, r.Total);
+            Assert.AreEqual(2, r.CurrentPage);
         }
     }
 }

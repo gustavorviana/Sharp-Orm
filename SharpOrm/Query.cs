@@ -174,6 +174,8 @@ namespace SharpOrm
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
 
+            this.OnClone(query);
+
             return query;
         }
     }
@@ -553,6 +555,8 @@ namespace SharpOrm
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
 
+            this.OnClone(query);
+
             return query;
         }
 
@@ -564,6 +568,14 @@ namespace SharpOrm
             if (this.Info.Config.OnlySafeModifications && this.Info.Where.Length == 0)
                 throw new UnsafeDbOperation();
         }
+
+        protected virtual void OnClone(Query cloned)
+        {
+            cloned.Distinct = this.Distinct;
+            cloned.Limit = this.Limit;
+            cloned.Offset = this.Offset;
+        }
+
         #endregion
 
         /// <summary>
