@@ -1,5 +1,4 @@
-﻿using SharpOrm.Errors;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -31,18 +30,9 @@ namespace SharpOrm.Builder.DataTranslation
             }
 
             var loader = this.GetLoader(typeof(T));
-
-            foreach (var property in loader.Properties)
-            {
-                try
-                {
-                    loader.SetColumnValue(obj, property.Value, reader[property.Key]);
-                }
-                catch (IndexOutOfRangeException)
-                {
-                    throw new DatabaseException($"The column \"{property.Key}\" not found in database.");
-                }
-            }
+            for (int i = 0; i < reader.FieldCount; i++)
+                if (loader.TryGetProperty(reader.GetName(i), out var property))
+                    loader.SetColumnValue(obj, property, reader[i]);
 
             return obj;
         }

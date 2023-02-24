@@ -15,6 +15,7 @@ namespace SharpOrm
         public static string TableName => Translator.GetTableNameOf(typeof(T));
         protected internal ObjectLoader Loader => Translator.GetLoader(typeof(T));
 
+        #region Query
         public Query(string alias = "") : base(TableName, alias)
         {
             QueryExtension.ValidateTranslator();
@@ -44,6 +45,7 @@ namespace SharpOrm
         {
             QueryExtension.ValidateTranslator();
         }
+        #endregion
 
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
@@ -517,17 +519,9 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            Column[] lastSelect = this.Info.Select;
-            try
-            {
-                using (Grammar grammar = this.Info.Config.NewGrammar(this.Select(Column.CountAll)))
-                using (DbCommand cmd = grammar.Select())
-                    return Convert.ToInt64(cmd.ExecuteScalar());
-            }
-            finally
-            {
-                this.Select(lastSelect);
-            }
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Count())
+                return Convert.ToInt64(cmd.ExecuteScalar());
         }
         #endregion
 

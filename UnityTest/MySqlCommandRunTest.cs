@@ -35,6 +35,23 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectDistinct()
+        {
+            const int Id = 1;
+            const string Name = "User 1";
+            using var query = NewQuery();
+
+            query.Insert(NewRow(Id, Name).Cells);
+            query.Distinct = true;
+
+            var row = query.FirstRow();
+
+            Assert.IsNotNull(row);
+            Assert.AreEqual(Id, row[ID]);
+            Assert.AreEqual(Name, row[NAME]);
+        }
+
+        [TestMethod]
         public void SelectByValidPk()
         {
             const int Id = 1;

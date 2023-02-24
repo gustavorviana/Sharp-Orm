@@ -13,10 +13,22 @@ namespace SharpOrm.Builder
         {
         }
 
+        protected override void ConfigureCount()
+        {
+            this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+            this.ConfigureSelect(true, true);
+            this.QueryBuilder.Append(") AS [count]");
+        }
+
         protected override void ConfigureSelect(bool configureWhereParams)
         {
+            this.ConfigureSelect(configureWhereParams, false);
+        }
+
+        private void ConfigureSelect(bool configureWhereParams, bool isCount)
+        {
             if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams);
-            else this.WriteSelect(configureWhereParams);
+            else this.WriteSelect(configureWhereParams, isCount);
         }
 
         protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
@@ -27,15 +39,15 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
         }
 
-        private void WriteSelect(bool configureWhereParams)
+        private void WriteSelect(bool configureWhereParams, bool isCount)
         {
             this.QueryBuilder.Append("SELECT ");
 
-            if (HasLimit && !HasOffset)
-                this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
-
-            if (this.Query.Distinct)
+            if (this.Query.Distinct && !this.Info.IsCount())
                 this.QueryBuilder.Append("DISTINCT ");
+
+            if (HasLimit && !HasOffset && !this.Info.IsCount())
+                this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
             this.WriteSelectColumns();
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
@@ -44,7 +56,7 @@ namespace SharpOrm.Builder
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
 
-            if (this.IsCount())
+            if (isCount)
                 return;
 
             this.ApplyOrderBy();
@@ -69,15 +81,6 @@ namespace SharpOrm.Builder
             this.WriteGroupBy();
             this.QueryBuilder.AppendFormat(") {0} ", this.GetTableNameIfNoAlias());
             this.ApplyPagination();
-        }
-
-        private bool IsCount()
-        {
-            if (this.Info.Select.Length != 1)
-                return true;
-
-            string select = this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower();
-            return select.StartsWith("count(");
         }
 
         private string GetTableNameIfNoAlias()

@@ -67,10 +67,10 @@ namespace UnityTest.Utils
         protected static Row NewRow(int id, string name)
         {
             return new Row(
-                new Cell(ID, id), 
-                new Cell(NAME, name), 
-                new Cell(NUMBER, id), 
-                new Cell(GUIDID, Guid.NewGuid().ToString()), 
+                new Cell(ID, id),
+                new Cell(NAME, name),
+                new Cell(NUMBER, id),
+                new Cell(GUIDID, Guid.NewGuid().ToString()),
                 new Cell(STATUS, 1)
             );
         }

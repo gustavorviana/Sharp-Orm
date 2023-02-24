@@ -31,6 +31,15 @@ namespace SharpOrm.Builder
 
         #region DML
 
+        public DbCommand Count()
+        {
+            this.Reset();
+            this.ConfigureCount();
+            return this.BuildCommand();
+        }
+
+        protected abstract void ConfigureCount();
+
         public DbCommand Select(bool configureWhereParams = true)
         {
             this.Reset();

@@ -125,5 +125,20 @@ namespace SharpOrm.Builder.DataTranslation
 
             return property.Name;
         }
+
+        public bool TryGetProperty(string name, out PropertyInfo property)
+        {
+            foreach (var item in this.Properties)
+            {
+                if (!item.Key.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                property = item.Value;
+                return true;
+            }
+
+            property = null;
+            return false;
+        }
     }
 }

@@ -3,8 +3,6 @@ using SharpOrm;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -12,15 +10,6 @@ namespace UnityTest
     [TestClass]
     public class QueryExceptionsTest : MysqlTableTest
     {
-        [TestMethod]
-        public void InvalidClassColumn()
-        {
-            using var q = new Query<InvalidTestClass>(Connection);
-            q.Insert(NewRow(1, "1").Cells);
-
-            Assert.ThrowsException<DatabaseException>(() => q.FirstOrDefault());
-        }
-
         [TestMethod]
         public void OnCreateQueryWithNull()
         {
@@ -48,14 +37,6 @@ namespace UnityTest
             Assert.ThrowsException<DatabaseException>(() => q.Where("column", "", "value"));
             Assert.ThrowsException<NullReferenceException>(() => q.Where("column", null, "value"));
             Assert.ThrowsException<DatabaseException>(() => q.Where("column", "None", "value"));
-        }
-
-        [Table(TABLE)]
-        private class InvalidTestClass
-        {
-            [Key]
-            public int MyId { get; set; }
-            public string InvalidName { get; set; }
         }
     }
 }

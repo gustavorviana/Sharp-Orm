@@ -51,6 +51,15 @@ namespace SharpOrm.Builder
             return this._queryInfo;
         }
 
+        internal bool IsCount()
+        {
+            if (this.Select.Length != 1)
+                return false;
+
+            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString().ToLower();
+            return select.StartsWith("count(");
+        }
+
         private class ReadonlyInfo : IReadonlyQueryInfo
         {
             private readonly QueryInfo info;

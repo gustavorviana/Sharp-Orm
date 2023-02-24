@@ -48,13 +48,29 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT LAST_INSERT_ID();");
         }
 
+        protected override void ConfigureCount()
+        {
+            this.ConfigureSelect(true, true);
+        }
+
         protected override void ConfigureSelect(bool configureWhereParams)
         {
+            this.ConfigureSelect(configureWhereParams, false);
+        }
+
+        private void ConfigureSelect(bool configureWhereParams, bool isCount)
+        {
             this.QueryBuilder.Append("SELECT ");
+
+            if (isCount)
+                this.QueryBuilder.Append("COUNT(");
             if (this.Query.Distinct)
                 this.QueryBuilder.Append("DISTINCT ");
 
             this.WriteSelectColumns();
+            if (isCount)
+                this.QueryBuilder.Append(')');
+
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();
@@ -125,5 +141,6 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(" WHERE {0}", where);
             where.Clear();
         }
+
     }
 }
