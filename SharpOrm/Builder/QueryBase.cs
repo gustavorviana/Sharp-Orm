@@ -113,14 +113,38 @@ namespace SharpOrm.Builder
             return this.WriteWhere($"{column1} {operation} {column2}", AND);
         }
 
+        /// <summary>
+        /// Between two others
+        /// </summary>
+        /// <param name="toCheck">Value to check.</param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <returns></returns>
         public QueryBase WhereBetween(object toCheck, object arg1, object arg2)
         {
             return this.WriteBetween(toCheck, arg1, arg2, false, AND);
         }
 
+        /// <summary>
+        /// Check if the value is not between two others.
+        /// </summary>
+        /// <param name="toCheck">Value to check.</param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <returns></returns>
         public QueryBase WhereNotBetween(object toCheck, object arg1, object arg2)
         {
             return this.WriteBetween(toCheck, arg1, arg2, true, AND);
+        }
+
+        public QueryBase Exists(Query query)
+        {
+            return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", AND);
+        }
+
+        public QueryBase NotExists(Query query)
+        {
+            return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", AND);
         }
 
         #endregion
@@ -203,6 +227,16 @@ namespace SharpOrm.Builder
         public QueryBase OrWhereNotBetween(object toCheck, object arg1, object arg2)
         {
             return this.WriteBetween(toCheck, arg1, arg2, true, OR);
+        }
+
+        public QueryBase OrExists(Query query)
+        {
+            return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", OR);
+        }
+
+        public QueryBase OrNotExists(Query query)
+        {
+            return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", OR);
         }
 
         #endregion
