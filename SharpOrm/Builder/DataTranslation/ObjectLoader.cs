@@ -99,6 +99,11 @@ namespace SharpOrm.Builder.DataTranslation
             }
         }
 
+        public bool HasConversor(string columnName)
+        {
+            return this.conversors.ContainsKey(columnName.ToLower());
+        }
+
         public void SetColumnValue(object owner, PropertyInfo property, object value)
         {
             string name = GetColumnName(property);
@@ -118,12 +123,22 @@ namespace SharpOrm.Builder.DataTranslation
             }
         }
 
-        public static string GetColumnName(PropertyInfo property)
+        public static bool IsNative(Type type)
+        {
+            return NativeSqlValueConversor.IsNative(type);
+        }
+
+        public static bool IsRequired(PropertyInfo property)
+        {
+            return property.GetCustomAttribute<RequiredAttribute>() != null;
+        }
+
+        public static string GetColumnName(PropertyInfo property, bool usePropertyNameIfEmpty = true)
         {
             if (property.GetCustomAttribute<ColumnAttribute>() is ColumnAttribute col)
                 return col.Name;
 
-            return property.Name;
+            return usePropertyNameIfEmpty ? property.Name : null;
         }
 
         public bool TryGetProperty(string name, out PropertyInfo property)

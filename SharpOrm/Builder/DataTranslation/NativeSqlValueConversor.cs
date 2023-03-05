@@ -5,18 +5,27 @@ namespace SharpOrm.Builder.DataTranslation
 {
     internal class NativeSqlValueConversor : ISqlTranslation
     {
-        private static readonly Type[] types = new Type[]
+        private static readonly Type[] nativeTypes = new Type[]
         {
             typeof(DBNull),
             typeof(string),
             typeof(DateTime),
             typeof(Guid),
             typeof(TimeSpan),
-            typeof(decimal),
-            typeof(Nullable<>)
+            typeof(decimal)
         };
 
-        public bool CanWork(Type type) => type == null || type.IsPrimitive || type.IsEnum || types.Contains(type);
+        public bool CanWork(Type type) => IsNative(type);
+
+        internal static bool IsNative(Type type)
+        {
+            return type == null || IsNullable(type) || type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type);
+        }
+
+        internal static bool IsNullable(Type type)
+        {
+            return type == typeof(Nullable<>) || type.Name == "Nullable`1";
+        }
 
         public object FromSqlValue(object value, Type expectedType)
         {
@@ -25,9 +34,6 @@ namespace SharpOrm.Builder.DataTranslation
 
             if (expectedType == typeof(Guid))
                 return Guid.Parse((string)value);
-
-            if (expectedType == typeof(DateTime?) && value is DBNull)
-                return DateTime.MinValue;
 
             if (expectedType.IsEnum)
                 return Enum.ToObject(expectedType, value);

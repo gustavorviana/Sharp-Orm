@@ -148,7 +148,7 @@ namespace UnityTest
             query.Insert(NewRow(Id, "Name1").Cells);
 
             query.Where(NICK, null);
-            bool changed = query.Update(new Cell(NICK, "Name2"));
+            bool changed = query.Update(new Cell(NICK, "Name2")) > 0;
             Assert.IsTrue(changed);
 
             using var query2 = NewQuery();

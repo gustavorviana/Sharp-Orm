@@ -83,7 +83,7 @@ namespace SharpOrm
         {
             ValidateTranslator();
 
-            using (var reader = query.ExecuteReader())
+            using (var reader = query.Execute())
                 while (reader.Read())
                     yield return Query.Translator.ParseFromReader<T>(reader);
         }
@@ -184,6 +184,16 @@ namespace SharpOrm
                 cells[i] = reader.GetCell(i);
 
             return new Row(cells);
+        }
+
+        public static int GetIndexOf(this DbDataReader reader, string name)
+        {
+            name = name.ToLower();
+            for (int i = 0; i < reader.FieldCount; i++)
+                if (reader.GetName(i).ToLower() == name)
+                    return i;
+
+            return -1;
         }
 
         #endregion

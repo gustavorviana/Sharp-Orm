@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -19,22 +21,53 @@ namespace SharpOrm.Builder.DataTranslation
 
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
         {
-            if (typeof(T) == typeof(Row))
-                return (T)(object)reader.GetRow();
+            return (T)this.ParseFromReader(typeof(T), reader, "");
+        }
 
-            T obj = new T();
+        private object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
+        {
+            if (typeToParse == typeof(Row))
+                return reader.GetRow();
+
+            object obj = Activator.CreateInstance(typeToParse);
             if (obj is Model model)
             {
                 model.LoadFromDataReader(reader);
                 return obj;
             }
 
-            var loader = this.GetLoader(typeof(T));
-            for (int i = 0; i < reader.FieldCount; i++)
-                if (loader.TryGetProperty(reader.GetName(i), out var property))
-                    loader.SetColumnValue(obj, property, reader[i]);
+            var loader = this.GetLoader(typeToParse);
+            foreach (var property in loader.Properties.Values)
+                this.LoadPropertyValue(obj, loader, reader, property, prefix);
 
             return obj;
+        }
+
+        private void LoadPropertyValue(object obj, ObjectLoader loader, DbDataReader reader, PropertyInfo property, string fullName)
+        {
+            string column = ObjectLoader.GetColumnName(property, false);
+            if (!string.IsNullOrEmpty(fullName) && string.IsNullOrEmpty(column))
+                fullName += "_" + property.Name;
+
+            bool isNative = ObjectLoader.IsNative(property.PropertyType);
+            string validName = new[] { column, fullName, property.Name }.FirstOrDefault(x => !string.IsNullOrEmpty(x));
+            int index = reader.GetIndexOf(validName);
+            if ((!isNative || index == -1) && !ObjectLoader.IsRequired(property))
+                return;
+
+            if (isNative || loader.HasConversor(column ?? property.Name))
+            {
+                if (index < 0)
+                    throw new KeyNotFoundException($"Could not find column in database with key {validName}, failed to load value for {property.DeclaringType.FullName}.{property.Name}.");
+
+                loader.SetColumnValue(obj, property, reader[index]);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(fullName))
+                fullName = column ?? property.Name;
+
+            property.SetValue(obj, this.ParseFromReader(property.PropertyType, reader, fullName));
         }
 
         public Row ToRow(object obj, Type type)

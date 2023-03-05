@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm
 {
@@ -128,7 +127,7 @@ namespace SharpOrm
         /// <param name="obj"></param>
         /// <param name="columns">If filled in, only inserted columns will be updated.</param>
         /// <returns></returns>
-        public bool Update(T obj, params string[] columns)
+        public int Update(T obj, params string[] columns)
         {
             if (columns.Length == 0)
                 return base.Update(this.Loader.GetCells(obj, true).ToArray());
@@ -401,43 +400,16 @@ namespace SharpOrm
 
         #endregion
 
-        #region DbCommand\DbDataReader
-
-        /// <summary>
-        /// Create DbCommand using connection and transaction.
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <returns></returns>
-        public DbCommand CreateCommand(StringBuilder builder)
-        {
-            return this.CreateCommand(builder.ToString());
-        }
-
-        /// <summary>
-        /// Create DbCommand using connection and transaction.
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <returns></returns>
-        public DbCommand CreateCommand(string sql)
-        {
-            var cmd = this.Connection.CreateCommand();
-            cmd.Transaction = Transaction;
-            cmd.CommandText = sql;
-            return cmd;
-        }
-
         /// <summary>
         /// Execute SQL Select command and return DataReader.
         /// </summary>
         /// <returns></returns>
-        public DbDataReader ExecuteReader()
+        public DbDataReader Execute()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Select())
                 return cmd.ExecuteReader();
         }
-
-        #endregion
 
         #region DML SQL commands
         /// <summary>
@@ -445,7 +417,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="cells"></param>
         /// <returns></returns>
-        public bool Update(params Cell[] cells)
+        public int Update(params Cell[] cells)
         {
             this.CheckIsSafeOperation();
 
@@ -454,7 +426,7 @@ namespace SharpOrm
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Update(cells))
-                return cmd.ExecuteNonQuery() > 0;
+                return cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -470,10 +442,7 @@ namespace SharpOrm
             using (DbCommand cmd = grammar.Insert(cells))
             {
                 object result = cmd.ExecuteScalar();
-                if (result is DBNull)
-                    return 0;
-
-                return Convert.ToInt32(result);
+                return result is DBNull ? 0 : Convert.ToInt32(result);
             }
         }
 
@@ -504,13 +473,13 @@ namespace SharpOrm
         /// Removes rows from database
         /// </summary>
         /// <returns></returns>
-        public bool Delete()
+        public int Delete()
         {
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Delete())
-                return cmd.ExecuteNonQuery() > 0;
+                return cmd.ExecuteNonQuery();
         }
 
         /// <summary>
