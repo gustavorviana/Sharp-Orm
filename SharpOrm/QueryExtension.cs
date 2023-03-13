@@ -1,8 +1,6 @@
 ﻿using SharpOrm.Builder;
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 
 namespace SharpOrm
 {
@@ -59,35 +57,6 @@ namespace SharpOrm
             return Pager<Row>.FromBuilder(query, peerPage, currentPage);
         }
 
-        /// <summary>
-        /// Returns all rows of the table
-        /// </summary>
-        /// <param name="query"></param>
-        /// <returns></returns>
-        public static Row[] ReadRows(this Query query)
-        {
-            return query.ReadResults<Row>().ToArray();
-        }
-
-        /// <summary>
-        /// Returns the first row of the table (if the table returns no value, null will be returned).
-        /// </summary>
-        /// <param name="query"></param>
-        /// <returns></returns>
-        public static Row FirstRow(this Query query)
-        {
-            return query.TempOnlyFirstSelection(query.ReadResults<Row>().FirstOrDefault);
-        }
-
-        internal static IEnumerable<T> ReadResults<T>(this Query query) where T : new()
-        {
-            ValidateTranslator();
-
-            using (var reader = query.Execute())
-                while (reader.Read())
-                    yield return Query.Translator.ParseFromReader<T>(reader);
-        }
-
         internal static void ValidateTranslator()
         {
             if (Query.Translator == null)
@@ -101,7 +70,7 @@ namespace SharpOrm
         /// <returns></returns>
         public static bool Any(this Query query)
         {
-            return query.Count() > 0;
+            return query.TempOnlyFirstSelection(query.Count) > 0;
         }
 
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()

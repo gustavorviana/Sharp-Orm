@@ -51,13 +51,18 @@ namespace SharpOrm
             return Pager<T>.FromBuilder(this, peerPage, currentPage);
         }
 
+        public IEnumerable<T> GetEnumerable()
+        {
+            return this.GetEnumerable<T>();
+        }
+
         /// <summary>
         /// Get first result.
         /// </summary>
         /// <returns></returns>
         public T FirstOrDefault()
         {
-            return this.TempOnlyFirstSelection(this.ReadResults<T>().FirstOrDefault);
+            return this.TempOnlyFirstSelection(this.GetEnumerable<T>().FirstOrDefault);
         }
 
         /// <summary>
@@ -100,7 +105,7 @@ namespace SharpOrm
         /// <returns></returns>
         public T[] Get()
         {
-            return this.ReadResults<T>().ToArray();
+            return this.GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -492,6 +497,34 @@ namespace SharpOrm
             using (DbCommand cmd = grammar.Count())
                 return Convert.ToInt64(cmd.ExecuteScalar());
         }
+
+        internal IEnumerable<T> GetEnumerable<T>() where T : new()
+        {
+            QueryExtension.ValidateTranslator();
+
+            using (var reader = this.Execute())
+                while (reader.Read())
+                    yield return Translator.ParseFromReader<T>(reader);
+        }
+
+        /// <summary>
+        /// Returns all rows of the table
+        /// </summary>
+        /// <returns></returns>
+        public Row[] ReadRows()
+        {
+            return this.GetEnumerable<Row>().ToArray();
+        }
+
+        /// <summary>
+        /// Returns the first row of the table (if the table returns no value, null will be returned).
+        /// </summary>
+        /// <returns></returns>
+        public Row FirstRow()
+        {
+            return this.TempOnlyFirstSelection(this.GetEnumerable<Row>().FirstOrDefault);
+        }
+
         #endregion
 
         #region Clone and safety
