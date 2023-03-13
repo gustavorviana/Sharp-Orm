@@ -53,7 +53,7 @@ namespace SharpOrm
 
         public IEnumerable<T> GetEnumerable()
         {
-            return this.GetEnumerable<T>();
+            return this.GetInternalEnumerable<T>();
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace SharpOrm
         /// <returns></returns>
         public T FirstOrDefault()
         {
-            return this.TempOnlyFirstSelection(this.GetEnumerable<T>().FirstOrDefault);
+            return this.TempOnlyFirstSelection(this.GetInternalEnumerable<T>().FirstOrDefault);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace SharpOrm
         /// <returns></returns>
         public T[] Get()
         {
-            return this.GetEnumerable<T>().ToArray();
+            return this.GetInternalEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -498,7 +498,7 @@ namespace SharpOrm
                 return Convert.ToInt64(cmd.ExecuteScalar());
         }
 
-        internal IEnumerable<T> GetEnumerable<T>() where T : new()
+        internal IEnumerable<T> GetInternalEnumerable<T>() where T : new()
         {
             QueryExtension.ValidateTranslator();
 
@@ -513,7 +513,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Row[] ReadRows()
         {
-            return this.GetEnumerable<Row>().ToArray();
+            return this.GetInternalEnumerable<Row>().ToArray();
         }
 
         /// <summary>
@@ -522,7 +522,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Row FirstRow()
         {
-            return this.TempOnlyFirstSelection(this.GetEnumerable<Row>().FirstOrDefault);
+            return this.TempOnlyFirstSelection(this.GetInternalEnumerable<Row>().FirstOrDefault);
         }
 
         #endregion
