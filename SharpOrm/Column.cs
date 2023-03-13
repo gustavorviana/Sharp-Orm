@@ -85,6 +85,10 @@ namespace SharpOrm
                    Name == other;
         }
 
+        public static bool operator ==(Column a, Column b) => a is Column && a.Equals(b);
+
+        public static bool operator !=(Column a, Column b) => a is Column && !a.Equals(b);
+
         #endregion
     }
 }

@@ -15,9 +15,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount()
         {
-            this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+            bool isOldOrDistinct = this.HasOffset || this.Query.Distinct || this.Config.UseOldPagination;
+            if (isOldOrDistinct)
+                this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+
             this.ConfigureSelect(true, true);
-            this.QueryBuilder.Append(") AS [count]");
+
+            if (isOldOrDistinct)
+                this.QueryBuilder.Append(") AS [count]");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -49,7 +54,7 @@ namespace SharpOrm.Builder
             if (HasLimit && !HasOffset && !this.Info.IsCount())
                 this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
-            this.WriteSelectColumns();
+            this.WriteSelectColumns(isCount);
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();
@@ -68,6 +73,14 @@ namespace SharpOrm.Builder
 
             if (HasLimit)
                 this.QueryBuilder.Append($" FETCH NEXT {this.Query.Limit} ROWS ONLY");
+        }
+
+        private void WriteSelectColumns(bool isCount)
+        {
+            if (isCount && !this.Query.Distinct && !this.Config.UseOldPagination && this.Info.Select.FirstOrDefault().ToExpression(this.Info.ToReadOnly()) == Column.All.ToExpression(this.Info.ToReadOnly()))
+                this.QueryBuilder.Append("COUNT(*)");
+            else
+                this.WriteSelectColumns();
         }
 
         private void WriteSelectWithOldPagination(bool configureWhereParams)

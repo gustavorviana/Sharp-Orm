@@ -160,7 +160,7 @@ namespace SharpOrm.Builder
         {
             this.Command.CommandText = this.QueryBuilder.ToString();
             this.Command.Transaction = this.Query.Transaction;
-            if (Grammar.LogQuery)
+            if (LogQuery)
                 System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
             return this.Command;
         }
