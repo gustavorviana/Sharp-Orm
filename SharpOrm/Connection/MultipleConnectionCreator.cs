@@ -9,6 +9,7 @@ namespace SharpOrm.Connection
 {
     public class MultipleConnectionCreator : ConnectionCreator
     {
+        private readonly object _lock = new object();
         private readonly List<DbConnection> connections = new List<DbConnection>();
         private readonly string _connectionString;
 
@@ -40,8 +41,10 @@ namespace SharpOrm.Connection
                 return;
 
             con.Disposed -= OnConnectionDisposed;
-            if (this.connections.Contains(con))
-                this.connections.Remove(con);
+
+            lock (this._lock)
+                if (this.connections.Contains(con))
+                    this.connections.Remove(con);
         }
 
         public override void SafeDisposeConnection(DbConnection connection)
