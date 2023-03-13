@@ -114,7 +114,7 @@ namespace SharpOrm
 
         protected virtual IEnumerable<T> GetItems()
         {
-            return this.query.GetInternalEnumerable<T>();
+            return this.query.GetEnumerable<T>();
         }
 
         #region IDisposable
