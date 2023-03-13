@@ -40,7 +40,8 @@ namespace SharpOrm.Connection
                 return;
 
             con.Disposed -= OnConnectionDisposed;
-            this.connections.Remove(con);
+            if (this.connections.Contains(con))
+                this.connections.Remove(con);
         }
 
         public override void SafeDisposeConnection(DbConnection connection)
