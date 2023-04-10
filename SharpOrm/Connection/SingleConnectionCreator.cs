@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Errors;
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -33,8 +34,15 @@ namespace SharpOrm.Connection
                 connection.Disposed += OnConnectionDisposed;
             }
 
-            if (this.connection.State == System.Data.ConnectionState.Closed)
-                this.connection.Open();
+            try
+            {
+                if (this.connection.State == System.Data.ConnectionState.Closed)
+                    this.connection.Open();
+            }
+            catch (Exception ex)
+            {
+                throw new DbConnectionException(ex);
+            }
 
             return this.connection;
         }

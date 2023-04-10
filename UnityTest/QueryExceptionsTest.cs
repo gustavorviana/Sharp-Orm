@@ -14,7 +14,7 @@ namespace UnityTest
         public void OnCreateQueryWithNull()
         {
             ConnectionCreator.Default = null;
-            Assert.ThrowsException<NullReferenceException>(() => new Query("SomeTable"));
+            Assert.ThrowsException<ArgumentNullException>(() => new Query("SomeTable"));
         }
 
         [TestMethod]

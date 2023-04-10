@@ -18,7 +18,7 @@ namespace UnityTest.Utils
 
         protected static Query NewQuery(string table, string alias = "")
         {
-            return new Query(Connection, table, alias);
+            return new Query(Connection, $"{table} {alias}");
         }
     }
 }

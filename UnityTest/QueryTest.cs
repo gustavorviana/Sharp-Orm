@@ -10,7 +10,7 @@ namespace UnityTest
         [TestMethod]
         public void Clone()
         {
-            var original = new Query("table", "alias")
+            var original = new Query("table alias")
             {
                 Limit = 1,
                 Offset = 3,

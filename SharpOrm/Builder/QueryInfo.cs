@@ -19,8 +19,11 @@ namespace SharpOrm.Builder
 
         public IQueryConfig Config { get; }
 
-        public string From { get; set; }
-        public string Alias { get; set; }
+        public TableName Table { get; set; }
+
+        public string From => this.Table.Name;
+
+        public string Alias => this.Table.Alias;
 
         public QueryInfo(IQueryConfig config)
         {

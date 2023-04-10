@@ -70,7 +70,7 @@ namespace SharpOrm
         /// <returns></returns>
         public static bool Any(this Query query)
         {
-            return query.TempOnlyFirstSelection(query.Count) > 0;
+            return query.Count() > 0;
         }
 
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
@@ -99,32 +99,43 @@ namespace SharpOrm
             }
         }
 
+        #region Join
+
+        public static Query InnerJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
+        {
+            return query.Join(table, leftColumn, operation, rightColumn, "INNER");
+        }
+
+        public static Query InnerJoin(this Query query, string table, string leftColumn, string rightColumn)
+        {
+            return query.Join(table, leftColumn, "=", rightColumn, "INNER");
+        }
+
+        public static Query LeftJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
+        {
+            return query.Join(table, leftColumn, operation, rightColumn, "LEFT");
+        }
+
+        public static Query LeftJoin(this Query query, string table, string leftColumn, string rightColumn)
+        {
+            return query.Join(table, leftColumn, "=", rightColumn, "LEFT");
+        }
+
+        public static Query RightJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
+        {
+            return query.Join(table, leftColumn, operation, rightColumn, "RIGHT");
+        }
+
+        public static Query RightJoin(this Query query, string table, string leftColumn, string rightColumn)
+        {
+            return query.Join(table, leftColumn, "=", rightColumn, "RIGHT");
+        }
+
+        #endregion
+
         #endregion
 
         #region DbDataReader
-
-        /// <summary>
-        /// Get value by column name.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="reader"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static T GetByName<T>(this DbDataReader reader, string name)
-        {
-            return (T)reader.GetByName(name);
-        }
-
-        /// <summary>
-        /// Get value by column name.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static object GetByName(this DbDataReader reader, string name)
-        {
-            return reader.GetValue(reader.GetOrdinal(name));
-        }
 
         /// <summary>
         /// Get Cell by column index.
