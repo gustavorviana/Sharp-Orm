@@ -1,21 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SharpOrm
 {
     public class SqlExpression : IEquatable<SqlExpression>
     {
-        protected string value;
+        private readonly string value;
+        public object[] Parameters { get; protected set; }
 
         protected SqlExpression()
         {
 
         }
 
-        public SqlExpression(string value)
+        public SqlExpression(string value, params object[] arguments)
         {
+            if (value.Count(c => c == '?') != arguments.Length)
+                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+
             this.value = value;
+            this.Parameters = arguments;
         }
 
         public override string ToString()
@@ -31,7 +37,8 @@ namespace SharpOrm
         public bool Equals(SqlExpression other)
         {
             return other != null &&
-                   value == other.value;
+                   value == other.value &&
+                   Parameters == other.Parameters;
         }
 
         public override int GetHashCode()

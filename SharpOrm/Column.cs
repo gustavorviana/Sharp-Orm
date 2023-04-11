@@ -8,7 +8,7 @@ namespace SharpOrm
     public class Column : IExpressionConversion, IEquatable<Column>, IEquatable<string>
     {
         #region Fields\Properties
-        private readonly SqlExpression expression;
+        protected readonly SqlExpression expression;
 
         public string Name { get; protected set; }
         public string Alias { get; protected set; }
@@ -37,7 +37,12 @@ namespace SharpOrm
             this.expression = expression;
         }
 
-        public virtual SqlExpression ToExpression(IReadonlyQueryInfo info)
+        public SqlExpression ToExpression(IReadonlyQueryInfo info)
+        {
+            return this.ToExpression(info, true);
+        }
+
+        public virtual SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
             if (this.expression != null)
                 return this.expression;
@@ -48,7 +53,7 @@ namespace SharpOrm
 
             builder.Append(info.Config.ApplyNomenclature(this.Name));
 
-            if (!string.IsNullOrEmpty(this.Alias))
+            if (alias && !string.IsNullOrEmpty(this.Alias))
                 builder.AppendFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
 
             return (SqlExpression)builder;

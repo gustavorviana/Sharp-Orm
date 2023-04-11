@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(SqlExpression expression)
         {
-            return this.WriteWhere((string)expression, AND);
+            return this.WriteWhere(ToSql(expression), AND);
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(SqlExpression expression)
         {
-            return this.WriteWhere((string)expression, OR);
+            return this.WriteWhere(this.ToSql(expression), OR);
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace SharpOrm.Builder
                 return this.Info.Config.ApplyNomenclature(strColumn);
 
             if (arg is SqlExpression exp)
-                return exp.ToString();
+                return ToSql(exp);
 
             if (arg is IExpressionConversion expConvert)
                 return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
@@ -276,6 +276,14 @@ namespace SharpOrm.Builder
                 return this.RegisterParameterValue(arg);
 
             throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+        }
+
+        private string ToSql(SqlExpression expr)
+        {
+            foreach (var param in expr.Parameters)
+                this.Info.WhereObjs.Add(param);
+
+            return expr.ToString();
         }
 
         internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
@@ -308,13 +316,13 @@ namespace SharpOrm.Builder
             if (column is string strColumn)
                 return this.Info.Config.ApplyNomenclature(strColumn);
 
-            if (column is SqlExpression exp)
+            if (column is IExpressionConversion expConvert)
+                column = expConvert.ToExpression(this.Info.ToReadOnly());
+
+            if (column is SqlExpression exp && exp.Parameters.Length == 0)
                 return exp.ToString();
 
-            if (column is IExpressionConversion expConvert)
-                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
-
-            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+            throw new NotSupportedException("The column type is not supported.");
         }
 
         /// <summary>
@@ -327,11 +335,11 @@ namespace SharpOrm.Builder
             if (value == null)
                 return "NULL";
 
-            if (value is SqlExpression raw)
-                return raw.ToString();
-
             if (value is IExpressionConversion expConvert)
-                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
+                value = expConvert.ToExpression(this.Info.ToReadOnly());
+
+            if (value is SqlExpression raw)
+                return ToSql(raw);
 
             return this.RegisterParameterValue(value);
         }
