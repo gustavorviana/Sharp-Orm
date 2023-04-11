@@ -22,7 +22,7 @@ namespace SharpOrm.Builder
             return this.Add(exp.ToString()).AddParams(exp.Parameters);
         }
 
-        public QueryConstructor Add(string raw)
+        public QueryConstructor Add(string raw = " ")
         {
             this.query.Append(raw);
 

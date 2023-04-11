@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using System;
 using System.Data.Common;
 using UnityTest.Utils;
 
@@ -333,6 +334,31 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` ORDER BY `Name` Asc", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void ColumnCase()
+        {
+            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? END";
+            using var query = NewQuery().OrderBy("Name");
+            Assert.ThrowsException<InvalidOperationException>(() => new ColumnCase().ToExpression(query.Info.ToReadOnly()));
+
+            var c = new ColumnCase("Column", "Alias").When(1, "Yes").When(0, "No");
+
+            Assert.AreEqual(SQL, c.ToExpression(query.Info.ToReadOnly(), false).ToString());
+            Assert.AreEqual($"{SQL} AS `Alias`", c.ToExpression(query.Info.ToReadOnly()).ToString());
+        }
+
+        [TestMethod]
+        public void ColumnCaseExpression()
+        {
+            const string SQL = "CASE WHEN `Column` >= ? THEN ? WHEN `Column` BETWEEN 11 AND 12 THEN ? END";
+            using var query = NewQuery().OrderBy("Name");
+            Assert.ThrowsException<InvalidOperationException>(() => new ColumnCase().ToExpression(query.Info.ToReadOnly()));
+
+            var c = new ColumnCase().When("Column", ">=", "10", "No").When((SqlExpression)"`Column` BETWEEN 11 AND 12", "InRange");
+
+            Assert.AreEqual(SQL, c.ToExpression(query.Info.ToReadOnly(), false).ToString());
         }
 
         private void AreEqualsParameter(DbParameter param, string name, object value)
