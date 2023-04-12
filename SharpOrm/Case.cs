@@ -36,6 +36,17 @@ namespace SharpOrm
         #endregion
 
         #region When
+
+        public Case WhenNull(string column, object then)
+        {
+            return this.When(column, "IS", null, then);
+        }
+
+        public Case When(string column, object value, object then)
+        {
+            return this.When(column, "=", value, then);
+        }
+
         public Case When(string column, string operation, object value, object then)
         {
             this.nodes.Add(new CaseNode
@@ -75,7 +86,7 @@ namespace SharpOrm
             foreach (var node in this.nodes)
                 node.WriteTo(query, info);
 
-            this.WriteElse(query);
+            this.WriteElse(query, info);
             query.Add("END");
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
@@ -94,9 +105,23 @@ namespace SharpOrm
             query.Add();
         }
 
-        private void WriteElse(QueryConstructor query)
+        private void WriteElse(QueryConstructor query, IReadonlyQueryInfo info)
         {
-            query.Add("ELSE ? ").AddParams(this.elseValue);
+            query.Add("ELSE ");
+
+            if (this.elseValue is ISqlExpressible exp) AddExpression(query, info, exp);
+            else query.Add("? ").AddParams(this.elseValue);
+        }
+
+        private void AddExpression(QueryConstructor query, IReadonlyQueryInfo info, ISqlExpressible exp)
+        {
+            var sql = exp is ISqlExpressibleAlias expAlias ? expAlias.ToExpression(info) : exp.ToExpression(info);
+
+            query.Add(sql.ToString());
+
+            foreach (var param in sql.Parameters)
+                if (param is ISqlExpressible paramExp) AddExpression(query, info, paramExp);
+                else query.AddParams(param);
         }
 
         private class CaseNode

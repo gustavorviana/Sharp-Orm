@@ -3,8 +3,8 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.1.5.1</AssemblyVersion>
-		<FileVersion>1.1.5.1</FileVersion>
+		<AssemblyVersion>1.1.5.2</AssemblyVersion>
+		<FileVersion>1.1.5.2</FileVersion>
 		<VersionPrefix>1.1.51</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
@@ -19,6 +19,7 @@
 		<Company />
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
+		<Copyright>$(Authors)</Copyright>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

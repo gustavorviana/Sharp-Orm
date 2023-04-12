@@ -21,7 +21,7 @@ namespace SharpOrm.Builder
 
         public QueryConstructor Add(QueryConstructor constructor)
         {
-            if (constructor == null) 
+            if (constructor == null)
                 throw new ArgumentNullException(nameof(constructor));
 
             if (this == constructor)

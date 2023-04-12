@@ -21,6 +21,19 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectCase()
+        {
+            using var query = NewQuery();
+            using var g = new MysqlGrammar(query);
+            query.Select(new Case((string)null, "Col").WhenNull("Column", "No value").Else((Column)"Column + ' ' + Column2"));
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS @v1 THEN @v2 ELSE Column + ' ' + Column2END AS `Col` FROM `TestTable`", cmd.CommandText);
+            IsDbNullParam(cmd.Parameters[0], "@v1");
+            AreEqualsParameter(cmd.Parameters[1], "@v2", "No value");
+        }
+
+        [TestMethod]
         public void WhereIn()
         {
             using var query = NewQuery();
@@ -428,6 +441,12 @@ namespace UnityTest
         {
             Assert.AreEqual(name, param.ParameterName);
             Assert.AreEqual(value, param.Value);
+        }
+
+        private static void IsDbNullParam(DbParameter param, string name)
+        {
+            Assert.AreEqual(name, param.ParameterName);
+            Assert.IsTrue(param.Value is DBNull);
         }
     }
 }

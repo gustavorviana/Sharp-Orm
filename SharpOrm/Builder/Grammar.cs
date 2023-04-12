@@ -16,6 +16,7 @@ namespace SharpOrm.Builder
         private bool _disposed = false;
         private int whereCount;
         private int valuesCount;
+        private int selectValueCount;
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
         protected Query Query { get; }
@@ -197,7 +198,25 @@ namespace SharpOrm.Builder
 
         protected virtual void WriteSelectColumns()
         {
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
+            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(WriteSelect)));
+        }
+
+        protected string WriteSelect(Column column)
+        {
+            var exp = column.ToExpression(this.Info.ToReadOnly());
+            
+            return new StringBuilder()
+                .AppendReplaced(
+                    exp.ToString(),
+                    '?',
+                    c => RegisterSelectParam(exp.Parameters[c - 1])
+                ).ToString();
+        }
+
+        private string RegisterSelectParam(object value)
+        {
+            this.valuesCount++;
+            return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
         }
 
         protected virtual void WriteGroupBy()
