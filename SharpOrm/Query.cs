@@ -570,7 +570,7 @@ namespace SharpOrm
         /// </summary>
         protected void CheckIsSafeOperation()
         {
-            if (this.Info.Config.OnlySafeModifications && this.Info.Where.Length == 0)
+            if (this.Info.Config.OnlySafeModifications && this.Info.Where.Parameters.Count == 0)
                 throw new UnsafeDbOperation();
         }
 

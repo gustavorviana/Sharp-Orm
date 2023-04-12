@@ -87,9 +87,9 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Where.Length > 0)
+            if (query.Info.Where.Parameters.Count > 0)
             {
-                this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
+                this.Info.Where.AddParams(query.Info.Where.Parameters);
                 return this.WriteWhere($"({query.Info.Where})", AND);
             }
 
@@ -193,9 +193,9 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Where.Length > 0)
+            if (query.Info.Where.Parameters.Count > 0)
             {
-                this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
+                query.Info.Where.AddParams(query.Info.Where.Parameters);
                 return this.WriteWhere($"({query.Info.Where})", OR);
             }
 
@@ -280,8 +280,7 @@ namespace SharpOrm.Builder
 
         private string ToSql(SqlExpression expr)
         {
-            foreach (var param in expr.Parameters)
-                this.Info.WhereObjs.Add(param);
+            this.Info.Where.AddParams(expr.Parameters);
 
             return expr.ToString();
         }
@@ -346,10 +345,10 @@ namespace SharpOrm.Builder
 
         internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
         {
-            if (this.Info.Where.Length != 0)
-                this.Info.Where.Append($" {type} ");
+            if (!this.Info.Where.Empty)
+                this.Info.Where.Add($" {type} ");
 
-            this.Info.Where.Append(rawSqlExpression);
+            this.Info.Where.Add(rawSqlExpression);
             return this;
         }
 
@@ -358,15 +357,15 @@ namespace SharpOrm.Builder
             if (value is Query query)
                 return this.RegisterQuery(query);
 
-            if (value is Enum) this.Info.WhereObjs.Add(Convert.ToInt32(value));
-            else this.Info.WhereObjs.Add(value);
+            if (value is Enum) this.Info.Where.AddParams(Convert.ToInt32(value));
+            else this.Info.Where.AddParams(value);
 
             return "?";
         }
 
         private string RegisterQuery(Query query)
         {
-            this.Info.WhereObjs.AddRange(query.Info.WhereObjs);
+            this.Info.Where.AddParams(query.Info.Where.Parameters);
 
             return $"({query})";
         }

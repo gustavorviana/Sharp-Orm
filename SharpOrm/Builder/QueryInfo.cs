@@ -8,8 +8,7 @@ namespace SharpOrm.Builder
     {
         private IReadonlyQueryInfo _queryInfo;
 
-        public StringBuilder Where { get; } = new StringBuilder();
-        public List<object> WhereObjs { get; } = new List<object>();
+        public QueryConstructor Where { get; } = new QueryConstructor();
 
         public Column[] GroupsBy { get; set; } = new Column[0];
         public List<JoinQuery> Joins { get; } = new List<JoinQuery>();
@@ -35,15 +34,11 @@ namespace SharpOrm.Builder
             this.Where.Clear();
             this.Joins.Clear();
 
-            this.WhereObjs.Clear();
-
-            this.Where.Append(info.Where);
-            this.GroupsBy = (Column[])info.GroupsBy.Clone();
+            this.Where.Add(info.Where);
             this.Joins.AddRange(info.Joins);
+            this.GroupsBy = (Column[])info.GroupsBy.Clone();
             this.Orders = (ColumnOrder[])info.Orders.Clone();
             this.Select = (Column[])info.Select.Clone();
-
-            this.WhereObjs.AddRange(info.WhereObjs);
         }
 
         public IReadonlyQueryInfo ToReadOnly()

@@ -10,11 +10,26 @@ namespace SharpOrm.Builder
         private readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();
 
-        public IReadOnlyCollection<object> Parameters { get; }
+        public bool Empty => this.query.Length == 0;
+
+        public ReadOnlyCollection<object> Parameters { get; }
 
         public QueryConstructor()
         {
             this.Parameters = new ReadOnlyCollection<object>(parameters);
+        }
+
+        public QueryConstructor Add(QueryConstructor constructor)
+        {
+            if (constructor == null) 
+                throw new ArgumentNullException(nameof(constructor));
+
+            if (this == constructor)
+                throw new InvalidOperationException();
+
+            this.Add(constructor.query.ToString());
+            this.AddParams(constructor.Parameters);
+            return this;
         }
 
         public QueryConstructor Add(SqlExpression exp)
@@ -31,8 +46,14 @@ namespace SharpOrm.Builder
 
         public QueryConstructor AddParams(params object[] @params)
         {
-            foreach (var param in @params)
-                this.parameters.Add(param);
+            this.parameters.AddRange(@params);
+
+            return this;
+        }
+
+        public QueryConstructor AddParams(IEnumerable<object> @params)
+        {
+            this.parameters.AddRange(@params);
 
             return this;
         }
@@ -43,11 +64,24 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        public QueryConstructor Clear()
+        {
+            this.query.Clear();
+            this.parameters.Clear();
+            return this;
+        }
+
+        public SqlExpression ToExpression(IReadonlyQueryInfo info)
+        {
+            return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
+        }
+
         public override string ToString()
         {
             return query.ToString();
         }
 
+        #region IDisposable
         ~QueryConstructor()
         {
             ((IDisposable)this).Dispose();
@@ -59,10 +93,6 @@ namespace SharpOrm.Builder
             this.parameters.Clear();
             GC.SuppressFinalize(this);
         }
-
-        public SqlExpression ToExpression(IReadonlyQueryInfo info)
-        {
-            return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
-        }
+        #endregion
     }
 }

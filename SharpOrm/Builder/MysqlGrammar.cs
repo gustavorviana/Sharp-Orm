@@ -11,14 +11,16 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureInsertQuery(Query query, string[] columnNames)
         {
-            this.QueryBuilder.AppendFormat(
-                "INSERT INTO {0} ({1}) {2}",
-                this.GetTableName(false),
-                string.Join(",", columnNames),
-                query
-            );
-
-            this.QueryBuilder.Replace('?', (count) => this.RegisterClausuleParameter(query.Info.WhereObjs[count - 1]));
+            this.QueryBuilder
+                .AppendFormat(
+                    "INSERT INTO {0} ({1}) ",
+                    this.GetTableName(false),
+                    string.Join(",", columnNames)
+                ).AppendReplaced(
+                    query.ToString(),
+                    '?',
+                    (count) => this.RegisterClausuleParameter(query.Info.Where.Parameters[count - 1])
+                );
         }
 
         protected override void ConfigureBulkInsert(Row[] rows)
@@ -130,17 +132,22 @@ namespace SharpOrm.Builder
 
         protected void WriteWhere(bool configureParameters)
         {
-            if (this.Info.Where.Length == 0)
+            if (this.Info.Where.Empty)
                 return;
 
-            var where = new StringBuilder(this.Info.Where.ToString());
+            if (!configureParameters)
+            {
+                this.QueryBuilder.AppendFormat(" WHERE {0}", this.Info.Where);
+                return;
+            }
 
-            if (configureParameters)
-                where.Replace('?', (count) => this.RegisterClausuleParameter(this.Info.WhereObjs[count - 1]));
-
-            this.QueryBuilder.AppendFormat(" WHERE {0}", where);
-            where.Clear();
+            this.QueryBuilder
+                .Append(" WHERE ")
+                .AppendReplaced(
+                    this.Info.Where.ToString(),
+                    '?',
+                    (count) => this.RegisterClausuleParameter(this.Info.Where.Parameters[count - 1])
+                );
         }
-
     }
 }
