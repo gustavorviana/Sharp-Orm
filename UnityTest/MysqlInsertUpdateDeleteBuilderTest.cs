@@ -27,6 +27,16 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void InsertWIthRaw()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.Insert(new Cell[] { new Cell(ID, (SqlExpression)"1") });
+            Assert.AreEqual("INSERT INTO `TestTable` (`id`) VALUES (1); SELECT LAST_INSERT_ID();", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void InsertExtendedClass()
         {
             using var q = NewQuery();
@@ -100,14 +110,14 @@ namespace UnityTest
             var caseVal = new Case().When("alias", "IS", null, CaseMsg).Else(ElseMsg);
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", caseVal), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = CASE WHEN `alias` IS @c1 THEN @c2 ELSE @c3 END, `value` = @v2, `status` = @v3", cmd.CommandText);
+            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = CASE WHEN `alias` IS @v2 THEN @v3 ELSE @v4 END, `value` = @v5, `status` = @v6", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
-            IsDbNullParam(cmd.Parameters[1], "@c1");
-            AreEqualsParameter(cmd.Parameters[2], "@c2", CaseMsg);
-            AreEqualsParameter(cmd.Parameters[3], "@c3", ElseMsg);
-            IsDbNullParam(cmd.Parameters[4], "@v2");
-            AreEqualsParameter(cmd.Parameters[5], "@v3", (int)Status.Success);
+            IsDbNullParam(cmd.Parameters[1], "@v2");
+            AreEqualsParameter(cmd.Parameters[2], "@v3", CaseMsg);
+            AreEqualsParameter(cmd.Parameters[3], "@v4", ElseMsg);
+            IsDbNullParam(cmd.Parameters[4], "@v5");
+            AreEqualsParameter(cmd.Parameters[5], "@v6", (int)Status.Success);
         }
 
         [TestMethod]

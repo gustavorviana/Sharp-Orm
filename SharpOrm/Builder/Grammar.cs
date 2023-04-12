@@ -112,17 +112,20 @@ namespace SharpOrm.Builder
             return string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
         }
 
-        protected string RegisterInsertValue(Cell cell)
+        protected string RegisterCellValue(Cell cell)
         {
-            if (!(cell.Value is ISqlExpressible expression))
+            object value = cell.Value;
+            if (value is ISqlExpressible expression)
+                value = this.ToExpression(expression);
+
+            if (!(value is SqlExpression exp))
                 return RegisterValueParam(cell.Value);
 
-            var exp = this.ToExpression(expression);
             return new StringBuilder()
                 .AppendReplaced(
                     exp.ToString(),
                     '?',
-                    c => RegisterClausuleParameter(exp.Parameters[c - 1])
+                    c => RegisterValueParam(exp.Parameters[c - 1])
                 ).ToString();
         }
 
@@ -134,7 +137,7 @@ namespace SharpOrm.Builder
             return expression.ToExpression(this.Info.ToReadOnly());
         }
 
-        protected string RegisterValueParam(object value)
+        private string RegisterValueParam(object value)
         {
             this.valuesCount++;
             return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;

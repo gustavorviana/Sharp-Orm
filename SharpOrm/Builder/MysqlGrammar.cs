@@ -28,7 +28,7 @@ namespace SharpOrm.Builder
             this.ConfigureInsert(rows[0].Cells, false);
 
             for (int i = 1; i < rows.Length; i++)
-                this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[i].Cells.Select(c => this.RegisterValueParam(c.Value))));
+                this.QueryBuilder.AppendFormat(", ({0})", string.Join(", ", rows[i].Cells.Select(c => this.RegisterCellValue(c))));
         }
 
         protected override void ConfigureDelete()
@@ -43,7 +43,7 @@ namespace SharpOrm.Builder
                 "INSERT INTO {0} ({1}) VALUES ({2})",
                 this.GetTableName(false),
                 string.Join(", ", cells.Select(c => this.ApplyTableColumnConfig(c.Name))),
-                string.Join(", ", cells.Select(c => this.RegisterValueParam(c.Value)))
+                string.Join(", ", cells.Select(c => this.RegisterCellValue(c)))
             );
 
             if (getGeneratedId)
@@ -125,7 +125,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",
                 this.GetTableName(false),
-                string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {this.RegisterInsertValue(c)}"))
+                string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {this.RegisterCellValue(c)}"))
             );
             this.WriteWhere(true);
         }
