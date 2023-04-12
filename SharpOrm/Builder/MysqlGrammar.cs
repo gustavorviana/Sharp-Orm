@@ -120,7 +120,7 @@ namespace SharpOrm.Builder
             this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.Info, true)} ON {join.Info.Where}");
         }
 
-        protected override void ConfigureUpdate(ICell[] cells)
+        protected override void ConfigureUpdate(Cell[] cells)
         {
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",

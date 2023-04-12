@@ -61,7 +61,9 @@ namespace UnityTest.Utils
 
         protected static Query NewQuery(string table, string alias = "")
         {
+#pragma warning disable CS0612 // Type or member is obsolete
             return new Query(Connection, config, table, alias);
+#pragma warning restore CS0612 // Type or member is obsolete
         }
 
         protected static Row NewRow(int id, string name)

@@ -7,12 +7,10 @@ using System.Text;
 
 namespace SharpOrm
 {
-    public class Case : Column, ICell
+    public class Case : Column
     {
         private readonly List<CaseNode> nodes = new List<CaseNode>();
         private object elseValue;
-
-        object ICell.Value => this;
 
         #region Constructor
         public Case()

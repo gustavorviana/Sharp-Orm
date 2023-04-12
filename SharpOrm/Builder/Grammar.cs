@@ -77,14 +77,14 @@ namespace SharpOrm.Builder
 
         protected abstract void ConfigureBulkInsert(Row[] rows);
 
-        public DbCommand Update(ICell[] cells)
+        public DbCommand Update(Cell[] cells)
         {
             this.Reset();
             this.ConfigureUpdate(cells);
             return this.BuildCommand();
         }
 
-        protected abstract void ConfigureUpdate(ICell[] cells);
+        protected abstract void ConfigureUpdate(Cell[] cells);
 
         public DbCommand Delete()
         {
@@ -112,7 +112,7 @@ namespace SharpOrm.Builder
             return string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
         }
 
-        protected string RegisterInsertValue(ICell cell)
+        protected string RegisterInsertValue(Cell cell)
         {
             if (!(cell.Value is ISqlExpressible expression))
                 return RegisterValueParam(cell.Value);
