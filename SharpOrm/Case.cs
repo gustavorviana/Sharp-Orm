@@ -1,41 +1,44 @@
 ﻿using SharpOrm.Builder;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
 namespace SharpOrm
 {
-    public class ColumnCase : Column
+    public class Case : Column, ICell
     {
         private readonly List<CaseNode> nodes = new List<CaseNode>();
         private object elseValue;
 
+        object ICell.Value => this;
+
         #region Constructor
-        public ColumnCase()
+        public Case()
         {
         }
 
-        public ColumnCase(string columnName) : base(columnName)
+        public Case(string columnName) : base(columnName)
         {
         }
 
-        public ColumnCase(string columnName, string alias) : base(columnName, alias)
+        public Case(string columnName, string alias) : base(columnName, alias)
         {
         }
 
-        public ColumnCase(SqlExpression expression) : base(expression)
+        public Case(SqlExpression expression) : base(expression)
         {
         }
 
-        public ColumnCase(SqlExpression expression, string alias) : base(expression)
+        public Case(SqlExpression expression, string alias) : base(expression)
         {
             this.Alias = alias;
         }
         #endregion
 
         #region When
-        public ColumnCase When(string column, string operation, object value, object then)
+        public Case When(string column, string operation, object value, object then)
         {
             this.nodes.Add(new CaseNode
             {
@@ -46,7 +49,7 @@ namespace SharpOrm
             return this;
         }
 
-        public ColumnCase When(object expected, object then)
+        public Case When(object expected, object then)
         {
             this.nodes.Add(new CaseNode
             {
@@ -74,6 +77,7 @@ namespace SharpOrm
             foreach (var node in this.nodes)
                 node.WriteTo(query, info);
 
+            this.WriteElse(query);
             query.Add("END");
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
@@ -90,6 +94,11 @@ namespace SharpOrm
             else if (!string.IsNullOrEmpty(this.Name)) query.Add($" {info.Config.ApplyNomenclature(this.Name)}");
 
             query.Add();
+        }
+
+        private void WriteElse(QueryConstructor query)
+        {
+            query.Add("ELSE ? ").AddParams(this.elseValue);
         }
 
         private class CaseNode

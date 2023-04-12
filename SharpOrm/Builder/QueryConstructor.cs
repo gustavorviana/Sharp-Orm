@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class QueryConstructor : IDisposable, IExpressionConversion
+    public class QueryConstructor : IDisposable, ISqlExpressible
     {
         private readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();

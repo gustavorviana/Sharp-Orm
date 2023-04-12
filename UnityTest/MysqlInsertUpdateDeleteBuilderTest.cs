@@ -90,6 +90,27 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void UpdateCaseValue()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+            const string CaseMsg = "Without alias";
+            const string ElseMsg = "With alias";
+
+            var caseVal = new Case().When("alias", "IS", null, CaseMsg).Else(ElseMsg);
+            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", caseVal), new Cell("value", null), new Cell("status", Status.Success));
+            using var cmd = g.Update(row.Cells);
+            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = CASE WHEN `alias` IS @c1 THEN @c2 ELSE @c3 END, `value` = @v2, `status` = @v3", cmd.CommandText);
+
+            AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
+            IsDbNullParam(cmd.Parameters[1], "@c1");
+            AreEqualsParameter(cmd.Parameters[2], "@c2", CaseMsg);
+            AreEqualsParameter(cmd.Parameters[3], "@c3", ElseMsg);
+            IsDbNullParam(cmd.Parameters[4], "@v2");
+            AreEqualsParameter(cmd.Parameters[5], "@v3", (int)Status.Success);
+        }
+
+        [TestMethod]
         public void UpdateWhere()
         {
             using var q = NewQuery();

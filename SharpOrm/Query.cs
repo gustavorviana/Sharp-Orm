@@ -431,7 +431,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="cells"></param>
         /// <returns></returns>
-        public int Update(params Cell[] cells)
+        public int Update(params ICell[] cells)
         {
             this.CheckIsSafeOperation();
 

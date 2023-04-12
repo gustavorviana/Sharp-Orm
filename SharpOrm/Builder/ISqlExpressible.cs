@@ -1,6 +1,6 @@
 ﻿namespace SharpOrm.Builder
 {
-    public interface IExpressionConversion
+    public interface ISqlExpressible
     {
         SqlExpression ToExpression(IReadonlyQueryInfo info);
     }

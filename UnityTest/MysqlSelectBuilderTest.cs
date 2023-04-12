@@ -339,11 +339,11 @@ namespace UnityTest
         [TestMethod]
         public void ColumnCase()
         {
-            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? END";
+            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? ELSE ? END";
             using var query = NewQuery().OrderBy("Name");
-            Assert.ThrowsException<InvalidOperationException>(() => new ColumnCase().ToExpression(query.Info.ToReadOnly()));
+            Assert.ThrowsException<InvalidOperationException>(() => new Case().ToExpression(query.Info.ToReadOnly()));
 
-            var c = new ColumnCase("Column", "Alias").When(1, "Yes").When(0, "No");
+            var c = new Case("Column", "Alias").When(1, "Yes").When(0, "No");
 
             Assert.AreEqual(SQL, c.ToExpression(query.Info.ToReadOnly(), false).ToString());
             Assert.AreEqual($"{SQL} AS `Alias`", c.ToExpression(query.Info.ToReadOnly()).ToString());
@@ -352,13 +352,16 @@ namespace UnityTest
         [TestMethod]
         public void ColumnCaseExpression()
         {
-            const string SQL = "CASE WHEN `Column` >= ? THEN ? WHEN `Column` BETWEEN 11 AND 12 THEN ? END";
+            const string SQL = "CASE WHEN `Column` >= ? THEN ? WHEN `Column` BETWEEN 11 AND 12 THEN ? ELSE ? END";
             using var query = NewQuery().OrderBy("Name");
-            Assert.ThrowsException<InvalidOperationException>(() => new ColumnCase().ToExpression(query.Info.ToReadOnly()));
+            Assert.ThrowsException<InvalidOperationException>(() => new Case().ToExpression(query.Info.ToReadOnly()));
 
-            var c = new ColumnCase().When("Column", ">=", "10", "No").When((SqlExpression)"`Column` BETWEEN 11 AND 12", "InRange");
-
-            Assert.AreEqual(SQL, c.ToExpression(query.Info.ToReadOnly(), false).ToString());
+            var c = new Case().When("Column", ">=", "10", "No").When((SqlExpression)"`Column` BETWEEN 11 AND 12", "InRange");
+            var exp = c.ToExpression(query.Info.ToReadOnly(), false);
+            Assert.AreEqual(SQL, exp.ToString());
+            Assert.AreEqual("10", exp.Parameters[0]);
+            Assert.AreEqual("No", exp.Parameters[1]);
+            Assert.AreEqual("InRange", exp.Parameters[2]);
         }
 
         private void AreEqualsParameter(DbParameter param, string name, object value)

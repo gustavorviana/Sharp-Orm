@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SharpOrm
 {
-    public class Cell : ICloneable, IEquatable<Cell>
+    public class Cell : ICell, ICloneable, IEquatable<Cell>
     {
         public string Name { get; }
 

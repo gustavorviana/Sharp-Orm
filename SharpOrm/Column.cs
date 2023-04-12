@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpOrm
 {
-    public class Column : IExpressionConversion, IEquatable<Column>, IEquatable<string>
+    public class Column : ISqlExpressibleAlias, IEquatable<Column>, IEquatable<string>
     {
         #region Fields\Properties
         protected readonly SqlExpression expression;

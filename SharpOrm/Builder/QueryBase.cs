@@ -269,7 +269,7 @@ namespace SharpOrm.Builder
             if (arg is SqlExpression exp)
                 return ToSql(exp);
 
-            if (arg is IExpressionConversion expConvert)
+            if (arg is ISqlExpressible expConvert)
                 return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
 
             if (arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive)
@@ -315,7 +315,7 @@ namespace SharpOrm.Builder
             if (column is string strColumn)
                 return this.Info.Config.ApplyNomenclature(strColumn);
 
-            if (column is IExpressionConversion expConvert)
+            if (column is ISqlExpressible expConvert)
                 column = expConvert.ToExpression(this.Info.ToReadOnly());
 
             if (column is SqlExpression exp && exp.Parameters.Length == 0)
@@ -334,7 +334,7 @@ namespace SharpOrm.Builder
             if (value == null)
                 return "NULL";
 
-            if (value is IExpressionConversion expConvert)
+            if (value is ISqlExpressible expConvert)
                 value = expConvert.ToExpression(this.Info.ToReadOnly());
 
             if (value is SqlExpression raw)
