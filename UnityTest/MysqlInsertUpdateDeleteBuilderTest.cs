@@ -18,6 +18,8 @@ namespace UnityTest
             using var q = NewQuery();
             using var g = new MysqlGrammar(q);
 
+            q.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
+
             using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
             Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`, `value`) VALUES (@v1, @v2, @v3); SELECT LAST_INSERT_ID();", cmd.CommandText);
 

@@ -1,6 +1,9 @@
 ﻿using SharpOrm.Builder;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 
 namespace SharpOrm
 {
@@ -26,6 +29,27 @@ namespace SharpOrm
         {
             return qBase.WriteWhere(column1, operation, column2, "AND");
         }
+
+        public static QueryBase WhereIn<T>(this QueryBase qBase, string column, params T[] items)
+        {
+            return qBase.Where(column, "IN", items);
+        }
+
+        public static QueryBase WhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
+        {
+            return qBase.Where(column, "NOT IN", items);
+        }
+
+        public static QueryBase WhereInColumn(this QueryBase qBase, object value, params string[] columns)
+        {
+            return WhereInColumn(qBase, false, false, value, columns);
+        }
+
+        public static QueryBase WhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
+        {
+            return WhereInColumn(qBase, true, false, value, columns);
+        }
+
         #endregion
 
         #region Or
@@ -48,7 +72,37 @@ namespace SharpOrm
         {
             return qBase.WriteWhere(column1, operation, column2, "OR");
         }
+
+        public static QueryBase OrWhereIn<T>(this QueryBase qBase, string column, params T[] items)
+        {
+            return qBase.OrWhere(column, "IN", items);
+        }
+
+        public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
+        {
+            return qBase.OrWhere(column, "NOT IN", items);
+        }
+
+        public static QueryBase OrWhereInColumn(this QueryBase qBase, object value, params string[] columns)
+        {
+            return WhereInColumn(qBase, false, true, value, columns);
+        }
+
+        public static QueryBase OrWhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
+        {
+            return WhereInColumn(qBase, true, true, value, columns);
+        }
+
         #endregion
+
+        private static QueryBase WhereInColumn(QueryBase qBase, bool not, bool or, object value, IEnumerable<string> columns)
+        {
+            string @in = not ? "NOT IN" : "IN";
+            columns = columns.Select(qBase.Info.Config.ApplyNomenclature);
+            var exp = new SqlExpression($"? {@in} ({string.Join(",", columns)})", value);
+
+            return or ? qBase.OrWhere(exp) : qBase.Where(exp);
+        }
 
         #region Query
 

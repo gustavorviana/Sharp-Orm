@@ -21,6 +21,66 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void WhereIn()
+        {
+            using var query = NewQuery();
+            query.WhereIn("Status", 1, 2, 3).OrWhereIn("Status2", 3, 4, 5);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` IN (@c1, @c2, @c3) OR `Status2` IN (@c4, @c5, @c6)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[1], "@c2", 2);
+            AreEqualsParameter(cmd.Parameters[2], "@c3", 3);
+            AreEqualsParameter(cmd.Parameters[3], "@c4", 3);
+            AreEqualsParameter(cmd.Parameters[4], "@c5", 4);
+            AreEqualsParameter(cmd.Parameters[5], "@c6", 5);
+        }
+
+        [TestMethod]
+        public void WhereNotIn()
+        {
+            using var query = NewQuery();
+            query.WhereNotIn("Status", 1, 2, 3).OrWhereNotIn("Status2", 3, 4, 5);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` NOT IN (@c1, @c2, @c3) OR `Status2` NOT IN (@c4, @c5, @c6)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[1], "@c2", 2);
+            AreEqualsParameter(cmd.Parameters[2], "@c3", 3);
+            AreEqualsParameter(cmd.Parameters[3], "@c4", 3);
+            AreEqualsParameter(cmd.Parameters[4], "@c5", 4);
+            AreEqualsParameter(cmd.Parameters[5], "@c6", 5);
+        }
+
+        [TestMethod]
+        public void WhereInColumn()
+        {
+            using var query = NewQuery();
+            query.WhereInColumn(1, "Status", "Status2").OrWhereInColumn(4, "Status3", "Status4");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE @c1 IN (`Status`,`Status2`) OR @c2 IN (`Status3`,`Status4`)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[1], "@c2", 4);
+        }
+
+        [TestMethod]
+        public void WhereNotInColumn()
+        {
+            using var query = NewQuery();
+            query.WhereNotInColumn(1, "Status", "Status2").OrWhereNotInColumn(4, "Status3", "Status4");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE @c1 NOT IN (`Status`,`Status2`) OR @c2 NOT IN (`Status3`,`Status4`)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            AreEqualsParameter(cmd.Parameters[1], "@c2", 4);
+        }
+
+        [TestMethod]
         public void SelectWhereNull()
         {
             using var query = NewQuery();
