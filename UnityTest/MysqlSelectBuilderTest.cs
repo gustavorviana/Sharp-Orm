@@ -25,12 +25,25 @@ namespace UnityTest
         {
             using var query = NewQuery();
             using var g = new MysqlGrammar(query);
-            query.Select(new Case((string)null, "Col").WhenNull("Column", "No value").Else((Column)"Column + ' ' + Column2"));
+            query.Select(new Case(null, "Col").WhenNull("Column", "No value").When("Column2", 2, null).Else((Column)"Column + ' ' + Column2"));
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT CASE WHEN `Column` IS @v1 THEN @v2 ELSE Column + ' ' + Column2END AS `Col` FROM `TestTable`", cmd.CommandText);
-            IsDbNullParam(cmd.Parameters[0], "@v1");
-            AreEqualsParameter(cmd.Parameters[1], "@v2", "No value");
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS NULL THEN @v1 WHEN `Column2` = @v2 THEN @v3 ELSE Column + ' ' + Column2 END AS `Col` FROM `TestTable`", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@v1", "No value");
+            AreEqualsParameter(cmd.Parameters[1], "@v2", 2);
+            AreEqualsParameter(cmd.Parameters[2], "@v3", null);
+        }
+
+        [TestMethod]
+        public void SelectCase2()
+        {
+            using var query = NewQuery();
+            using var g = new MysqlGrammar(query);
+            query.Select(new Case(null, "Col").When((Column)"`Column` IS NOT NULL", 1).Else((Column)"`Column` + ' ' + `Column2`"));
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS NOT NULL THEN @v1 ELSE `Column` + ' ' + `Column2` END AS `Col` FROM `TestTable`", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
         }
 
         [TestMethod]
@@ -97,12 +110,11 @@ namespace UnityTest
         public void SelectWhereNull()
         {
             using var query = NewQuery();
-            query.Where("Column", null);
-
+            query.Where("Column", null).OrWhereNull("Column2");
             using var g = new MysqlGrammar(query);
-
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL", cmd.CommandText);
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL OR `Column2` IS NULL", cmd.CommandText);
         }
 
         [TestMethod]
@@ -164,22 +176,22 @@ namespace UnityTest
         private void TestListParameters(DbParameterCollection collection, int[] items)
         {
             for (int i = 0; i < items.Length; i++)
-                this.AreEqualsParameter(collection[i], $"@c{i + 1}", items[i]);
+                AreEqualsParameter(collection[i], $"@c{i + 1}", items[i]);
         }
 
         [TestMethod]
         public void SelectWhereInQuery()
         {
             using var query = NewQuery();
-            query.Where("id", "IN", this.CreateQueryForWhere());
+            query.Where("id", "IN", CreateQueryForWhere());
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (SELECT `Id` FROM `TestIds` WHERE `Type` = @c1)", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "Unity");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "Unity");
         }
 
-        private Query CreateQueryForWhere()
+        private static Query CreateQueryForWhere()
         {
             return (Query)new Query(Connection, "TestIds").Select("Id").Where("Type", "=", "Unity");
         }
@@ -233,7 +245,7 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
 
         [TestMethod]
@@ -245,7 +257,7 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 LIMIT 10", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
 
         [TestMethod]
@@ -257,7 +269,7 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`column` = @c1)", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
         }
 
         [TestMethod]
@@ -270,8 +282,8 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = @c1 AND (`column2` = @c2)", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "value1");
-            this.AreEqualsParameter(cmd.Parameters[1], "@c2", "value2");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "value1");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "value2");
         }
 
         [TestMethod]
@@ -284,8 +296,8 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 OR `column` = @c2", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "teste");
-            this.AreEqualsParameter(cmd.Parameters[1], "@c2", "value");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "teste");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "value");
         }
 
         [TestMethod]
@@ -320,7 +332,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE UPPER(column1) = @c1", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", "ABC");
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "ABC");
         }
 
         [TestMethod]
@@ -412,9 +424,8 @@ namespace UnityTest
         [TestMethod]
         public void ColumnCase()
         {
-            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? ELSE ? END";
+            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? END";
             using var query = NewQuery().OrderBy("Name");
-            Assert.ThrowsException<InvalidOperationException>(() => new Case().ToExpression(query.Info.ToReadOnly()));
 
             var c = new Case("Column", "Alias").When(1, "Yes").When(0, "No");
 
@@ -423,11 +434,17 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void ColumnCaseExpression()
+        public void CaseEmptyCase()
         {
-            const string SQL = "CASE WHEN `Column` >= ? THEN ? WHEN `Column` BETWEEN 11 AND 12 THEN ? ELSE ? END";
             using var query = NewQuery().OrderBy("Name");
             Assert.ThrowsException<InvalidOperationException>(() => new Case().ToExpression(query.Info.ToReadOnly()));
+        }
+
+        [TestMethod]
+        public void ColumnCaseExpression()
+        {
+            const string SQL = "CASE WHEN `Column` >= ? THEN ? WHEN `Column` BETWEEN 11 AND 12 THEN ? END";
+            using var query = NewQuery().OrderBy("Name");
 
             var c = new Case().When("Column", ">=", "10", "No").When((SqlExpression)"`Column` BETWEEN 11 AND 12", "InRange");
             var exp = c.ToExpression(query.Info.ToReadOnly(), false);
@@ -437,16 +454,11 @@ namespace UnityTest
             Assert.AreEqual("InRange", exp.Parameters[2]);
         }
 
-        private void AreEqualsParameter(DbParameter param, string name, object value)
+        private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);
-            Assert.AreEqual(value, param.Value);
-        }
-
-        private static void IsDbNullParam(DbParameter param, string name)
-        {
-            Assert.AreEqual(name, param.ParameterName);
-            Assert.IsTrue(param.Value is DBNull);
+            if (value == null || value is DBNull) Assert.IsTrue(param.Value is DBNull);
+            else Assert.AreEqual(value, param.Value);
         }
     }
 }

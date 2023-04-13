@@ -11,7 +11,7 @@ namespace SharpOrm
         protected readonly SqlExpression expression;
 
         public string Name { get; protected set; }
-        public string Alias { get; protected set; }
+        public string Alias { get; set; }
 
         public static Column All => new Column(new SqlExpression("*"));
         public static Column CountAll => new Column(new SqlExpression("COUNT(*)"));
@@ -20,6 +20,13 @@ namespace SharpOrm
         protected Column()
         {
 
+        }
+
+        protected Column(Column column)
+        {
+            this.expression = column.expression;
+            this.Name = column.Name;
+            this.Alias = column.Alias;
         }
 
         public Column(string name, string alias) : this(name)

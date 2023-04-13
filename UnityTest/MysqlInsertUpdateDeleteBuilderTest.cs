@@ -179,7 +179,8 @@ namespace UnityTest
         private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);
-            Assert.AreEqual(value, param.Value);
+            if (value == null || value is DBNull) Assert.IsTrue(param.Value is DBNull);
+            else Assert.AreEqual(value, param.Value);
         }
 
         private static void IsDbNullParam(DbParameter param, string name)

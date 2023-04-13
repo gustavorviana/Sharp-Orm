@@ -19,7 +19,7 @@ namespace SharpOrm.Builder
         #endregion
 
         public bool Disposed => this._disposed;
-        protected virtual string[] AvailableOperations { get; } = {
+        private static string[] AvailableOperations { get; } = {
             "=",
             ">",
             "<",
@@ -44,6 +44,11 @@ namespace SharpOrm.Builder
 
         #region Where
 
+        public QueryBase Where(ISqlExpressible expressible)
+        {
+            return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
+        }
+
         /// <summary>
         /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "AND" is inserted before the new clause)
         /// </summary>
@@ -63,6 +68,16 @@ namespace SharpOrm.Builder
         public QueryBase Where(string column, object value)
         {
             return this.Where(column, value == null ? "IS" : "=", value);
+        }
+
+        public QueryBase WhereNull(string column)
+        {
+            return this.Where(column, "IS", null);
+        }
+
+        public QueryBase WhereNotNull(string column)
+        {
+            return this.Where(column, "IS NOT", null);
         }
 
         /// <summary>
@@ -105,7 +120,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase WhereColumn(string column1, string operation, string column2)
         {
-            this.CheckIsAvailableOperation(operation);
+            CheckIsAvailableOperation(operation);
 
             column1 = this.Info.Config.ApplyNomenclature(column1);
             column2 = this.Info.Config.ApplyNomenclature(column2);
@@ -150,6 +165,11 @@ namespace SharpOrm.Builder
         #endregion
 
         #region OrWhere
+        public QueryBase OrWhere(ISqlExpressible expressible)
+        {
+            return this.OrWhere(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
+        }
+
         /// <summary>
         /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "OR" is inserted before the new clause)
         /// </summary>
@@ -169,6 +189,16 @@ namespace SharpOrm.Builder
         public QueryBase OrWhere(string column, object value)
         {
             return this.OrWhere(column, value == null ? "IS" : "=", value);
+        }
+
+        public QueryBase OrWhereNull(string column)
+        {
+            return this.OrWhere(column, "IS", null);
+        }
+
+        public QueryBase OrWhereNotNull(string column)
+        {
+            return this.OrWhere(column, "IS NOT", null);
         }
 
         /// <summary>
@@ -211,7 +241,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhereColumn(string column1, string operation, string column2)
         {
-            this.CheckIsAvailableOperation(operation);
+            CheckIsAvailableOperation(operation);
 
             column1 = this.Info.Config.ApplyNomenclature(column1);
             column2 = this.Info.Config.ApplyNomenclature(column2);
@@ -270,7 +300,7 @@ namespace SharpOrm.Builder
                 return ToSql(exp);
 
             if (arg is ISqlExpressible expConvert)
-                return expConvert.ToExpression(this.Info.ToReadOnly()).ToString();
+                return expConvert.ToSafeExpression(this.Info.ToReadOnly(), false).ToString();
 
             if (arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive)
                 return this.RegisterParameterValue(arg);
@@ -290,7 +320,7 @@ namespace SharpOrm.Builder
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
 
-            this.CheckIsAvailableOperation(operation);
+            CheckIsAvailableOperation(operation);
 
             return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
         }
@@ -299,9 +329,9 @@ namespace SharpOrm.Builder
         /// Checks whether the inserted operation has been recorded in "this.AvailableOperations".
         /// </summary>
         /// <param name="operation"></param>
-        protected void CheckIsAvailableOperation(string operation)
+        internal protected static void CheckIsAvailableOperation(string operation)
         {
-            if (!this.AvailableOperations.Contains(operation.ToLower()))
+            if (!AvailableOperations.Contains(operation.ToLower()))
                 throw new DatabaseException("Invalid SQL operation: " + operation);
         }
 

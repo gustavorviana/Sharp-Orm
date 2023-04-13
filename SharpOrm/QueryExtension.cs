@@ -104,6 +104,14 @@ namespace SharpOrm
             return or ? qBase.OrWhere(exp) : qBase.Where(exp);
         }
 
+        internal static SqlExpression ToSafeExpression(this ISqlExpressible exp, IReadonlyQueryInfo info, bool allowAlias)
+        {
+            if (exp is ISqlExpressibleAlias iAliasExp)
+                return iAliasExp.ToExpression(info, allowAlias);
+
+            return exp.ToExpression(info);
+        }
+
         #region Query
 
         public static Pager<Row> PaginateRows(this Query query, int peerPage, int currentPage)

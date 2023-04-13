@@ -16,7 +16,6 @@ namespace SharpOrm.Builder
         private bool _disposed = false;
         private int whereCount;
         private int valuesCount;
-        private int selectValueCount;
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
         protected Query Query { get; }
@@ -117,7 +116,7 @@ namespace SharpOrm.Builder
         {
             object value = cell.Value;
             if (value is ISqlExpressible expression)
-                value = this.ToExpression(expression);
+                value = expression.ToSafeExpression(this.Info.ToReadOnly(), false);
 
             if (!(value is SqlExpression exp))
                 return RegisterValueParam(cell.Value);
@@ -128,14 +127,6 @@ namespace SharpOrm.Builder
                     '?',
                     c => RegisterValueParam(exp.Parameters[c - 1])
                 ).ToString();
-        }
-
-        private SqlExpression ToExpression(ISqlExpressible expression)
-        {
-            if (expression is ISqlExpressibleAlias alias)
-                return alias.ToExpression(this.Info.ToReadOnly(), false);
-
-            return expression.ToExpression(this.Info.ToReadOnly());
         }
 
         private string RegisterValueParam(object value)

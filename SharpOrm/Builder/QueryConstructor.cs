@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data.Common;
+using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -19,6 +21,25 @@ namespace SharpOrm.Builder
             this.Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
+        public QueryConstructor SafeAddParam(IReadonlyQueryInfo info, object val, bool addParamChar = true, bool allowAlias = true)
+        {
+            if (val is SqlExpression exp)
+                return this.Add(exp, info, allowAlias);
+
+            if (val is ISqlExpressible iExp)
+                return AddExpression(info, iExp, allowAlias);
+
+            if (addParamChar)
+                this.Add("?");
+
+            return this.AddParams(val);
+        }
+
+        public QueryConstructor AddExpression(IReadonlyQueryInfo info, ISqlExpressible exp, bool allowAlias = true)
+        {
+            return this.Add(exp.ToSafeExpression(info, allowAlias), info, allowAlias);
+        }
+
         public QueryConstructor Add(QueryConstructor constructor)
         {
             if (constructor == null)
@@ -35,6 +56,31 @@ namespace SharpOrm.Builder
         public QueryConstructor Add(SqlExpression exp)
         {
             return this.Add(exp.ToString()).AddParams(exp.Parameters);
+        }
+
+        public QueryConstructor Add(SqlExpression exp, IReadonlyQueryInfo info, bool allowAlias)
+        {
+            StringBuilder builder = new StringBuilder(exp.ToString());
+            int[] paramCharIndexes = builder.GetIndexesOfParamsChar().ToArray();
+
+            for (int i = paramCharIndexes.Length - 1; i >= 0; i--)
+                if (exp.Parameters[i] is ISqlExpressible iExp)
+                    this.AddParams(this.SafeAdd(paramCharIndexes[i], info, builder, iExp, allowAlias));
+                else
+                    this.SafeAddParam(info, exp.Parameters[i], false);
+
+            this.Add(builder.ToString());
+            return this;
+        }
+
+        private IEnumerable<object> SafeAdd(int argIndex, IReadonlyQueryInfo info, StringBuilder builder, ISqlExpressible exp, bool allowAlias)
+        {
+            builder.Remove(argIndex, 1);
+            var sqlExp = exp.ToSafeExpression(info, allowAlias);
+
+            builder.Insert(argIndex, sqlExp.ToString());
+            foreach (var item in sqlExp.Parameters)
+                yield return item;
         }
 
         public QueryConstructor Add(string raw = " ")

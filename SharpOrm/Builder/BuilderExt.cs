@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -38,6 +39,13 @@ namespace SharpOrm.Builder
             }
 
             return builder;
+        }
+
+        internal static IEnumerable<int> GetIndexesOfParamsChar(this StringBuilder builder)
+        {
+            for (int i = 0; i < builder.Length; i++)
+                if (builder[i] == '?')
+                    yield return i;
         }
     }
 }
