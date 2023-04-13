@@ -50,7 +50,7 @@ namespace UnityTest
         public void WhereIn()
         {
             using var query = NewQuery();
-            query.WhereIn("Status", 1, 2, 3).OrWhereIn("Status2", 3, 4, 5);
+            query.WhereIn("Status", 1, 2, 3).OrWhereIn("Status2", "");
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();

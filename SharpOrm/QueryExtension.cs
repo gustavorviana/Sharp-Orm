@@ -40,6 +40,16 @@ namespace SharpOrm
             return qBase.Where(column, "NOT IN", items);
         }
 
+        public static QueryBase WhereIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
+        {
+            return qBase.Where(column, "IN", items);
+        }
+
+        public static QueryBase WhereNotIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
+        {
+            return qBase.Where(column, "NOT IN", items);
+        }
+
         public static QueryBase WhereInColumn(this QueryBase qBase, object value, params string[] columns)
         {
             return WhereInColumn(qBase, false, false, value, columns);
@@ -79,6 +89,16 @@ namespace SharpOrm
         }
 
         public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
+        {
+            return qBase.OrWhere(column, "NOT IN", items);
+        }
+
+        public static QueryBase OrWhereIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
+        {
+            return qBase.OrWhere(column, "IN", items);
+        }
+
+        public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
         {
             return qBase.OrWhere(column, "NOT IN", items);
         }
