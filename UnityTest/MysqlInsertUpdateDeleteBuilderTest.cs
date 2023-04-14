@@ -21,11 +21,10 @@ namespace UnityTest
             q.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`, `value`) VALUES (@v1, @v2, @v3); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`, `value`) VALUES (1, @v1, @v2); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
-            AreEqualsParameter(cmd.Parameters[1], "@v2", "T1");
-            IsDbNullParam(cmd.Parameters[2], "@v3");
+            AreEqualsParameter(cmd.Parameters[0], "@v1", "T1");
+            IsDbNullParam(cmd.Parameters[1], "@v2");
         }
 
         [TestMethod]
@@ -49,22 +48,19 @@ namespace UnityTest
                 CreatedAt = DateTime.Now,
                 CustomId = Guid.NewGuid(),
                 Name = "Name",
-                Number = 1,
+                Number = 2.1M,
                 ExtendedProp = "Nothing",
                 CustomStatus = Status.Success,
                 Nick = null
             };
 
             using var cmd = g.Insert(Query.Translator.ToRow(table, typeof(TestTable)).Cells);
-            Assert.AreEqual("INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (@v1, @v2, @v3, @v4, @v5, @v6, @v7); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (1, @v1, @v2, @v3, 2.1, @v4, 1); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", table.Id);
-            AreEqualsParameter(cmd.Parameters[1], "@v2", table.Name);
-            IsDbNullParam(cmd.Parameters[2], "@v3");
-            AreEqualsParameter(cmd.Parameters[3], "@v4", table.CreatedAt);
-            AreEqualsParameter(cmd.Parameters[4], "@v5", table.Number);
-            AreEqualsParameter(cmd.Parameters[5], "@v6", table.CustomId.ToString());
-            AreEqualsParameter(cmd.Parameters[6], "@v7", (int)table.CustomStatus);
+            AreEqualsParameter(cmd.Parameters[0], "@v1", table.Name);
+            IsDbNullParam(cmd.Parameters[1], "@v2");
+            AreEqualsParameter(cmd.Parameters[2], "@v3", table.CreatedAt);
+            AreEqualsParameter(cmd.Parameters[3], "@v4", table.CustomId.ToString());
         }
 
         [TestMethod]
@@ -75,7 +71,7 @@ namespace UnityTest
             var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
 
             using var cmd = g.BulkInsert(rows);
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (@v1, @v2), (@v3, @v4), (@v5, @v6), (@v7, @v8), (@v9, @v10)", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (1, @v1), (2, @v2), (3, @v3), (4, @v4), (5, @v5)", cmd.CommandText);
 
             TestBulkInsertParams(cmd, rows);
         }
@@ -190,9 +186,7 @@ namespace UnityTest
 
             for (int i = 0; i < rows.Length; i++)
             {
-                var row = rows[i];
-                AreEqualsParameter(dbParams[i * 2], $"@v{(i * 2) + 1}", row[ID]);
-                AreEqualsParameter(dbParams[(i * 2) + 1], $"@v{(i * 2) + 2}", row[NAME]);
+                AreEqualsParameter(dbParams[i], $"@v{i + 1}", rows[i][NAME]);
             }
         }
     }

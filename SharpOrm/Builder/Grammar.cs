@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -104,20 +105,13 @@ namespace SharpOrm.Builder
                 value = bvalue ? 1 : 0;
 
             if (this.IsNumericNonDecimal(value))
-                return value.ToString();
+                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
 
             if (value is ICollection col)
                 return string.Format("({0})", this.RegisterCollectionParameters(col));
 
             this.whereCount++;
             return this.RegisterParameter($"@c{this.whereCount}", value).ParameterName;
-        }
-
-        private bool IsNumericNonDecimal(object value)
-        {
-            return value is int || value is long || value is byte || value is sbyte 
-                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64 
-                || value is UInt64;
         }
 
         protected string RegisterCollectionParameters(ICollection collection)
@@ -148,8 +142,33 @@ namespace SharpOrm.Builder
 
         private string RegisterValueParam(object value)
         {
+            if (value is bool bvalue)
+                value = bvalue ? 1 : 0;
+
+            if (this.IsNumericNonDecimal(value))
+                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
+
+            if (value is ICollection col)
+                return string.Format("({0})", this.RegisterValueCollectionParameters(col));
+
             this.valuesCount++;
             return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
+        }
+
+        protected bool IsNumericNonDecimal(object value)
+        {
+            return value is int || value is long || value is byte || value is sbyte
+                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64
+                || value is UInt64 || value is decimal || value is float || value is double;
+        }
+
+        protected string RegisterValueCollectionParameters(ICollection collection)
+        {
+            string items = string.Join(", ", collection.Cast<object>().Select(c => this.RegisterValueParam(c)));
+            if (string.IsNullOrEmpty(items))
+                throw new InvalidOperationException("Cannot use an empty list in the query.");
+
+            return items;
         }
 
         protected virtual DbParameter RegisterParameter(string name, object value)
