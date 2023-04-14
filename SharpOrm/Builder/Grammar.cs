@@ -100,6 +100,12 @@ namespace SharpOrm.Builder
         #region Parameters
         protected string RegisterClausuleParameter(object value)
         {
+            if (value is bool bvalue)
+                value = bvalue ? 1 : 0;
+
+            if (this.IsNumericNonDecimal(value))
+                return value.ToString();
+
             if (value is ICollection col)
                 return string.Format("({0})", this.RegisterCollectionParameters(col));
 
@@ -107,9 +113,20 @@ namespace SharpOrm.Builder
             return this.RegisterParameter($"@c{this.whereCount}", value).ParameterName;
         }
 
+        private bool IsNumericNonDecimal(object value)
+        {
+            return value is int || value is long || value is byte || value is sbyte 
+                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64 
+                || value is UInt64;
+        }
+
         protected string RegisterCollectionParameters(ICollection collection)
         {
-            return string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
+            string items = string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
+            if (string.IsNullOrEmpty(items))
+                throw new InvalidOperationException("Cannot use an empty list in the query.");
+
+            return items;
         }
 
         protected string RegisterCellValue(Cell cell)
@@ -195,7 +212,7 @@ namespace SharpOrm.Builder
         protected string WriteSelect(Column column)
         {
             var exp = column.ToExpression(this.Info.ToReadOnly());
-            
+
             return new StringBuilder()
                 .AppendReplaced(
                     exp.ToString(),

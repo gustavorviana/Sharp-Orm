@@ -278,7 +278,7 @@ namespace SharpOrm.Builder
             StringBuilder builder = new StringBuilder();
             builder.Append(ParseBetweenArgument(toCheck));
             if (isNot)
-                builder.Append(" NOT ");
+                builder.Append(" NOT");
 
             builder.Append(" BETWEEN ");
             builder.Append(ParseBetweenArgument(arg1));

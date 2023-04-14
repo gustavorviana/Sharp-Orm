@@ -47,6 +47,21 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void WhereBetween()
+        {
+            DateTime now = DateTime.Now;
+            DateTime past = now.AddDays(-1);
+            using var query = NewQuery();
+            query.OrWhereNotBetween("Date", past, now);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Date` NOT BETWEEN @c1 AND @c2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", past);
+            AreEqualsParameter(cmd.Parameters[1], "@c2", now);
+        }
+
+        [TestMethod]
         public void WhereIn()
         {
             using var query = NewQuery();
@@ -54,13 +69,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` IN (@c1, @c2, @c3) OR `Status2` IN (@c4, @c5, @c6)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
-            AreEqualsParameter(cmd.Parameters[1], "@c2", 2);
-            AreEqualsParameter(cmd.Parameters[2], "@c3", 3);
-            AreEqualsParameter(cmd.Parameters[3], "@c4", 3);
-            AreEqualsParameter(cmd.Parameters[4], "@c5", 4);
-            AreEqualsParameter(cmd.Parameters[5], "@c6", 5);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` IN (1, 2, 3) OR `Status2` IN (@c1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "");
         }
 
         [TestMethod]
@@ -71,13 +81,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` NOT IN (@c1, @c2, @c3) OR `Status2` NOT IN (@c4, @c5, @c6)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
-            AreEqualsParameter(cmd.Parameters[1], "@c2", 2);
-            AreEqualsParameter(cmd.Parameters[2], "@c3", 3);
-            AreEqualsParameter(cmd.Parameters[3], "@c4", 3);
-            AreEqualsParameter(cmd.Parameters[4], "@c5", 4);
-            AreEqualsParameter(cmd.Parameters[5], "@c6", 5);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` NOT IN (1, 2, 3) OR `Status2` NOT IN (3, 4, 5)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -88,9 +92,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE @c1 IN (`Status`,`Status2`) OR @c2 IN (`Status3`,`Status4`)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
-            AreEqualsParameter(cmd.Parameters[1], "@c2", 4);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 IN (`Status`,`Status2`) OR 4 IN (`Status3`,`Status4`)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -101,9 +103,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE @c1 NOT IN (`Status`,`Status2`) OR @c2 NOT IN (`Status3`,`Status4`)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
-            AreEqualsParameter(cmd.Parameters[1], "@c2", 4);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 NOT IN (`Status`,`Status2`) OR 4 NOT IN (`Status3`,`Status4`)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -169,8 +169,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (@c1, @c2, @c3, @c4, @c5, @c6, @c7, @c8, @c9)", cmd.CommandText);
-            this.TestListParameters(cmd.Parameters, list);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (1, 2, 3, 4, 5, 6, 7, 8, 9)", cmd.CommandText);
         }
 
         private void TestListParameters(DbParameterCollection collection, int[] items)

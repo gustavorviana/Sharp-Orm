@@ -49,8 +49,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = @c1) [TestTable] WHERE [grammar_rownum] > 1", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = 1) [TestTable] WHERE [grammar_rownum] > 1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -62,8 +61,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = @c1 ORDER BY [Id] Asc OFFSET 1 ROWS", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS", cmd.CommandText);
         }
 
         [TestMethod]
@@ -77,8 +75,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = @c1 ORDER BY [Id] Asc OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", cmd.CommandText);
         }
 
         [TestMethod]
@@ -90,8 +87,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT TOP (1) * FROM [TestTable] WHERE [Id] = @c1 ORDER BY [Id] Asc", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT TOP (1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc", cmd.CommandText);
         }
 
         [TestMethod]
@@ -113,8 +109,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = @c1", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -141,8 +136,7 @@ namespace UnityTest
             using var g = config.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] WHERE [id] = @c1) [TestTable] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 1);
+            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] WHERE [id] = 1) [TestTable] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
         [TestMethod]
@@ -168,8 +162,7 @@ namespace UnityTest
 
             using var g = config.NewGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] WHERE [Id] != @c1 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 10);
+            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
         [TestMethod]
@@ -183,8 +176,7 @@ namespace UnityTest
 
             using var g = config.NewGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != @c1 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
-            this.AreEqualsParameter(cmd.Parameters[0], "@c1", 10);
+            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
         private void AreEqualsParameter(DbParameter param, string name, object value)
