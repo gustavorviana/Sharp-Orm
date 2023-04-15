@@ -101,14 +101,12 @@ namespace SharpOrm.Builder
         #region Parameters
         protected string RegisterClausuleParameter(object value)
         {
-            if (value is bool bvalue)
-                value = bvalue ? 1 : 0;
-
-            if (this.IsNumericNonDecimal(value))
-                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
-
             if (value is ICollection col)
                 return string.Format("({0})", this.RegisterCollectionParameters(col));
+
+            value = Query.Translator.Config.ToSql(value);
+            if (TryToSql(value) is string sqlValue)
+                return sqlValue;
 
             this.whereCount++;
             return this.RegisterParameter($"@c{this.whereCount}", value).ParameterName;
@@ -126,6 +124,9 @@ namespace SharpOrm.Builder
         protected string RegisterCellValue(Cell cell)
         {
             object value = cell.Value;
+            if (value == null)
+                return "NULL";
+
             if (value is ISqlExpressible expression)
                 value = expression.ToSafeExpression(this.Info.ToReadOnly(), false);
 
@@ -142,24 +143,15 @@ namespace SharpOrm.Builder
 
         private string RegisterValueParam(object value)
         {
-            if (value is bool bvalue)
-                value = bvalue ? 1 : 0;
-
-            if (this.IsNumericNonDecimal(value))
-                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
-
             if (value is ICollection col)
                 return string.Format("({0})", this.RegisterValueCollectionParameters(col));
 
+            value = Query.Translator.Config.ToSql(value);
+            if (TryToSql(value) is string sqlValue)
+                return sqlValue;
+
             this.valuesCount++;
             return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
-        }
-
-        protected bool IsNumericNonDecimal(object value)
-        {
-            return value is int || value is long || value is byte || value is sbyte
-                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64
-                || value is UInt64 || value is decimal || value is float || value is double;
         }
 
         protected string RegisterValueCollectionParameters(ICollection collection)
@@ -171,11 +163,11 @@ namespace SharpOrm.Builder
             return items;
         }
 
-        protected virtual DbParameter RegisterParameter(string name, object value)
+        private DbParameter RegisterParameter(string name, object value)
         {
             var p = this.Command.CreateParameter();
             p.ParameterName = name;
-            p.Value = Query.Translator.Config.ToSql(value);
+            p.Value = value;
 
             this.Command.Parameters.Add(p);
             return p;
@@ -242,6 +234,10 @@ namespace SharpOrm.Builder
 
         private string RegisterSelectParam(object value)
         {
+            value = Query.Translator.Config.ToSql(value);
+            if (TryToSql(value) is string sqlValue)
+                return sqlValue;
+
             this.valuesCount++;
             return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
         }
@@ -263,6 +259,25 @@ namespace SharpOrm.Builder
         {
             return this.Info.Config.ApplyNomenclature(name);
         }
+
+        private string TryToSql(object value)
+        {
+            if (value == null || value is DBNull)
+                return "NULL";
+
+            if (this.IsNumericNonDecimal(value))
+                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
+
+            return null;
+        }
+
+        protected bool IsNumericNonDecimal(object value)
+        {
+            return value is int || value is long || value is byte || value is sbyte
+                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64
+                || value is UInt64 || value is decimal || value is float || value is double;
+        }
+
 
         #region IDisposable
         ~Grammar()

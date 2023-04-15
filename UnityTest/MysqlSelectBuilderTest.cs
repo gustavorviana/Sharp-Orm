@@ -28,10 +28,19 @@ namespace UnityTest
             query.Select(new Case(null, "Col").WhenNull("Column", "No value").When("Column2", 2, null).Else((Column)"Column + ' ' + Column2"));
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT CASE WHEN `Column` IS NULL THEN @v1 WHEN `Column2` = @v2 THEN @v3 ELSE Column + ' ' + Column2 END AS `Col` FROM `TestTable`", cmd.CommandText);
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS NULL THEN @v1 WHEN `Column2` = 2 THEN NULL ELSE Column + ' ' + Column2 END AS `Col` FROM `TestTable`", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@v1", "No value");
-            AreEqualsParameter(cmd.Parameters[1], "@v2", 2);
-            AreEqualsParameter(cmd.Parameters[2], "@v3", null);
+        }
+
+        [TestMethod]
+        public void WhereBool()
+        {
+            using var query = NewQuery();
+            query.Where("First", true).OrWhere("Left", false);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `First` = 1 OR `Left` = 0", cmd.CommandText);
         }
 
         [TestMethod]
@@ -42,8 +51,7 @@ namespace UnityTest
             query.Select(new Case(null, "Col").When((Column)"`Column` IS NOT NULL", 1).Else((Column)"`Column` + ' ' + `Column2`"));
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT CASE WHEN `Column` IS NOT NULL THEN @v1 ELSE `Column` + ' ' + `Column2` END AS `Col` FROM `TestTable`", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@v1", 1);
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS NOT NULL THEN 1 ELSE `Column` + ' ' + `Column2` END AS `Col` FROM `TestTable`", cmd.CommandText);
         }
 
         [TestMethod]
