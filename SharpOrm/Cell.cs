@@ -3,12 +3,26 @@ using System.Collections.Generic;
 
 namespace SharpOrm
 {
+    /// <summary>
+    /// Represents a single cell (column and value) of a database table.
+    /// </summary>
     public class Cell : ICloneable, IEquatable<Cell>
     {
+        /// <summary>
+        /// The name of the column.
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// The value of the cell.
+        /// </summary>
         public object Value { get; }
 
+        /// <summary>
+        /// Creates a new instance of a cell with the specified column name and value.
+        /// </summary>
+        /// <param name="name">The name of the column.</param>
+        /// <param name="value">The value of the cell.</param>
         public Cell(string name, object value)
         {
             this.Name = name;

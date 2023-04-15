@@ -7,6 +7,9 @@ using System.Reflection;
 
 namespace SharpOrm.Builder.DataTranslation
 {
+    /// <summary>
+    /// Class responsible for loading objects and their properties for use in database translation.
+    /// </summary>
     public class ObjectLoader
     {
         private readonly Type type;
@@ -27,6 +30,10 @@ namespace SharpOrm.Builder.DataTranslation
             this.PrimaryKeysName = GetAttrPrimaryKeys().Select(pk => GetColumnName(pk)).ToArray();
         }
 
+        /// <summary>
+        /// Gets the primary key properties of a type based on the presence of the [Key] attribute or a property named "Id".
+        /// </summary>
+        /// <returns>An enumerable of the primary key properties of the type.</returns>
         public IEnumerable<PropertyInfo> GetAttrPrimaryKeys()
         {
             var props = type.GetProperties(PropertiesFlags)
@@ -41,12 +48,18 @@ namespace SharpOrm.Builder.DataTranslation
             return new PropertyInfo[0];
         }
 
+        /// <summary>
+        /// Gets the cells of an object's properties for use in database translation.
+        /// </summary>
+        /// <param name="owner">The object to get the cells from.</param>
+        /// <param name="ignorePrimaryKey">Whether to ignore primary key columns when getting the cells.</param>
+        /// <returns>An enumerable of the cells of the object's properties.</returns>
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
         {
             foreach (var item in this.Properties)
             {
                 object value = this.GetColumnValue(item.Key, owner, item.Value);
-                if (this.IsPrimaryKey(item.Key) && (ignorePrimaryKey || this.IsInvalidPk(value)))
+                if (this.IsPrimaryKey(item.Key) && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value)))
                     continue;
 
                 yield return new Cell(item.Key, value);
@@ -56,11 +69,6 @@ namespace SharpOrm.Builder.DataTranslation
         private bool IsPrimaryKey(string column)
         {
             return this.PrimaryKeysName.Contains(column);
-        }
-
-        private bool IsInvalidPk(object value)
-        {
-            return value is null || value is DBNull || value is int intVal && intVal == 0;
         }
 
         private void LoadProperties()

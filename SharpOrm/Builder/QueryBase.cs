@@ -6,7 +6,7 @@ using System.Text;
 namespace SharpOrm.Builder
 {
     /// <summary>
-    /// SQL clause creator
+    /// SQL clause creator. Provides methods to build SQL SELECT, INSERT, UPDATE and DELETE queries. Allows defining WHERE, ORDER BY, GROUP BY, JOIN and other clauses.
     /// </summary>
     public class QueryBase : IDisposable
     {
@@ -37,6 +37,10 @@ namespace SharpOrm.Builder
             "is not"
         };
 
+        /// <summary>
+        /// Initializes a new instance of the QueryBase class with the specified configuration.
+        /// </summary>
+        /// <param name="config">The configuration to use for the query.</param>
         public QueryBase(IQueryConfig config)
         {
             this.Info = new QueryInfo(config);
@@ -44,6 +48,11 @@ namespace SharpOrm.Builder
 
         #region Where
 
+        /// <summary>
+        /// Adds a clause to the "WHERE" statement based on an ISqlExpressible object, where the expression is safely converted to a SqlExpression.
+        /// </summary>
+        /// <param name="expressible">The ISqlExpressible object that contains the expression to be added to the WHERE statement.</param>
+        /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(ISqlExpressible expressible)
         {
             return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
@@ -70,11 +79,20 @@ namespace SharpOrm.Builder
             return this.Where(column, value == null ? "IS" : "=", value);
         }
 
+        /// <summary>
+        /// This method adds a clause to the "WHERE" clause checking if a column is null
+        /// </summary>
+        /// <param name="column">the name of the column to be checked</param>
         public QueryBase WhereNull(string column)
         {
             return this.Where(column, "IS", null);
         }
 
+
+        /// <summary>
+        /// This method adds a clause to the "WHERE" clause checking if a column is not null
+        /// </summary>
+        /// <param name="column">the name of the column to be checked</param>
         public QueryBase WhereNotNull(string column)
         {
             return this.Where(column, "IS NOT", null);
@@ -112,7 +130,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// adds a value comparison clause between columns in "WHERE"
+        /// Adds a value comparison clause between columns in "WHERE"
         /// </summary>
         /// <param name="column1">Column 1 to compare value.</param>
         /// <param name="operation">Operation</param>
@@ -129,7 +147,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Between two others
+        /// Check if the value is between two others.
         /// </summary>
         /// <param name="toCheck">Value to check.</param>
         /// <param name="arg1"></param>
@@ -152,11 +170,19 @@ namespace SharpOrm.Builder
             return this.WriteBetween(toCheck, arg1, arg2, true, AND);
         }
 
+        /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="query">The subquery to be checked for the existence of a record.</param>
+        /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase Exists(Query query)
         {
             return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", AND);
         }
 
+        /// Adds an NOT EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="query">The subquery to be checked for the existence of a record.</param>
+        /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase NotExists(Query query)
         {
             return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", AND);
@@ -165,13 +191,16 @@ namespace SharpOrm.Builder
         #endregion
 
         #region OrWhere
+        /// <summary>
+        /// Adds an OR condition to the WHERE clause of the query.
+        /// </summary>
         public QueryBase OrWhere(ISqlExpressible expressible)
         {
             return this.OrWhere(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
         }
 
         /// <summary>
-        /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "OR" is inserted before the new clause)
+        ///  Adds an OR condition to the WHERE clause of the query.
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
@@ -191,11 +220,19 @@ namespace SharpOrm.Builder
             return this.OrWhere(column, value == null ? "IS" : "=", value);
         }
 
+        /// <summary>
+        /// Adds an OR condition to the "WHERE" clause checking if a column is null
+        /// </summary>
+        /// <param name="column">the name of the column to be checked</param>
         public QueryBase OrWhereNull(string column)
         {
             return this.OrWhere(column, "IS", null);
         }
 
+        /// <summary>
+        /// Adds an OR condition to the "WHERE" clause checking if a column is not null
+        /// </summary>
+        /// <param name="column">the name of the column to be checked</param>
         public QueryBase OrWhereNotNull(string column)
         {
             return this.OrWhere(column, "IS NOT", null);
@@ -233,7 +270,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// adds a value comparison clause between columns in "WHERE"
+        /// Adds a value comparison clause between columns in "WHERE"
         /// </summary>
         /// <param name="column1">Column 1 to compare value.</param>
         /// <param name="operation">Operation</param>
@@ -249,21 +286,41 @@ namespace SharpOrm.Builder
             return this.WriteWhere($"{column1} {operation} {column2}", OR);
         }
 
+        /// <summary>
+        /// Writes a WHERE clause that checks if a value is between two others.
+        /// </summary>
+        /// <param name="toCheck">The value to check.</param>
+        /// <param name="arg1">The first comparison value.</param>
+        /// <param name="arg2">The second comparison value.</param>
         public QueryBase OrWhereBetween(object toCheck, object arg1, object arg2)
         {
             return this.WriteBetween(toCheck, arg1, arg2, false, OR);
         }
 
+        /// <summary>
+        /// Writes a WHERE clause that checks if a value is not between two others.
+        /// </summary>
+        /// <param name="toCheck">The value to check.</param>
+        /// <param name="arg1">The first comparison value.</param>
+        /// <param name="arg2">The second comparison value.</param>
         public QueryBase OrWhereNotBetween(object toCheck, object arg1, object arg2)
         {
             return this.WriteBetween(toCheck, arg1, arg2, true, OR);
         }
 
+        /// <summary>
+        /// Writes a WHERE clause that checks if a subquery returns any rows.
+        /// </summary>
+        /// <param name="query">The subquery to check.</param>
         public QueryBase OrExists(Query query)
         {
             return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", OR);
         }
 
+        /// <summary>
+        /// Writes a WHERE clause that checks if a subquery returns no rows.
+        /// </summary>
+        /// <param name="query">The subquery to check.</param>
         public QueryBase OrNotExists(Query query)
         {
             return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", OR);

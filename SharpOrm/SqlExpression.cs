@@ -5,16 +5,30 @@ using System.Text;
 
 namespace SharpOrm
 {
+    /// <summary>
+    /// Represents a SQL expression with optional parameters to be used in a SQL query.
+    /// </summary>
     public class SqlExpression : IEquatable<SqlExpression>
     {
         private readonly string value;
+        /// <summary>
+        /// Gets the parameters used in the SQL expression.
+        /// </summary>
         public object[] Parameters { get; protected set; }
 
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with an empty SQL expression string and no parameters.
+        /// </summary>
         protected SqlExpression()
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL expression string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL expression string.</param>
+        /// <param name="arguments">The parameters used in the SQL expression.</param>
         public SqlExpression(string value, params object[] arguments)
         {
             if (value.Count(c => c == '?') != arguments.Length)
@@ -24,6 +38,10 @@ namespace SharpOrm
             this.Parameters = arguments;
         }
 
+        /// <summary>
+        /// Returns the SQL expression string.
+        /// </summary>
+        /// <returns>The SQL expression string.</returns>
         public override string ToString()
         {
             return this.value;

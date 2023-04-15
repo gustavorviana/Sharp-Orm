@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.DataTranslation;
+using System;
 using System.Collections;
 using System.Data.Common;
 using System.Globalization;
@@ -7,6 +8,9 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the base implementation for building SQL queries using a fluent interface.
+    /// </summary>
     public abstract class Grammar : IDisposable
     {
         #region Fields\Properties
@@ -15,8 +19,8 @@ namespace SharpOrm.Builder
         private DbCommand _command = null;
 
         private bool _disposed = false;
-        private int whereCount;
-        private int valuesCount;
+        private readonly ParamWriter whereWriter;
+        private readonly ParamWriter valuesWriter;
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
         protected Query Query { get; }
@@ -24,14 +28,20 @@ namespace SharpOrm.Builder
         protected DbCommand Command => this._command;
         #endregion
 
-        public Grammar(Query query)
+        protected Grammar(Query query)
         {
+            this.whereWriter = new ParamWriter(this, 'c');
+            this.valuesWriter = new ParamWriter(this, 'v');
             this.Query = query;
             this.Reset();
         }
 
         #region DML
 
+        /// <summary>
+        /// Performs a record count in the database based on the current Query object configuration.
+        /// </summary>
+        /// <returns>The database command configured to perform the record count.</returns>
         public DbCommand Count()
         {
             this.Reset();
@@ -39,8 +49,16 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// Defines the necessary configuration for count operation.
+        /// </summary>
         protected abstract void ConfigureCount();
 
+        /// <summary>
+        /// Generates a SELECT statement and returns a DbCommand object to execute it.
+        /// </summary>
+        /// <param name="configureWhereParams">Indicates whether to include WHERE clause parameters or not.</param>
+        /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
         public DbCommand Select(bool configureWhereParams = true)
         {
             this.Reset();
@@ -48,6 +66,11 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// This method is an abstract method that must be implemented by any subclass of Grammar.
+        /// It is responsible for configuring the SELECT query, including the SELECT statement and WHERE clause, if necessary.
+        /// </summary>
+        /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
         internal DbCommand InsertQuery(Query query, string[] columnNames)
@@ -58,8 +81,17 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// Configures the insert query for a given table and columns.
+        /// </summary>
+        /// <param name="query">The query to be configured.</param>
+        /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected abstract void ConfigureInsertQuery(Query query, string[] columnNames);
 
+        /// <summary>
+        /// Inserts a new record into the database table with the specified cell values.
+        /// </summary>
+        /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
         public DbCommand Insert(Cell[] cells)
         {
             this.Reset();
@@ -67,8 +99,17 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// Configures the INSERT operation with the given cells to be inserted into the database table, and whether or not to get the generated ID.
+        /// </summary>
+        /// <param name="cells">The cells to be inserted.</param>
+        /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
         protected abstract void ConfigureInsert(Cell[] cells, bool getGeneratedId);
 
+        /// <summary>
+        /// Executes a bulk insert operation with the given rows.
+        /// </summary>
+        /// <param name="rows">The rows to be inserted.</param>
         public DbCommand BulkInsert(Row[] rows)
         {
             this.Reset();
@@ -76,8 +117,16 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// Configures the INSERT statement for inserting multiple rows in a bulk operation.
+        /// </summary>
+        /// <param name="rows">The rows to be inserted.</param>
         protected abstract void ConfigureBulkInsert(Row[] rows);
 
+        /// <summary>
+        /// Builds and returns a database command object for executing an update operation based on the specified array of cells.
+        /// </summary>
+        /// <param name="cells">An array of cells containing the values to be updated.</param>
         public DbCommand Update(Cell[] cells)
         {
             this.Reset();
@@ -85,8 +134,15 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// This method is used to configure an SQL UPDATE statement with the given cell array.
+        /// </summary>
+        /// <param name="cells">The cell array to be updated in the table.</param>
         protected abstract void ConfigureUpdate(Cell[] cells);
 
+        /// <summary>
+        /// Creates a DELETE command for deleting data from a table.
+        /// </summary>
         public DbCommand Delete()
         {
             this.Reset();
@@ -94,73 +150,32 @@ namespace SharpOrm.Builder
             return this.BuildCommand();
         }
 
+        /// <summary>
+        /// This method is an abstract method which will be implemented by the derived classes. It is responsible for configuring a DELETE query command.
+        /// </summary>
         protected abstract void ConfigureDelete();
 
         #endregion
 
         #region Parameters
+        /// <summary>
+        /// Returns a clause parameter value registered in the WHERE clause of the query.
+        /// </summary>
+        /// <param name="value">The parameter value.</param>
+        /// <returns>The registered clause parameter value.</returns>
         protected string RegisterClausuleParameter(object value)
         {
-            if (value is ICollection col)
-                return string.Format("({0})", this.RegisterCollectionParameters(col));
-
-            value = Query.Translator.Config.ToSql(value);
-            if (TryToSql(value) is string sqlValue)
-                return sqlValue;
-
-            this.whereCount++;
-            return this.RegisterParameter($"@c{this.whereCount}", value).ParameterName;
+            return this.whereWriter.LoadValue(value, false);
         }
 
-        protected string RegisterCollectionParameters(ICollection collection)
-        {
-            string items = string.Join(", ", collection.Cast<object>().Select(c => this.RegisterClausuleParameter(c)));
-            if (string.IsNullOrEmpty(items))
-                throw new InvalidOperationException("Cannot use an empty list in the query.");
-
-            return items;
-        }
-
+        /// <summary>
+        /// Registers the value of a cell as a parameter in the VALUES clause of an INSERT statement.
+        /// </summary>
+        /// <param name="cell">Cell to be registered</param>
+        /// <returns>Value of the cell registered as parameter</returns>
         protected string RegisterCellValue(Cell cell)
         {
-            object value = cell.Value;
-            if (value == null)
-                return "NULL";
-
-            if (value is ISqlExpressible expression)
-                value = expression.ToSafeExpression(this.Info.ToReadOnly(), false);
-
-            if (!(value is SqlExpression exp))
-                return RegisterValueParam(cell.Value);
-
-            return new StringBuilder()
-                .AppendReplaced(
-                    exp.ToString(),
-                    '?',
-                    c => RegisterValueParam(exp.Parameters[c - 1])
-                ).ToString();
-        }
-
-        private string RegisterValueParam(object value)
-        {
-            if (value is ICollection col)
-                return string.Format("({0})", this.RegisterValueCollectionParameters(col));
-
-            value = Query.Translator.Config.ToSql(value);
-            if (TryToSql(value) is string sqlValue)
-                return sqlValue;
-
-            this.valuesCount++;
-            return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
-        }
-
-        protected string RegisterValueCollectionParameters(ICollection collection)
-        {
-            string items = string.Join(", ", collection.Cast<object>().Select(c => this.RegisterValueParam(c)));
-            if (string.IsNullOrEmpty(items))
-                throw new InvalidOperationException("Cannot use an empty list in the query.");
-
-            return items;
+            return this.valuesWriter.LoadValue(cell.Value, true);
         }
 
         private DbParameter RegisterParameter(string name, object value)
@@ -174,6 +189,9 @@ namespace SharpOrm.Builder
         }
         #endregion
 
+        /// <summary>
+        /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
+        /// </summary>
         protected void Reset()
         {
             if (this.Command != null)
@@ -186,8 +204,8 @@ namespace SharpOrm.Builder
             this._command.Transaction = this.Query.Transaction;
 
             this.QueryBuilder.Clear();
-            this.whereCount = 0;
-            this.valuesCount = 0;
+            this.whereWriter.Reset();
+            this.valuesWriter.Reset();
         }
 
         protected string GetTableName(bool withAlias)
@@ -195,6 +213,12 @@ namespace SharpOrm.Builder
             return this.GetTableName(this.Info, withAlias);
         }
 
+        /// <summary>
+        /// Returns the table name with optional table alias. If withAlias is true and the table has an alias, the alias is included in the returned string.
+        /// </summary>
+        /// <param name="info">The QueryInfo object containing information about the table</param>
+        /// <param name="withAlias">Whether or not to include the table alias in the returned string</param>
+        /// <returns>The table name with optional alias</returns>
         protected virtual string GetTableName(QueryInfo info, bool withAlias)
         {
             string name = this.ApplyTableColumnConfig(info.From);
@@ -222,24 +246,7 @@ namespace SharpOrm.Builder
 
         protected string WriteSelect(Column column)
         {
-            var exp = column.ToExpression(this.Info.ToReadOnly());
-
-            return new StringBuilder()
-                .AppendReplaced(
-                    exp.ToString(),
-                    '?',
-                    c => RegisterSelectParam(exp.Parameters[c - 1])
-                ).ToString();
-        }
-
-        private string RegisterSelectParam(object value)
-        {
-            value = Query.Translator.Config.ToSql(value);
-            if (TryToSql(value) is string sqlValue)
-                return sqlValue;
-
-            this.valuesCount++;
-            return this.RegisterParameter($"@v{this.valuesCount}", value).ParameterName;
+            return this.valuesWriter.LoadValue(column, true);
         }
 
         protected virtual void WriteGroupBy()
@@ -259,25 +266,6 @@ namespace SharpOrm.Builder
         {
             return this.Info.Config.ApplyNomenclature(name);
         }
-
-        private string TryToSql(object value)
-        {
-            if (value == null || value is DBNull)
-                return "NULL";
-
-            if (this.IsNumericNonDecimal(value))
-                return ((IConvertible)value).ToString(CultureInfo.InvariantCulture);
-
-            return null;
-        }
-
-        protected bool IsNumericNonDecimal(object value)
-        {
-            return value is int || value is long || value is byte || value is sbyte
-                || value is Int16 || value is UInt16 || value is UInt32 || value is Int64
-                || value is UInt64 || value is decimal || value is float || value is double;
-        }
-
 
         #region IDisposable
         ~Grammar()
@@ -308,5 +296,81 @@ namespace SharpOrm.Builder
             GC.SuppressFinalize(this);
         }
         #endregion
+
+        private class ParamWriter
+        {
+            private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+            private readonly Grammar grammar;
+            private readonly char paramChar;
+            private int writes = 0;
+
+            public ParamWriter(Grammar grammar, char paramChar)
+            {
+                this.grammar = grammar;
+                this.paramChar = paramChar;
+            }
+
+            public string LoadValue(object value, bool allowAlias)
+            {
+                return this.InternalLoadValue(value, allowAlias, false);
+            }
+
+            private string InternalLoadValue(object value, bool allowAlias, bool isValueOfList)
+            {
+                if (value is ISqlExpressible expression)
+                    value = expression.ToSafeExpression(this.grammar.Info.ToReadOnly(), allowAlias);
+
+                if (!(value is SqlExpression exp))
+                    return this.LoadParameter(value, allowAlias, isValueOfList);
+
+                return new StringBuilder()
+                    .AppendReplaced(
+                        exp.ToString(),
+                        '?',
+                        c => this.LoadParameter(exp.Parameters[c - 1], allowAlias, isValueOfList)
+                    ).ToString();
+            }
+
+            private string LoadParameter(object value, bool allowAlias, bool isValueOfList)
+            {
+                if (value is ICollection col)
+                    return string.Format("({0})", this.RegisterCollectionParameters(col, allowAlias, isValueOfList));
+
+                value = Query.Translator.Config.ToSql(value);
+                if (ToSql(value) is string sqlValue)
+                    return sqlValue;
+
+                this.writes++;
+                return this.grammar.RegisterParameter($"@{this.paramChar}{this.writes}", value).ParameterName;
+            }
+
+            private string RegisterCollectionParameters(ICollection collection, bool allowAlias, bool isValueOfList)
+            {
+                if (isValueOfList)
+                    throw new NotSupportedException("You cannot use a collection as a value in another collection.");
+
+                string items = string.Join(", ", collection.Cast<object>().Select(c => this.LoadValue(c, allowAlias)));
+                if (string.IsNullOrEmpty(items))
+                    throw new InvalidOperationException("Cannot use an empty collection in the query.");
+
+                return items;
+            }
+
+            public void Reset()
+            {
+                this.writes = 0;
+            }
+
+            private string ToSql(object value)
+            {
+                if (TranslationUtils.IsNull(value))
+                    return "NULL";
+
+                if (TranslationUtils.IsNumeric(value))
+                    return ((IConvertible)value).ToString(Invariant);
+
+                return null;
+            }
+        }
     }
 }
