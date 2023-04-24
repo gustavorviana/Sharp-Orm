@@ -1,8 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
 using System.Data.Common;
+using System.Linq;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -459,6 +461,60 @@ namespace UnityTest
             Assert.AreEqual("10", exp.Parameters[0]);
             Assert.AreEqual("No", exp.Parameters[1]);
             Assert.AreEqual("InRange", exp.Parameters[2]);
+        }
+
+        [TestMethod]
+        public void BasicSqlExpressionSelect()
+        {
+            const string Name = "Test";
+            var exp = new SqlExpression("`Name` = ? AND `Active` = ?", Name, true);
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = @c1 AND `Active` = 1", ExpressionToSelectSql(exp, out var sqlParams));
+            Assert.AreEqual(1, sqlParams.Length);
+            AreEqualsParameter(sqlParams[0], "@c1", Name);
+        }
+
+        [TestMethod]
+        public void NonDecimalSqlExpressionSelect()
+        {
+            var exp = new SqlExpression(
+                "`Int` = ? AND `Long` = ? AND `Byte` = ? AND `Sbyte` = ? AND `Short` = ? AND `Ushort` = ? AND `Uint` = ? AND `Ulong` = ?",
+                1, 2L, (byte)3, (sbyte)4, (short)5, (ushort)6, 7u, (ulong)8
+            );
+            Assert.AreEqual(
+                "SELECT * FROM `TestTable` WHERE `Int` = 1 AND `Long` = 2 AND `Byte` = 3 AND `Sbyte` = 4 AND `Short` = 5 AND `Ushort` = 6 AND `Uint` = 7 AND `Ulong` = 8",
+                ExpressionToSelectSql(exp, out var sqlParams)
+            );
+            Assert.AreEqual(0, sqlParams.Length);
+        }
+
+        [TestMethod]
+        public void DecimalSqlExpressionSelect()
+        {
+            var exp = new SqlExpression(
+                "`Float` = ? AND `Double` = ? AND `Decimal` = ?",
+                1.1f, 2.2, 3.3m
+            );
+            Assert.AreEqual(
+                "SELECT * FROM `TestTable` WHERE `Float` = 1.1 AND `Double` = 2.2 AND `Decimal` = 3.3",
+                ExpressionToSelectSql(exp, out var sqlParams)
+            );
+            Assert.AreEqual(0, sqlParams.Length);
+        }
+
+        private string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Where(exp);
+            return ToSelectSql(query, out parameters);
+        }
+
+        private string ToSelectSql(Query query, out DbParameter[] parameters)
+        {
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            parameters = cmd.Parameters.OfType<DbParameter>().ToArray();
+            return cmd.CommandText;
         }
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)
