@@ -179,7 +179,44 @@ namespace UnityTest
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
-        private void AreEqualsParameter(DbParameter param, string name, object value)
+
+        [TestMethod]
+        public void CountSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable]", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void CountWhereSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Where("Column", null);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] WHERE [Column] IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void CountSelectJoin()
+        {
+            using var query = new Query(Connection, TABLE);
+            query
+                .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
+                .Where("t2.Column", "Value");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+        }
+
+
+        private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);
             Assert.AreEqual(value, param.Value);

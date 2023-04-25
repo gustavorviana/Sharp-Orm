@@ -5,6 +5,7 @@ using SharpOrm.Builder;
 using System;
 using System.Data.Common;
 using System.Linq;
+using System.Xml.Linq;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -180,12 +181,6 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (1, 2, 3, 4, 5, 6, 7, 8, 9)", cmd.CommandText);
-        }
-
-        private void TestListParameters(DbParameterCollection collection, int[] items)
-        {
-            for (int i = 0; i < items.Length; i++)
-                AreEqualsParameter(collection[i], $"@c{i + 1}", items[i]);
         }
 
         [TestMethod]
@@ -502,14 +497,50 @@ namespace UnityTest
             Assert.AreEqual(0, sqlParams.Length);
         }
 
-        private string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)
+        [TestMethod]
+        public void CountSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable`", cmd.CommandText);
+
+        }
+
+        [TestMethod]
+        public void CountWhereSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Where("Column", null);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` WHERE `Column` IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void CountSelectJoin()
+        {
+            using var query = new Query(Connection, TABLE);
+            query
+                .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
+                .Where("t2.Column", "Value");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @c1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+        }
+
+        private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)
         {
             using var query = new Query(Connection, TABLE);
             query.Where(exp);
             return ToSelectSql(query, out parameters);
         }
 
-        private string ToSelectSql(Query query, out DbParameter[] parameters)
+        private static string ToSelectSql(Query query, out DbParameter[] parameters)
         {
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
