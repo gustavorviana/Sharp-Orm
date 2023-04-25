@@ -71,6 +71,21 @@ namespace SharpOrm
             return new Column(new SqlExpression(rawColumn));
         }
 
+        internal string GetCountColumn()
+        {
+            if (!string.IsNullOrEmpty(this.Name))
+                return this.Name;
+
+            string exp = this.expression?.ToString();
+            if (exp == "*")
+                return "*";
+
+            if (exp == null || !exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) || !exp.EndsWith(")"))
+                return "";
+
+            return exp.Substring(6, exp.Length - 2);
+        }
+
         #region IEquatable
 
         public override bool Equals(object obj)

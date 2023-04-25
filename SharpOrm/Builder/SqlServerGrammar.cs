@@ -15,7 +15,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount()
         {
-            bool isOldOrDistinct = this.HasOffset || this.Query.Distinct || this.Config.UseOldPagination;
+            bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination;
             if (isOldOrDistinct)
                 this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
 
@@ -54,7 +54,11 @@ namespace SharpOrm.Builder
             if (HasLimit && !HasOffset && !this.Info.IsCount())
                 this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
-            this.WriteSelectColumns(isCount);
+            if (isCount)
+                this.WriteCountColumn();
+            else
+                this.WriteSelectColumns();
+
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
             this.ApplyJoins();
@@ -75,12 +79,19 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append($" FETCH NEXT {this.Query.Limit} ROWS ONLY");
         }
 
-        private void WriteSelectColumns(bool isCount)
+        private void WriteCountColumn()
         {
-            if (isCount && !this.Query.Distinct && !this.Config.UseOldPagination && this.Info.Select.FirstOrDefault().ToExpression(this.Info.ToReadOnly()) == Column.All.ToExpression(this.Info.ToReadOnly()))
-                this.QueryBuilder.Append("COUNT(*)");
-            else
-                this.WriteSelectColumns();
+            if (this.Info.Select.Length > 1)
+                throw new NotSupportedException("It's not possible to count more than one column.");
+
+            string colName = this.Info.Select.FirstOrDefault()?.GetCountColumn();
+            if (string.IsNullOrEmpty(colName))
+                throw new NotSupportedException("The name of a column or '*' must be entered for counting.");
+
+            if (this.Query.Distinct && colName == "*")
+                throw new NotSupportedException("Cannot perform DISTINCT counting for all columns.");
+
+            this.QueryBuilder.AppendFormat("COUNT({0}{1})", this.Query.Distinct ? "DISTINCT " : "", colName);
         }
 
         private void WriteSelectWithOldPagination(bool configureWhereParams)

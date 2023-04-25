@@ -13,7 +13,7 @@ namespace UnityTest
         public void Select()
         {
             using var query = NewQuery(TABLE);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM [TestTable]", cmd.CommandText);
@@ -23,7 +23,7 @@ namespace UnityTest
         public void SelectAndOrderBy()
         {
             using var query = NewQuery(TABLE);
-            using var g = config.NewGrammar(query.OrderBy("Id"));
+            using var g = NewConfig.NewGrammar(query.OrderBy("Id"));
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM [TestTable] ORDER BY [Id] Asc", cmd.CommandText);
@@ -32,9 +32,9 @@ namespace UnityTest
         [TestMethod]
         public void SelectOffset()
         {
-            using var query = NewQuery(TABLE);
+            using var query = NewQuery(TABLE, "", false);
             query.OrderBy("Id").Offset = 1;
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable]) [TestTable] WHERE [grammar_rownum] > 1", cmd.CommandText);
@@ -43,10 +43,10 @@ namespace UnityTest
         [TestMethod]
         public void SelectOffsetWhere()
         {
-            using var query = NewQuery(TABLE);
+            using var query = NewQuery(TABLE, "", false);
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = 1) [TestTable] WHERE [grammar_rownum] > 1", cmd.CommandText);
@@ -58,7 +58,7 @@ namespace UnityTest
             using var query = new Query(Connection, new SqlServerQueryConfig(false), TABLE);
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS", cmd.CommandText);
@@ -72,7 +72,7 @@ namespace UnityTest
             query.Where("Id", 1);
             query.Offset = 1;
             query.Limit = 10;
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", cmd.CommandText);
@@ -84,7 +84,7 @@ namespace UnityTest
             using var query = NewQuery(TABLE);
             query.OrderBy("Id").Limit = 1;
             query.Where("Id", 1);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT TOP (1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc", cmd.CommandText);
@@ -95,7 +95,7 @@ namespace UnityTest
         {
             using var query = NewQuery(TABLE);
             query.Limit = 1;
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT TOP (1) * FROM [TestTable]", cmd.CommandText);
@@ -106,7 +106,7 @@ namespace UnityTest
         {
             using var query = NewQuery(TABLE);
             query.Where("Id", 1);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Id] = 1", cmd.CommandText);
@@ -115,11 +115,11 @@ namespace UnityTest
         [TestMethod]
         public void SelectAndPaginate()
         {
-            using var query = NewQuery(TABLE, "table");
+            using var query = NewQuery(TABLE, "table", false);
             query.OrderByDesc("Id").Select("Id", "Name");
             query.Offset = 1;
             query.Limit = 10;
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [table].[Id] Desc) AS [grammar_rownum], [table].[Id], [table].[Name] FROM [TestTable] [table]) [table] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
@@ -128,12 +128,12 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereAndPaginate()
         {
-            using var query = NewQuery(TABLE);
+            using var query = NewQuery(TABLE, "", false);
             query.OrderByDesc("Id").Select("Id", "Name");
             query.Offset = 1;
             query.Limit = 10;
             query.Where("id", 1);
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] WHERE [id] = 1) [TestTable] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
@@ -142,12 +142,12 @@ namespace UnityTest
         [TestMethod]
         public void SelectGroupByPaginate()
         {
-            using var query = NewQuery("Customer");
+            using var query = NewQuery("Customer", "", false);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]");
             query.Offset = 1;
             query.Limit = 10;
 
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
@@ -155,12 +155,12 @@ namespace UnityTest
         [TestMethod]
         public void SelectWhereGroupByPaginate()
         {
-            using var query = NewQuery("Customer");
+            using var query = NewQuery("Customer", "", false);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]").Where("Id", "!=", 10);
             query.Offset = 1;
             query.Limit = 10;
 
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
@@ -168,13 +168,13 @@ namespace UnityTest
         [TestMethod]
         public void SelectGroupByPaginateInnerJoin()
         {
-            using var query = NewQuery("Customer");
+            using var query = NewQuery("Customer", "", false);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]").Where("Id", "!=", 10);
             query.Join("User", "User.Id", "=", "Customer.UserId");
             query.Offset = 1;
             query.Limit = 10;
 
-            using var g = config.NewGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
@@ -184,7 +184,7 @@ namespace UnityTest
         public void CountSelect()
         {
             using var query = new Query(Connection, TABLE);
-            using var g = new MysqlGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM [TestTable]", cmd.CommandText);
@@ -195,7 +195,7 @@ namespace UnityTest
         {
             using var query = new Query(Connection, TABLE);
             query.Where("Column", null);
-            using var g = new MysqlGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] WHERE [Column] IS NULL", cmd.CommandText);
@@ -208,13 +208,26 @@ namespace UnityTest
             query
                 .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
                 .Where("t2.Column", "Value");
-            using var g = new MysqlGrammar(query);
+            using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
         }
 
+        [TestMethod]
+        public void CountNewSelectJoin()
+        {
+            using var query = new Query(Connection, new SqlServerQueryConfig { UseOldPagination = false }, TABLE);
+            query
+                .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
+                .Where("t2.Column", "Value");
+            using var g = NewConfig.NewGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+        }
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)
         {

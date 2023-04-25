@@ -505,7 +505,18 @@ namespace UnityTest
 
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM `TestTable`", cmd.CommandText);
+        }
 
+
+        [TestMethod]
+        public void CountDitinctSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("Column").Distinct = true;
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(DISTINCT `Column`) FROM `TestTable`", cmd.CommandText);
         }
 
         [TestMethod]
@@ -531,6 +542,17 @@ namespace UnityTest
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @c1", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+        }
+
+        [TestMethod]
+        public void CountDistinctSelect()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("Column").Distinct = true;
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(DISTINCT `Column`) FROM `TestTable`", cmd.CommandText);
         }
 
         private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)

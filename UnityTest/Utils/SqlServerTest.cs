@@ -10,12 +10,13 @@ namespace UnityTest.Utils
 {
     public class SqlServerTest : BaseTest
     {
-        protected static readonly SqlServerQueryConfig config = new(false) { UseOldPagination = true };
+        protected static readonly SqlServerQueryConfig NewConfig = new(false) { UseOldPagination = false };
+        protected static readonly SqlServerQueryConfig OldConfig = new(false) { UseOldPagination = true };
         protected static DbConnection Connection
         {
             get
             {
-                ConnectionStr.Boot<SqlConnection>(() => config, ConnectionStr.SqlServer);
+                ConnectionStr.Boot<SqlConnection>(() => NewConfig, ConnectionStr.SqlServer);
                 return ConnectionCreator.Default.GetConnection();
             }
         }
@@ -59,10 +60,10 @@ namespace UnityTest.Utils
         }
         #endregion
 
-        protected static Query NewQuery(string table, string alias = "")
+        protected static Query NewQuery(string table, string alias = "", bool useNewConfig = true)
         {
 #pragma warning disable CS0612 // Type or member is obsolete
-            return new Query(Connection, config, table, alias);
+            return new Query(Connection, useNewConfig ? NewConfig : OldConfig, table, alias);
 #pragma warning restore CS0612 // Type or member is obsolete
         }
 
