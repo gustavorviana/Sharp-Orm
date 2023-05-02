@@ -27,7 +27,7 @@ namespace SharpOrm.Builder.DataTranslation
         private object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
         {
             if (typeToParse == typeof(Row))
-                return reader.GetRow();
+                return reader.GetRow(this.Config);
 
             object obj = Activator.CreateInstance(typeToParse);
             if (obj is Model model)

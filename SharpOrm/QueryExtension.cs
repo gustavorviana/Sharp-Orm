@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -225,12 +226,12 @@ namespace SharpOrm
         /// <param name="reader"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, int index)
+        public static Cell GetCell(this DbDataReader reader, int index, TranslationConfig config)
         {
             if (index < 0 || index > reader.FieldCount)
                 throw new ArgumentOutOfRangeException();
 
-            return new Cell(reader.GetName(index), reader[index]);
+            return new Cell(reader.GetName(index), config.FromSql(reader[index], reader[index]?.GetType()));
         }
 
         /// <summary>
@@ -238,12 +239,15 @@ namespace SharpOrm
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row GetRow(this DbDataReader reader)
+        public static Row GetRow(this DbDataReader reader, TranslationConfig config = null)
         {
+            if (config == null)
+                config = Query.Translator.Config;
+
             Cell[] cells = new Cell[reader.FieldCount];
 
             for (int i = 0; i < cells.Length; i++)
-                cells[i] = reader.GetCell(i);
+                cells[i] = reader.GetCell(i, config);
 
             return new Row(cells);
         }

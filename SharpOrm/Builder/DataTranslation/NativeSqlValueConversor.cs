@@ -5,6 +5,7 @@ namespace SharpOrm.Builder.DataTranslation
 {
     internal class NativeSqlValueConversor : ISqlTranslation
     {
+        private static readonly BinaryTranslator _binaryTranslator = new BinaryTranslator();
         /// <summary>
         /// An array of native types used for fast type checking and conversion.
         /// </summary>
@@ -27,7 +28,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>True if the type is nullable, false otherwise.</returns>
         internal static bool IsNative(Type type)
         {
-            return type == null || IsNullable(type) || type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type);
+            return type == null || _binaryTranslator.CanWork(type) || IsNullable(type) || type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type);
         }
 
         /// <summary>
@@ -48,6 +49,9 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent .NET representation of the SQL value.</returns>
         public object FromSqlValue(object value, Type expectedType)
         {
+            if (_binaryTranslator.CanWork(expectedType))
+                return _binaryTranslator.FromSqlValue(value, expectedType);
+
             if (value is DBNull)
                 return null;
 
@@ -71,6 +75,9 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent SQL representation of the value.</returns>
         public object ToSqlValue(object value, Type type)
         {
+            if (_binaryTranslator.CanWork(type))
+                return _binaryTranslator.ToSqlValue(value, type);
+
             if (TranslationUtils.IsNull(value))
                 return DBNull.Value;
 
