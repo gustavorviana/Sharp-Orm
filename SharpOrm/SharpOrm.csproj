@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.1.5.4</AssemblyVersion>
-		<FileVersion>1.1.5.4</FileVersion>
-		<VersionPrefix>1.1.54</VersionPrefix>
+		<AssemblyVersion>1.1.6.5</AssemblyVersion>
+		<FileVersion>1.1.6.5</FileVersion>
+		<VersionPrefix>1.1.65</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -17,7 +17,7 @@
 		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<Company />
-		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
+		<Description>Added support for blob and added MultipleConnectionCreator T.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>Correction in the code to perform column counting.</PackageReleaseNotes>

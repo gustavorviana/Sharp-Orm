@@ -49,7 +49,6 @@ namespace UnityTest
         }
         #endregion
 
-
         [TestMethod]
         public void OnInsertBytes()
         {
@@ -57,23 +56,69 @@ namespace UnityTest
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             using var query = new Query(Connection, TABLE);
             query.Insert(new Cell(BINARY, bytes));
-            
+
             var row = query.FirstRow();
             Assert.IsInstanceOfType(row[BINARY], typeof(byte[]));
             CollectionAssert.AreEqual(bytes, (byte[])row[BINARY]);
         }
 
+        [TestMethod]
+        public void OnInsertStream()
+        {
+            Clear();
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            using var query = new Query(Connection, TABLE);
+            query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
+
+            var row = query.FirstRow();
+            Assert.IsInstanceOfType(row[BINARY], typeof(byte[]));
+            CollectionAssert.AreEqual(bytes, (byte[])row[BINARY]);
+        }
+
+        [TestMethod]
+        public void OnReadBytesTable()
+        {
+            Clear();
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            using var query = new Query<TestBytes>(Connection, TABLE);
+            query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
+
+            var obj = query.FirstOrDefault();
+            Assert.IsInstanceOfType(obj.File, typeof(byte[]));
+            CollectionAssert.AreEqual(bytes, obj.File);
+        }
+
+        [TestMethod]
+        public void OnReadStreamTable()
+        {
+            Clear();
+            var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            using var query = new Query<TestStream>(Connection, TABLE);
+            query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
+
+            var obj = query.FirstOrDefault();
+            Assert.IsInstanceOfType(obj.File, typeof(MemoryStream));
+            CollectionAssert.AreEqual(bytes, (obj.File as MemoryStream).ToArray());
+        }
+
         static void Clear()
         {
-            using var query = new Query<Teste>(Connection, TABLE);
+            using var query = new Query(Connection, TABLE);
             query.Delete();
         }
 
         [Table(TABLE)]
-        class Teste
+        class TestBytes
         {
             public int Id { get; set; }
-            public Stream Arquivo { get; set; }
+            public byte[] File { get; set; }
+        }
+
+        [Table(TABLE)]
+        class TestStream
+        {
+            public int Id { get; set; }
+            public Stream File { get; set; }
         }
     }
 }

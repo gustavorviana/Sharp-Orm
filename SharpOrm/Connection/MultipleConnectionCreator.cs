@@ -7,7 +7,14 @@ using System.Data.SqlClient;
 
 namespace SharpOrm.Connection
 {
-    public class MultipleConnectionCreator : ConnectionCreator
+    public class MultipleConnectionCreator : MultipleConnectionCreator<SqlConnection>
+    {
+        public MultipleConnectionCreator(IQueryConfig config, string connectionString) : base(config, connectionString)
+        {
+        }
+    }
+
+    public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
         private readonly object _lock = new object();
         private readonly List<DbConnection> connections = new List<DbConnection>();
@@ -26,7 +33,7 @@ namespace SharpOrm.Connection
             if (this.Disposed)
                 throw new ObjectDisposedException(this.GetType().FullName);
 
-            var connection = new SqlConnection(this._connectionString);
+            var connection = new T { ConnectionString = this._connectionString };
             if (connection.State == ConnectionState.Closed)
                 connection.Open();
 
