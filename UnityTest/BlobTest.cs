@@ -1,19 +1,13 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityTest.Utils;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace UnityTest
 {
     [TestClass]
-    internal class BlobTest : MysqlConnectionTest
+    public class BlobTest : MysqlConnectionTest
     {
         #region Consts
         private const string TABLE = "Files";
@@ -111,6 +105,7 @@ namespace UnityTest
         class TestBytes
         {
             public int Id { get; set; }
+            [Column("bin")]
             public byte[] File { get; set; }
         }
 
@@ -118,6 +113,7 @@ namespace UnityTest
         class TestStream
         {
             public int Id { get; set; }
+            [Column("bin")]
             public Stream File { get; set; }
         }
     }

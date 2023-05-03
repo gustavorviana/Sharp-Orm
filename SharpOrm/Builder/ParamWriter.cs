@@ -60,7 +60,7 @@ namespace SharpOrm.Builder
 
         private bool CanTranslate(object value)
         {
-            return this.grammar.Translation.Translators.Any(t => t.CanWork(value?.GetType()));
+            return this.grammar.Translation.GetFor(value.GetType()) != null;
         }
 
         private string RegisterCollectionParameters(ICollection collection, bool allowAlias, bool isValueOfList)

@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.1.6.5</AssemblyVersion>
-		<FileVersion>1.1.6.5</FileVersion>
-		<VersionPrefix>1.1.65</VersionPrefix>
+		<AssemblyVersion>1.1.6.7</AssemblyVersion>
+		<FileVersion>1.1.6.7</FileVersion>
+		<VersionPrefix>1.1.67</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Added support for blob and added MultipleConnectionCreator T.</PackageReleaseNotes>
+		<PackageReleaseNotes>Added support for blob, fix boolean convertion and added MultipleConnectionCreator T.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

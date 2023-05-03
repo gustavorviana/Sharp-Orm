@@ -61,8 +61,8 @@ namespace SharpOrm.Builder.DataTranslation
             if (expectedType.IsEnum)
                 return Enum.ToObject(expectedType, value);
 
-            if (expectedType == typeof(bool) && value is int i)
-                return i == 1;
+            if (expectedType == typeof(bool))
+                return Convert.ToBoolean(value);
 
             return value;
         }

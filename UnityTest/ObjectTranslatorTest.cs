@@ -111,6 +111,20 @@ namespace UnityTest
             AssertSqlValueConverted(expected, expected);
         }
 
+        [TestMethod]
+        public void SqlToBoolean()
+        {
+            bool expected = true;
+            int intBool = 1;
+            byte byteBool = 1;
+            sbyte sbyteBool = 1;
+
+            AssertSqlValueConverted(expected, expected);
+            AssertSqlValueConverted(expected, intBool);
+            AssertSqlValueConverted(expected, byteBool);
+            AssertSqlValueConverted(expected, sbyteBool);
+        }
+
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
             var prop = loader.Properties[propName];
