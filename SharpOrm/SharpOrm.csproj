@@ -17,10 +17,10 @@
 		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<Company />
-		<Description>Added support for blob and added MultipleConnectionCreator T.</Description>
+		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Correction in the code to perform column counting.</PackageReleaseNotes>
+		<PackageReleaseNotes>Added support for blob and added MultipleConnectionCreator T.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
