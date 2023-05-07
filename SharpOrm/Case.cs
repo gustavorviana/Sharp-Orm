@@ -111,14 +111,14 @@ namespace SharpOrm
             if (this.nodes.Count == 0)
                 throw new InvalidOperationException("You cannot use an empty case.");
 
-            var query = new QueryConstructor();
+            var query = new QueryConstructor(info);
             this.WriteCase(query, info);
 
             foreach (var node in this.nodes)
                 node.WriteTo(query, info);
 
             if (this.elseValue != null)
-                query.Add("ELSE ").SafeAddParam(info, this.elseValue).Add();
+                query.Add("ELSE ").AddParameter(this.elseValue).Add();
 
             query.Add("END");
 
@@ -133,7 +133,7 @@ namespace SharpOrm
             query.Add("CASE");
 
             if (this.expression != null)
-                return query.Add().Add(this.expression, info, false);
+                return query.Add().Add(this.expression, false);
 
             if (!string.IsNullOrEmpty(this.Name))
                 return query.Add($" {info.Config.ApplyNomenclature(this.Name)}").Add();
@@ -153,14 +153,14 @@ namespace SharpOrm
                 query.Add("WHEN ");
 
                 if (this.Column != null)
-                    query.SafeAddParam(info, this.Column).Add();
+                    query.AddParameter(this.Column).Add();
 
-                query.Add(this.Expression, info, false).Add(" THEN ");
+                query.Add(this.Expression, false).Add(" THEN ");
 
                 if (this.Then is SqlExpression exp)
-                    return query.Add().SafeAddParam(info, exp).Add();
+                    return query.Add().AddParameter(exp).Add();
 
-                return query.SafeAddParam(info, this.Then).Add();
+                return query.AddParameter(this.Then).Add();
             }
         }
     }
