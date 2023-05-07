@@ -29,14 +29,8 @@ namespace SharpOrm.Builder.DataTranslation
             if (typeToParse == typeof(Row))
                 return reader.GetRow(this.Config);
 
-            object obj = Activator.CreateInstance(typeToParse);
-            if (obj is Model model)
-            {
-                model.LoadFromDataReader(reader);
-                return obj;
-            }
-
             var loader = this.GetLoader(typeToParse);
+            object obj = Activator.CreateInstance(typeToParse);
             foreach (var property in loader.Properties.Values)
                 this.LoadPropertyValue(obj, loader, reader, property, prefix);
 
@@ -74,9 +68,6 @@ namespace SharpOrm.Builder.DataTranslation
         {
             if (obj is Row row)
                 return row;
-
-            if (obj is Model model)
-                return new Row(model.GetCells());
 
             return new Row(this.GetLoader(type).GetCells(obj).ToArray());
         }

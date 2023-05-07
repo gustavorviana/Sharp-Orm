@@ -54,9 +54,21 @@ namespace SharpOrm
 
         public bool Equals(SqlExpression other)
         {
-            return other != null &&
+            return other is SqlExpression &&
                    value == other.value &&
-                   Parameters == other.Parameters;
+                   this.EqualsParams(other);
+        }
+
+        private bool EqualsParams(SqlExpression other)
+        {
+            if (other.Parameters.Length != this.Parameters.Length)
+                return false;
+
+            for (int i = 0; i < this.Parameters.Length; i++)
+                if (this.Parameters[i] != other.Parameters[i])
+                    return false;
+
+            return true;
         }
 
         public override int GetHashCode()

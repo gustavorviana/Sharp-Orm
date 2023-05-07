@@ -7,6 +7,17 @@ namespace SharpOrm
 {
     public static class SqlExtension
     {
+        /// <summary>
+        /// Sanitizes a string value for use in SQL queries, replacing all occurrences
+        /// of the % and _ characters with their respective escaped versions.
+        /// </summary>
+        /// <param name="value">The string value to sanitize.</param>
+        /// <returns>A sanitized version of the input string.</returns>
+        public static string SanitizeSqlValue(this string value)
+        {
+            return value.Replace("%", "\\%").Replace("_", "\\_");
+        }
+
         public static string Only(this string value, Func<char, bool> func)
         {
             return new string(value.Where(c => func(c)).ToArray());
@@ -15,12 +26,6 @@ namespace SharpOrm
         public static string AlphaNumericOnly(this string value, params char[] exceptions)
         {
             return value.Only(c => char.IsDigit(c) || char.IsLetter(c) || exceptions.Contains(c));
-        }
-
-        internal static void LoadFromDataReader(this Model model, DbDataReader reader)
-        {
-            for (int i = 0; i < reader.FieldCount; i++)
-                model.columns[reader.GetName(i)] = Query.Translator.Config.FromSql(reader[i], reader[i]?.GetType());
         }
 
         public static bool Contains(this IEnumerable<string> values, string toCompare, StringComparison stringComparison)
