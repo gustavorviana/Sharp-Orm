@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm
 {
@@ -186,6 +187,11 @@ namespace SharpOrm
             this.OnClone(query);
 
             return query;
+        }
+
+        public QueryBase WhereObj(Expression<Func<T, bool>> check)
+        {
+            return Where(SqlLambdaVisitor.ParseLambda(this.Info, check));
         }
     }
 
