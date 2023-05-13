@@ -7,39 +7,58 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// A class for building SQL queries with parameters.
+    /// </summary>
     public class QueryConstructor : IDisposable, ISqlExpressible
     {
         private readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();
+        private readonly IReadonlyQueryInfo info;
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is empty.
+        /// </summary>
         public bool Empty => this.query.Length == 0;
 
+        /// <summary>
+        /// Gets the parameters.
+        /// </summary>
         public ReadOnlyCollection<object> Parameters { get; }
 
-        public QueryConstructor()
+        public QueryConstructor(QueryInfo info) : this(info.ToReadOnly())
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryConstructor"/> class.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        public QueryConstructor(IReadonlyQueryInfo info)
+        {
+            this.info = info;
             this.Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
-        public QueryConstructor SafeAddParam(IReadonlyQueryInfo info, object val, bool addParamChar = true, bool allowAlias = true)
+        public QueryConstructor AddParameter(object val, bool allowAlias = true)
         {
-            if (val is SqlExpression exp)
-                return this.Add(exp, info, allowAlias);
-
-            if (val is ISqlExpressible iExp)
-                return AddExpression(info, iExp, allowAlias);
-
-            if (addParamChar)
-                this.Add("?");
-
-            return this.AddParams(val);
+            return this.InternalAddParameter(val, true, allowAlias);
         }
 
-        public QueryConstructor AddExpression(IReadonlyQueryInfo info, ISqlExpressible exp, bool allowAlias = true)
+        /// <summary>
+        /// Adds an expression to the query.
+        /// </summary>
+        /// <param name="expression">The expression to add.</param>
+        /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
+        public QueryConstructor AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {
-            return this.Add(exp.ToSafeExpression(info, allowAlias), info, allowAlias);
+            return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
         }
 
+        /// <summary>
+        /// Adds a <see cref="QueryConstructor"/> to this instance.
+        /// </summary>
+        /// <param name="constructor">The <see cref="QueryConstructor"/> to add.</param>
         public QueryConstructor Add(QueryConstructor constructor)
         {
             if (constructor == null)
@@ -49,31 +68,62 @@ namespace SharpOrm.Builder
                 throw new InvalidOperationException();
 
             this.Add(constructor.query.ToString());
-            this.AddParams(constructor.Parameters);
+            this.AddParameters(constructor.Parameters);
             return this;
         }
 
-        public QueryConstructor Add(SqlExpression exp)
+        public QueryConstructor Add(string query, params object[] parameters)
         {
-            return this.Add(exp.ToString()).AddParams(exp.Parameters);
+            if (query.Count(c => c == '?') != parameters.Length)
+                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+
+            return this.Add(query.ToString()).AddParameters(parameters);
         }
 
-        public QueryConstructor Add(SqlExpression exp, IReadonlyQueryInfo info, bool allowAlias)
+        /// <summary>
+        /// Adds an <see cref="SqlExpression"/> to the query.
+        /// </summary>
+        /// <param name="expression">The <see cref="SqlExpression"/> to add.</param>
+        public QueryConstructor Add(SqlExpression expression)
         {
-            StringBuilder builder = new StringBuilder(exp.ToString());
+            return this.Add(expression.ToString()).AddParameters(expression.Parameters);
+        }
+
+        /// <summary>
+        /// Adds an <see cref="SqlExpression"/> to the query.
+        /// </summary>
+        /// <param name="expression">The <see cref="SqlExpression"/> to add
+        /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
+        public QueryConstructor Add(SqlExpression expression, bool allowAlias)
+        {
+            StringBuilder builder = new StringBuilder(expression.ToString());
             int[] paramCharIndexes = builder.GetIndexesOfParamsChar().ToArray();
 
             for (int i = paramCharIndexes.Length - 1; i >= 0; i--)
-                if (exp.Parameters[i] is ISqlExpressible iExp)
-                    this.AddParams(this.SafeAdd(paramCharIndexes[i], info, builder, iExp, allowAlias));
+                if (expression.Parameters[i] is ISqlExpressible iExp)
+                    this.AddParameters(this.InternalAdd(paramCharIndexes[i], builder, iExp, allowAlias));
                 else
-                    this.SafeAddParam(info, exp.Parameters[i], false);
+                    this.InternalAddParameter(expression.Parameters[i], false, true);
 
             this.Add(builder.ToString());
             return this;
         }
 
-        private IEnumerable<object> SafeAdd(int argIndex, IReadonlyQueryInfo info, StringBuilder builder, ISqlExpressible exp, bool allowAlias)
+        private QueryConstructor InternalAddParameter(object val, bool addParamChar, bool allowAlias)
+        {
+            if (val is SqlExpression exp)
+                return this.Add(exp, allowAlias);
+
+            if (val is ISqlExpressible iExp)
+                return this.AddExpression(iExp, allowAlias);
+
+            if (addParamChar)
+                this.Add("?");
+
+            return this.AddParameters(val);
+        }
+
+        private IEnumerable<object> InternalAdd(int argIndex, StringBuilder builder, ISqlExpressible exp, bool allowAlias)
         {
             builder.Remove(argIndex, 1);
             var sqlExp = exp.ToSafeExpression(info, allowAlias);
@@ -83,6 +133,12 @@ namespace SharpOrm.Builder
                 yield return item;
         }
 
+        public QueryConstructor AddFormat(string format, params object[] args)
+        {
+            this.Add(string.Format(format, args));
+            return this;
+        }
+
         public QueryConstructor Add(string raw = " ")
         {
             this.query.Append(raw);
@@ -90,26 +146,41 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public QueryConstructor AddParams(params object[] @params)
+        /// <summary>
+        /// Adds parameters to the query.
+        /// </summary>
+        /// <param name="parameters">The parameters to add.</param>
+        public QueryConstructor AddParameters(params object[] parameters)
         {
-            this.parameters.AddRange(@params);
+            return AddParameters((IEnumerable<object>)parameters);
+        }
+
+        /// <summary>
+        /// Adds parameters to the query.
+        /// </summary>
+        /// <param name="parameters">The parameters to add.</param>
+        public QueryConstructor AddParameters(IEnumerable<object> parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException(nameof(parameters));
+
+            this.parameters.AddRange(parameters);
 
             return this;
         }
 
-        public QueryConstructor AddParams(IEnumerable<object> @params)
-        {
-            this.parameters.AddRange(@params);
-
-            return this;
-        }
-
-        public QueryConstructor Line()
+        /// <summary>
+        /// Adds a line break to the query.
+        /// </summary>
+        public QueryConstructor NewLine()
         {
             this.query.AppendLine();
             return this;
         }
 
+        /// <summary>
+        /// Clears the query.
+        /// </summary>
         public QueryConstructor Clear()
         {
             this.query.Clear();
@@ -117,6 +188,10 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        /// <summary>
+        /// Returns an <see cref="SqlExpression"/> representation of the query.
+        /// </summary>
+        /// <param name="info">The query information.</param>
         public SqlExpression ToExpression(IReadonlyQueryInfo info)
         {
             return new SqlExpression(this.query.ToString(), this.parameters.ToArray());

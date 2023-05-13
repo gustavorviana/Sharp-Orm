@@ -4,6 +4,7 @@ using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,38 +17,48 @@ namespace SharpOrm
         protected internal ObjectLoader Loader => Translator.GetLoader(typeof(T));
 
         #region Query
-        public Query(string alias) : base($"{TableName} {alias}")
-        {
-            QueryExtension.ValidateTranslator();
-        }
-
         public Query() : base(TableName)
         {
 
         }
 
-        public Query(ConnectionCreator creator, string alias = "") : base(creator, $"{TableName} {alias}")
+        public Query(string alias) : this(new DbName(TableName, alias))
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbConnection connection, string alias = "") : base(connection, $"{TableName} {alias}")
+        public Query(DbName name) : base(ConnectionCreator.Default, name)
+        {
+
+        }
+
+        public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbTransaction transaction, string alias = "") : base(transaction, $"{TableName} {alias}")
+        public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
+        {
+        }
+
+        public Query(DbTransaction transaction, string alias = "") : this(transaction, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
+        {
+        }
+
+        public Query(DbConnection connection, IQueryConfig config) : this(connection, config, new DbName(TableName, null))
+        {
+        }
+
+        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
+        {
+        }
+
+        public Query(DbConnection connection, IQueryConfig config, DbName name) : base(connection, config, name)
         {
             QueryExtension.ValidateTranslator();
         }
 
-        public Query(DbConnection connection, IQueryConfig config) : base(connection, config, TableName)
-        {
-            QueryExtension.ValidateTranslator();
-        }
-
-        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") :
-            base(transaction, config, new TableName(TableName, alias))
+        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(transaction, config, name)
         {
             QueryExtension.ValidateTranslator();
         }
@@ -158,7 +169,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.Table = new TableName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
             join.WhereColumn(column1, operation, column2);
 
             this.Info.Joins.Add(join);
@@ -168,7 +179,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.Table = new TableName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
 
             operation(join);
             this.Info.Joins.Add(join);
@@ -211,12 +222,6 @@ namespace SharpOrm
 
         #region Query
 
-        [Obsolete]
-        public Query(string table, string alias) : this(ConnectionCreator.Default, table, alias)
-        {
-
-        }
-
         /// <summary>
         /// Creates a new instance of SharpOrm.Query using the default values ​​defined in SharpOrm.QueryDefaults.Default.
         /// </summary>
@@ -226,48 +231,34 @@ namespace SharpOrm
 
         }
 
-        [Obsolete]
-        public Query(ConnectionCreator creator, string table, string alias)
-            : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), "Um criador de conexão deve ser foi definido"), creator.Config, new TableName(table, alias))
+        public Query(ConnectionCreator creator, string table) : this(creator, new DbName(table))
         {
             this._creator = creator;
         }
 
-        public Query(ConnectionCreator creator, string table)
-            : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), "Um criador de conexão deve ser foi definido"), creator.Config, new TableName(table))
-        {
-            this._creator = creator;
-        }
-
-        public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new TableName(table))
-        {
-        }
-
-        [Obsolete]
-        public Query(DbTransaction transaction, string table, string alias) : this(transaction, ConnectionCreator.Default.Config, new TableName(table, alias))
+        public Query(ConnectionCreator creator, DbName table)
+            : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
         {
 
         }
 
-        public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new TableName(table))
+        public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))
+        {
+        }
+
+        public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new DbName(table))
         {
 
         }
 
-        [Obsolete]
-        public Query(DbConnection connection, IQueryConfig config, string table, string alias) : this(connection, config, new TableName(table, alias))
-        {
-
-        }
-
-        public Query(DbConnection connection, IQueryConfig config, string table) : this(connection, config, new TableName(table))
+        public Query(DbConnection connection, IQueryConfig config, string table) : this(connection, config, new DbName(table))
         {
         }
 
-        protected Query(DbConnection connection, IQueryConfig config, TableName table) : base(config)
+        public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config)
         {
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            this.Info.Table = table;
+            this.Info.TableName = table;
 
             try
             {
@@ -280,21 +271,26 @@ namespace SharpOrm
             }
         }
 
-        [Obsolete]
-        public Query(DbTransaction transaction, IQueryConfig config, string table, string alias) : this(transaction, config, new TableName(table, alias))
-        {
-        }
-
-        public Query(DbTransaction transaction, IQueryConfig config, string table) : this(transaction, config, new TableName(table))
+        public Query(DbTransaction transaction, IQueryConfig config, string table) : this(transaction, config, new DbName(table))
         {
 
         }
 
-        protected Query(DbTransaction transaction, IQueryConfig config, TableName table) : base(config)
+        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(config)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.Connection = transaction.Connection;
-            this.Info.Table = table;
+            this.Info.TableName = name;
+
+            try
+            {
+                if (transaction.Connection.State != System.Data.ConnectionState.Open)
+                    transaction.Connection.Open();
+            }
+            catch (Exception ex)
+            {
+                throw new DbConnectionException(ex);
+            }
         }
 
         #endregion
@@ -312,7 +308,7 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(columnNames), "At least one column must be inserted.");
 
             if (columnNames.Length == 1 && columnNames[0] == "*")
-                return this.Select((Column)"*");
+                return this.Select(Column.All);
 
             return this.Select(columnNames.Select(name => new Column(name)).ToArray());
         }
@@ -339,7 +335,7 @@ namespace SharpOrm
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.Table = new TableName(table);
+            join.Info.TableName = new DbName(table);
             join.WhereColumn(column1, operation, column2);
 
             this.Info.Joins.Add(join);
@@ -349,7 +345,7 @@ namespace SharpOrm
         public Query Join(string table, QueryCallback operation, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.Table = new TableName(table);
+            join.Info.TableName = new DbName(table);
             operation(join);
             this.Info.Joins.Add(join);
             return this;
@@ -559,7 +555,7 @@ namespace SharpOrm
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = this.Transaction == null ? new Query(this.Creator.GetConnection(), this.Info.Config, this.Info.Table) : new Query(this.Transaction, this.Info.Config, this.Info.Table);
+            Query query = this.Transaction == null ? new Query(this.Creator.GetConnection(), this.Info.Config, this.Info.TableName) : new Query(this.Transaction, this.Info.Config, this.Info.TableName);
 
             query._creator = this.Creator;
 

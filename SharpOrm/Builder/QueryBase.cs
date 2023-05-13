@@ -122,7 +122,7 @@ namespace SharpOrm.Builder
 
             if (query.Info.Where.Parameters.Count > 0)
             {
-                this.Info.Where.AddParams(query.Info.Where.Parameters);
+                this.Info.Where.AddParameters(query.Info.Where.Parameters);
                 return this.WriteWhere($"({query.Info.Where})", AND);
             }
 
@@ -262,7 +262,7 @@ namespace SharpOrm.Builder
 
             if (query.Info.Where.Parameters.Count > 0)
             {
-                query.Info.Where.AddParams(query.Info.Where.Parameters);
+                query.Info.Where.AddParameters(query.Info.Where.Parameters);
                 return this.WriteWhere($"({query.Info.Where})", OR);
             }
 
@@ -367,7 +367,7 @@ namespace SharpOrm.Builder
 
         private string ToSql(SqlExpression expr)
         {
-            this.Info.Where.AddParams(expr.Parameters);
+            this.Info.Where.AddParameters(expr.Parameters);
 
             return expr.ToString();
         }
@@ -444,15 +444,15 @@ namespace SharpOrm.Builder
             if (value is Query query)
                 return this.RegisterQuery(query);
 
-            if (value is Enum) this.Info.Where.AddParams(Convert.ToInt32(value));
-            else this.Info.Where.AddParams(value);
+            if (value is Enum) this.Info.Where.AddParameters(Convert.ToInt32(value));
+            else this.Info.Where.AddParameters(value);
 
             return "?";
         }
 
         private string RegisterQuery(Query query)
         {
-            this.Info.Where.AddParams(query.Info.Where.Parameters);
+            this.Info.Where.AddParameters(query.Info.Where.Parameters);
 
             return $"({query})";
         }

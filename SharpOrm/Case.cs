@@ -23,6 +23,11 @@ namespace SharpOrm
 
         }
 
+        public Case(DbName column) : base(column)
+        {
+
+        }
+
         public Case(string columnName) : base(columnName)
         {
         }
@@ -111,19 +116,19 @@ namespace SharpOrm
             if (this.nodes.Count == 0)
                 throw new InvalidOperationException("You cannot use an empty case.");
 
-            var query = new QueryConstructor();
+            var query = new QueryConstructor(info);
             this.WriteCase(query, info);
 
             foreach (var node in this.nodes)
                 node.WriteTo(query, info);
 
             if (this.elseValue != null)
-                query.Add("ELSE ").SafeAddParam(info, this.elseValue).Add();
+                query.Add("ELSE ").AddParameter(this.elseValue).Add();
 
             query.Add("END");
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
-                query.Add($" AS {info.Config.ApplyNomenclature(this.Alias)}");
+                query.AddFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
 
             return query.ToExpression(info);
         }
@@ -133,10 +138,10 @@ namespace SharpOrm
             query.Add("CASE");
 
             if (this.expression != null)
-                return query.Add().Add(this.expression, info, false);
+                return query.Add().Add(this.expression, false).Add();
 
             if (!string.IsNullOrEmpty(this.Name))
-                return query.Add($" {info.Config.ApplyNomenclature(this.Name)}").Add();
+                return query.AddFormat(" {0} ", info.Config.ApplyNomenclature(this.Name));
 
             return query.Add();
         }
@@ -153,14 +158,14 @@ namespace SharpOrm
                 query.Add("WHEN ");
 
                 if (this.Column != null)
-                    query.SafeAddParam(info, this.Column).Add();
+                    query.AddParameter(this.Column).Add();
 
-                query.Add(this.Expression, info, false).Add(" THEN ");
+                query.Add(this.Expression, false).Add(" THEN ");
 
                 if (this.Then is SqlExpression exp)
-                    return query.Add().SafeAddParam(info, exp).Add();
+                    return query.Add().AddParameter(exp).Add();
 
-                return query.SafeAddParam(info, this.Then).Add();
+                return query.AddParameter(this.Then).Add();
             }
         }
     }
