@@ -61,10 +61,11 @@ namespace UnityTest
             query.Insert(new TestTable
             {
                 Id = Id,
+                Id2 = Id,
                 Name = Name
             });
 
-            var value = query.Find(Id);
+            var value = query.Find(Id, Id);
             Assert.IsNotNull(value);
         }
 

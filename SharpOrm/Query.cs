@@ -84,37 +84,39 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Search a row in the database by the primary key.
+        /// Searches and returns the first occurrence of an object of type T that matches the values of the provided primary keys.
         /// </summary>
-        /// <param name="primaryKeys"></param>
-        /// <returns></returns>
-        public T Find(object primaryKey)
+        /// <param name="primaryKeysValues">The values of the primary keys to search for.</param>
+        /// <returns>The first occurrence of an object of type T that matches the provided primary keys.</returns>
+        public T Find(params object[] primaryKeysValues)
         {
-            string pkColumn = this.GetAndValidatePrimaryKey(primaryKey).First();
             using (var query = (Query<T>)this.Clone(false))
             {
-                query.Where(pkColumn, primaryKey);
+                var pKeys = this.GetAndValidatePrimaryKey(primaryKeysValues);
+                for (var i = 0; i < primaryKeysValues.Length; i++)
+                    query.Where(pKeys[i], primaryKeysValues[i]);
+
                 return query.FirstOrDefault();
             }
         }
 
-        private IEnumerable<string> GetAndValidatePrimaryKey(params object[] pksToCheck)
+        private string[] GetAndValidatePrimaryKey(object[] pksToCheck)
         {
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
             var properties = this.Loader.GetAttrPrimaryKeys().ToArray();
             if (properties.Length == 0)
-                throw new DatabaseException("No primary key has been configured in the model.");
+                throw new DatabaseException(Messages.MissingPrimaryKey);
 
             if (properties.Length != pksToCheck.Length)
-                throw new ArgumentException("The number of inserted values ​​is not the same number of primary keys.", nameof(pksToCheck));
+                throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
 
             for (int i = 0; i < properties.Length; i++)
-                if (properties[i].PropertyType != pksToCheck[i].GetType())
-                    throw new InvalidCastException("Inserted type is not the same as defined in the primary key column of the model.");
+                if (properties[i].PropertyType != pksToCheck[i]?.GetType())
+                    throw new InvalidCastException(Messages.InsertedTypeMismatch);
 
-            return properties.Select(pk => ObjectLoader.GetColumnName(pk));
+            return properties.Select(pk => ObjectLoader.GetColumnName(pk)).ToArray();
         }
 
         /// <summary>
@@ -161,7 +163,7 @@ namespace SharpOrm
 
             var toUpdate = cells.ToArray();
             if (toUpdate.Length == 0)
-                throw new InvalidOperationException("Columns inserted to be updated were not found.");
+                throw new InvalidOperationException(Messages.ColumnsNotFound);
 
             return base.Update(toUpdate);
         }
@@ -305,7 +307,7 @@ namespace SharpOrm
         public Query Select(params string[] columnNames)
         {
             if ((columnNames?.Length ?? 0) == 0)
-                throw new ArgumentNullException(nameof(columnNames), "At least one column must be inserted.");
+                throw new ArgumentNullException(nameof(columnNames), Messages.NoColumnsInserted);
 
             if (columnNames.Length == 1 && columnNames[0] == "*")
                 return this.Select(Column.All);
@@ -321,7 +323,7 @@ namespace SharpOrm
         public Query Select(params Column[] columns)
         {
             if ((columns?.Length ?? 0) == 0)
-                throw new ArgumentNullException(nameof(columns), "At least one column must be inserted.");
+                throw new ArgumentNullException(nameof(columns), Messages.NoColumnsInserted);
 
             this.Info.Select = columns;
 
@@ -438,7 +440,7 @@ namespace SharpOrm
             this.CheckIsSafeOperation();
 
             if (cells.Length == 0)
-                throw new InvalidOperationException("At least one column must be entered.");
+                throw new InvalidOperationException(Messages.NoColumnsInserted);
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Update(cells))

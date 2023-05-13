@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net45;net5.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
 		<AssemblyVersion>1.1.6.8</AssemblyVersion>
 		<FileVersion>1.1.6.8</FileVersion>
@@ -40,7 +40,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" Condition="'$(TargetFramework)' != 'net45' " />
 	</ItemGroup>
 
 	<ItemGroup>
