@@ -37,7 +37,8 @@ namespace SharpOrm.Builder.DataTranslation
         public IEnumerable<PropertyInfo> GetAttrPrimaryKeys()
         {
             var props = type.GetProperties(PropertiesFlags)
-                .Where(p => p.GetCustomAttribute<KeyAttribute>() != null);
+                .Where(p => p.GetCustomAttribute<KeyAttribute>() != null)
+                .OrderBy(p => GetColumnOrder(p));
 
             if (props.Any())
                 return props;
@@ -46,6 +47,14 @@ namespace SharpOrm.Builder.DataTranslation
                 return new[] { idProperty };
 
             return new PropertyInfo[0];
+        }
+
+        private static int GetColumnOrder(PropertyInfo property)
+        {
+            if (property.GetCustomAttribute<ColumnAttribute>()  is ColumnAttribute attr)
+                return attr.Order;
+
+            return int.MaxValue;
         }
 
         /// <summary>
@@ -143,7 +152,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public static string GetColumnName(PropertyInfo property, bool usePropertyNameIfEmpty = true)
         {
-            if (property.GetCustomAttribute<ColumnAttribute>() is ColumnAttribute col)
+            if (property.GetCustomAttribute<ColumnAttribute>() is ColumnAttribute col && !string.IsNullOrEmpty(col.Name))
                 return col.Name;
 
             return usePropertyNameIfEmpty ? property.Name : null;

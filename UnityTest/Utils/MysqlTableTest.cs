@@ -11,6 +11,7 @@ namespace UnityTest.Utils
         protected const string TABLE = "TestTable";
 
         protected const string ID = "id";
+        protected const string ID2 = "id2";
         protected const string NAME = "name";
         protected const string NICK = "nick";
         protected const string CREATEDAT = "record_created";
@@ -64,6 +65,7 @@ namespace UnityTest.Utils
         {
             return $@"CREATE TABLE IF NOT EXISTS {TABLE} (
                   {ID} INT NOT NULL PRIMARY KEY,
+                  {ID2} INT NULL,
                   {NAME} VARCHAR(256) NOT NULL,
                   {NICK} VARCHAR(256) NULL,
                   {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

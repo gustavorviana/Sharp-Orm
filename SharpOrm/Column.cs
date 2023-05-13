@@ -141,7 +141,7 @@ namespace SharpOrm
 
         public bool Equals(Column other)
         {
-            return other != null &&
+            return other is Column &&
                    Name == other.Name &&
                    Alias == other.Alias &&
                    expression.Equals(other.expression);
