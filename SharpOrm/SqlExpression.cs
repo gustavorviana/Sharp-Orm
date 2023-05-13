@@ -28,14 +28,14 @@ namespace SharpOrm
         /// Initializes a new instance of the SqlExpression class with the provided SQL expression string and parameters.
         /// </summary>
         /// <param name="value">The SQL expression string.</param>
-        /// <param name="arguments">The parameters used in the SQL expression.</param>
-        public SqlExpression(string value, params object[] arguments)
+        /// <param name="parameters">The parameters used in the SQL expression.</param>
+        public SqlExpression(string value, params object[] parameters)
         {
-            if (value.Count(c => c == '?') != arguments.Length)
+            if (value.Count(c => c == '?') != parameters.Length)
                 throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
 
             this.value = value;
-            this.Parameters = arguments;
+            this.Parameters = parameters;
         }
 
         /// <summary>

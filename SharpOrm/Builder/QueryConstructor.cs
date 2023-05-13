@@ -72,6 +72,14 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        public QueryConstructor Add(string query, params object[] parameters)
+        {
+            if (query.Count(c => c == '?') != parameters.Length)
+                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+
+            return this.Add(query.ToString()).AddParameters(parameters);
+        }
+
         /// <summary>
         /// Adds an <see cref="SqlExpression"/> to the query.
         /// </summary>
@@ -86,16 +94,16 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">The <see cref="SqlExpression"/> to add
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
-        public QueryConstructor Add(SqlExpression exp, bool allowAlias)
+        public QueryConstructor Add(SqlExpression expression, bool allowAlias)
         {
-            StringBuilder builder = new StringBuilder(exp.ToString());
+            StringBuilder builder = new StringBuilder(expression.ToString());
             int[] paramCharIndexes = builder.GetIndexesOfParamsChar().ToArray();
 
             for (int i = paramCharIndexes.Length - 1; i >= 0; i--)
-                if (exp.Parameters[i] is ISqlExpressible iExp)
+                if (expression.Parameters[i] is ISqlExpressible iExp)
                     this.AddParameters(this.InternalAdd(paramCharIndexes[i], builder, iExp, allowAlias));
                 else
-                    this.InternalAddParameter(exp.Parameters[i], false, true);
+                    this.InternalAddParameter(expression.Parameters[i], false, true);
 
             this.Add(builder.ToString());
             return this;
@@ -123,6 +131,12 @@ namespace SharpOrm.Builder
             builder.Insert(argIndex, sqlExp.ToString());
             foreach (var item in sqlExp.Parameters)
                 yield return item;
+        }
+
+        public QueryConstructor AddFormat(string format, params object[] args)
+        {
+            this.Add(string.Format(format, args));
+            return this;
         }
 
         public QueryConstructor Add(string raw = " ")

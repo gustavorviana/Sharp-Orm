@@ -23,6 +23,11 @@ namespace SharpOrm
 
         }
 
+        public Case(DbName column) : base(column)
+        {
+
+        }
+
         public Case(string columnName) : base(columnName)
         {
         }
@@ -123,7 +128,7 @@ namespace SharpOrm
             query.Add("END");
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
-                query.Add($" AS {info.Config.ApplyNomenclature(this.Alias)}");
+                query.AddFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
 
             return query.ToExpression(info);
         }
@@ -133,10 +138,10 @@ namespace SharpOrm
             query.Add("CASE");
 
             if (this.expression != null)
-                return query.Add().Add(this.expression, false);
+                return query.Add().Add(this.expression, false).Add();
 
             if (!string.IsNullOrEmpty(this.Name))
-                return query.Add($" {info.Config.ApplyNomenclature(this.Name)}").Add();
+                return query.AddFormat(" {0} ", info.Config.ApplyNomenclature(this.Name));
 
             return query.Add();
         }

@@ -5,10 +5,10 @@ namespace SharpOrm.Builder.DataTranslation
     public interface ISqlTranslation
     {
         /// <summary>
-        /// Signals whether the class can work with the type.
+        /// Determines whether the translator can work with the specified type.
         /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
+        /// <param name="type">The type to check.</param>
+        /// <returns><c>true</c> if the translator can work with the type; otherwise, <c>false</c>.</returns>
         bool CanWork(Type type);
 
         /// <summary>
