@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Added support for blob, fix boolean convertion and added MultipleConnectionCreator T.</PackageReleaseNotes>
+		<PackageReleaseNotes>Bug fixes, removal of obsolete functions, improvements to QueryConstructor, and enhancements to the Query&lt;T&gt;.Find function with multiple primary keys.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
