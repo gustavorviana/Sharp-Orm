@@ -49,7 +49,7 @@ namespace SharpOrm
             get
             {
                 if (!(this.GetCell(columnName) is Cell cell))
-                    throw new ArgumentException($"A coluna \"{columnName}\" não foi encontrada.");
+                    throw new ArgumentException($"The column \"{columnName}\" was not found.");
 
                 return cell.Value;
             }

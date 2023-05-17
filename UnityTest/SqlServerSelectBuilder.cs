@@ -179,7 +179,6 @@ namespace UnityTest
             Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
-
         [TestMethod]
         public void CountSelect()
         {

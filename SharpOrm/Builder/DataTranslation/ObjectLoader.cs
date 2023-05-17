@@ -51,7 +51,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         private static int GetColumnOrder(PropertyInfo property)
         {
-            if (property.GetCustomAttribute<ColumnAttribute>()  is ColumnAttribute attr)
+            if (property.GetCustomAttribute<ColumnAttribute>() is ColumnAttribute attr)
                 return attr.Order;
 
             return int.MaxValue;

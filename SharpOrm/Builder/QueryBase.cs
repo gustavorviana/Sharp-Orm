@@ -88,7 +88,6 @@ namespace SharpOrm.Builder
             return this.Where(column, "IS", null);
         }
 
-
         /// <summary>
         /// This method adds a clause to the "WHERE" clause checking if a column is not null
         /// </summary>
@@ -120,13 +119,17 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Where.Parameters.Count > 0)
-            {
-                this.Info.Where.AddParameters(query.Info.Where.Parameters);
-                return this.WriteWhere($"({query.Info.Where})", AND);
-            }
+            return this.WriteQuery(query, AND);
+        }
 
-            return this;
+        /// <summary>
+        /// Adds a clause to the "WHERE" statement based on an QueryBase object, where the expression is safely converted to a SqlExpression.
+        /// </summary>
+        /// <param name="query">The QueryBase object that contains the expression to be added to the WHERE statement.</param>
+        /// <returns>The QueryBase instance to allow for method chaining.</returns>
+        public QueryBase Where(QueryBase query)
+        {
+            return this.WriteQuery(query, AND);
         }
 
         /// <summary>
@@ -191,6 +194,7 @@ namespace SharpOrm.Builder
         #endregion
 
         #region OrWhere
+
         /// <summary>
         /// Adds an OR condition to the WHERE clause of the query.
         /// </summary>
@@ -260,13 +264,17 @@ namespace SharpOrm.Builder
             var query = new QueryBase(this.Info.Config);
             callback(query);
 
-            if (query.Info.Where.Parameters.Count > 0)
-            {
-                query.Info.Where.AddParameters(query.Info.Where.Parameters);
-                return this.WriteWhere($"({query.Info.Where})", OR);
-            }
+            return this.WriteQuery(query, OR);
+        }
 
-            return this;
+        /// <summary>
+        /// Adds a clause to the "WHERE" statement based on an QueryBase object, where the expression is safely converted to a SqlExpression.
+        /// </summary>
+        /// <param name="query">The QueryBase object that contains the expression to be added to the WHERE statement.</param>
+        /// <returns>The QueryBase instance to allow for method chaining.</returns>
+        public QueryBase OrWhere(QueryBase query)
+        {
+            return this.WriteQuery(query, OR);
         }
 
         /// <summary>
@@ -329,6 +337,23 @@ namespace SharpOrm.Builder
         #endregion
 
         #region Where builder
+
+        private QueryBase WriteQuery(QueryBase query, string type)
+        {
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+
+            if (query == this)
+                throw new InvalidOperationException(Messages.SourceQueryEqualToProvidedQuery);
+
+            if (!query.Info.Where.Empty)
+            {
+                this.Info.Where.AddParameters(query.Info.Where.Parameters);
+                return this.WriteWhere($"({query.Info.Where})", type);
+            }
+
+            return this;
+        }
 
         private QueryBase WriteBetween(object toCheck, object arg1, object arg2, bool isNot, string whereType)
         {

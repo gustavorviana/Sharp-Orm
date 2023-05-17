@@ -10,7 +10,7 @@ namespace SharpOrm.Builder
     /// <summary>
     /// A class for building SQL queries with parameters.
     /// </summary>
-    public class QueryConstructor : IDisposable, ISqlExpressible
+    public sealed class QueryConstructor : IDisposable, ISqlExpressible
     {
         private readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();

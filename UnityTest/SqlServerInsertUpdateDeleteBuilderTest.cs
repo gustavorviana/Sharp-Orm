@@ -1,27 +1,27 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm;
-using SharpOrm.Builder;
 using System;
-using System.Data.Common;
-using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
+using SharpOrm.Builder;
+using SharpOrm;
+using System.Data.Common;
+using System.Linq;
 
 namespace UnityTest
 {
     [TestClass]
-    public class MysqlInsertUpdateDeleteBuilderTest : MysqlTableTest
+    public class SqlServerInsertUpdateDeleteBuilderTest : SqlServerTest
     {
         [TestMethod]
         public void Insert()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
 
             q.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`, `value`) VALUES (1, @v1, NULL); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name], [value]) VALUES (1, @v1, NULL); SELECT SCOPE_IDENTITY();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", "T1");
         }
@@ -29,18 +29,18 @@ namespace UnityTest
         [TestMethod]
         public void InsertWIthRaw()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
 
             using var cmd = g.Insert(new Cell[] { new Cell(ID, (SqlExpression)"1") });
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`) VALUES (1); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([id]) VALUES (1); SELECT SCOPE_IDENTITY();", cmd.CommandText);
         }
 
         [TestMethod]
         public void InsertExtendedClass()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
             var table = new ExtendedTestTable
             {
                 Id = 1,
@@ -54,7 +54,7 @@ namespace UnityTest
             };
 
             using var cmd = g.Insert(Query.Translator.ToRow(table, typeof(TestTable)).Cells);
-            Assert.AreEqual("INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (1, @v1, NULL, @v2, 2.1, @v3, 1); SELECT LAST_INSERT_ID();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([Id], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status]) VALUES (1, @v1, NULL, @v2, 2.1, @v3, 1); SELECT SCOPE_IDENTITY();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", table.Name);
             AreEqualsParameter(cmd.Parameters[1], "@v2", table.CreatedAt);
@@ -64,13 +64,12 @@ namespace UnityTest
         [TestMethod]
         public void BulkInsert()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
             var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
 
             using var cmd = g.BulkInsert(rows);
-            Assert.AreEqual("INSERT INTO `TestTable` (`id`, `name`) VALUES (1, @v1), (2, @v2), (3, @v3), (4, @v4), (5, @v5)", cmd.CommandText);
-
+            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name]) VALUES (1, @v1), (2, @v2), (3, @v3), (4, @v4), (5, @v5)", cmd.CommandText);
             TestBulkInsertParams(cmd, rows);
         }
 
@@ -82,12 +81,12 @@ namespace UnityTest
         [TestMethod]
         public void Update()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
 
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = @v2, `value` = NULL, `status` = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1, [alias] = @v2, [value] = NULL, [status] = 1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
             AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
@@ -96,15 +95,15 @@ namespace UnityTest
         [TestMethod]
         public void UpdateCaseValue()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
             const string CaseMsg = "Without alias";
             const string ElseMsg = "With alias";
 
             var caseVal = new Case().When("alias", "IS", null, CaseMsg).Else(ElseMsg);
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", caseVal), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1, `alias` = CASE WHEN `alias` IS NULL THEN @v2 ELSE @v3 END, `value` = NULL, `status` = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1, [alias] = CASE WHEN [alias] IS NULL THEN @v2 ELSE @v3 END, [value] = NULL, [status] = 1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
             AreEqualsParameter(cmd.Parameters[1], "@v2", CaseMsg);
@@ -114,12 +113,12 @@ namespace UnityTest
         [TestMethod]
         public void UpdateWhere()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
             q.Where("id", "=", 1);
 
             using var cmd = g.Update(new Cell[] { new Cell("name", "MyName") });
-            Assert.AreEqual("UPDATE `TestTable` SET `name` = @v1 WHERE `id` = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1 WHERE [id] = 1", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", "MyName");
         }
@@ -127,22 +126,22 @@ namespace UnityTest
         [TestMethod]
         public void Delete()
         {
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
 
             using var cmd = g.Delete();
-            Assert.AreEqual("DELETE FROM `TestTable`", cmd.CommandText);
+            Assert.AreEqual("DELETE FROM [TestTable]", cmd.CommandText);
         }
 
         [TestMethod]
         public void DeleteWhere()
         {
-            using var q = NewQuery();
+            using var q = NewQuery(TABLE);
             q.Where("id", "=", 1);
-            using var g = new MysqlGrammar(q);
+            using var g = new SqlServerGrammar(q);
 
             using var cmd = g.Delete();
-            Assert.AreEqual("DELETE FROM `TestTable` WHERE `id` = 1", cmd.CommandText);
+            Assert.AreEqual("DELETE FROM [TestTable] WHERE [id] = 1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -151,10 +150,10 @@ namespace UnityTest
             using var q = NewQuery(TABLE, "t1");
             q.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
             q.Where("t2.Id", 1);
-            using var g = new MysqlGrammar(q);
+            using var g = new SqlServerGrammar(q);
 
             using var cmd = g.Delete();
-            Assert.AreEqual("DELETE `t1` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", cmd.CommandText);
+            Assert.AreEqual("DELETE [t1] FROM [TestTable] [t1] INNER JOIN [Table2] [t2] ON [t2].[Id] = [t1].[T2Id] WHERE [t2].[Id] = 1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -165,11 +164,11 @@ namespace UnityTest
                 .Select(new Column("Id"), (Column)"1")
                 .Where("id", 1);
 
-            using var q = NewQuery();
-            using var g = new MysqlGrammar(q);
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
 
             using var cmd = g.InsertQuery(selectQuery, new[] { "UserId", "Status" });
-            Assert.AreEqual("INSERT INTO `TestTable` (UserId,Status) SELECT `Id`, 1 FROM `User` WHERE `id` = 1", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] (UserId,Status) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
         }
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)
@@ -184,9 +183,7 @@ namespace UnityTest
             var dbParams = command.Parameters.OfType<DbParameter>().Where(p => p.ParameterName.StartsWith("@v")).ToArray();
 
             for (int i = 0; i < rows.Length; i++)
-            {
                 AreEqualsParameter(dbParams[i], $"@v{i + 1}", rows[i][NAME]);
-            }
         }
     }
 }

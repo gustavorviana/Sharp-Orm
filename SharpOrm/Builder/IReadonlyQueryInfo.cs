@@ -3,7 +3,6 @@
     public interface IReadonlyQueryInfo
     {
         IQueryConfig Config { get; }
-        string From { get; }
-        string Alias { get; }
+        DbName TableName { get; }
     }
 }

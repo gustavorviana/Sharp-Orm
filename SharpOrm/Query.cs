@@ -448,7 +448,7 @@ namespace SharpOrm
         public int Insert(params Cell[] cells)
         {
             if (cells.Length == 0)
-                throw new InvalidOperationException("At least one column must be entered.");
+                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Insert(cells))

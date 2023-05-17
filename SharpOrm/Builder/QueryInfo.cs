@@ -68,9 +68,7 @@ namespace SharpOrm.Builder
 
             public IQueryConfig Config => this.info.Config;
 
-            public string From => this.info.From;
-
-            public string Alias => this.info.Alias;
+            public DbName TableName => this.info.TableName;
         }
     }
 }

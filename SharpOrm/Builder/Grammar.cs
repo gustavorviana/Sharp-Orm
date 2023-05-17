@@ -212,19 +212,12 @@ namespace SharpOrm.Builder
 
         protected string GetTableName(bool withAlias)
         {
-            return this.GetTableName(this.Info, withAlias);
+            return this.GetTableName(this.Query, withAlias);
         }
 
-        /// <summary>
-        /// Returns the table name with optional table alias. If withAlias is true and the table has an alias, the alias is included in the returned string.
-        /// </summary>
-        /// <param name="info">The QueryInfo object containing information about the table</param>
-        /// <param name="withAlias">Whether or not to include the table alias in the returned string</param>
-        /// <returns>The table name with optional alias</returns>
-        protected virtual string GetTableName(QueryInfo info, bool withAlias)
+        protected string GetTableName(QueryBase query, bool withAlias)
         {
-            string name = this.ApplyTableColumnConfig(info.From);
-            return !withAlias || string.IsNullOrEmpty(info.Alias) ? name : $"{name} {this.ApplyTableColumnConfig(info.Alias)}";
+            return query.Info.TableName.GetName(withAlias, query.Info.Config);
         }
 
         private DbCommand BuildCommand()

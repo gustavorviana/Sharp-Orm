@@ -114,7 +114,7 @@ namespace SharpOrm
         public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
             if (this.nodes.Count == 0)
-                throw new InvalidOperationException("You cannot use an empty case.");
+                throw new InvalidOperationException(Messages.CannotUseEmptyCase);
 
             var query = new QueryConstructor(info);
             this.WriteCase(query, info);

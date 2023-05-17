@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Linq;
 
 namespace SharpOrm.Builder
 {
@@ -46,6 +47,31 @@ namespace SharpOrm.Builder
 
             this.Name = splits[0];
             this.Alias = GetAlias(splits);
+        }
+
+        /// <summary>
+        /// Tries to retrieve the alias of the object.
+        /// </summary>
+        /// <returns>The alias of the object, if set; otherwise, returns the name of the object.</returns>
+        public string TryGetAlias(IQueryConfig config)
+        {
+            return string.IsNullOrEmpty(this.Alias) ? 
+                config.ApplyNomenclature(this.Name) :
+                config.ApplyNomenclature(this.Alias);
+        }
+
+        /// <summary>
+        /// Gets the name of the object, optionally including the alias.
+        /// </summary>
+        /// <param name="withAlias">Specifies whether to include the alias in the name.</param>
+        /// <param name="config">The query configuration used to apply nomenclature.</param>
+        /// <returns>The name of the object, with or without the alias, based on the specified parameters.</returns>
+        public string GetName(bool withAlias, IQueryConfig config)
+        {
+            if (!withAlias || string.IsNullOrEmpty(this.Alias))
+                return config.ApplyNomenclature(this.Name);
+
+            return string.Format("{0} {1}", config.ApplyNomenclature(this.Name), config.ApplyNomenclature(this.Alias));
         }
 
         private static string GetAlias(string[] split)

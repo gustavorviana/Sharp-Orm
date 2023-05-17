@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.1.6.8</AssemblyVersion>
-		<FileVersion>1.1.6.8</FileVersion>
-		<VersionPrefix>1.1.68</VersionPrefix>
+		<AssemblyVersion>1.1.7.8</AssemblyVersion>
+		<FileVersion>1.1.7.8</FileVersion>
+		<VersionPrefix>1.1.78</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Bug fixes, removal of obsolete functions, improvements to QueryConstructor, and enhancements to the Query&lt;T&gt;.Find function with multiple primary keys.</PackageReleaseNotes>
+		<PackageReleaseNotes>Addition of support for join in delete operations and various bug fixes.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

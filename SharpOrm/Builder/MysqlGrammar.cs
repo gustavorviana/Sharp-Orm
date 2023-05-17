@@ -33,7 +33,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            this.QueryBuilder.AppendFormat("DELETE FROM {0}", this.GetTableName(false));
+            this.QueryBuilder.AppendFormat("DELETE");
+
+            if (this.Info.Joins.Count > 0)
+                this.QueryBuilder.AppendFormat(" {0}", this.Info.TableName.TryGetAlias(this.Info.Config));
+
+            this.QueryBuilder.AppendFormat(" FROM {0}", this.Info.TableName.GetName(true, this.Info.Config));
+
+            this.ApplyJoins();
             this.WriteWhere(true);
         }
 
@@ -117,7 +124,7 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder.Append($" {join.Type} JOIN {this.GetTableName(join.Info, true)} ON {join.Info.Where}");
+            this.QueryBuilder.AppendFormat(" {0} JOIN {1} ON {2}", join.Type, this.GetTableName(join, true), join.Info.Where);
         }
 
         protected override void ConfigureUpdate(Cell[] cells)

@@ -32,7 +32,7 @@ namespace SharpOrm
         public SqlExpression(string value, params object[] parameters)
         {
             if (value.Count(c => c == '?') != parameters.Length)
-                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
 
             this.value = value;
             this.Parameters = parameters;
