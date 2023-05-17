@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
+using System.Xml.Linq;
 
 namespace SharpOrm
 {
@@ -25,7 +27,21 @@ namespace SharpOrm
 
         public static string AlphaNumericOnly(this string value, params char[] exceptions)
         {
-            return value.Only(c => char.IsDigit(c) || char.IsLetter(c) || exceptions.Contains(c));
+            return value.Only(c => char.IsLetterOrDigit(c) || exceptions.Contains(c));
+        }
+
+        public static string SanitizeSqlName(this string value, char prefix, char suffix)
+        {
+            string[] splitNames = value.Split('.');
+            for (int i = 0; i < splitNames.Length; i++)
+            {
+                if (splitNames[i] == "*")
+                    continue;
+
+                splitNames[i] = string.Format("{0}{1}{2}", prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
+            }
+
+            return string.Join(".", splitNames);
         }
 
         public static bool Contains(this IEnumerable<string> values, string toCompare, StringComparison stringComparison)

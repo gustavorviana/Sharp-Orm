@@ -1,13 +1,9 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Common;
-using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -23,6 +19,16 @@ namespace UnityTest
 
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable`", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void Basic2Select()
+        {
+            using var query = NewQuery("TestTable", "table").Select("table.*");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT `table`.* FROM `TestTable` `table`", cmd.CommandText);
         }
 
         [TestMethod]

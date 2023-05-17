@@ -21,7 +21,7 @@
 
         public string ApplyNomenclature(string name)
         {
-            return $"`{string.Join("`.`", name.AlphaNumericOnly('_', '.').Split('.'))}`";
+            return name.SanitizeSqlName('`', '`');
         }
     }
 }
