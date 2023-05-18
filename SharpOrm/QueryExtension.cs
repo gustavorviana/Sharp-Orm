@@ -221,20 +221,6 @@ namespace SharpOrm
         #region DbDataReader
 
         /// <summary>
-        /// Get Cell by column index.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, int index, TranslationConfig config)
-        {
-            if (index < 0 || index > reader.FieldCount)
-                throw new ArgumentOutOfRangeException();
-
-            return new Cell(reader.GetName(index), config.FromSql(reader[index], reader[index]?.GetType()));
-        }
-
-        /// <summary>
         /// Get row of current reader.
         /// </summary>
         /// <param name="reader"></param>
@@ -250,6 +236,20 @@ namespace SharpOrm
                 cells[i] = reader.GetCell(i, config);
 
             return new Row(cells);
+        }
+
+        /// <summary>
+        /// Get Cell by column index.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public static Cell GetCell(this DbDataReader reader, int index, TranslationConfig config)
+        {
+            if (index < 0 || index > reader.FieldCount)
+                throw new ArgumentOutOfRangeException();
+
+            return new Cell(reader.GetName(index), config.FromSql(reader[index], reader.GetFieldType(index)));
         }
 
         public static int GetIndexOf(this DbDataReader reader, string name)

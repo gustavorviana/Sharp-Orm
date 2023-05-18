@@ -7,21 +7,16 @@ namespace SharpOrm
 {
     public class Pager<T> : IReadOnlyList<T>, IDisposable where T : new()
     {
-        #region Fields
+        #region Properties/Fields
         protected readonly Query query;
         private T[] items = new T[0];
 
-        private int currentPage;
         private int peerPage;
-        private int pagesQtd = 0;
-        private long total = 0;
         private bool disposed;
-        #endregion
 
-        #region Properties
-        public int CurrentPage => this.currentPage;
-        public int Pages => this.pagesQtd;
-        public long Total => this.total;
+        public int CurrentPage { get; private set; }
+        public int Pages { get; private set; }
+        public long Total { get; private set; }
 
         public int Count => items.Length;
         public T this[int index] => items[index];
@@ -31,7 +26,7 @@ namespace SharpOrm
         {
             this.query = query;
             this.peerPage = peerPage;
-            this.currentPage = page;
+            this.CurrentPage = page;
         }
 
         public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage)
@@ -57,8 +52,8 @@ namespace SharpOrm
             if (page < 1 || page > this.Pages)
                 throw new ArgumentOutOfRangeException(nameof(page));
 
-            int lastPage = this.currentPage;
-            this.currentPage = page;
+            int lastPage = this.CurrentPage;
+            this.CurrentPage = page;
 
             try
             {
@@ -66,7 +61,7 @@ namespace SharpOrm
             }
             catch (Exception)
             {
-                this.currentPage = lastPage;
+                this.CurrentPage = lastPage;
                 throw;
             }
         }
@@ -85,7 +80,7 @@ namespace SharpOrm
             this.RefreshPageCount();
 
             if (this.CurrentPage > this.Pages)
-                this.currentPage = this.pagesQtd;
+                this.CurrentPage = this.Pages;
 
             this.RefreshItems();
         }
@@ -100,8 +95,8 @@ namespace SharpOrm
         {
             this.query.Offset = null;
             this.query.Limit = null;
-            this.total = this.query.Count();
-            this.pagesQtd = PageCalculator.CalcPages(this.total, this.peerPage);
+            this.Total = this.query.Count();
+            this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
         }
 
         private void RefreshItems()

@@ -7,20 +7,36 @@ namespace SharpOrm.Connection
     public abstract class ConnectionCreator : IDisposable
     {
         private bool _disposed;
+        /// <summary>
+        /// Indicates whether the ConnectionCreator object has been disposed.
+        /// </summary>
         public bool Disposed => this._disposed;
 
+        /// <summary>
+        /// Gets or sets the default instance of the ConnectionCreator class.
+        /// </summary>
         public static ConnectionCreator Default { get; set; }
 
         /// <summary>
-        /// IQueryConfig defaults to "Query". The default object is "DefaultQueryConfig"
+        /// Configuration for queries.
         /// </summary>
         public abstract IQueryConfig Config { get; }
 
+        /// <summary>
+        /// Gets a database connection.
+        /// </summary>
         public abstract DbConnection GetConnection();
 
+        /// <summary>
+        /// Safely disposes a database connection.
+        /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
 
         #region Transaction
+
+        /// <summary>
+        /// Executes a database transaction.
+        /// </summary>
         public static void ExecuteTransaction(TransactionCall call)
         {
             DbConnection connection = Default.GetConnection();
@@ -43,6 +59,9 @@ namespace SharpOrm.Connection
             }
         }
 
+        /// <summary>
+        /// Executes a database transaction and returns a value.
+        /// </summary>
         public static T ExecuteTransaction<T>(TransactionCall<T> func)
         {
             T value = default;
@@ -53,6 +72,9 @@ namespace SharpOrm.Connection
 
         #region IDisposable
 
+        /// <summary>
+        /// Releases the unmanaged resources used by the ConnectionCreator object.
+        /// </summary>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -61,12 +83,18 @@ namespace SharpOrm.Connection
             _disposed = true;
         }
 
+        /// <summary>
+        /// Destructor for the ConnectionCreator class.
+        /// </summary>
         ~ConnectionCreator()
         {
             // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: false);
         }
 
+        /// <summary>
+        /// Releases the resources used by the ConnectionCreator object.
+        /// </summary>
         public void Dispose()
         {
             if (this._disposed)

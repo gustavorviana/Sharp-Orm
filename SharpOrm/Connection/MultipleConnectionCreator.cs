@@ -7,6 +7,9 @@ using System.Data.SqlClient;
 
 namespace SharpOrm.Connection
 {
+    /// <summary>
+    /// Provides a multiple connection creator implementation using SqlConnection.
+    /// </summary>
     public class MultipleConnectionCreator : MultipleConnectionCreator<SqlConnection>
     {
         public MultipleConnectionCreator(IQueryConfig config, string connectionString) : base(config, connectionString)
@@ -14,34 +17,55 @@ namespace SharpOrm.Connection
         }
     }
 
+    /// <summary>
+    /// Generic class for multiple connection creation.
+    /// </summary>
+    /// <typeparam name="T">The type of the DbConnection used for creating connections.</typeparam>
     public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
         private readonly object _lock = new object();
         private readonly List<DbConnection> connections = new List<DbConnection>();
         private readonly string _connectionString;
 
+        /// <summary>
+        /// Gets the query configuration for the connection creator.
+        /// </summary>
         public override IQueryConfig Config { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the MultipleConnectionCreator class.
+        /// </summary>
+        /// <param name="config">The query configuration.</param>
+        /// <param name="connectionString">The connection string for the database.</param>
         public MultipleConnectionCreator(IQueryConfig config, string connectionString)
         {
             this._connectionString = connectionString;
             this.Config = config;
         }
 
+        /// <summary>
+        /// Gets a database connection.
+        /// </summary>
         public override DbConnection GetConnection()
         {
             if (this.Disposed)
                 throw new ObjectDisposedException(this.GetType().FullName);
 
-            var connection = new T { ConnectionString = this._connectionString };
-            if (connection.State == ConnectionState.Closed)
-                connection.Open();
+            lock (this._lock)
+            {
+                var connection = new T { ConnectionString = this._connectionString };
+                if (connection.State == ConnectionState.Closed)
+                    connection.Open();
 
-            connection.Disposed += OnConnectionDisposed;
-            this.connections.Add(connection);
-            return connection;
+                connection.Disposed += OnConnectionDisposed;
+                this.connections.Add(connection);
+                return connection;
+            }
         }
 
+        /// <summary>
+        /// Event handler for connection disposal.
+        /// </summary>
         private void OnConnectionDisposed(object sender, EventArgs e)
         {
             if (!(sender is DbConnection con))
@@ -54,14 +78,23 @@ namespace SharpOrm.Connection
                     this.connections.Remove(con);
         }
 
+        /// <summary>
+        /// Safely disposes a database connection.
+        /// </summary>
         public override void SafeDisposeConnection(DbConnection connection)
         {
-            if (connection.State == ConnectionState.Open)
-                connection.Close();
+            lock (this._lock)
+            {
+                if (connection.State == ConnectionState.Open)
+                    connection.Close();
 
-            connection.Dispose();
+                connection.Dispose();
+            }
         }
 
+        /// <summary>
+        /// Releases the resources used by the MultipleConnectionCreator object.
+        /// </summary>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
