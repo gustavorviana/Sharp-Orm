@@ -10,6 +10,21 @@ namespace UnityTest
     public class SqlServerSelectBuilder : SqlServerTest
     {
         [TestMethod]
+        public void FixColumnName()
+        {
+            var config = new SqlServerQueryConfig(false);
+            string basic = config.ApplyNomenclature("colName");
+            string withTable = config.ApplyNomenclature("table.colName");
+            string all = config.ApplyNomenclature("*");
+            string allWithTable = config.ApplyNomenclature("table.*");
+
+            Assert.AreEqual("[colName]", basic);
+            Assert.AreEqual("[table].[colName]", withTable);
+            Assert.AreEqual("*", all);
+            Assert.AreEqual("[table].*", allWithTable);
+        }
+
+        [TestMethod]
         public void Select()
         {
             using var query = NewQuery(TABLE);

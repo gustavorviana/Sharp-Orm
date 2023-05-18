@@ -12,6 +12,21 @@ namespace UnityTest
     public class MysqlSelectBuilderTest : MysqlTableTest
     {
         [TestMethod]
+        public void FixColumnName()
+        {
+            var config = new MysqlQueryConfig(false);
+            string basic = config.ApplyNomenclature("colName");
+            string withTable = config.ApplyNomenclature("table.colName");
+            string all = config.ApplyNomenclature("*");
+            string allWithTable = config.ApplyNomenclature("table.*");
+
+            Assert.AreEqual("`colName`", basic);
+            Assert.AreEqual("`table`.`colName`", withTable);
+            Assert.AreEqual("*", all);
+            Assert.AreEqual("`table`.*", allWithTable);
+        }
+
+        [TestMethod]
         public void BasicSelect()
         {
             using var query = NewQuery();
