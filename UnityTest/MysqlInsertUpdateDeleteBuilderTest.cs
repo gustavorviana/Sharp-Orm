@@ -160,7 +160,7 @@ namespace UnityTest
         [TestMethod]
         public void InsertByBasicSelect()
         {
-            using var selectQuery = new Query("User");
+            using var selectQuery = NewQuery("User");
             selectQuery
                 .Select(new Column("Id"), (Column)"1")
                 .Where("id", 1);
