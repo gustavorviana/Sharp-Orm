@@ -4,7 +4,6 @@ using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Linq;
 
@@ -13,7 +12,7 @@ namespace SharpOrm
     public class Query<T> : Query where T : new()
     {
         public static string TableName => Translator.GetTableNameOf(typeof(T));
-        protected internal ObjectLoader Loader => Translator.GetLoader(typeof(T));
+        protected internal TableInfo TableInfo => Translator.GetLoader(typeof(T));
 
         #region Query
         public Query() : base(TableName)
@@ -104,18 +103,18 @@ namespace SharpOrm
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
-            var properties = this.Loader.GetAttrPrimaryKeys().ToArray();
-            if (properties.Length == 0)
+            var columns = this.TableInfo.Column.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+            if (columns.Length == 0)
                 throw new DatabaseException(Messages.MissingPrimaryKey);
 
-            if (properties.Length != pksToCheck.Length)
+            if (columns.Length != pksToCheck.Length)
                 throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
 
-            for (int i = 0; i < properties.Length; i++)
-                if (properties[i].PropertyType != pksToCheck[i]?.GetType())
+            for (int i = 0; i < columns.Length; i++)
+                if (columns[i].Type != pksToCheck[i]?.GetType())
                     throw new InvalidCastException(Messages.InsertedTypeMismatch);
 
-            return properties.Select(pk => ObjectLoader.GetColumnName(pk)).ToArray();
+            return columns.Select(c => c.Name).ToArray();
         }
 
         /// <summary>
@@ -131,6 +130,7 @@ namespace SharpOrm
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="obj"></param>
+        /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
             return this.Insert(Translator.ToRow(obj, typeof(T)).Cells);
@@ -154,9 +154,9 @@ namespace SharpOrm
         public int Update(T obj, params string[] columns)
         {
             if (columns.Length == 0)
-                return base.Update(this.Loader.GetCells(obj, true).ToArray());
+                return base.Update(this.TableInfo.GetCells(obj, true).ToArray());
 
-            var cells = this.Loader
+            var cells = this.TableInfo
                 .GetCells(obj)
                 .Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
 
@@ -445,6 +445,7 @@ namespace SharpOrm
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="cells"></param>
+        /// <returns>Id of row.</returns>
         public int Insert(params Cell[] cells)
         {
             if (cells.Length == 0)

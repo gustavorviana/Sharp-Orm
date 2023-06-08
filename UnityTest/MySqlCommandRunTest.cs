@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using System;
+using System.ComponentModel.DataAnnotations;
 using UnityTest.Models;
 using UnityTest.Utils;
 
@@ -166,6 +167,35 @@ namespace UnityTest
         {
             using var query = NewQuery();
             query.Delete();
+        }
+
+        [TestMethod]
+        public void Select2()
+        {
+            using var query = new Query<Cidade>(Connection);
+            var cidade = query.Insert(new Cidade
+            {
+                Nome = "Teste",
+                IdEstado = 3
+            });
+        }
+
+        public class Cidade
+        {
+            [Key]
+            public int Id { get; set; }
+
+            public int IdEstado { get; set; }
+
+            public string Nome { get; set; }
+        }
+
+        public class Estado
+        {
+            [Key]
+            public int Id { get; set; }
+
+            public string Sigla { get; set; }
         }
     }
 }

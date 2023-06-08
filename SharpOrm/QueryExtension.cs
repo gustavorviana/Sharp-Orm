@@ -1,7 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -134,6 +133,34 @@ namespace SharpOrm
         }
 
         #region Query
+
+        /// <summary>
+        /// Inserts one row into the table.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns>Id of row (long).</returns>
+        public static long InsertL<T>(this Query<T> query, T obj) where T : new()
+        {
+            return query.InsertL(Query<T>.Translator.ToRow(obj, typeof(T)).Cells);
+        }
+
+        /// <summary>
+        /// Inserts one row into the table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns>Id of row (long).</returns>
+        public static long InsertL(this Query query, params Cell[] cells)
+        {
+            if (cells.Length == 0)
+                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
+
+            using (Grammar grammar = query.Info.Config.NewGrammar(query))
+            using (DbCommand cmd = grammar.Insert(cells))
+            {
+                object result = cmd.ExecuteScalar();
+                return result is DBNull ? 0 : Convert.ToInt64(result);
+            }
+        }
 
         public static Pager<Row> PaginateRows(this Query query, int peerPage, int currentPage)
         {

@@ -49,11 +49,11 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent .NET representation of the SQL value.</returns>
         public object FromSqlValue(object value, Type expectedType)
         {
-            if (_binaryTranslator.CanWork(expectedType))
-                return _binaryTranslator.FromSqlValue(value, expectedType);
-
             if (value is DBNull)
                 return null;
+
+            if (_binaryTranslator.CanWork(expectedType))
+                return _binaryTranslator.FromSqlValue(value, expectedType);
 
             if (expectedType == typeof(Guid))
                 return Guid.Parse((string)value);

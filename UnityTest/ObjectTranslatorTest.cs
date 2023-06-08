@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -11,16 +12,16 @@ namespace UnityTest
     [TestClass]
     public class ObjectTranslatorTest
     {
-        private static readonly ObjectLoader loader = new(typeof(TestClass), new TranslationConfig());
+        private static readonly TableInfo table = new(new TranslationConfig(), typeof(TestClass));
 
         [TestMethod]
         public void InvalidPk()
         {
-            var cells = loader.GetCells(new TestClass()).ToArray();
+            var cells = table.GetCells(new TestClass()).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(6, cells.Length);
 
-            cells = loader.GetCells(new TestClass { MyId = 1 }).ToArray();
+            cells = table.GetCells(new TestClass { MyId = 1 }).ToArray();
             Assert.IsTrue(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(7, cells.Length);
         }
@@ -28,7 +29,7 @@ namespace UnityTest
         [TestMethod]
         public void IgnorePk()
         {
-            var cells = loader.GetCells(new TestClass { MyId = 1 }, true).ToArray();
+            var cells = table.GetCells(new TestClass { MyId = 1 }, true).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
         }
 
@@ -127,10 +128,10 @@ namespace UnityTest
 
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
-            var prop = loader.Properties[propName];
+            var prop = table.Column.FirstOrDefault(c => c.Name == propName);
 
             Assert.IsNotNull(prop);
-            Assert.AreEqual(expected, loader.GetColumnValue(ObjectLoader.GetColumnName(prop), objOwner, prop));
+            Assert.AreEqual(expected, prop.Get(objOwner));
         }
 
         private static void AssertSqlValueConverted(object expected, object value)

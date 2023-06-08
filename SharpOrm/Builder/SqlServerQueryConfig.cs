@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace SharpOrm.Builder
+﻿namespace SharpOrm.Builder
 {
     public class SqlServerQueryConfig : IQueryConfig
     {

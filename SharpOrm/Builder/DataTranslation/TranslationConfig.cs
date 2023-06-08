@@ -41,7 +41,7 @@ namespace SharpOrm.Builder.DataTranslation
             return null;
         }
 
-        public ISqlTranslation GetOf(PropertyInfo property)
+        public ISqlTranslation GetOf(MemberInfo property)
         {
             if (property.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);

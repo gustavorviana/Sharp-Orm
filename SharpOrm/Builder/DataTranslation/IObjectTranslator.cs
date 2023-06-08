@@ -12,6 +12,6 @@ namespace SharpOrm.Builder.DataTranslation
 
         string GetTableNameOf(Type type);
 
-        ObjectLoader GetLoader(Type type);
+        TableInfo GetLoader(Type type);
     }
 }

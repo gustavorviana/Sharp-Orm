@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Linq;
 
 namespace SharpOrm.Builder
 {
@@ -55,7 +51,7 @@ namespace SharpOrm.Builder
         /// <returns>The alias of the object, if set; otherwise, returns the name of the object.</returns>
         public string TryGetAlias(IQueryConfig config)
         {
-            return string.IsNullOrEmpty(this.Alias) ? 
+            return string.IsNullOrEmpty(this.Alias) ?
                 config.ApplyNomenclature(this.Name) :
                 config.ApplyNomenclature(this.Alias);
         }
