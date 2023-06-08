@@ -63,8 +63,8 @@ namespace SharpOrm.Builder
             if (constructor == null)
                 throw new ArgumentNullException(nameof(constructor));
 
-            if (this == constructor)
-                throw new InvalidOperationException();
+            if (this.Equals(constructor))
+                throw new InvalidOperationException("The same instance cannot be passed as a parameter.");
 
             this.Add(constructor.query.ToString());
             this.AddParameters(constructor.Parameters);
