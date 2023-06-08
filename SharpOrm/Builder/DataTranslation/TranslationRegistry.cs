@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace SharpOrm.Builder.DataTranslation
 {
-    public class TranslationConfig
+    public class TranslationRegistry
     {
         private static readonly NativeSqlValueConversor native = new NativeSqlValueConversor();
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];

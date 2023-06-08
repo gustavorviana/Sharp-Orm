@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
         #region Properties
         private readonly MemberInfo column;
 
-        private readonly TranslationConfig config;
+        private readonly TranslationRegistry config;
 
         /// <summary>
         /// Gets the name of the column.
@@ -65,9 +65,9 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Initializes a new instance of the <see cref="ColumnInfo"/> class for a field.
         /// </summary>
-        /// <param name="config">The translation configuration.</param>
+        /// <param name="registry">The translation registry.</param>
         /// <param name="fieldInfo">The field information.</param>
-        public ColumnInfo(TranslationConfig config, FieldInfo fieldInfo) : this(config, config.GetOf(fieldInfo), fieldInfo)
+        public ColumnInfo(TranslationRegistry registry, FieldInfo fieldInfo) : this(registry, registry.GetOf(fieldInfo), fieldInfo)
         {
             this.Type = fieldInfo.FieldType;
         }
@@ -75,16 +75,16 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Initializes a new instance of the <see cref="ColumnInfo"/> class for a property.
         /// </summary>
-        /// <param name="config">The translation configuration.</param>
+        /// <param name="registry">The translation registry.</param>
         /// <param name="propertyInfo">The property information.</param>
-        public ColumnInfo(TranslationConfig config, PropertyInfo propertyInfo) : this(config, config.GetOf(propertyInfo), propertyInfo)
+        public ColumnInfo(TranslationRegistry registry, PropertyInfo propertyInfo) : this(registry, registry.GetOf(propertyInfo), propertyInfo)
         {
             this.Type = propertyInfo.PropertyType;
         }
 
-        private ColumnInfo(TranslationConfig config, ISqlTranslation translation, MemberInfo member)
+        private ColumnInfo(TranslationRegistry registry, ISqlTranslation translation, MemberInfo member)
         {
-            this.config = config;
+            this.config = registry;
             this.column = member;
             this.Translation = translation;
             this.DeclaringType = member.DeclaringType;

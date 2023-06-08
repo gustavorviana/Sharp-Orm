@@ -5,28 +5,14 @@ using System.Linq;
 
 namespace SharpOrm.Builder.DataTranslation
 {
-    public class ObjectTranslator : IObjectTranslator
+    public class TableTranslator : TableTranslatorBase
     {
-        private readonly Dictionary<Type, TableInfo> cachedTables = new Dictionary<Type, TableInfo>();
-        private readonly object lockObj = new object();
-
-        public TranslationConfig Config { get; }
-
-        public ObjectTranslator(TranslationConfig config)
+        public TableTranslator(TranslationRegistry registry) : base(registry)
         {
-            this.Config = config;
         }
 
-        public T ParseFromReader<T>(DbDataReader reader) where T : new()
+        protected override object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
         {
-            return (T)this.ParseFromReader(typeof(T), reader, "");
-        }
-
-        private object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
-        {
-            if (typeToParse == typeof(Row))
-                return reader.GetRow(this.Config);
-
             var loader = this.GetLoader(typeToParse);
             object obj = Activator.CreateInstance(typeToParse);
             foreach (var column in loader.Column)
@@ -59,31 +45,6 @@ namespace SharpOrm.Builder.DataTranslation
                 fullName = column.Name;
 
             column.SetRaw(obj, this.ParseFromReader(column.Type, reader, fullName));
-        }
-
-        public Row ToRow(object obj, Type type)
-        {
-            if (obj is Row row)
-                return row;
-
-            return new Row(this.GetLoader(type).GetCells(obj).ToArray());
-        }
-
-        public string GetTableNameOf(Type type)
-        {
-            return GetLoader(type).Name;
-        }
-
-        public TableInfo GetLoader(Type type)
-        {
-            lock (lockObj)
-            {
-                if (this.cachedTables.TryGetValue(type, out var loader))
-                    return loader;
-
-                this.cachedTables.Add(type, loader = new TableInfo(this.Config, type));
-                return loader;
-            }
         }
     }
 }

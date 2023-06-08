@@ -30,7 +30,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="config">The translation configuration.</param>
         /// <param name="type">The type representing the table.</param>
-        public TableInfo(TranslationConfig config, Type type)
+        public TableInfo(TranslationRegistry config, Type type)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
@@ -40,7 +40,7 @@ namespace SharpOrm.Builder
             this.Column = this.GetColumns(config).ToArray();
         }
 
-        private IEnumerable<ColumnInfo> GetColumns(TranslationConfig config)
+        private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry config)
         {
             foreach (var prop in type.GetProperties(propertiesFlags))
                 if (prop.GetCustomAttribute<NotMappedAttribute>() == null)

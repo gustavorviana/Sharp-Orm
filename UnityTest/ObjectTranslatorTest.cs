@@ -12,7 +12,7 @@ namespace UnityTest
     [TestClass]
     public class ObjectTranslatorTest
     {
-        private static readonly TableInfo table = new(new TranslationConfig(), typeof(TestClass));
+        private static readonly TableInfo table = new(new TranslationRegistry(), typeof(TestClass));
 
         [TestMethod]
         public void InvalidPk()
@@ -136,7 +136,7 @@ namespace UnityTest
 
         private static void AssertSqlValueConverted(object expected, object value)
         {
-            Assert.AreEqual(expected, Query.Translator.Config.FromSql(value, expected?.GetType()));
+            Assert.AreEqual(expected, Query.Translator.Registry.FromSql(value, expected?.GetType()));
         }
 
         private class TestClass

@@ -257,15 +257,15 @@ namespace SharpOrm
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row GetRow(this DbDataReader reader, TranslationConfig config = null)
+        public static Row GetRow(this DbDataReader reader, TranslationRegistry registry = null)
         {
-            if (config == null)
-                config = Query.Translator.Config;
+            if (registry == null)
+                registry = Query.Translator.Registry;
 
             Cell[] cells = new Cell[reader.FieldCount];
 
             for (int i = 0; i < cells.Length; i++)
-                cells[i] = reader.GetCell(i, config);
+                cells[i] = reader.GetCell(i, registry);
 
             return new Row(cells);
         }
@@ -276,12 +276,12 @@ namespace SharpOrm
         /// <param name="reader"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, int index, TranslationConfig config)
+        public static Cell GetCell(this DbDataReader reader, int index, TranslationRegistry registry)
         {
             if (index < 0 || index > reader.FieldCount)
                 throw new ArgumentOutOfRangeException();
 
-            return new Cell(reader.GetName(index), config.FromSql(reader[index], reader.GetFieldType(index)));
+            return new Cell(reader.GetName(index), registry.FromSql(reader[index], reader.GetFieldType(index)));
         }
 
         public static int GetIndexOf(this DbDataReader reader, string name)

@@ -215,7 +215,7 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Properties
-        public static IObjectTranslator Translator { get; set; } = new ObjectTranslator(new TranslationConfig());
+        public static TableTranslatorBase Translator { get; set; } = new TableTranslator(new TranslationRegistry());
 
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
