@@ -13,6 +13,21 @@ namespace SharpOrm.Builder
         {
         }
 
+        protected override void ConfigureUpdate(Cell[] cells)
+        {
+            this.QueryBuilder.AppendFormat(
+                "UPDATE {0} SET {1}",
+                this.GetTableName(false),
+                string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {this.RegisterCellValue(c)}"))
+            );
+
+            if (this.Info.Joins.Any())
+                this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(false));
+
+            this.ApplyJoins();
+            this.WriteWhere(true);
+        }
+
         protected override void ConfigureCount()
         {
             bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination;

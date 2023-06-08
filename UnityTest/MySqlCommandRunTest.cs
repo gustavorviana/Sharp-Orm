@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MySqlX.XDevAPI.Relational;
 using SharpOrm;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -161,41 +162,123 @@ namespace UnityTest
             Assert.AreEqual("Name2", row[NICK]);
         }
 
+        [TestMethod]
+        public void DeleteJoin()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 2,
+                Name = "Michael",
+                Address = "My address 2",
+                Email = "michael@email.com"
+            });
+
+            qOrder.Insert(new Order
+            {
+                Id = 1,
+                CustomerId = 1,
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+            qOrder.Insert(new Order
+            {
+                Id = 2,
+                CustomerId = 2,
+                Product = "My product 2",
+                Quantity = 10,
+                Status = "Ok"
+            });
+
+            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Where("c.name", "Ronaldo");
+            qOrder.Delete();
+
+            qOrder.Info.Joins.Clear();
+            qOrder.Info.Where.Clear();
+
+            Assert.AreEqual(1, qOrder.Count());
+
+            var order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Ok", order.Status);
+        }
+
+        [TestMethod]
+        public void UpdateJoin()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 2,
+                Name = "Michael",
+                Address = "My address 2",
+                Email = "michael@email.com"
+            });
+
+            qOrder.Insert(new Order
+            {
+                Id = 1,
+                CustomerId = 1,
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+            qOrder.Insert(new Order
+            {
+                Id = 2,
+                CustomerId = 2,
+                Product = "My product 2",
+                Quantity = 10,
+                Status = "Ok"
+            });
+
+            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Where("c.name", "Ronaldo");
+            qOrder.Update(new Cell("Status", "Processed"));
+
+            qOrder.Info.Joins.Clear();
+            qOrder.Info.Where.Clear();
+
+            qOrder.Offset = 1;
+            var order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Ok", order.Status);
+
+            qOrder.Offset = null;
+            order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Processed", order.Status);
+        }
+
         [TestCleanup]
         [TestInitialize]
         public void CleanupTest()
         {
             using var query = NewQuery();
             query.Delete();
-        }
-
-        [TestMethod]
-        public void Select2()
-        {
-            using var query = new Query<Cidade>(Connection);
-            var cidade = query.Insert(new Cidade
-            {
-                Nome = "Teste",
-                IdEstado = 3
-            });
-        }
-
-        public class Cidade
-        {
-            [Key]
-            public int Id { get; set; }
-
-            public int IdEstado { get; set; }
-
-            public string Nome { get; set; }
-        }
-
-        public class Estado
-        {
-            [Key]
-            public int Id { get; set; }
-
-            public string Sigla { get; set; }
         }
     }
 }

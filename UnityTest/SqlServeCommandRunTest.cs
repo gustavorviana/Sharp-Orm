@@ -73,6 +73,117 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void DeleteJoin()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 2,
+                Name = "Michael",
+                Address = "My address 2",
+                Email = "michael@email.com"
+            });
+
+            qOrder.Insert(new Order
+            {
+                Id = 1,
+                CustomerId = 1,
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+            qOrder.Insert(new Order
+            {
+                Id = 2,
+                CustomerId = 2,
+                Product = "My product 2",
+                Quantity = 10,
+                Status = "Ok"
+            });
+
+            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Where("c.name", "Ronaldo");
+            qOrder.Delete();
+
+            qOrder.Info.Joins.Clear();
+            qOrder.Info.Where.Clear();
+
+            Assert.AreEqual(1, qOrder.Count());
+
+            var order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Ok", order.Status);
+        }
+
+        [TestMethod]
+        public void UpdateJoin()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 2,
+                Name = "Michael",
+                Address = "My address 2",
+                Email = "michael@email.com"
+            });
+
+            qOrder.Insert(new Order
+            {
+                Id = 1,
+                CustomerId = 1,
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+            qOrder.Insert(new Order
+            {
+                Id = 2,
+                CustomerId = 2,
+                Product = "My product 2",
+                Quantity = 10,
+                Status = "Ok"
+            });
+
+            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Where("c.name", "Ronaldo");
+            qOrder.Update(new Cell("Status", "Processed"));
+
+            qOrder.Info.Joins.Clear();
+            qOrder.Info.Where.Clear();
+
+            qOrder.OrderBy("Id").Offset = 1;
+            var order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Ok", order.Status);
+
+            qOrder.Offset = null;
+            order = qOrder.FirstOrDefault();
+            Assert.AreEqual("Processed", order.Status);
+        }
+
+        [TestMethod]
         [TestProperty("clearDb", "")]
         public void PaginatePage2()
         {

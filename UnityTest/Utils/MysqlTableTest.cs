@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using System;
+using System.IO;
 using UnityTest.Models;
 
 namespace UnityTest.Utils
@@ -26,16 +27,7 @@ namespace UnityTest.Utils
         {
             using var con = Connection;
             using var cmd = con.CreateCommand();
-            cmd.CommandText = GetCreateTableSql();
-            cmd.ExecuteNonQuery();
-        }
-
-        [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
-        public static void CleanupDbConnection()
-        {
-            using var con = Connection;
-            using var cmd = con.CreateCommand();
-            cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
+            cmd.CommandText = File.ReadAllText("./Scripts/Mysql.sql");
             cmd.ExecuteNonQuery();
         }
         #endregion
@@ -59,20 +51,6 @@ namespace UnityTest.Utils
         protected static Query NewQuery()
         {
             return NewQuery(TABLE);
-        }
-
-        private static string GetCreateTableSql()
-        {
-            return $@"CREATE TABLE IF NOT EXISTS {TABLE} (
-                  {ID} INT NOT NULL PRIMARY KEY,
-                  {ID2} INT NULL,
-                  {NAME} VARCHAR(256) NOT NULL,
-                  {NICK} VARCHAR(256) NULL,
-                  {CREATEDAT} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                  {NUMBER} DECIMAL(13,2) NOT NULL,
-                  {GUIDID} VARCHAR(36) NULL,
-                  {STATUS} INT NOT NULL
-                )";
         }
     }
 }

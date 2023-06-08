@@ -89,9 +89,10 @@ namespace SharpOrm.Builder
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 
-            if (this.Query.Limit != null)
-                this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);
+            if (this.Query.Limit == null)
+                return;
 
+            this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);
             if (this.Query.Offset != null)
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
         }
@@ -128,11 +129,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureUpdate(Cell[] cells)
         {
+            this.QueryBuilder.AppendFormat("UPDATE {0}", this.GetTableName(false));
+            this.ApplyJoins();
+
             this.QueryBuilder.AppendFormat(
-                "UPDATE {0} SET {1}",
-                this.GetTableName(false),
+                " SET {0}",
                 string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {this.RegisterCellValue(c)}"))
             );
+
             this.WriteWhere(true);
         }
 

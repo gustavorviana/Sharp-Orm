@@ -5,6 +5,7 @@ using SharpOrm.Connection;
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.IO;
 
 namespace UnityTest.Utils
 {
@@ -46,7 +47,7 @@ namespace UnityTest.Utils
 
             using var conn = Connection;
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = GetCreateTableSql();
+            cmd.CommandText = File.ReadAllText("./Scripts/SqlServer.sql");
             cmd.ExecuteNonQuery();
         }
 
@@ -76,19 +77,6 @@ namespace UnityTest.Utils
             );
         }
 
-        private static string GetCreateTableSql()
-        {
-            return @$"CREATE TABLE [{TABLE}] (
-                      [{ID}] INT NOT NULL PRIMARY KEY,
-                      [{NAME}] VARCHAR(256) NOT NULL,
-                      [{NICK}] VARCHAR(256) NULL,
-                      [{CREATEDAT}] DATETIME DEFAULT GETDATE(),
-                      [{NUMBER}] DECIMAL(13,2) NOT NULL,
-                      [{GUIDID}] VARCHAR(36) NOT NULL,
-                      [{STATUS}] INT NOT NULL
-                );";
-        }
-
         [TestCleanup]
         [TestInitialize]
         public void CleanupTest()
@@ -112,7 +100,7 @@ namespace UnityTest.Utils
                 using var q = NewQuery(TABLE);
                 q.BulkInsert(rows);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
             }
         }

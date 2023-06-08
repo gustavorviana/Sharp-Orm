@@ -224,16 +224,6 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void SelectWithOffset()
-        {
-            using var query = new Query(Connection, TABLE) { Offset = 10 };
-            using var g = new MysqlGrammar(query);
-
-            using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` OFFSET 10", cmd.CommandText);
-        }
-
-        [TestMethod]
         public void SelectWithOffsetLimit()
         {
             using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10 };

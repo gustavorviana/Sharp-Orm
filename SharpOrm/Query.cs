@@ -167,6 +167,16 @@ namespace SharpOrm
             return base.Update(toUpdate);
         }
 
+        public Query Join<C>(string alias, string column1, string column2)
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
+            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.WhereColumn(column1, "=", column2);
+
+            this.Info.Joins.Add(join);
+            return this;
+        }
+
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
@@ -328,6 +338,16 @@ namespace SharpOrm
 
         #region Join
 
+        public Query Join(string table, string column1, string column2)
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
+            join.Info.TableName = new DbName(table);
+            join.WhereColumn(column1, "=", column2);
+
+            this.Info.Joins.Add(join);
+            return this;
+        }
+
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
@@ -424,6 +444,12 @@ namespace SharpOrm
         }
 
         #region DML SQL commands
+
+        public int Update(Dictionary<string, object> cells)
+        {
+            return this.Update(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+        }
+
         /// <summary>
         /// Update rows on table.
         /// </summary>
@@ -439,6 +465,11 @@ namespace SharpOrm
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Update(cells))
                 return cmd.ExecuteNonQuery();
+        }
+
+        public int Insert(Dictionary<string, object> cells)
+        {
+            return this.Insert(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
         }
 
         /// <summary>
@@ -591,10 +622,8 @@ namespace SharpOrm
         internal T OnlyFirstSelection<T>(Func<T> action)
         {
             int? lastLimit = this.Limit;
-            int? lastOffset = this.Offset;
+            this.Limit = 1;
 
-            this.Limit = null;
-            this.Offset = null;
             try
             {
                 return action();
@@ -602,7 +631,6 @@ namespace SharpOrm
             finally
             {
                 this.Limit = lastLimit;
-                this.Offset = lastOffset;
             }
         }
 

@@ -144,6 +144,11 @@ namespace SharpOrm
             return query.InsertL(Query<T>.Translator.ToRow(obj, typeof(T)).Cells);
         }
 
+        public static long InsertL(this Query query, Dictionary<string, object> cells)
+        {
+            return query.Insert(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+        }
+
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
