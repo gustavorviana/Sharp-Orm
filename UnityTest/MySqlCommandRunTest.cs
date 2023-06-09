@@ -273,6 +273,15 @@ namespace UnityTest
             Assert.AreEqual("Processed", order.Status);
         }
 
+        [TestMethod]
+        public void SelectWithForeign()
+        {
+            using var query = new Query<Order>();
+            var o = query.FirstOrDefault();
+
+            Assert.IsNotNull(o.Customer);
+        }
+
         [TestCleanup]
         [TestInitialize]
         public void CleanupTest()

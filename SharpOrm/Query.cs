@@ -11,8 +11,8 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public static string TableName => Translator.GetTableNameOf(typeof(T));
-        protected internal TableInfo TableInfo => Translator.GetLoader(typeof(T));
+        public static string TableName => TableTranslatorBase.GetTableNameOf(typeof(T));
+        protected internal TableInfo TableInfo => TableTranslatorBase.GetLoader(typeof(T));
 
         #region Query
         public Query() : base(TableName)
@@ -22,7 +22,6 @@ namespace SharpOrm
 
         public Query(string alias) : this(new DbName(TableName, alias))
         {
-            QueryExtension.ValidateTranslator();
         }
 
         public Query(DbName name) : base(ConnectionCreator.Default, name)
@@ -32,7 +31,6 @@ namespace SharpOrm
 
         public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
         {
-            QueryExtension.ValidateTranslator();
         }
 
         public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
@@ -53,12 +51,10 @@ namespace SharpOrm
 
         public Query(DbConnection connection, IQueryConfig config, DbName name) : base(connection, config, name)
         {
-            QueryExtension.ValidateTranslator();
         }
 
         public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(transaction, config, name)
         {
-            QueryExtension.ValidateTranslator();
         }
         #endregion
 
@@ -78,7 +74,31 @@ namespace SharpOrm
         /// <returns></returns>
         public T FirstOrDefault()
         {
-            return this.OnlyFirstSelection(this.GetEnumerable<T>().FirstOrDefault);
+
+            int? lastLimit = this.Limit;
+            this.Limit = 1;
+
+            try
+            {
+                return this.GetEnumerable<T>().FirstOrDefault();
+            }
+            finally
+            {
+                this.Limit = lastLimit;
+            }
+        }
+
+        public override IEnumerable<K> GetEnumerable<K>()
+        {
+            var translator = new TableTranslator();
+            List<K> list = new List<K>();
+
+            using (var reader = this.ExecuteReader())
+                while (reader.Read())
+                    list.Add(translator.ParseFromReader<K>(reader));
+
+            translator.LoadForeignKeys();
+            return list;
         }
 
         /// <summary>
@@ -133,7 +153,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(Translator.ToRow(obj, typeof(T)).Cells);
+            return this.Insert(TableTranslatorBase.ToRow(obj, typeof(T)).Cells);
         }
 
         /// <summary>
@@ -142,7 +162,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => Translator.ToRow(obj, typeof(T))).ToArray());
+            this.BulkInsert(objs.Select(obj => TableTranslatorBase.ToRow(obj, typeof(T))).ToArray());
         }
 
         /// <summary>
@@ -170,7 +190,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string column2)
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
-            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
             join.WhereColumn(column1, "=", column2);
 
             this.Info.Joins.Add(join);
@@ -180,7 +200,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
             join.WhereColumn(column1, operation, column2);
 
             this.Info.Joins.Add(join);
@@ -190,7 +210,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(Translator.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
 
             operation(join);
             this.Info.Joins.Add(join);
@@ -215,8 +235,6 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable
     {
         #region Properties
-        public static TableTranslatorBase Translator { get; set; } = new TableTranslator(new TranslationRegistry());
-
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
@@ -436,7 +454,17 @@ namespace SharpOrm
         /// Execute SQL Select command and return DataReader.
         /// </summary>
         /// <returns></returns>
+        [Obsolete("Use ExecuteReader. This function will be removed in version 1.2.", false)]
         public DbDataReader Execute()
+        {
+            return this.ExecuteReader();
+        }
+
+        /// <summary>
+        /// Execute SQL Select command and return DataReader.
+        /// </summary>
+        /// <returns></returns>
+        public DbDataReader ExecuteReader()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Select())
@@ -537,13 +565,12 @@ namespace SharpOrm
                 return Convert.ToInt64(cmd.ExecuteScalar());
         }
 
-        public IEnumerable<T> GetEnumerable<T>() where T : new()
+        public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
-            QueryExtension.ValidateTranslator();
-
-            using (var reader = this.Execute())
+            var translator = new TableTranslator();
+            using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    yield return Translator.ParseFromReader<T>(reader);
+                    yield return translator.ParseFromReader<T>(reader);
         }
 
         /// <summary>
@@ -561,7 +588,17 @@ namespace SharpOrm
         /// <returns></returns>
         public Row FirstRow()
         {
-            return this.OnlyFirstSelection(this.GetEnumerable<Row>().FirstOrDefault);
+            int? lastLimit = this.Limit;
+            this.Limit = 1;
+
+            try
+            {
+                return this.GetEnumerable<Row>().FirstOrDefault();
+            }
+            finally
+            {
+                this.Limit = lastLimit;
+            }
         }
 
         #endregion
@@ -612,27 +649,6 @@ namespace SharpOrm
         }
 
         #endregion
-
-        /// <summary>
-        /// Signals to the class that code must be executed for the first item and that upon execution, the boundary and offset must be reset.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        internal T OnlyFirstSelection<T>(Func<T> action)
-        {
-            int? lastLimit = this.Limit;
-            this.Limit = 1;
-
-            try
-            {
-                return action();
-            }
-            finally
-            {
-                this.Limit = lastLimit;
-            }
-        }
 
         protected override void Dispose(bool disposing)
         {

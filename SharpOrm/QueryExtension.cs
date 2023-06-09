@@ -141,7 +141,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(Query<T>.Translator.ToRow(obj, typeof(T)).Cells);
+            return query.InsertL(TableTranslatorBase.ToRow(obj, typeof(T)).Cells);
         }
 
         public static long InsertL(this Query query, Dictionary<string, object> cells)
@@ -172,12 +172,6 @@ namespace SharpOrm
             return Pager<Row>.FromBuilder(query, peerPage, currentPage);
         }
 
-        internal static void ValidateTranslator()
-        {
-            if (Query.Translator == null)
-                throw new NullReferenceException($"The \"{nameof(Query.Translator)}\" property must be set");
-        }
-
         /// <summary>
         /// Checks if there is any value in the table.
         /// </summary>
@@ -190,7 +184,7 @@ namespace SharpOrm
 
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
-            query.Upsert(Query.Translator.ToRow(obj, typeof(T)), toCheckColumns);
+            query.Upsert(TableTranslatorBase.ToRow(obj, typeof(T)), toCheckColumns);
         }
 
         /// <summary>
@@ -260,7 +254,7 @@ namespace SharpOrm
         public static Row GetRow(this DbDataReader reader, TranslationRegistry registry = null)
         {
             if (registry == null)
-                registry = Query.Translator.Registry;
+                registry = TableTranslatorBase.Registry;
 
             Cell[] cells = new Cell[reader.FieldCount];
 

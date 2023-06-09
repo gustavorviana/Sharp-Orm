@@ -12,7 +12,7 @@ namespace UnityTest.Models
         public int Quantity { get; set; }
         public string Status { get; set; }
 
-        [NotMapped]
+        [ForeignKey("customer_id")]
         public Customer Customer { get; set; }
     }
 }

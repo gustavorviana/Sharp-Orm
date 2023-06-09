@@ -24,8 +24,6 @@ namespace SharpOrm.Builder
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
         protected DbCommand Command => this._command;
-
-        public virtual TranslationRegistry Registry => Query.Translator.Registry;
         #endregion
 
         protected Grammar(Query query)

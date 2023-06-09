@@ -13,7 +13,7 @@ namespace SharpOrm.Builder
     public class TableInfo
     {
         private readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
-        private Type type;
+        public Type Type { get; }
 
         /// <summary>
         /// Gets the name of the table.
@@ -35,20 +35,33 @@ namespace SharpOrm.Builder
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
 
-            this.type = type;
+            this.Type = type;
             this.Name = type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
-            this.Column = this.GetColumns(config).ToArray();
+            this.Column = this.GetColumns(config).Distinct().Where(c => c != null).ToArray();
         }
 
-        private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry config)
+        private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
         {
-            foreach (var prop in type.GetProperties(propertiesFlags))
+            foreach (var prop in Type.GetProperties(propertiesFlags))
                 if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
-                    yield return new ColumnInfo(config, prop);
+                    yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in type.GetFields(propertiesFlags))
+            foreach (var field in Type.GetFields(propertiesFlags))
                 if (field.GetCustomAttribute<NotMappedAttribute>() == null)
-                    yield return new ColumnInfo(config, field);
+                    yield return new ColumnInfo(registry, field);
+
+            yield return GetByName(registry, "Id");
+        }
+
+        public ColumnInfo GetByName(TranslationRegistry registry, string name)
+        {
+            if (Type.GetProperty(name, propertiesFlags) is PropertyInfo property)
+                return property.GetCustomAttribute<NotMappedAttribute>() == null ? new ColumnInfo(registry, property) : null;
+
+            if (Type.GetField(name, propertiesFlags) is FieldInfo fild)
+                return fild.GetCustomAttribute<NotMappedAttribute>() == null ? new ColumnInfo(registry, fild) : null;
+
+            return null;
         }
 
         /// <summary>
@@ -68,16 +81,21 @@ namespace SharpOrm.Builder
         /// <param name="owner">The owner object.</param>
         /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
         /// <returns>An enumerable of cells.</returns>
-        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
+        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool ignoreForeign = true)
         {
             foreach (var c in this.Column)
             {
                 object value = c.Get(owner);
-                if (c.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value)))
+                if ((c.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))) || (ignoreForeign && !string.IsNullOrEmpty(c.ForeignKey)))
                     continue;
 
                 yield return new Cell(c.Name, value);
             }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}: {1}", this.Name, this.Type);
         }
     }
 }
