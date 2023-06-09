@@ -13,10 +13,11 @@ namespace SharpOrm.Builder.DataTranslation
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
+        public bool FindAllForeigns = false;
 
         public void LoadForeignKeys()
         {
-            while (foreignKeyToLoad.Count > 0)
+            while (this.FindAllForeigns && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
                 this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
@@ -100,6 +101,9 @@ namespace SharpOrm.Builder.DataTranslation
                 return;
             }
 
+            if (!this.FindAllForeigns)
+                return;
+
             object foreignKey = reader[column.ForeignKey];
             if (foreignKey == DBNull.Value)
                 return;
@@ -153,6 +157,11 @@ namespace SharpOrm.Builder.DataTranslation
                 return !(other is null) &&
                        TableName == other.TableName &&
                        EqualityComparer<object>.Default.Equals(KeyValue, other.KeyValue);
+            }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
             }
 
             public static bool operator ==(ForeignTable left, ForeignTable right)

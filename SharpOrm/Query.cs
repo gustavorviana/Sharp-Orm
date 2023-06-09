@@ -13,6 +13,7 @@ namespace SharpOrm
     {
         public static string TableName => TableTranslatorBase.GetTableNameOf(typeof(T));
         protected internal TableInfo TableInfo => TableTranslatorBase.GetLoader(typeof(T));
+        private bool findAllForeign = false;
 
         #region Query
         public Query() : base(TableName)
@@ -58,6 +59,12 @@ namespace SharpOrm
         }
         #endregion
 
+        public Query<T> WithAllForeigns()
+        {
+            this.findAllForeign = true;
+            return this;
+        }
+
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
             return Pager<T>.FromBuilder(this, peerPage, currentPage);
@@ -90,7 +97,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableTranslator();
+            var translator = new TableTranslator { FindAllForeigns = this.findAllForeign };
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())
