@@ -86,7 +86,6 @@ namespace SharpOrm.Builder
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
         {
             var fkCol = this.Columns.FirstOrDefault(c => !string.IsNullOrEmpty(c.ForeignKey));
-            bool fkLoaded = false;
 
             foreach (var c in this.Columns)
             {
