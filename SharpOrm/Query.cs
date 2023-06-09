@@ -194,6 +194,7 @@ namespace SharpOrm
             return base.Update(toUpdate);
         }
 
+        #region Join
         public Query Join<C>(string alias, string column1, string column2)
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
@@ -223,6 +224,7 @@ namespace SharpOrm
             this.Info.Joins.Add(join);
             return this;
         }
+        #endregion
 
         public override Query Clone(bool withWhere)
         {

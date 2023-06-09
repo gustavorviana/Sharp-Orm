@@ -86,24 +86,31 @@ namespace SharpOrm.Builder
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
         {
             var fkCol = this.Columns.FirstOrDefault(c => !string.IsNullOrEmpty(c.ForeignKey));
+            bool hasPriorityFk = this.Columns.Any(c => c.Name == fkCol?.ForeignKey);
 
-            foreach (var c in this.Columns)
+            foreach (var column in this.Columns)
             {
-                object value = c.Get(owner);
-                if ((c.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))) || !string.IsNullOrEmpty(c.ForeignKey))
+                bool isFkColumn = column == fkCol;
+                if (isFkColumn && hasPriorityFk)
                     continue;
 
-                yield return new Cell(c.Name, value);
+                object value = isFkColumn ? this.GetFkValue(owner, column.GetRaw(owner), column) : column.Get(owner);
+                if ((column.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))))
+                    continue;
+
+                yield return new Cell(isFkColumn ? column.ForeignKey : column.Name, value);
             }
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            if (fkColumn == null || !TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
-                return value;
+            var table = TableTranslatorBase.GetTable(fkColumn.Type);
+            var pkColumn = table.Columns.First(c => c.Key);
 
-            var fkPkColumn = TableTranslatorBase.GetTable(fkColumn.Type).Columns.FirstOrDefault(c => c.Key);
-            return fkPkColumn.Get(fkInstance);
+            if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
+                return Activator.CreateInstance(pkColumn.Type);
+
+            return pkColumn.Get(fkInstance);
         }
 
         public override string ToString()

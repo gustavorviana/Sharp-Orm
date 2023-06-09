@@ -161,6 +161,32 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void InsertWithForeign()
+        {
+            using var qOrder = new Query<Order2>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qOrder.Insert(new Order2
+            {
+                Id = 1,
+                Customer = new Customer { Id = 1 },
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+        }
+
+        [TestMethod]
         public void DeleteJoin()
         {
             ConfigureInitialCustomerAndOrder();
