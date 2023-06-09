@@ -23,7 +23,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
-        public ColumnInfo[] Column { get; }
+        public ColumnInfo[] Columns { get; }
 
         /// <summary>
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
@@ -37,7 +37,7 @@ namespace SharpOrm.Builder
 
             this.Type = type;
             this.Name = type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
-            this.Column = this.GetColumns(config).Distinct().Where(c => c != null).ToArray();
+            this.Columns = this.GetColumns(config).Distinct().ToArray();
         }
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
@@ -50,7 +50,8 @@ namespace SharpOrm.Builder
                 if (field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
 
-            yield return GetByName(registry, "Id");
+            if (GetByName(registry, "Id") is ColumnInfo pk)
+                yield return pk;
         }
 
         public ColumnInfo GetByName(TranslationRegistry registry, string name)
@@ -72,7 +73,7 @@ namespace SharpOrm.Builder
         public ColumnInfo GetColumn(MemberInfo member)
         {
             string name = ColumnInfo.GetName(member);
-            return this.Column.FirstOrDefault(c => c.Name == name);
+            return this.Columns.FirstOrDefault(c => c.Name == name);
         }
 
         /// <summary>
@@ -80,17 +81,30 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="owner">The owner object.</param>
         /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
+        /// <param name="useForeign">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
         /// <returns>An enumerable of cells.</returns>
-        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool ignoreForeign = true)
+        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
         {
-            foreach (var c in this.Column)
+            var fkCol = this.Columns.FirstOrDefault(c => !string.IsNullOrEmpty(c.ForeignKey));
+            bool fkLoaded = false;
+
+            foreach (var c in this.Columns)
             {
                 object value = c.Get(owner);
-                if ((c.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))) || (ignoreForeign && !string.IsNullOrEmpty(c.ForeignKey)))
+                if ((c.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))) || !string.IsNullOrEmpty(c.ForeignKey))
                     continue;
 
                 yield return new Cell(c.Name, value);
             }
+        }
+
+        private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
+        {
+            if (fkColumn == null || !TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
+                return value;
+
+            var fkPkColumn = TableTranslatorBase.GetTable(fkColumn.Type).Columns.FirstOrDefault(c => c.Key);
+            return fkPkColumn.Get(fkInstance);
         }
 
         public override string ToString()

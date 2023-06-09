@@ -12,7 +12,7 @@ namespace SharpOrm
     public class Query<T> : Query where T : new()
     {
         public static string TableName => TableTranslatorBase.GetTableNameOf(typeof(T));
-        protected internal TableInfo TableInfo => TableTranslatorBase.GetLoader(typeof(T));
+        protected internal TableInfo TableInfo => TableTranslatorBase.GetTable(typeof(T));
         private bool findAllForeign = false;
 
         #region Query
@@ -130,7 +130,7 @@ namespace SharpOrm
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
-            var columns = this.TableInfo.Column.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+            var columns = this.TableInfo.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
             if (columns.Length == 0)
                 throw new DatabaseException(Messages.MissingPrimaryKey);
 

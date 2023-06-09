@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -28,10 +27,10 @@ namespace SharpOrm.Builder.DataTranslation
         /// <inheritdoc />
         protected override object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
         {
-            var loader = GetLoader(typeToParse);
+            var table = GetTable(typeToParse);
             object obj = Activator.CreateInstance(typeToParse);
 
-            foreach (var column in loader.Column)
+            foreach (var column in table.Columns)
             {
                 string fullName = GetFullName(column.Name, prefix);
                 if (IsValidColumn(column, reader, fullName))
@@ -143,7 +142,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             public ForeignTable(ForeignInfo info)
             {
-                this.TableName = GetLoader(info.ForeignColumn.Type).Name;
+                this.TableName = GetTable(info.ForeignColumn.Type).Name;
                 this.KeyValue = info.ForeignKey;
             }
 

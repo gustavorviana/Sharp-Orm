@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -27,7 +25,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The parsed object of type <typeparamref name="T"/>.</returns>
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
         {
-            if (typeof (T) == typeof(Row))
+            if (typeof(T) == typeof(Row))
                 return (T)(object)reader.GetRow(Registry);
 
             return (T)this.ParseFromReader(typeof(T), reader, "");
@@ -53,7 +51,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (obj is Row row)
                 return row;
 
-            return new Row(GetLoader(type).GetCells(obj).ToArray());
+            return new Row(GetTable(type).GetCells(obj).ToArray());
         }
 
         /// <summary>
@@ -63,7 +61,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The table name of the specified type.</returns>
         public static string GetTableNameOf(Type type)
         {
-            return GetLoader(type).Name;
+            return GetTable(type).Name;
         }
 
         /// <summary>
@@ -71,7 +69,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns>The table info for the specified type.</returns>
-        public static TableInfo GetLoader(Type type)
+        public static TableInfo GetTable(Type type)
         {
             return cachedTables.GetOrAdd(type, _type => new TableInfo(Registry, _type));
         }

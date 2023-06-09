@@ -128,7 +128,7 @@ namespace UnityTest
 
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
-            var prop = table.Column.FirstOrDefault(c => c.Name == propName);
+            var prop = table.Columns.FirstOrDefault(c => c.Name == propName);
 
             Assert.IsNotNull(prop);
             Assert.AreEqual(expected, prop.Get(objOwner));
