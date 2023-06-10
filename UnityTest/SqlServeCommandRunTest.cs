@@ -75,43 +75,9 @@ namespace UnityTest
         [TestMethod]
         public void DeleteJoin()
         {
+            ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);
             using var qCustomer = new Query<Customer>(Connection);
-            qOrder.Delete();
-            qCustomer.Delete();
-
-            qCustomer.Insert(new Customer
-            {
-                Id = 1,
-                Name = "Ronaldo",
-                Address = "My address",
-                Email = "ronaldo@email.com"
-            });
-
-            qCustomer.Insert(new Customer
-            {
-                Id = 2,
-                Name = "Michael",
-                Address = "My address 2",
-                Email = "michael@email.com"
-            });
-
-            qOrder.Insert(new Order
-            {
-                Id = 1,
-                CustomerId = 1,
-                Product = "My product",
-                Quantity = 10,
-                Status = "Pending"
-            });
-            qOrder.Insert(new Order
-            {
-                Id = 2,
-                CustomerId = 2,
-                Product = "My product 2",
-                Quantity = 10,
-                Status = "Ok"
-            });
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -129,43 +95,9 @@ namespace UnityTest
         [TestMethod]
         public void UpdateJoin()
         {
+            ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);
             using var qCustomer = new Query<Customer>(Connection);
-            qOrder.Delete();
-            qCustomer.Delete();
-
-            qCustomer.Insert(new Customer
-            {
-                Id = 1,
-                Name = "Ronaldo",
-                Address = "My address",
-                Email = "ronaldo@email.com"
-            });
-
-            qCustomer.Insert(new Customer
-            {
-                Id = 2,
-                Name = "Michael",
-                Address = "My address 2",
-                Email = "michael@email.com"
-            });
-
-            qOrder.Insert(new Order
-            {
-                Id = 1,
-                CustomerId = 1,
-                Product = "My product",
-                Quantity = 10,
-                Status = "Pending"
-            });
-            qOrder.Insert(new Order
-            {
-                Id = 2,
-                CustomerId = 2,
-                Product = "My product 2",
-                Quantity = 10,
-                Status = "Ok"
-            });
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -174,7 +106,8 @@ namespace UnityTest
             qOrder.Info.Joins.Clear();
             qOrder.Info.Where.Clear();
 
-            qOrder.OrderBy("Id").Offset = 1;
+            qOrder.OrderBy("Id");
+            qOrder.Offset = 1;
             var order = qOrder.FirstOrDefault();
             Assert.AreEqual("Ok", order.Status);
 
@@ -198,5 +131,88 @@ namespace UnityTest
             Assert.AreEqual(10, r.Total);
             Assert.AreEqual(2, r.CurrentPage);
         }
+
+
+        [TestMethod]
+        public void InsertWithForeign()
+        {
+            using var qOrder = new Query<Order2>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.Insert(new Customer
+            {
+                Id = 1,
+                Name = "Ronaldo",
+                Address = "My address",
+                Email = "ronaldo@email.com"
+            });
+
+            qOrder.Insert(new Order2
+            {
+                Id = 1,
+                Customer = new Customer { Id = 1 },
+                Product = "My product",
+                Quantity = 10,
+                Status = "Pending"
+            });
+        }
+
+        [TestMethod]
+        public void SelectWithForeign()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            var order = query.WithAllForeigns().FirstOrDefault();
+
+            Assert.IsNotNull(order.Customer);
+            Assert.AreEqual(order.CustomerId, order.Customer.Id);
+        }
+
+        private static void ConfigureInitialCustomerAndOrder()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            using var qCustomer = new Query<Customer>(Connection);
+            qOrder.Delete();
+            qCustomer.Delete();
+
+            qCustomer.BulkInsert(
+                new Customer
+                {
+                    Id = 1,
+                    Name = "Ronaldo",
+                    Address = "My address",
+                    Email = "ronaldo@email.com"
+                },
+                new Customer
+                {
+                    Id = 2,
+                    Name = "Michael",
+                    Address = "My address 2",
+                    Email = "michael@email.com"
+                }
+            );
+
+            qOrder.BulkInsert(
+                new Order
+                {
+                    Id = 1,
+                    CustomerId = 1,
+                    Product = "My product",
+                    Quantity = 10,
+                    Status = "Pending"
+                },
+                new Order
+                {
+                    Id = 2,
+                    CustomerId = 2,
+                    Product = "My product 2",
+                    Quantity = 10,
+                    Status = "Ok"
+                }
+            );
+        }
+
     }
 }

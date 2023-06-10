@@ -88,10 +88,10 @@ namespace SharpOrm.Builder
                 return;
 
             this.ValidateOffsetOrderBy();
-            this.QueryBuilder.Append($" OFFSET {this.Query.Offset} ROWS");
+            this.QueryBuilder.AppendFormat(" OFFSET {0} ROWS", this.Query.Offset);
 
             if (HasLimit)
-                this.QueryBuilder.Append($" FETCH NEXT {this.Query.Limit} ROWS ONLY");
+                this.QueryBuilder.AppendFormat(" FETCH NEXT {0} ROWS ONLY", this.Query.Limit);
         }
 
         private void WriteCountColumn()
@@ -150,7 +150,7 @@ namespace SharpOrm.Builder
         private void ValidateOffsetOrderBy()
         {
             if (this.Info.Orders.Length == 0)
-                throw new InvalidOperationException("You cannot page the result without a field for ordering.");
+                throw new InvalidOperationException($"You cannot use {nameof(Query)}.{nameof(Query.Offset)} without defining a sort column.");
         }
     }
 }

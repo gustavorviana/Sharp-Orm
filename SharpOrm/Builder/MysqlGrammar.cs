@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace SharpOrm.Builder
 {
@@ -89,6 +90,8 @@ namespace SharpOrm.Builder
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 
+
+            this.ValidateOffset();
             if (this.Query.Limit == null)
                 return;
 
@@ -158,6 +161,12 @@ namespace SharpOrm.Builder
                     '?',
                     (count) => this.RegisterClausuleParameter(this.Info.Where.Parameters[count - 1])
                 );
+        }
+
+        private void ValidateOffset()
+        {
+            if (this.Query.Offset != null && this.Query.Limit == null)
+                throw new InvalidOperationException($"You cannot use {nameof(Query)}.{nameof(Query.Offset)} without {nameof(Query)}.{nameof(Query.Limit)}.");
         }
     }
 }
