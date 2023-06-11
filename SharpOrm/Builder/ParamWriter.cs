@@ -84,7 +84,7 @@ namespace SharpOrm.Builder
             if (TranslationUtils.IsNull(value))
                 return "NULL";
 
-            if (TranslationUtils.IsNumeric(value))
+            if (TranslationUtils.IsNumeric(value?.GetType()))
                 return ((IConvertible)value).ToString(Invariant);
 
             return null;

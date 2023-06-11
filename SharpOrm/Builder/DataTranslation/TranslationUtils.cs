@@ -16,24 +16,24 @@ namespace SharpOrm.Builder.DataTranslation
 
         public static bool IsZero(object value)
         {
-            return IsNumeric(value) && value.Equals(Activator.CreateInstance(value.GetType()));
+            return IsNumeric(value?.GetType()) && value.Equals(Activator.CreateInstance(value.GetType()));
         }
 
-        public static bool IsNumeric(object value)
+        public static bool IsNumeric(Type type)
         {
-            return IsNumberWithoutDecimal(value) || IsNumberWithDecimal(value);
+            return IsNumberWithoutDecimal(type) || IsNumberWithDecimal(type);
         }
 
-        public static bool IsNumberWithDecimal(object value)
+        public static bool IsNumberWithDecimal(Type type)
         {
-            return value is decimal || value is float || value is double;
+            return type == typeof(decimal) || type == typeof(float) || type == typeof(double);
         }
 
-        public static bool IsNumberWithoutDecimal(object value)
+        public static bool IsNumberWithoutDecimal(Type type)
         {
-            return value is int || value is long || value is byte || value is sbyte
-            || value is Int16 || value is UInt16 || value is UInt32 || value is Int64
-            || value is UInt64;
+            return type == typeof(int) || type == typeof(long) || type == typeof(byte) || type == typeof(sbyte)
+            || type == typeof(Int16) || type == typeof(UInt16) || type == typeof(UInt32) || type == typeof(Int64)
+            || type == typeof(UInt64);
         }
     }
 }

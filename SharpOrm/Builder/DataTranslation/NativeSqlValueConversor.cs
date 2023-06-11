@@ -5,7 +5,8 @@ namespace SharpOrm.Builder.DataTranslation
 {
     internal class NativeSqlValueConversor : ISqlTranslation
     {
-        private static readonly BinaryTranslator _binaryTranslator = new BinaryTranslator();
+        private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
+        private static readonly NumericTranslation numericTranslation = new NumericTranslation();
         /// <summary>
         /// An array of native types used for fast type checking and conversion.
         /// </summary>
@@ -15,8 +16,7 @@ namespace SharpOrm.Builder.DataTranslation
             typeof(string),
             typeof(DateTime),
             typeof(Guid),
-            typeof(TimeSpan),
-            typeof(decimal)
+            typeof(TimeSpan)
         };
 
         public bool CanWork(Type type) => IsNative(type);
@@ -28,7 +28,8 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>True if the type is nullable, false otherwise.</returns>
         internal static bool IsNative(Type type)
         {
-            return type == null || _binaryTranslator.CanWork(type) || IsNullable(type) || type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type);
+            return type == null || binaryTranslator.CanWork(type) || IsNullable(type) || type.IsPrimitive ||
+                type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type);
         }
 
         /// <summary>
@@ -52,8 +53,11 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is DBNull)
                 return null;
 
-            if (_binaryTranslator.CanWork(expectedType))
-                return _binaryTranslator.FromSqlValue(value, expectedType);
+            if (binaryTranslator.CanWork(expectedType))
+                return binaryTranslator.FromSqlValue(value, expectedType);
+
+            if (numericTranslation.CanWork(expectedType))
+                return numericTranslation.FromSqlValue(value, expectedType);
 
             if (expectedType == typeof(Guid))
                 return Guid.Parse((string)value);
@@ -75,8 +79,11 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent SQL representation of the value.</returns>
         public object ToSqlValue(object value, Type type)
         {
-            if (_binaryTranslator.CanWork(type))
-                return _binaryTranslator.ToSqlValue(value, type);
+            if (binaryTranslator.CanWork(type))
+                return binaryTranslator.ToSqlValue(value, type);
+
+            if (numericTranslation.CanWork(type))
+                return numericTranslation.ToSqlValue(value, type);
 
             if (TranslationUtils.IsNull(value))
                 return DBNull.Value;
