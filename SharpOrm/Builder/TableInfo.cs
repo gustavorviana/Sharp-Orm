@@ -49,31 +49,6 @@ namespace SharpOrm.Builder
             foreach (var field in Type.GetFields(propertiesFlags))
                 if (field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
-
-            if (GetByName(registry, "Id") is ColumnInfo pk)
-                yield return pk;
-        }
-
-        public ColumnInfo GetByName(TranslationRegistry registry, string name)
-        {
-            if (Type.GetProperty(name, propertiesFlags) is PropertyInfo property)
-                return property.GetCustomAttribute<NotMappedAttribute>() == null ? new ColumnInfo(registry, property) : null;
-
-            if (Type.GetField(name, propertiesFlags) is FieldInfo fild)
-                return fild.GetCustomAttribute<NotMappedAttribute>() == null ? new ColumnInfo(registry, fild) : null;
-
-            return null;
-        }
-
-        /// <summary>
-        /// Gets the column information for the specified member.
-        /// </summary>
-        /// <param name="member">The member representing the column.</param>
-        /// <returns>The column information.</returns>
-        public ColumnInfo GetColumn(MemberInfo member)
-        {
-            string name = ColumnInfo.GetName(member);
-            return this.Columns.FirstOrDefault(c => c.Name == name);
         }
 
         /// <summary>
@@ -104,7 +79,7 @@ namespace SharpOrm.Builder
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            var table = TableTranslatorBase.GetTable(fkColumn.Type);
+            var table = TableReaderBase.GetTable(fkColumn.Type);
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))

@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Base class for table translators.
     /// </summary>
-    public abstract class TableTranslatorBase
+    public abstract class TableReaderBase
     {
         private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
 

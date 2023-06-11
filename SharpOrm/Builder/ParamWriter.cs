@@ -46,7 +46,7 @@ namespace SharpOrm.Builder
             if (value is ICollection col && !this.CanTranslate(value))
                 return string.Format("({0})", this.RegisterCollectionParameters(col, allowAlias, isValueOfList));
 
-            value = TableTranslatorBase.Registry.ToSql(value);
+            value = TableReaderBase.Registry.ToSql(value);
             if (!(value is byte[]) && value is ICollection)
                 throw new NotSupportedException();
 
@@ -59,7 +59,7 @@ namespace SharpOrm.Builder
 
         private bool CanTranslate(object value)
         {
-            return TableTranslatorBase.Registry.GetFor(value.GetType()) != null;
+            return TableReaderBase.Registry.GetFor(value.GetType()) != null;
         }
 
         private string RegisterCollectionParameters(ICollection collection, bool allowAlias, bool isValueOfList)

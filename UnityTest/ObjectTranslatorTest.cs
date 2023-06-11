@@ -136,7 +136,7 @@ namespace UnityTest
 
         private static void AssertSqlValueConverted(object expected, object value)
         {
-            Assert.AreEqual(expected, TableTranslatorBase.Registry.FromSql(value, expected?.GetType()));
+            Assert.AreEqual(expected, TableReaderBase.Registry.FromSql(value, expected?.GetType()));
         }
 
         private class TestClass

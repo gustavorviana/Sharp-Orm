@@ -54,7 +54,7 @@ namespace UnityTest
                 Nick = null
             };
 
-            using var cmd = g.Insert(TableTranslatorBase.ToRow(table, typeof(TestTable)).Cells);
+            using var cmd = g.Insert(TableReaderBase.ToRow(table, typeof(TestTable)).Cells);
             Assert.AreEqual("INSERT INTO [TestTable] ([Id], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status]) VALUES (1, @v1, NULL, @v2, 2.1, @v3, 1); SELECT SCOPE_IDENTITY();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", table.Name);
@@ -160,7 +160,7 @@ namespace UnityTest
         [TestMethod]
         public void InsertByBasicSelect()
         {
-            using var selectQuery = new Query("User");
+            using var selectQuery = new Query(Connection, "User");
             selectQuery
                 .Select(new Column("Id"), (Column)"1")
                 .Where("id", 1);

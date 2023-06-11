@@ -141,7 +141,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(TableTranslatorBase.ToRow(obj, typeof(T)).Cells);
+            return query.InsertL(TableReaderBase.ToRow(obj, typeof(T)).Cells);
         }
 
         public static long InsertL(this Query query, Dictionary<string, object> cells)
@@ -184,7 +184,7 @@ namespace SharpOrm
 
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
-            query.Upsert(TableTranslatorBase.ToRow(obj, typeof(T)), toCheckColumns);
+            query.Upsert(TableReaderBase.ToRow(obj, typeof(T)), toCheckColumns);
         }
 
         /// <summary>
@@ -254,7 +254,7 @@ namespace SharpOrm
         public static Row GetRow(this DbDataReader reader, TranslationRegistry registry = null)
         {
             if (registry == null)
-                registry = TableTranslatorBase.Registry;
+                registry = TableReaderBase.Registry;
 
             Cell[] cells = new Cell[reader.FieldCount];
 

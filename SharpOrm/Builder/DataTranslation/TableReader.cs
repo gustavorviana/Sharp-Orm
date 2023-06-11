@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Represents a table translator for database table operations.
     /// </summary>
-    public class TableTranslator : TableTranslatorBase
+    public class TableReader : TableReaderBase
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
@@ -32,26 +32,12 @@ namespace SharpOrm.Builder.DataTranslation
 
             foreach (var column in table.Columns)
             {
-                string fullName = GetFullName(column.Name, prefix);
+                string fullName = string.IsNullOrEmpty(prefix) ? column.Name : $"{prefix}_{column.Name}";
                 if (IsValidColumn(column, reader, fullName))
                     LoadColumnValue(obj, column, reader, fullName);
             }
 
             return obj;
-        }
-
-        /// <summary>
-        /// Gets the full column name by combining the column name and the prefix.
-        /// </summary>
-        /// <param name="columnName">The column name.</param>
-        /// <param name="prefix">The prefix.</param>
-        /// <returns>The full column name.</returns>
-        private string GetFullName(string columnName, string prefix)
-        {
-            if (string.IsNullOrEmpty(prefix))
-                return columnName;
-
-            return $"{prefix}_{columnName}";
         }
 
         /// <summary>
@@ -67,9 +53,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return true;
 
             bool isNative = NativeSqlValueConversor.IsNative(column.Type);
-            int index = reader.GetIndexOf(fullName);
-
-            if ((!isNative || index == -1) && !column.Required)
+            if ((!isNative || reader.GetIndexOf(fullName) == -1) && !column.Required)
                 return false;
 
             return true;
@@ -94,20 +78,18 @@ namespace SharpOrm.Builder.DataTranslation
                 return;
             }
 
-            if (string.IsNullOrEmpty(column.ForeignKey))
-            {
-                column.SetRaw(obj, ParseFromReader(column.Type, reader, fullName));
-                return;
-            }
+            if (!string.IsNullOrEmpty(column.ForeignKey)) this.EnqueueForeign(reader, column, obj);
+            else column.SetRaw(obj, ParseFromReader(column.Type, reader, fullName));
+        }
 
+        private void EnqueueForeign(DbDataReader reader, ColumnInfo column, object obj)
+        {
             if (!this.FindAllForeigns)
                 return;
 
             object foreignKey = reader[column.ForeignKey];
-            if (foreignKey == DBNull.Value)
-                return;
-
-            foreignKeyToLoad.Enqueue(new ForeignInfo(obj, foreignKey, column));
+            if (foreignKey != DBNull.Value)
+                foreignKeyToLoad.Enqueue(new ForeignInfo(obj, foreignKey, column));
         }
 
         /// <summary>

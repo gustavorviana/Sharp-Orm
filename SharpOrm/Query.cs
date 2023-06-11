@@ -11,8 +11,8 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public static string TableName => TableTranslatorBase.GetTableNameOf(typeof(T));
-        protected internal TableInfo TableInfo => TableTranslatorBase.GetTable(typeof(T));
+        public static string TableName => TableReaderBase.GetTableNameOf(typeof(T));
+        protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
         private bool findAllForeign = false;
 
         #region Query
@@ -97,7 +97,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableTranslator { FindAllForeigns = this.findAllForeign };
+            var translator = new TableReader { FindAllForeigns = this.findAllForeign };
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())
@@ -160,7 +160,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(TableTranslatorBase.ToRow(obj, typeof(T)).Cells);
+            return this.Insert(TableReaderBase.ToRow(obj, typeof(T)).Cells);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => TableTranslatorBase.ToRow(obj, typeof(T))).ToArray());
+            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T))).ToArray());
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string column2)
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
-            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
             join.WhereColumn(column1, "=", column2);
 
             this.Info.Joins.Add(join);
@@ -208,7 +208,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
             join.WhereColumn(column1, operation, column2);
 
             this.Info.Joins.Add(join);
@@ -218,7 +218,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableTranslatorBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
 
             operation(join);
             this.Info.Joins.Add(join);
@@ -576,7 +576,7 @@ namespace SharpOrm
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
-            var translator = new TableTranslator();
+            var translator = new TableReader();
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
                     yield return translator.ParseFromReader<T>(reader);
