@@ -141,6 +141,28 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectWhereNot()
+        {
+            using var query = NewQuery();
+            query.WhereNot("Column", 0).OrWhereNot("Column2", "Text");
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` != 0 OR `Column2` != @c1", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereNotNull()
+        {
+            using var query = NewQuery();
+            query.WhereNot("Column", null).OrWhereNot("Column2", null);
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NOT NULL OR `Column2` IS NOT NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void SelectWhereNull()
         {
             using var query = NewQuery();

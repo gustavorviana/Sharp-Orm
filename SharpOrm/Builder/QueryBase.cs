@@ -80,6 +80,17 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to compare</param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public QueryBase WhereNot(string column, object value)
+        {
+            return this.Where(column, value == null ? "IS NOT" : "!=", value);
+        }
+
+        /// <summary>
         /// This method adds a clause to the "WHERE" clause checking if a column is null
         /// </summary>
         /// <param name="column">the name of the column to be checked</param>
@@ -222,6 +233,17 @@ namespace SharpOrm.Builder
         public QueryBase OrWhere(string column, object value)
         {
             return this.OrWhere(column, value == null ? "IS" : "=", value);
+        }
+
+        /// <summary>
+        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">Column to compare</param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public QueryBase OrWhereNot(string column, object value)
+        {
+            return this.OrWhere(column, value == null ? "IS NOT" : "!=", value);
         }
 
         /// <summary>
