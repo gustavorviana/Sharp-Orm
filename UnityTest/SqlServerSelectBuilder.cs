@@ -181,6 +181,28 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void CountDistinctSelect2()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("Column").Distinct = true;
+            using var g = NewConfig.NewGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(DISTINCT [Column]) FROM [TestTable]", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void CountDistinctSelect3()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("nick", "name").Distinct = true;
+            using var g = NewConfig.NewGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM (SELECT DISTINCT [nick], [name] FROM [TestTable]) AS [count]", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void SelectGroupByPaginateInnerJoin()
         {
             using var query = NewQuery("Customer", "", false);

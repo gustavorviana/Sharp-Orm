@@ -120,10 +120,13 @@ namespace SharpOrm
         internal string GetCountColumn()
         {
             if (!string.IsNullOrEmpty(this.Name))
-                return this.Name;
+                return this.Name.EndsWith(".*") ? "*" : this.Name;
 
             string exp = this.expression?.ToString();
             if (exp == "*")
+                return "*";
+
+            if (exp?.EndsWith(".*") ?? false)
                 return "*";
 
             if (exp == null || !exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) || !exp.EndsWith(")"))
@@ -158,9 +161,15 @@ namespace SharpOrm
                    Name == other;
         }
 
-        public static bool operator ==(Column a, Column b) => a is Column && a.Equals(b);
+        public static bool operator ==(Column left, Column right)
+        {
+            return Equals(left, right);
+        }
 
-        public static bool operator !=(Column a, Column b) => a is Column && !a.Equals(b);
+        public static bool operator !=(Column left, Column right)
+        {
+            return !(left == right);
+        }
 
         #endregion
     }

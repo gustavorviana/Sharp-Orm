@@ -28,13 +28,13 @@ namespace SharpOrm.Builder
             this.WriteWhere(true);
         }
 
-        protected override void ConfigureCount()
+        protected override void ConfigureCount(Column column)
         {
-            bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination;
+            bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
             if (isOldOrDistinct)
                 this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
 
-            this.ConfigureSelect(true, true);
+            this.ConfigureSelect(true, column);
 
             if (isOldOrDistinct)
                 this.QueryBuilder.Append(") AS [count]");
@@ -42,13 +42,13 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            this.ConfigureSelect(configureWhereParams, false);
+            this.ConfigureSelect(configureWhereParams, null);
         }
 
-        private void ConfigureSelect(bool configureWhereParams, bool isCount)
+        private void ConfigureSelect(bool configureWhereParams, Column countColumn)
         {
-            if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams);
-            else this.WriteSelect(configureWhereParams, isCount);
+            if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams, countColumn);
+            else this.WriteSelect(configureWhereParams, countColumn);
         }
 
         protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
@@ -59,18 +59,19 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
         }
 
-        private void WriteSelect(bool configureWhereParams, bool isCount)
+        private void WriteSelect(bool configureWhereParams, Column countColumn)
         {
+            bool isCount = countColumn != null;
             this.QueryBuilder.Append("SELECT ");
 
-            if (this.Query.Distinct && !this.Info.IsCount())
+            if (this.Query.Distinct && !this.Info.IsCount() && countColumn == null)
                 this.QueryBuilder.Append("DISTINCT ");
 
             if (HasLimit && !HasOffset && !this.Info.IsCount())
                 this.QueryBuilder.AppendFormat("TOP ({0}) ", this.Query.Limit);
 
             if (isCount)
-                this.WriteCountColumn();
+                this.WriteCountColumn(countColumn);
             else
                 this.WriteSelectColumns();
 
@@ -94,26 +95,29 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.AppendFormat(" FETCH NEXT {0} ROWS ONLY", this.Query.Limit);
         }
 
-        private void WriteCountColumn()
+        private void WriteCountColumn(Column column)
         {
             if (this.Info.Select.Length > 1)
                 throw new NotSupportedException("It's not possible to count more than one column.");
 
-            string colName = this.Info.Select.FirstOrDefault()?.GetCountColumn();
-            if (string.IsNullOrEmpty(colName))
+            string countCol = column?.GetCountColumn();
+            if (string.IsNullOrEmpty(countCol))
                 throw new NotSupportedException("The name of a column or '*' must be entered for counting.");
 
-            if (this.Query.Distinct && colName == "*")
-                throw new NotSupportedException("Cannot perform DISTINCT counting for all columns.");
-
-            this.QueryBuilder.AppendFormat("COUNT({0}{1})", this.Query.Distinct ? "DISTINCT " : "", colName);
+            if (countCol == "*" || countCol.EndsWith(".*"))
+                this.QueryBuilder.AppendFormat("COUNT(*)");
+            else
+                this.QueryBuilder.AppendFormat("COUNT({0}{1})", this.Query.Distinct ? "DISTINCT " : "", WriteSelect(column));
         }
 
-        private void WriteSelectWithOldPagination(bool configureWhereParams)
+        private void WriteSelectWithOldPagination(bool configureWhereParams, Column countColunm)
         {
             this.QueryBuilder.Append("SELECT * FROM (");
             this.WriteRowNumber();
-            this.WriteSelectColumns();
+            if (countColunm == null)
+                this.WriteSelectColumns();
+            else
+                this.QueryBuilder.Append(WriteSelect(countColunm));
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);

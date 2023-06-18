@@ -97,7 +97,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableReader { FindAllForeigns = this.findAllForeign };
+            var translator = new TableReader(this.findAllForeign);
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())
@@ -591,6 +591,17 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Count())
+                return Convert.ToInt64(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Counts the amount of results available. 
+        /// </summary>
+        /// <returns></returns>
+        public long Count(Column column)
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Count(column))
                 return Convert.ToInt64(cmd.ExecuteScalar());
         }
 

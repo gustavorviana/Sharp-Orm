@@ -542,16 +542,15 @@ namespace UnityTest
             Assert.AreEqual("SELECT COUNT(*) FROM `TestTable`", cmd.CommandText);
         }
 
-
         [TestMethod]
-        public void CountDitinctSelect()
+        public void CountDistinctSelect()
         {
             using var query = new Query(Connection, TABLE);
-            query.Select("Column").Distinct = true;
+            query.Distinct = true;
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Count();
-            Assert.AreEqual("SELECT COUNT(DISTINCT `Column`) FROM `TestTable`", cmd.CommandText);
+            Assert.AreEqual("SELECT COUNT(*) FROM (SELECT DISTINCT * FROM `TestTable`) `count`", cmd.CommandText);
         }
 
         [TestMethod]
@@ -566,6 +565,28 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void CountDistinctSelect2()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("Column").Distinct = true;
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(DISTINCT `Column`) FROM `TestTable`", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void CountDistinctSelect3()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Select("nick", "name").Distinct = true;
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM (SELECT DISTINCT `nick`, `name` FROM `TestTable`) `count`", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void CountSelectJoin()
         {
             using var query = new Query(Connection, TABLE);
@@ -577,17 +598,6 @@ namespace UnityTest
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @c1", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
-        }
-
-        [TestMethod]
-        public void CountDistinctSelect()
-        {
-            using var query = new Query(Connection, TABLE);
-            query.Select("Column").Distinct = true;
-            using var g = new MysqlGrammar(query);
-
-            using var cmd = g.Count();
-            Assert.AreEqual("SELECT COUNT(DISTINCT `Column`) FROM `TestTable`", cmd.CommandText);
         }
 
         private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)

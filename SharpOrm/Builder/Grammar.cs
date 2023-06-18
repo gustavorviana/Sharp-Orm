@@ -41,15 +41,35 @@ namespace SharpOrm.Builder
         /// <returns>The database command configured to perform the record count.</returns>
         public DbCommand Count()
         {
+            return this.Count(this.GetColumnToCount());
+        }
+
+        private Column GetColumnToCount()
+        {
+            Column first = this.Info.Select.FirstOrDefault();
+            bool distinct = this.Query.Distinct;
+
+            if (!distinct && first == Column.All)
+                return Column.All;
+
+            return this.Info.Select.Length == 1 ? first : null;
+        }
+
+        /// <summary>
+        /// Performs a record count in the database based on the current Query object configuration.
+        /// </summary>
+        /// <returns>The database command configured to perform the record count.</returns>
+        public DbCommand Count(Column column)
+        {
             this.Reset();
-            this.ConfigureCount();
+            this.ConfigureCount(column);
             return this.BuildCommand();
         }
 
         /// <summary>
         /// Defines the necessary configuration for count operation.
         /// </summary>
-        protected abstract void ConfigureCount();
+        protected abstract void ConfigureCount(Column column);
 
         /// <summary>
         /// Generates a SELECT statement and returns a DbCommand object to execute it.

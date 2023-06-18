@@ -62,7 +62,8 @@ namespace UnityTest
         {
             InsertRows(30);
 
-            var q = new Query<TestTable>(Creator);
+            var q = new Query<TestTable>(Creator, "p");
+            q.Select("p.*");
             q.OrderBy("Id");
             var r = q.Paginate(5, 1);
 

@@ -57,18 +57,27 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append("; SELECT LAST_INSERT_ID();");
         }
 
-        protected override void ConfigureCount()
+        protected override void ConfigureCount(Column column)
         {
-            this.ConfigureSelect(true, true);
+            bool safeDistinct = (column == null || column == Column.All) && this.Query.Distinct;
+
+            if (safeDistinct)
+                this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+
+            this.ConfigureSelect(true, safeDistinct ? null : column);
+
+            if (safeDistinct)
+            this.QueryBuilder.AppendFormat(") `count`");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            this.ConfigureSelect(configureWhereParams, false);
+            this.ConfigureSelect(configureWhereParams, null);
         }
 
-        private void ConfigureSelect(bool configureWhereParams, bool isCount)
+        private void ConfigureSelect(bool configureWhereParams, Column countColumn)
         {
+            bool isCount = countColumn != null;
             this.QueryBuilder.Append("SELECT ");
 
             if (isCount)
@@ -76,9 +85,15 @@ namespace SharpOrm.Builder
             if (this.Query.Distinct)
                 this.QueryBuilder.Append("DISTINCT ");
 
-            this.WriteSelectColumns();
             if (isCount)
+            {
+                this.QueryBuilder.Append(string.Join(", ", WriteSelect(countColumn)));
                 this.QueryBuilder.Append(')');
+            }
+            else
+            {
+                this.WriteSelectColumns();
+            }
 
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 

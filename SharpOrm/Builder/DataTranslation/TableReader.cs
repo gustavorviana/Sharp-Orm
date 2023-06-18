@@ -10,9 +10,11 @@ namespace SharpOrm.Builder.DataTranslation
     /// </summary>
     public class TableReader : TableReaderBase
     {
+        public static readonly TableReader Default = new TableReader();
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
-        public bool FindAllForeigns = false;
+        private readonly bool findAllForeigns = false;
+        public bool FindAllForeigns => this.findAllForeigns;
 
         public void LoadForeignKeys()
         {
@@ -22,6 +24,16 @@ namespace SharpOrm.Builder.DataTranslation
                 this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
                 info.SetForeignValue(this.GetValueFor(info));
             }
+        }
+
+        public TableReader(bool findAllForeigns)
+        {
+            this.findAllForeigns = findAllForeigns;
+        }
+
+        public TableReader()
+        {
+
         }
 
         /// <inheritdoc />

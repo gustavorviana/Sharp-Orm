@@ -246,6 +246,11 @@ namespace SharpOrm
 
         #region DbDataReader
 
+        public static T ReadObject<T>(this DbDataReader reader) where T : new()
+        {
+            return TableReader.Default.ParseFromReader<T>(reader);
+        }
+
         /// <summary>
         /// Get row of current reader.
         /// </summary>

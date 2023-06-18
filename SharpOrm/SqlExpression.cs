@@ -76,10 +76,6 @@ namespace SharpOrm
             return -1584136870 + EqualityComparer<string>.Default.GetHashCode(value);
         }
 
-        public static bool operator ==(SqlExpression a, SqlExpression b) => a is SqlExpression && a.Equals(b);
-
-        public static bool operator !=(SqlExpression a, SqlExpression b) => a is SqlExpression && !a.Equals(b);
-
         public static explicit operator SqlExpression(StringBuilder builder)
         {
             return new SqlExpression(builder.ToString());
