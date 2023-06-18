@@ -15,26 +15,34 @@ namespace SharpOrm.Builder.DataTranslation
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
         private readonly string[] foreignsTables = null;
+        private readonly int maxDept = 0;
+        private int currentDepth = 0;
         public bool FindForeigns => this.foreignsTables != null;
+
+        public TableReader(string[] tables, int maxDepth)
+        {
+            this.foreignsTables = tables;
+            this.maxDept = maxDepth;
+        }
+
+        public TableReader()
+        {
+
+        }
 
         public void LoadForeignKeys()
         {
             while (this.FindForeigns && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
+                this.currentDepth = Math.Max(info.Depth, this.currentDepth);
+
+                if (info.Depth > maxDept)
+                    continue;
+
                 this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
                 info.SetForeignValue(this.GetValueFor(info));
             }
-        }
-
-        public TableReader(string[] tables)
-        {
-            this.foreignsTables = tables;
-        }
-
-        public TableReader()
-        {
-
         }
 
         /// <inheritdoc />
@@ -104,7 +112,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (foreignKey == DBNull.Value)
                 return;
 
-            var fi = new ForeignInfo(obj, foreignKey, column);
+            var fi = new ForeignInfo(obj, foreignKey, column, currentDepth + 1);
             if (this.CanFindForeign(fi.TableName))
                 foreignKeyToLoad.Enqueue(fi);
         }
@@ -136,8 +144,11 @@ namespace SharpOrm.Builder.DataTranslation
 
         private bool CanFindForeign(string name)
         {
-            if (this.foreignsTables == null || this.foreignsTables.Length == 0)
+            if (this.foreignsTables == null)
                 return false;
+
+            if (this.foreignsTables.Length == 0)
+                return true;
 
             name = name.ToLower();
             return this.foreignsTables.Any(t => t.ToLower() == name);
@@ -187,13 +198,15 @@ namespace SharpOrm.Builder.DataTranslation
             public object Owner { get; }
             public object ForeignKey { get; }
             public ColumnInfo ForeignColumn { get; }
+            public int Depth { get; }
             public string TableName => GetTable(ForeignColumn.Type).Name;
 
-            public ForeignInfo(object owner, object foreignKey, ColumnInfo foreignColumn)
+            public ForeignInfo(object owner, object foreignKey, ColumnInfo foreignColumn, int depth)
             {
                 this.Owner = owner;
                 this.ForeignKey = foreignKey;
                 this.ForeignColumn = foreignColumn;
+                this.Depth = depth;
             }
 
             public void SetForeignValue(object value)

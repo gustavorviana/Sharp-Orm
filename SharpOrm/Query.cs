@@ -14,6 +14,7 @@ namespace SharpOrm
         public static string TableName => TableReaderBase.GetTableNameOf(typeof(T));
         protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
         private string[] foreignsTables = null;
+        private int foreignsDepth = 0;
 
         #region Query
         public Query() : base(TableName)
@@ -59,12 +60,37 @@ namespace SharpOrm
         }
         #endregion
 
-        public Query<T> WithForeigns(params string[] tables)
+        /// <summary>
+        /// Specifies the foreign tables to be included in the query result up to the specified depth.
+        /// </summary>
+        /// <param name="depth">The depth to which the foreign tables should be included.</param>
+        /// <param name="tables">The names of the foreign tables to include.</param>
+        /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
+        public Query<T> WithForeigns(int depth, params string[] tables)
         {
             this.foreignsTables = tables;
+            this.foreignsDepth = depth;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the foreign tables to be included in the query result up to the default depth (10).
+        /// </summary>
+        /// <param name="tables">The names of the foreign tables to include.</param>
+        /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
+        public Query<T> WithForeigns(params string[] tables)
+        {
+            this.foreignsTables = tables;
+            this.foreignsDepth = 10;
+            return this;
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
             return Pager<T>.FromBuilder(this, peerPage, currentPage);
@@ -97,7 +123,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableReader(this.foreignsTables);
+            var translator = new TableReader(this.foreignsTables, this.foreignsDepth);
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())

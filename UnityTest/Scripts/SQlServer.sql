@@ -1,10 +1,17 @@
 DROP TABLE IF EXISTS [Orders];
 DROP TABLE IF EXISTS [Customers];
-CREATE TABLE [Customers] (
+DROP TABLE IF EXISTS [Address];
+CREATE TABLE [Address] (
       [id] INT PRIMARY KEY,
       [name] VARCHAR(50),
+      [street] VARCHAR(100)
+);
+CREATE TABLE [Customers] (
+      [id] INT PRIMARY KEY,
+      [address_id] INT,
+      [name] VARCHAR(50),
       [email] VARCHAR(100),
-      [address] VARCHAR(100)
+      FOREIGN KEY ([address_id]) REFERENCES [Address](id)
 );
 CREATE TABLE [Orders] (
       [id] INT PRIMARY KEY,

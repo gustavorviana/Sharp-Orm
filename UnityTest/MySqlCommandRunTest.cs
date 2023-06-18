@@ -161,32 +161,6 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void InsertWithForeign()
-        {
-            using var qOrder = new Query<Order2>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
-            qOrder.Delete();
-            qCustomer.Delete();
-
-            qCustomer.Insert(new Customer
-            {
-                Id = 1,
-                Name = "Ronaldo",
-                Address = "My address",
-                Email = "ronaldo@email.com"
-            });
-
-            qOrder.Insert(new Order2
-            {
-                Id = 1,
-                Customer = new Customer { Id = 1 },
-                Product = "My product",
-                Quantity = 10,
-                Status = "Pending"
-            });
-        }
-
-        [TestMethod]
         public void DeleteJoin()
         {
             ConfigureInitialCustomerAndOrder();
@@ -234,32 +208,65 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns("Customers").FirstOrDefault();
+            var order = query.WithForeigns("Customers", "Address").FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);
+
+            Assert.IsNotNull(order.Customer.Address);
+            Assert.AreEqual(order.Customer.AddressId, order.Customer.Address.Id);
+        }
+
+        [TestMethod]
+        public void SelectWithForeignDepth()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            var order = query.WithForeigns(1, "Customers", "Address").FirstOrDefault();
+
+            Assert.IsNotNull(order.Customer);
+            Assert.AreEqual(order.CustomerId, order.Customer.Id);
+
+            Assert.IsNull(order.Customer.Address);
         }
 
         private static void ConfigureInitialCustomerAndOrder()
         {
             using var qOrder = new Query<Order>(Connection);
+            using var qAddress = new Query<Address>(Connection);
             using var qCustomer = new Query<Customer>(Connection);
             qOrder.Delete();
             qCustomer.Delete();
+            qAddress.Delete();
+
+            qAddress.BulkInsert(
+                new Address
+                {
+                    Id = 1,
+                    Name = "Test 1",
+                    Street = "Street 1"
+                },
+                new Address
+                {
+                    Id = 2,
+                    Name = "Test 2",
+                    Street = "Street 2"
+                }
+            );
 
             qCustomer.BulkInsert(
                 new Customer
                 {
                     Id = 1,
                     Name = "Ronaldo",
-                    Address = "My address",
+                    AddressId = 1,
                     Email = "ronaldo@email.com"
                 },
                 new Customer
                 {
                     Id = 2,
                     Name = "Michael",
-                    Address = "My address 2",
+                    AddressId = 2,
                     Email = "michael@email.com"
                 }
             );
