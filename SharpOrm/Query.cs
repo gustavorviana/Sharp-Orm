@@ -480,6 +480,26 @@ namespace SharpOrm
                 return cmd.ExecuteReader();
         }
 
+        public T ExecuteScalar<T>()
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Select())
+            {
+                object result = cmd.ExecuteScalar();
+                return (T)TableReaderBase.Registry.FromSql(result, typeof(T));
+            }
+        }
+
+        public object ExecuteScalar()
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Select())
+            {
+                object result = cmd.ExecuteScalar();
+                return TableReaderBase.Registry.FromSql(result, result.GetType());
+            }
+        }
+
         #region DML SQL commands
 
         public int Update(Dictionary<string, object> cells)
