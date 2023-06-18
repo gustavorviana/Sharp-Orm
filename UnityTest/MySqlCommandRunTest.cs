@@ -234,7 +234,7 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithAllForeigns().FirstOrDefault();
+            var order = query.WithForeigns("Customers").FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);

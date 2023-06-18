@@ -13,7 +13,7 @@ namespace SharpOrm
     {
         public static string TableName => TableReaderBase.GetTableNameOf(typeof(T));
         protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
-        private bool findAllForeign = false;
+        private string[] foreignsTables = null;
 
         #region Query
         public Query() : base(TableName)
@@ -59,9 +59,9 @@ namespace SharpOrm
         }
         #endregion
 
-        public Query<T> WithAllForeigns()
+        public Query<T> WithForeigns(params string[] tables)
         {
-            this.findAllForeign = true;
+            this.foreignsTables = tables;
             return this;
         }
 
@@ -97,7 +97,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableReader(this.findAllForeign);
+            var translator = new TableReader(this.foreignsTables);
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())

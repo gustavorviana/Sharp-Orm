@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -13,12 +14,12 @@ namespace SharpOrm.Builder.DataTranslation
         public static readonly TableReader Default = new TableReader();
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
-        private readonly bool findAllForeigns = false;
-        public bool FindAllForeigns => this.findAllForeigns;
+        private readonly string[] foreignsTables = null;
+        public bool FindForeigns => this.foreignsTables != null;
 
         public void LoadForeignKeys()
         {
-            while (this.FindAllForeigns && foreignKeyToLoad.Count > 0)
+            while (this.FindForeigns && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
                 this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
@@ -26,9 +27,9 @@ namespace SharpOrm.Builder.DataTranslation
             }
         }
 
-        public TableReader(bool findAllForeigns)
+        public TableReader(string[] tables)
         {
-            this.findAllForeigns = findAllForeigns;
+            this.foreignsTables = tables;
         }
 
         public TableReader()
@@ -96,12 +97,16 @@ namespace SharpOrm.Builder.DataTranslation
 
         private void EnqueueForeign(DbDataReader reader, ColumnInfo column, object obj)
         {
-            if (!this.FindAllForeigns)
+            if (!this.FindForeigns)
                 return;
 
             object foreignKey = reader[column.ForeignKey];
-            if (foreignKey != DBNull.Value)
-                foreignKeyToLoad.Enqueue(new ForeignInfo(obj, foreignKey, column));
+            if (foreignKey == DBNull.Value)
+                return;
+
+            var fi = new ForeignInfo(obj, foreignKey, column);
+            if (this.CanFindForeign(fi.TableName))
+                foreignKeyToLoad.Enqueue(fi);
         }
 
         /// <summary>
@@ -129,6 +134,15 @@ namespace SharpOrm.Builder.DataTranslation
             });
         }
 
+        private bool CanFindForeign(string name)
+        {
+            if (this.foreignsTables == null || this.foreignsTables.Length == 0)
+                return false;
+
+            name = name.ToLower();
+            return this.foreignsTables.Any(t => t.ToLower() == name);
+        }
+
         private class ForeignTable : IEquatable<ForeignTable>
         {
             public string TableName { get; }
@@ -136,7 +150,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             public ForeignTable(ForeignInfo info)
             {
-                this.TableName = GetTable(info.ForeignColumn.Type).Name;
+                this.TableName = info.TableName;
                 this.KeyValue = info.ForeignKey;
             }
 
@@ -173,6 +187,7 @@ namespace SharpOrm.Builder.DataTranslation
             public object Owner { get; }
             public object ForeignKey { get; }
             public ColumnInfo ForeignColumn { get; }
+            public string TableName => GetTable(ForeignColumn.Type).Name;
 
             public ForeignInfo(object owner, object foreignKey, ColumnInfo foreignColumn)
             {
