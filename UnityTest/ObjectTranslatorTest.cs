@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
@@ -124,6 +125,22 @@ namespace UnityTest
             AssertSqlValueConverted(expected, intBool);
             AssertSqlValueConverted(expected, byteBool);
             AssertSqlValueConverted(expected, sbyteBool);
+        }
+
+        [TestMethod]
+        public void NullGuid()
+        {
+            var guid = Guid.NewGuid();
+            Assert.AreEqual(null, TableReaderBase.Registry.FromSql(DBNull.Value, typeof(Guid)));
+            Assert.AreEqual(guid, TableReaderBase.Registry.FromSql(guid.ToString(), typeof(Guid?)));
+        }
+
+        [TestMethod]
+        public void NullInt()
+        {
+            int value = 123;
+            Assert.AreEqual(null, TableReaderBase.Registry.FromSql(DBNull.Value, typeof(int)));
+            Assert.AreEqual(value, TableReaderBase.Registry.FromSql(value, typeof(int?)));
         }
 
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
