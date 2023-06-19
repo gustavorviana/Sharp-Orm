@@ -489,16 +489,6 @@ namespace SharpOrm
         /// Execute SQL Select command and return DataReader.
         /// </summary>
         /// <returns></returns>
-        [Obsolete("Use ExecuteReader. This function will be removed in version 1.2.", false)]
-        public DbDataReader Execute()
-        {
-            return this.ExecuteReader();
-        }
-
-        /// <summary>
-        /// Execute SQL Select command and return DataReader.
-        /// </summary>
-        /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
@@ -623,6 +613,17 @@ namespace SharpOrm
         /// <summary>
         /// Counts the amount of results available. 
         /// </summary>
+        /// <param name="column">Column to count.</param>
+        /// <returns></returns>
+        public long Count(string columnName)
+        {
+            return this.Count(new Column(columnName));
+        }
+
+        /// <summary>
+        /// Counts the amount of results available. 
+        /// </summary>
+        /// <param name="column">Column to count.</param>
         /// <returns></returns>
         public long Count(Column column)
         {
