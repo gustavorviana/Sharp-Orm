@@ -230,6 +230,17 @@ namespace UnityTest
             Assert.IsNull(order.Customer.Address);
         }
 
+        [TestMethod]
+        public void ExecuteArrayScalar()
+        {
+            InsertRows(5);
+            using var q = NewQuery();
+            q.Select("Name");
+
+            var names = q.ExecuteArrayScalar<string>();
+            Assert.AreEqual(5, names.Length);
+        }
+
         private static void ConfigureInitialCustomerAndOrder()
         {
             using var qOrder = new Query<Order>(Connection);

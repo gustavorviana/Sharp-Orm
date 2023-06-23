@@ -496,24 +496,40 @@ namespace SharpOrm
                 return cmd.ExecuteReader();
         }
 
-        public T ExecuteScalar<T>()
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        public T[] ExecuteArrayScalar<T>()
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select())
-            {
-                object result = cmd.ExecuteScalar();
-                return (T)TableReaderBase.Registry.FromSql(result, typeof(T));
-            }
+            List<T> list = new List<T>();
+
+            using (var reader = this.ExecuteReader())
+                while (reader.Read())
+                    list.Add((T)TableReaderBase.Registry.FromSql(reader[0], typeof(T)));
+
+            return list.ToArray();
         }
 
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public T ExecuteScalar<T>()
+        {
+            return (T)TableReaderBase.Registry.FromSql(this.ExecuteScalar(), typeof(T));
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Select())
-            {
-                object result = cmd.ExecuteScalar();
-                return TableReaderBase.Registry.FromSql(result, result.GetType());
-            }
+                return cmd.ExecuteScalar();
         }
 
         #region DML SQL commands
