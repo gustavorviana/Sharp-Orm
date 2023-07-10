@@ -113,6 +113,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void UpdateByColumn()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+            q.Where("id", "=", 1);
+
+            using var cmd = g.Update(new Cell[] { new Cell("name", new Column("nick")) });
+            Assert.AreEqual("UPDATE `TestTable` SET `name` = `nick` WHERE `id` = 1", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void UpdateWhere()
         {
             using var q = NewQuery();
