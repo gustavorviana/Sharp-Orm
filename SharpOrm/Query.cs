@@ -206,6 +206,9 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(T obj, params string[] columns)
         {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
             if (columns.Length == 0)
                 return base.Update(this.TableInfo.GetCells(obj, true).ToArray());
 

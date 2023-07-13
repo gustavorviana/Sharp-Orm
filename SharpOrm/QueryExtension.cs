@@ -2,6 +2,7 @@
 using SharpOrm.Builder.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 
@@ -133,6 +134,42 @@ namespace SharpOrm
         }
 
         #region Query
+
+        /// <summary>
+        /// Get a <see cref="DataTable"/> with values from a SELECT query.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public static DataTable ReadTable(this Query query)
+        {
+            DataTable dt = new DataTable();
+
+            using (var reader = query.ExecuteReader())
+                dt.Load(reader);
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Update row from table, disregarding column names.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="query"></param>
+        /// <param name="obj"></param>
+        /// <param name="columnsToIgnore">Columns that should not be updated.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columnsToIgnore) where T : new()
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            if ((columnsToIgnore?.Length ?? 0) == 0)
+                throw new ArgumentNullException(nameof(columnsToIgnore));
+
+            var reader = TableReaderBase.GetTable(typeof(T));
+            return query.Update(reader.GetCells(obj).Where(i => columnsToIgnore.Contains(i.Name)).ToArray());
+        }
 
         /// <summary>
         /// Inserts one row into the table.
