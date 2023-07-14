@@ -4,6 +4,7 @@
     {
         public bool OnlySafeModifications { get; }
         public bool UseOldPagination { get; set; }
+        public int CommandTimeout { get; set; } = 30;
 
         public SqlServerQueryConfig()
         {

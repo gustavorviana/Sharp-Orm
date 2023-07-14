@@ -4,6 +4,8 @@
     {
         public bool OnlySafeModifications { get; }
 
+        public int CommandTimeout { get; set; } = 30;
+
         public MysqlQueryConfig()
         {
 

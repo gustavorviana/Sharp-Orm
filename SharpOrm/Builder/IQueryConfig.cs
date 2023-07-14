@@ -8,6 +8,11 @@
         bool OnlySafeModifications { get; }
 
         /// <summary>
+        /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
+        /// </summary>
+        int CommandTimeout { get; set; }
+
+        /// <summary>
         /// Creates a new grammar object.
         /// </summary>
         /// <param name="query">Query for grammar.</param>

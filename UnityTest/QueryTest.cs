@@ -1,5 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MySql.Data.MySqlClient;
 using SharpOrm;
+using SharpOrm.Builder;
+using SharpOrm.Connection;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -27,6 +30,40 @@ namespace UnityTest
             Assert.AreEqual(original.Limit, clone.Limit);
             Assert.AreEqual(original.Offset, clone.Offset);
             Assert.AreEqual(original.Distinct, clone.Distinct);
+        }
+
+        [TestMethod]
+        public void DefaultTimeoutTest()
+        {
+            var query = new Query("table");
+
+            using var grammar = new MysqlGrammar(query);
+            using var cmd = grammar.Select();
+            Assert.AreEqual(30, cmd.CommandTimeout);
+        }
+
+        [TestMethod]
+        public void QueryCustomTimeoutTest()
+        {
+            var query = new Query("table")
+            {
+                CommandTimeout = 120
+            };
+
+            using var grammar = new MysqlGrammar(query);
+            using var cmd = grammar.Select();
+            Assert.AreEqual(120, cmd.CommandTimeout);
+        }
+
+        [TestMethod]
+        public void ConfigCustomTimeoutTest()
+        {
+            using var creator = new MultipleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false) { CommandTimeout = 120 }, ConnectionStr.Mysql);
+            var query = new Query(creator, "table");
+
+            using var grammar = new MysqlGrammar(query);
+            using var cmd = grammar.Select();
+            Assert.AreEqual(120, cmd.CommandTimeout);
         }
     }
 }

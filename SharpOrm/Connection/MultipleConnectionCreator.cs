@@ -101,8 +101,14 @@ namespace SharpOrm.Connection
             if (!disposing)
                 return;
 
-            foreach (var con in this.connections)
-                try { con.Dispose(); } catch { }
+            lock (this._lock)
+            {
+                foreach (var con in this.connections)
+                {
+                    con.Disposed -= OnConnectionDisposed;
+                    try { con.Dispose(); } catch { }
+                }
+            }
 
             this.connections.Clear();
         }

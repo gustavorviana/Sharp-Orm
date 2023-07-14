@@ -280,6 +280,10 @@ namespace SharpOrm
         public ConnectionCreator Creator => this._creator ?? ConnectionCreator.Default;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
+        /// <summary>
+        /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
+        /// </summary>
+        public int CommandTimeout { get; set; }
         #endregion
 
         #region Query
@@ -320,6 +324,7 @@ namespace SharpOrm
         public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config)
         {
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            this.CommandTimeout = config.CommandTimeout;
             this.Info.TableName = table;
 
             try
@@ -342,6 +347,7 @@ namespace SharpOrm
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.Connection = transaction.Connection;
+            this.CommandTimeout = config.CommandTimeout;
             this.Info.TableName = name;
 
             try

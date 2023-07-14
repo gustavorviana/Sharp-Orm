@@ -11,7 +11,10 @@ namespace SharpOrm.Builder
     public abstract class Grammar : IDisposable
     {
         #region Fields\Properties
+        [Obsolete("Use Grammar.QueryLogger.")]
         public static bool LogQuery { get; set; }
+
+        public static Action<string> QueryLogger { get; set; }
 
         private DbCommand _command = null;
 
@@ -239,8 +242,8 @@ namespace SharpOrm.Builder
         {
             this.Command.CommandText = this.QueryBuilder.ToString();
             this.Command.Transaction = this.Query.Transaction;
-            if (LogQuery)
-                System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
+            this.Command.CommandTimeout = this.Query.CommandTimeout;
+            QueryLogger?.Invoke(this.Command.CommandText);
             return this.Command;
         }
 
