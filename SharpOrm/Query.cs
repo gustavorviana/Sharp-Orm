@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 
 namespace SharpOrm
 {
@@ -280,6 +281,7 @@ namespace SharpOrm
         public ConnectionCreator Creator => this._creator ?? ConnectionCreator.Default;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
+        public CancellationToken Token { get; set; }
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
