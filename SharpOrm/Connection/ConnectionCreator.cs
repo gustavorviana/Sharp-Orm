@@ -97,11 +97,15 @@ namespace SharpOrm.Connection
         /// </summary>
         public void Dispose()
         {
-            if (this._disposed)
-                throw new ObjectDisposedException(GetType().FullName);
-
+            this.ThrowIfDisposed();
             this.Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        protected void ThrowIfDisposed()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(GetType().FullName);
         }
 
         #endregion

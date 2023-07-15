@@ -15,6 +15,7 @@ namespace SharpOrm.Connection
 
     public class SingleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
+        private readonly object _lock = new object();
         private readonly string _connectionString;
         private DbConnection connection;
 
@@ -28,23 +29,27 @@ namespace SharpOrm.Connection
 
         public override DbConnection GetConnection()
         {
-            if (connection == null)
+            lock (this._lock)
             {
-                connection = new T { ConnectionString = _connectionString };
-                connection.Disposed += OnConnectionDisposed;
-            }
+                this.ThrowIfDisposed();
+                if (connection == null)
+                {
+                    connection = new T { ConnectionString = _connectionString };
+                    connection.Disposed += OnConnectionDisposed;
+                }
 
-            try
-            {
-                if (this.connection.State == System.Data.ConnectionState.Closed)
-                    this.connection.Open();
-            }
-            catch (Exception ex)
-            {
-                throw new DbConnectionException(ex);
-            }
+                try
+                {
+                    if (this.connection.State == System.Data.ConnectionState.Closed)
+                        this.connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    throw new DbConnectionException(ex);
+                }
 
-            return this.connection;
+                return this.connection;
+            }
         }
 
         private void OnConnectionDisposed(object sender, EventArgs e)
@@ -62,6 +67,8 @@ namespace SharpOrm.Connection
 
             if (disposing)
                 this.connection?.Dispose();
+
+            this.connection = null;
         }
     }
 }

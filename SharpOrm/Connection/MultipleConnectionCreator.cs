@@ -48,11 +48,9 @@ namespace SharpOrm.Connection
         /// </summary>
         public override DbConnection GetConnection()
         {
-            if (this.Disposed)
-                throw new ObjectDisposedException(this.GetType().FullName);
-
             lock (this._lock)
             {
+                this.ThrowIfDisposed();
                 var connection = new T { ConnectionString = this._connectionString };
                 if (connection.State == ConnectionState.Closed)
                     connection.Open();
@@ -98,15 +96,16 @@ namespace SharpOrm.Connection
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (!disposing)
-                return;
 
-            lock (this._lock)
+            if (disposing)
             {
-                foreach (var con in this.connections)
+                lock (this._lock)
                 {
-                    con.Disposed -= OnConnectionDisposed;
-                    try { con.Dispose(); } catch { }
+                    foreach (var con in this.connections)
+                    {
+                        con.Disposed -= OnConnectionDisposed;
+                        try { con.Dispose(); } catch { }
+                    }
                 }
             }
 
