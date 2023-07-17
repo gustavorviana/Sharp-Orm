@@ -540,7 +540,11 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Select())
-                return cmd.ExecuteScalar();
+            {
+                object result = cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
+                return result;
+            }
         }
 
         #region DML SQL commands
@@ -564,7 +568,11 @@ namespace SharpOrm
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Update(cells))
-                return cmd.ExecuteNonQuery();
+            {
+                int result = cmd.ExecuteNonQuery();
+                this.Token.ThrowIfCancellationRequested();
+                return result;
+            }
         }
 
         public int Insert(Dictionary<string, object> cells)
@@ -586,6 +594,7 @@ namespace SharpOrm
             using (DbCommand cmd = grammar.Insert(cells))
             {
                 object result = cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
                 return result is DBNull ? 0 : Convert.ToInt32(result);
             }
         }
@@ -610,7 +619,10 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.BulkInsert(rows))
+            {
                 cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
+            }
         }
 
         /// <summary>
@@ -623,7 +635,11 @@ namespace SharpOrm
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Delete())
-                return cmd.ExecuteNonQuery();
+            {
+                int result = cmd.ExecuteNonQuery();
+                this.Token.ThrowIfCancellationRequested();
+                return result;
+            }
         }
 
         /// <summary>
@@ -634,7 +650,11 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Count())
-                return Convert.ToInt64(cmd.ExecuteScalar());
+            {
+                object result = cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
+                return Convert.ToInt64(result);
+            }
         }
 
         /// <summary>
@@ -656,7 +676,11 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Count(column))
-                return Convert.ToInt64(cmd.ExecuteScalar());
+            {
+                object result = cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
+                return Convert.ToInt64(result);
+            }
         }
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()

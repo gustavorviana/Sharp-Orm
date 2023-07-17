@@ -147,6 +147,7 @@ namespace SharpOrm
             using (var reader = query.ExecuteReader())
                 dt.Load(reader);
 
+            query.Token.ThrowIfCancellationRequested();
             return dt;
         }
 
@@ -200,6 +201,7 @@ namespace SharpOrm
             using (DbCommand cmd = grammar.Insert(cells))
             {
                 object result = cmd.ExecuteScalar();
+                query.Token.ThrowIfCancellationRequested();
                 return result is DBNull ? 0 : Convert.ToInt64(result);
             }
         }

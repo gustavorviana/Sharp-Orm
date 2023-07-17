@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace SharpOrm.Builder
 {
@@ -18,6 +20,8 @@ namespace SharpOrm.Builder
 
         private DbCommand _command = null;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private CancellationToken? lastRegistry = null;
         private bool _disposed = false;
         private readonly ParamWriter whereWriter;
         private readonly ParamWriter valuesWriter;
@@ -243,16 +247,25 @@ namespace SharpOrm.Builder
         private DbCommand BuildCommand()
         {
             this.Query.Token.ThrowIfCancellationRequested();
-            this.Query.Token.Register(() =>
-            {
-                try { this.Command.Cancel(); } catch { }
-            });
+            this.RegiterCancellation();
 
             this.Command.CommandText = this.QueryBuilder.ToString();
             this.Command.Transaction = this.Query.Transaction;
             this.Command.CommandTimeout = this.Query.CommandTimeout;
             QueryLogger?.Invoke(this.Command.CommandText);
             return this.Command;
+        }
+
+        private void RegiterCancellation()
+        {
+            if (this.lastRegistry == this.Query.Token)
+                return;
+
+            this.lastRegistry = this.Query.Token;
+            this.Query.Token.Register(() =>
+            {
+                try { this.Command.Cancel(); } catch { }
+            });
         }
 
         protected virtual void WriteSelectColumns()
