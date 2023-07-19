@@ -184,6 +184,7 @@ namespace SharpOrm.Builder
             return this.WriteBetween(toCheck, arg1, arg2, true, AND);
         }
 
+        /// <summary>
         /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
         /// </summary>
         /// <param name="query">The subquery to be checked for the existence of a record.</param>
@@ -193,6 +194,17 @@ namespace SharpOrm.Builder
             return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", AND);
         }
 
+        /// <summary>
+        /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="exp">The subquery to be checked for the existence of a record.</param>
+        /// <returns>A QueryBase instance for method chaining.</returns>
+        public QueryBase Exists(SqlExpression exp)
+        {
+            return this.WriteWhere($"EXISTS ({this.ToSql(exp)})", AND);
+        }
+
+        /// <summary>
         /// Adds an NOT EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
         /// </summary>
         /// <param name="query">The subquery to be checked for the existence of a record.</param>
@@ -200,6 +212,16 @@ namespace SharpOrm.Builder
         public QueryBase NotExists(Query query)
         {
             return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", AND);
+        }
+
+        /// <summary>
+        /// Adds an NOT EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="exp">The subquery to be checked for the existence of a record.</param>
+        /// <returns>A QueryBase instance for method chaining.</returns>
+        public QueryBase NotExists(SqlExpression exp)
+        {
+            return this.WriteWhere($"NOT EXISTS ({this.ToSql(exp)})", AND);
         }
 
         #endregion
@@ -348,12 +370,30 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Writes a WHERE clause that checks if a subquery returns any rows.
+        /// </summary>
+        /// <param name="exp">The subquery to check.</param>
+        public QueryBase OrExists(SqlExpression exp)
+        {
+            return this.WriteWhere($"EXISTS ({this.ToSql(exp)})", OR);
+        }
+
+        /// <summary>
         /// Writes a WHERE clause that checks if a subquery returns no rows.
         /// </summary>
         /// <param name="query">The subquery to check.</param>
         public QueryBase OrNotExists(Query query)
         {
             return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", OR);
+        }
+
+        /// <summary>
+        /// Writes a WHERE clause that checks if a subquery returns no rows.
+        /// </summary>
+        /// <param name="exp">The subquery to check.</param>
+        public QueryBase OrNotExists(SqlExpression exp)
+        {
+            return this.WriteWhere($"NOT EXISTS ({this.ToSql(exp)})", OR);
         }
 
         #endregion
