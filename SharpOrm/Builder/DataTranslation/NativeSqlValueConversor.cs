@@ -68,6 +68,9 @@ namespace SharpOrm.Builder.DataTranslation
             if (expectedType == typeof(bool))
                 return Convert.ToBoolean(value);
 
+            if (expectedType == typeof(TimeSpan) && value is DateTime date)
+                return date.TimeOfDay;
+
             return value;
         }
 
@@ -97,7 +100,10 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is bool vBool)
                 return vBool ? 1 : 0;
 
-            return value;
+            if (value is DateTime || value is TimeSpan)
+                return value;
+
+            return value?.ToString();
         }
     }
 }
