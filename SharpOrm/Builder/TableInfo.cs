@@ -66,7 +66,7 @@ namespace SharpOrm.Builder
         /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
         /// <param name="useForeign">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
         /// <returns>An enumerable of cells.</returns>
-        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false)
+        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool readForeignKey = false)
         {
             var fkCol = this.Columns.FirstOrDefault(c => !string.IsNullOrEmpty(c.ForeignKey));
             bool hasPriorityFk = this.Columns.Any(c => c.Name == fkCol?.ForeignKey);
@@ -77,12 +77,22 @@ namespace SharpOrm.Builder
                 if (isFkColumn && hasPriorityFk)
                     continue;
 
-                object value = isFkColumn ? this.GetFkValue(owner, column.GetRaw(owner), column) : column.Get(owner);
+                object value = isFkColumn ? this.GetFkValue(owner, column.GetRaw(owner), column) : ProcessValue(column, owner, readForeignKey);
                 if ((column.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
                 yield return new Cell(isFkColumn ? column.ForeignKey : column.Name, value);
             }
+        }
+
+        private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
+        {
+            object obj = column.Get(owner);
+            if (!readForeignKey || !column.Type.IsClass || string.IsNullOrEmpty(column.ForeignKey) || TranslationUtils.IsNull(obj))
+                return obj;
+
+            var table = new TableInfo(column.Type);
+            return table.Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)

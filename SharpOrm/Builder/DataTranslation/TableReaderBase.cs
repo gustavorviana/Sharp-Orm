@@ -48,12 +48,12 @@ namespace SharpOrm.Builder.DataTranslation
         /// <param name="obj">The object to convert.</param>
         /// <param name="type">The type of the object.</param>
         /// <returns>The row representation of the object.</returns>
-        public static Row ToRow(object obj, Type type)
+        public static Row ToRow(object obj, Type type, bool readForeignKey = false)
         {
             if (obj is Row row)
                 return row;
 
-            return new Row(GetTable(type).GetCells(obj).ToArray());
+            return new Row(GetTable(type).GetCells(obj, false, readForeignKey).ToArray());
         }
 
         /// <summary>

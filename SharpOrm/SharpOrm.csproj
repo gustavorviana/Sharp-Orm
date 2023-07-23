@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.2.1.4</AssemblyVersion>
-		<FileVersion>1.2.1.4</FileVersion>
-		<VersionPrefix>1.2.14</VersionPrefix>
+		<AssemblyVersion>1.2.2.4</AssemblyVersion>
+		<FileVersion>1.2.2.4</FileVersion>
+		<VersionPrefix>1.2.24</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>

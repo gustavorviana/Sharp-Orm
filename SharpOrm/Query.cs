@@ -3,6 +3,7 @@ using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -186,7 +187,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(TableReaderBase.ToRow(obj, typeof(T)).Cells);
+            return this.Insert(TableReaderBase.ToRow(obj, typeof(T), this.Creator.Config.ForeignLoader).Cells);
         }
 
         /// <summary>
@@ -195,7 +196,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T))).ToArray());
+            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T), this.Creator.Config.ForeignLoader)).ToArray());
         }
 
         /// <summary>
