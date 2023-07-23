@@ -11,18 +11,34 @@ namespace SharpOrm.Builder.DataTranslation
     /// </summary>
     public class TableReader : TableReaderBase
     {
-        public static readonly TableReader Default = new TableReader();
+        private static TableReader _default = new TableReader();
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
         private readonly string[] foreignsTables = null;
-        private readonly int maxDept = 0;
+        private readonly int maxDepth = 0;
         private int currentDepth = 0;
+        /// <summary>
+        /// Default instance of TableReader class.
+        /// </summary>
+        public static TableReader Default
+        {
+            get => _default;
+            set => _default = value ?? throw new ArgumentNullException();
+        }
+        /// <summary>
+        /// Property to check whether foreign tables need to be found.
+        /// </summary>
         public bool FindForeigns => this.foreignsTables != null;
+
+        /// <summary>
+        /// Property to determine if a foreign object should be created with id when no depth is specified.
+        /// </summary>
+        public bool CreateForeignIfNoDepth { get; set; }
 
         public TableReader(string[] tables, int maxDepth)
         {
             this.foreignsTables = tables;
-            this.maxDept = maxDepth;
+            this.maxDepth = maxDepth;
         }
 
         public TableReader()
@@ -30,14 +46,14 @@ namespace SharpOrm.Builder.DataTranslation
 
         }
 
-        public void LoadForeignKeys()
+        public override void LoadForeignKeys()
         {
             while (this.FindForeigns && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
                 this.currentDepth = Math.Max(info.Depth, this.currentDepth);
 
-                if (info.Depth > maxDept)
+                if (info.Depth > maxDepth)
                     continue;
 
                 this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
@@ -105,16 +121,29 @@ namespace SharpOrm.Builder.DataTranslation
 
         private void EnqueueForeign(DbDataReader reader, ColumnInfo column, object obj)
         {
+            object foreignKey = reader.HasName(column.ForeignKey) ? reader[column.ForeignKey] : DBNull.Value;
+            if (foreignKey is DBNull)
+                return;
+
+            var info = new ForeignInfo(obj, foreignKey, column, currentDepth + 1);
             if (!this.FindForeigns)
+            {
+                if (this.CreateForeignIfNoDepth && GetObjWithKey(info) is object value)
+                    info.SetForeignValue(value);
                 return;
+            }
 
-            object foreignKey = reader[column.ForeignKey];
-            if (foreignKey == DBNull.Value)
-                return;
+            if (this.CanFindForeign(info.TableName))
+                foreignKeyToLoad.Enqueue(info);
+        }
 
-            var fi = new ForeignInfo(obj, foreignKey, column, currentDepth + 1);
-            if (this.CanFindForeign(fi.TableName))
-                foreignKeyToLoad.Enqueue(fi);
+        private object GetObjWithKey(ForeignInfo info)
+        {
+            object value = Activator.CreateInstance(info.ForeignColumn.Type);
+            TableInfo valueTable = new TableInfo(info.ForeignColumn.Type);
+            valueTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, info.ForeignKey);
+
+            return value;
         }
 
         /// <summary>

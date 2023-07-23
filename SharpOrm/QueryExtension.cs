@@ -290,6 +290,15 @@ namespace SharpOrm
             return TableReader.Default.ParseFromReader<T>(reader);
         }
 
+        public static bool HasName(this DbDataReader reader, string key)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+                if (reader.GetName(i) == key)
+                    return true;
+
+            return false;
+        }
+
         /// <summary>
         /// Get row of current reader.
         /// </summary>

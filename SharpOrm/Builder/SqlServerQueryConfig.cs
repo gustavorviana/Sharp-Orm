@@ -1,26 +1,23 @@
 ﻿namespace SharpOrm.Builder
 {
-    public class SqlServerQueryConfig : IQueryConfig
+    public class SqlServerQueryConfig : QueryConfig
     {
-        public bool OnlySafeModifications { get; }
         public bool UseOldPagination { get; set; }
-        public int CommandTimeout { get; set; } = 30;
 
         public SqlServerQueryConfig()
         {
         }
 
-        public SqlServerQueryConfig(bool onlySafeModifications)
+        public SqlServerQueryConfig(bool onlySafeModifications) : base(onlySafeModifications)
         {
-            this.OnlySafeModifications = onlySafeModifications;
         }
 
-        public string ApplyNomenclature(string name)
+        public override string ApplyNomenclature(string name)
         {
             return name.SanitizeSqlName('[', ']');
         }
 
-        public Grammar NewGrammar(Query query)
+        public override Grammar NewGrammar(Query query)
         {
             return new SqlServerGrammar(query);
         }

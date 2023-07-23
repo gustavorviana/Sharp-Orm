@@ -123,7 +123,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = new TableReader(this.foreignsTables, this.foreignsDepth);
+            var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth);
             List<K> list = new List<K>();
 
             using (var reader = this.ExecuteReader())

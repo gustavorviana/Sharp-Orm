@@ -31,6 +31,8 @@ namespace SharpOrm.Builder.DataTranslation
             return (T)this.ParseFromReader(typeof(T), reader, "");
         }
 
+        public abstract void LoadForeignKeys();
+
         /// <summary>
         /// Parses an object of the specified <paramref name="typeToParse"/> from the database reader.
         /// </summary>

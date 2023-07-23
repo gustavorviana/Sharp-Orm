@@ -241,7 +241,7 @@ namespace UnityTest
             Assert.AreEqual(5, names.Length);
         }
 
-        private static void ConfigureInitialCustomerAndOrder()
+        public static void ConfigureInitialCustomerAndOrder()
         {
             using var qOrder = new Query<Order>(Connection);
             using var qAddress = new Query<Address>(Connection);

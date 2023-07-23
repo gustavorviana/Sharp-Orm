@@ -1,4 +1,6 @@
-﻿namespace SharpOrm.Builder
+﻿using SharpOrm.Builder.DataTranslation;
+
+namespace SharpOrm.Builder
 {
     public interface IQueryConfig
     {
@@ -13,6 +15,11 @@
         int CommandTimeout { get; set; }
 
         /// <summary>
+        /// If enabled, allows the query to create an object only with its primary key when there is no depth and allows reading the id of a foreign object.
+        /// </summary>
+        bool ForeignLoader { get; set; }
+
+        /// <summary>
         /// Creates a new grammar object.
         /// </summary>
         /// <param name="query">Query for grammar.</param>
@@ -25,5 +32,7 @@
         /// <param name="name"></param>
         /// <returns></returns>
         string ApplyNomenclature(string name);
+
+        TableReaderBase CreateTableReader(string[] tables, int maxDepth);
     }
 }
