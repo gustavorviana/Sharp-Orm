@@ -1,10 +1,8 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using UnityTest.Models;
 

@@ -165,7 +165,7 @@ namespace SharpOrm
                 throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
 
             for (int i = 0; i < columns.Length; i++)
-                if (columns[i].Type != pksToCheck[i]?.GetType())
+                if (!NativeSqlValueConversor.IsSame(columns[i].Type, pksToCheck[i]?.GetType()))
                     throw new InvalidCastException(Messages.InsertedTypeMismatch);
 
             return columns.Select(c => c.Name).ToArray();
@@ -258,9 +258,11 @@ namespace SharpOrm
 
         public override Query Clone(bool withWhere)
         {
-            Query query = this.Transaction == null ?
+            Query<T> query = this.Transaction == null ?
                 new Query<T>(this.Creator, this.Info.Alias) :
                  new Query<T>(this.Transaction, this.Info.Config, this.Info.Alias);
+
+            query.Creator = this.Creator;
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -277,8 +279,7 @@ namespace SharpOrm
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
-        private ConnectionCreator _creator;
-        public ConnectionCreator Creator => this._creator ?? ConnectionCreator.Default;
+        public ConnectionCreator Creator { get; protected set; } = ConnectionCreator.Default;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
@@ -301,7 +302,7 @@ namespace SharpOrm
 
         public Query(ConnectionCreator creator, string table) : this(creator, new DbName(table))
         {
-            this._creator = creator;
+            this.Creator = creator;
         }
 
         public Query(ConnectionCreator creator, DbName table)
@@ -740,7 +741,7 @@ namespace SharpOrm
         {
             Query query = this.Transaction == null ? new Query(this.Creator.GetConnection(), this.Info.Config, this.Info.TableName) : new Query(this.Transaction, this.Info.Config, this.Info.TableName);
 
-            query._creator = this.Creator;
+            query.Creator = this.Creator;
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);

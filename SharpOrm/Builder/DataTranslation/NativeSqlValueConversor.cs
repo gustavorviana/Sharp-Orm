@@ -42,6 +42,14 @@ namespace SharpOrm.Builder.DataTranslation
             return type == typeof(Nullable<>) || type.Name == "Nullable`1";
         }
 
+        internal static bool IsSame(Type type1, Type type2)
+        {
+            return type1 == type2 ||
+                    (type1 == typeof(string) && type2 == typeof(Guid)) ||
+                    (type2 == typeof(string) && type1 == typeof(Guid)) ||
+                    BinaryTranslator.IsSame(type1, type2);
+        }
+
         /// <summary>
         /// Converts a SQL value to its equivalent .NET representation based on the expected data type.
         /// </summary>
@@ -60,7 +68,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return numericTranslation.FromSqlValue(value, expectedType);
 
             if (expectedType == typeof(Guid))
-                return Guid.Parse((string)value);
+                return value is Guid guid ? guid : Guid.Parse((string)value);
 
             if (expectedType.IsEnum)
                 return Enum.ToObject(expectedType, value);

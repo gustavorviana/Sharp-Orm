@@ -67,7 +67,7 @@ namespace SharpOrm.Builder
             this.ConfigureSelect(true, safeDistinct ? null : column);
 
             if (safeDistinct)
-            this.QueryBuilder.AppendFormat(") `count`");
+                this.QueryBuilder.AppendFormat(") `count`");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)

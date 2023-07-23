@@ -28,6 +28,14 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
+        /// <param name="type">The type representing the table.</param>
+        public TableInfo(Type type) : this(new TranslationRegistry(), type)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
+        /// </summary>
         /// <param name="config">The translation configuration.</param>
         /// <param name="type">The type representing the table.</param>
         public TableInfo(TranslationRegistry config, Type type)

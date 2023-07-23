@@ -15,6 +15,14 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns><c>true</c> if the translator can work with the type; otherwise, <c>false</c>.</returns>
         public virtual bool CanWork(Type type) => type != null && (type == typeof(byte[]) || type == typeof(Stream) || type.IsSubclassOf(typeof(Stream)));
 
+        internal static bool IsSame(Type type1, Type type2)
+        {
+            return (type1 == typeof(byte[]) && type2 == typeof(Stream)) ||
+                    (type2 == typeof(byte[]) && type1 == typeof(Stream)) ||
+                    (type1 == typeof(byte[]) && type2.IsSubclassOf(typeof(Stream))) ||
+                    (type2 == typeof(byte[]) && type1.IsSubclassOf(typeof(Stream)));
+        }
+
         public virtual object FromSqlValue(object value, Type expectedType)
         {
             if (expectedType == typeof(byte[]))
