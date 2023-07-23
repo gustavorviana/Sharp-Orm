@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Addition of timeout for SQL commands, bug fix in connection disposal, and addition of methods for reading.</PackageReleaseNotes>
+		<PackageReleaseNotes>Support for retrieving the id of foreign objects when selecting, inserting, or updating an object, in addition to various bug fixes.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
