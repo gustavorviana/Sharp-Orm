@@ -88,7 +88,6 @@ namespace SharpOrm.Connection
         /// </summary>
         ~ConnectionCreator()
         {
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: false);
         }
 

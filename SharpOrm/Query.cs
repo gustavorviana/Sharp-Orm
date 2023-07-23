@@ -108,7 +108,6 @@ namespace SharpOrm
         /// <returns></returns>
         public T FirstOrDefault()
         {
-
             int? lastLimit = this.Limit;
             this.Limit = 1;
 
@@ -308,7 +307,7 @@ namespace SharpOrm
         public Query(ConnectionCreator creator, DbName table)
             : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
         {
-
+            this.Creator = creator;
         }
 
         public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))
@@ -740,7 +739,6 @@ namespace SharpOrm
         public virtual Query Clone(bool withWhere)
         {
             Query query = this.Transaction == null ? new Query(this.Creator.GetConnection(), this.Info.Config, this.Info.TableName) : new Query(this.Transaction, this.Info.Config, this.Info.TableName);
-
             query.Creator = this.Creator;
 
             if (withWhere)

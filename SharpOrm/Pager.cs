@@ -128,7 +128,6 @@ namespace SharpOrm
 
         ~Pager()
         {
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: false);
         }
 
@@ -137,7 +136,6 @@ namespace SharpOrm
             if (this.disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
