@@ -124,15 +124,17 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth);
-            List<K> list = new List<K>();
+            using (var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
+            {
+                List<K> list = new List<K>();
 
-            using (var reader = this.ExecuteReader())
-                while (reader.Read())
-                    list.Add(translator.ParseFromReader<K>(reader));
+                using (var reader = this.ExecuteReader())
+                    while (reader.Read())
+                        list.Add(translator.ParseFromReader<K>(reader));
 
-            translator.LoadForeignKeys();
-            return list;
+                translator.LoadForeignKeys();
+                return list;
+            }
         }
 
         /// <summary>
@@ -165,7 +167,7 @@ namespace SharpOrm
                 throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
 
             for (int i = 0; i < columns.Length; i++)
-                if (!NativeSqlValueConversor.IsSame(columns[i].Type, pksToCheck[i]?.GetType()))
+                if (!NativeSqlValueConversor.IsSimilar(columns[i].Type, pksToCheck[i]?.GetType()))
                     throw new InvalidCastException(Messages.InsertedTypeMismatch);
 
             return columns.Select(c => c.Name).ToArray();
@@ -686,7 +688,7 @@ namespace SharpOrm
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
-            var translator = new TableReader();
+            using (var translator = this.Creator.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
                     yield return translator.ParseFromReader<T>(reader);

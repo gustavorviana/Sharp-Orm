@@ -42,12 +42,14 @@ namespace SharpOrm.Builder.DataTranslation
             return type == typeof(Nullable<>) || type.Name == "Nullable`1";
         }
 
-        internal static bool IsSame(Type type1, Type type2)
+        internal static bool IsSimilar(Type type1, Type type2)
         {
             return type1 == type2 ||
                     (type1 == typeof(string) && type2 == typeof(Guid)) ||
                     (type2 == typeof(string) && type1 == typeof(Guid)) ||
-                    BinaryTranslator.IsSame(type1, type2);
+                    BinaryTranslator.IsSame(type1, type2) ||
+                    (TranslationUtils.IsNumberWithoutDecimal(type1) == TranslationUtils.IsNumberWithoutDecimal(type2)) ||
+                    (TranslationUtils.IsNumberWithDecimal(type1) == TranslationUtils.IsNumberWithDecimal(type2));
         }
 
         /// <summary>

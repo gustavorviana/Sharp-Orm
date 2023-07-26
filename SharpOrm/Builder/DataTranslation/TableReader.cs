@@ -183,6 +183,14 @@ namespace SharpOrm.Builder.DataTranslation
             return this.foreignsTables.Any(t => t.ToLower() == name);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            foreignKeyToLoad.Clear();
+            cachedValues.Clear();
+        }
+
         private class ForeignTable : IEquatable<ForeignTable>
         {
             public string TableName { get; }

@@ -8,9 +8,11 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Base class for table translators.
     /// </summary>
-    public abstract class TableReaderBase
+    public abstract class TableReaderBase : IDisposable
     {
         private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
+        private bool disposed;
+        public bool Disposed => this.disposed;
 
         /// <summary>
         /// Gets the translation registry associated with the table translator.
@@ -74,6 +76,28 @@ namespace SharpOrm.Builder.DataTranslation
         public static TableInfo GetTable(Type type)
         {
             return cachedTables.GetOrAdd(type, _type => new TableInfo(Registry, _type));
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            disposed = true;
+        }
+
+        ~TableReaderBase()
+        {
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            if (this.disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
