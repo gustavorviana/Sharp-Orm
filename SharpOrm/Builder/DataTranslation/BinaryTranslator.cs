@@ -15,6 +15,12 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns><c>true</c> if the translator can work with the type; otherwise, <c>false</c>.</returns>
         public virtual bool CanWork(Type type) => type != null && (type == typeof(byte[]) || type == typeof(Stream) || type.IsSubclassOf(typeof(Stream)));
 
+        /// <summary>
+        /// Checks if two types are considered the same for specific cases related to byte arrays and streams.
+        /// </summary>
+        /// <param name="type1">The first Type to compare.</param>
+        /// <param name="type2">The second Type to compare.</param>
+        /// <returns>True if the types are considered the same, otherwise false.</returns>
         internal static bool IsSame(Type type1, Type type2)
         {
             return (type1 == typeof(byte[]) && type2 == typeof(Stream)) ||

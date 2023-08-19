@@ -11,51 +11,153 @@ namespace SharpOrm
     public static class QueryExtension
     {
         #region Where
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column contains the value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to filter.</param>
+        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase WhereContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase WhereStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase WhereEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause with a specified operation and value using an SQL expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The SQL expression representing the value to compare with.</param>
         public static QueryBase Where(this QueryBase qBase, string column, string operation, SqlExpression value)
         {
             return qBase.WriteWhere(column, operation, value, "AND");
         }
 
+        /// <summary>
+        /// Adds a WHERE clause with a specified operation and value using an SQL expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The SQL expression representing the value to compare with.</param>
         public static QueryBase Where(this QueryBase qBase, Column column, string operation, SqlExpression value)
         {
             return qBase.WriteWhere(column, operation, value, "AND");
         }
 
+        /// <summary>
+        /// Adds a WHERE clause with a specified operation and value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         public static QueryBase Where(this QueryBase qBase, Column column, string operation, object value)
         {
             return qBase.WriteWhere(column, operation, value, "AND");
         }
 
+        /// <summary>
+        /// Adds a WHERE clause with a specified operation between two columns.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column1">The first column for comparison.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2">The second column for comparison.</param>
         public static QueryBase Where(this QueryBase qBase, Column column1, string operation, Column column2)
         {
             return qBase.WriteWhere(column1, operation, column2, "AND");
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
         public static QueryBase WhereIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.Where(column, "IN", items);
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
         public static QueryBase WhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.Where(column, "NOT IN", items);
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        /// <param name="items">An IEnumerable collection of items to check against the column value.</param>
         public static QueryBase WhereIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
         {
             return qBase.Where(column, "IN", items);
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        /// <param name="items">An IEnumerable collection of items to check against the column value.</param>
         public static QueryBase WhereNotIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
         {
             return qBase.Where(column, "NOT IN", items);
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the specified value is in any of the specified columns.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="value">The value to check for in the columns.</param>
+        /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase WhereInColumn(this QueryBase qBase, object value, params string[] columns)
         {
             return WhereInColumn(qBase, false, false, value, columns);
         }
 
+        /// <summary>
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the specified value is not in any of the specified columns.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="value">The value to check for in the columns.</param>
+        /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase WhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
         {
             return WhereInColumn(qBase, true, false, value, columns);
@@ -64,51 +166,153 @@ namespace SharpOrm
         #endregion
 
         #region Or
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column contains the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase OrWhereContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase OrWhereStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase OrWhereEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause with a specified operation and SQL expression value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The SQL expression representing the value to compare with.</param>
         public static QueryBase OrWhere(this QueryBase qBase, string column, string operation, SqlExpression value)
         {
             return qBase.WriteWhere(column, operation, value, "OR");
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause with a specified operation and SQL expression value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The SQL expression representing the value to compare with.</param>
         public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, SqlExpression value)
         {
             return qBase.WriteWhere(column, operation, value, "OR");
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause with a specified operation and value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, object value)
         {
             return qBase.WriteWhere(column, operation, value, "OR");
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause between two columns with a specified operation.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column1">The first column for comparison.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2">The second column for comparison.</param>
         public static QueryBase OrWhere(this QueryBase qBase, Column column1, string operation, Column column2)
         {
             return qBase.WriteWhere(column1, operation, column2, "OR");
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
         public static QueryBase OrWhereIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.OrWhere(column, "IN", items);
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
         public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.OrWhere(column, "NOT IN", items);
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        /// <param name="items">An IEnumerable collection of items to check against the column value.</param>
         public static QueryBase OrWhereIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
         {
             return qBase.OrWhere(column, "IN", items);
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        /// <param name="items">An IEnumerable collection of items to check against the column value.</param>
         public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, IEnumerable<T> items)
         {
             return qBase.OrWhere(column, "NOT IN", items);
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the specified value is in any of the specified columns.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="value">The value to check for in the columns.</param>
+        /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase OrWhereInColumn(this QueryBase qBase, object value, params string[] columns)
         {
             return WhereInColumn(qBase, false, true, value, columns);
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the specified value is not in any of the specified columns.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="value">The value to check for in the columns.</param>
+        /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase OrWhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
         {
             return WhereInColumn(qBase, true, true, value, columns);
@@ -182,6 +386,12 @@ namespace SharpOrm
             return query.InsertL(TableReaderBase.ToRow(obj, typeof(T), query.Creator.Config.ForeignLoader).Cells);
         }
 
+        /// <summary>
+        /// Inserts a new row into the table using the provided dictionary of cell values.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="cells">A dictionary containing column names and their corresponding values for the new row.</param>
+        /// <returns>Id of row.</returns>
         public static long InsertL(this Query query, Dictionary<string, object> cells)
         {
             return query.Insert(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
@@ -206,6 +416,13 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Creates a pager for rows using the provided query, peer page count, and current page number.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="peerPage">The number of peer pages to display on either side of the current page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <returns>A Pager object containing the paginated rows.</returns>
         public static Pager<Row> PaginateRows(this Query query, int peerPage, int currentPage)
         {
             return Pager<Row>.FromBuilder(query, peerPage, currentPage);
@@ -221,17 +438,30 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
+        /// <summary>
+        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
+        /// </summary>
+        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
+        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
+        /// <param name="obj">The object of type T to be inserted or updated.</param>
+        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
+        /// <remarks>
+        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
+        /// </remarks>
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
             query.Upsert(TableReaderBase.ToRow(obj, typeof(T), query.Creator.Config.ForeignLoader), toCheckColumns);
         }
 
         /// <summary>
-        /// Creates a row if it does not exist or updates the value if it already exists.
+        /// Inserts or updates a row using the provided query, row data, and columns to check for upserting.
         /// </summary>
-        /// <param name="query"></param>
-        /// <param name="row">Query with the connection that should be used.</param>
-        /// <param name="toCheckColumns">Columns that must be checked to update the database rows.</param>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="row">The Row object containing the row data to be inserted or updated.</param>
+        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
+        /// <remarks>
+        /// This method inserts a new row if it doesn't exist or updates an existing row if it matches the specified columns.
+        /// </remarks>
         public static void Upsert(this Query query, Row row, string[] toCheckColumns)
         {
             if (toCheckColumns.Length < 1)
@@ -249,31 +479,82 @@ namespace SharpOrm
 
         #region Join
 
+        /// <summary>
+        /// Adds an INNER JOIN clause to the query between the main table and the specified table.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="operation">The operation to perform for the join condition (e.g., "=", ">", etc.).</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the INNER JOIN clause applied.</returns>
         public static Query InnerJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
         {
             return query.Join(table, leftColumn, operation, rightColumn, "INNER");
         }
 
+        /// <summary>
+        /// Adds an INNER JOIN clause to the query between the main table and the specified table using the "=" operation.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the INNER JOIN clause applied.</returns>
         public static Query InnerJoin(this Query query, string table, string leftColumn, string rightColumn)
         {
             return query.Join(table, leftColumn, "=", rightColumn, "INNER");
         }
 
+        /// <summary>
+        /// Adds a LEFT JOIN clause to the query between the main table and the specified table.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="operation">The operation to perform for the join condition (e.g., "=", ">", etc.).</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the LEFT JOIN clause applied.</returns>
         public static Query LeftJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
         {
             return query.Join(table, leftColumn, operation, rightColumn, "LEFT");
         }
 
+        /// <summary>
+        /// Adds a LEFT JOIN clause to the query between the main table and the specified table using the "=" operation.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the LEFT JOIN clause applied.</returns>
         public static Query LeftJoin(this Query query, string table, string leftColumn, string rightColumn)
         {
             return query.Join(table, leftColumn, "=", rightColumn, "LEFT");
         }
 
+        /// <summary>
+        /// Adds a RIGHT JOIN clause to the query between the main table and the specified table.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="operation">The operation to perform for the join condition (e.g., "=", ">", etc.).</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the RIGHT JOIN clause applied.</returns>
         public static Query RightJoin(this Query query, string table, string leftColumn, string operation, string rightColumn)
         {
             return query.Join(table, leftColumn, operation, rightColumn, "RIGHT");
         }
 
+        /// <summary>
+        /// Adds a RIGHT JOIN clause to the query between the main table and the specified table using the "=" operation.
+        /// </summary>
+        /// <param name="query">The Query object representing the database query.</param>
+        /// <param name="table">The name of the table to join.</param>
+        /// <param name="leftColumn">The column from the main table to join on.</param>
+        /// <param name="rightColumn">The column from the joined table to join on.</param>
+        /// <returns>A Query object with the RIGHT JOIN clause applied.</returns>
         public static Query RightJoin(this Query query, string table, string leftColumn, string rightColumn)
         {
             return query.Join(table, leftColumn, "=", rightColumn, "RIGHT");
@@ -285,11 +566,23 @@ namespace SharpOrm
 
         #region DbDataReader
 
+        /// <summary>
+        /// Reads and parses the current row of the DbDataReader into an object of type T.
+        /// </summary>
+        /// <typeparam name="T">The type of object to parse the row into.</typeparam>
+        /// <param name="reader">The DbDataReader containing the current row data.</param>
+        /// <returns>An object of type T populated with data from the current row of the reader.</returns>
         public static T ReadObject<T>(this DbDataReader reader) where T : new()
         {
             return TableReader.Default.ParseFromReader<T>(reader);
         }
 
+        /// <summary>
+        /// Checks if the DbDataReader contains a column with the specified name.
+        /// </summary>
+        /// <param name="reader">The DbDataReader to check for the column.</param>
+        /// <param name="key">The name of the column to check for.</param>
+        /// <returns>True if the column exists in the reader, otherwise false.</returns>
         public static bool HasName(this DbDataReader reader, string key)
         {
             for (int i = 0; i < reader.FieldCount; i++)
@@ -331,6 +624,12 @@ namespace SharpOrm
             return new Cell(reader.GetName(index), registry.FromSql(reader[index], reader.GetFieldType(index)));
         }
 
+        /// <summary>
+        /// Gets the index of the column with the specified name in the DbDataReader.
+        /// </summary>
+        /// <param name="reader">The DbDataReader to get the column index from.</param>
+        /// <param name="name">The name of the column to find the index for.</param>
+        /// <returns>The index of the column, or -1 if the column is not found.</returns>
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
             name = name.ToLower();

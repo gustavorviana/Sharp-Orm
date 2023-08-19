@@ -42,6 +42,12 @@ namespace SharpOrm.Builder.DataTranslation
             return type == typeof(Nullable<>) || type.Name == "Nullable`1";
         }
 
+        /// <summary>
+        /// Checks if two types are considered similar for specific cases.
+        /// </summary>
+        /// <param name="type1">The first Type to compare.</param>
+        /// <param name="type2">The second Type to compare.</param>
+        /// <returns>True if the types are considered similar, otherwise false.</returns>
         internal static bool IsSimilar(Type type1, Type type2)
         {
             return type1 == type2 ||
