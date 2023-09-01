@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.2.2.5</AssemblyVersion>
-		<FileVersion>1.2.2.5</FileVersion>
-		<VersionPrefix>1.2.25</VersionPrefix>
+		<AssemblyVersion>1.2.2.6</AssemblyVersion>
+		<FileVersion>1.2.2.6</FileVersion>
+		<VersionPrefix>1.2.26</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Support for retrieving the id of foreign objects when selecting, inserting, or updating an object, in addition to various bug fixes.</PackageReleaseNotes>
+		<PackageReleaseNotes>Improvements in the foreign key system.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

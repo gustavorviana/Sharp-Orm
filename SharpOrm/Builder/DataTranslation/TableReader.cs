@@ -56,7 +56,6 @@ namespace SharpOrm.Builder.DataTranslation
                 if (info.Depth > maxDepth)
                     continue;
 
-                this.cachedValues.TryAdd(new ForeignTable(info), info.Owner);
                 info.SetForeignValue(this.GetValueFor(info));
             }
         }
@@ -216,7 +215,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             public override int GetHashCode()
             {
-                return base.GetHashCode();
+                return this.TableName.GetHashCode() * this.KeyValue.GetHashCode();
             }
 
             public static bool operator ==(ForeignTable left, ForeignTable right)

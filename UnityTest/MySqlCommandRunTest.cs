@@ -218,6 +218,20 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void FindWithForeign()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            var order = query.WithForeigns("Customers", "Address").Find(1);
+
+            Assert.IsNotNull(order.Customer);
+            Assert.AreEqual(order.CustomerId, order.Customer.Id);
+
+            Assert.IsNotNull(order.Customer.Address);
+            Assert.AreEqual(order.Customer.AddressId, order.Customer.Address.Id);
+        }
+
+        [TestMethod]
         public void SelectWithForeignDepth()
         {
             ConfigureInitialCustomerAndOrder();

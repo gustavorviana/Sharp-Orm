@@ -87,6 +87,29 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Adds a foreign table of type K to be included in the query result, expanding the query's depth if necessary.
+        /// </summary>
+        /// <typeparam name="K">The type of the foreign table to include.</typeparam>
+        /// <returns>The modified Query<T> object with the specified foreign table of type K included.</returns>
+        public Query<T> AddForeign<K>() where K : new()
+        {
+            if (this.foreignsTables == null)
+            {
+                this.foreignsTables = new string[] { new TableInfo(typeof(K)).Name };
+            }
+            else
+            {
+                Array.Resize(ref this.foreignsTables, this.foreignsTables.Length + 1);
+                this.foreignsTables[this.foreignsTables.Length - 1] = new TableInfo(typeof(K)).Name;
+            }
+
+            if (this.foreignsDepth < 1)
+                this.foreignsDepth = 10;
+
+            return this;
+        }
+
+        /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
         /// <param name="peerPage">The number of items per page.</param>
@@ -267,6 +290,9 @@ namespace SharpOrm
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
+
+            query.foreignsTables = this.foreignsTables;
+            query.foreignsDepth = this.foreignsDepth;
 
             this.OnClone(query);
 

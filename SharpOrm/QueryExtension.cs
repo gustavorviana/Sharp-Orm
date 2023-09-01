@@ -373,7 +373,7 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(columnsToIgnore));
 
             var reader = TableReaderBase.GetTable(typeof(T));
-            return query.Update(reader.GetCells(obj).Where(i => columnsToIgnore.Contains(i.Name)).ToArray());
+            return query.Update(reader.GetCells(obj).Where(i => !columnsToIgnore.Contains(i.Name)).ToArray());
         }
 
         /// <summary>
