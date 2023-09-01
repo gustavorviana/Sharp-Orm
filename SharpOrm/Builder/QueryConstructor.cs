@@ -25,6 +25,11 @@ namespace SharpOrm.Builder
         /// </summary>
         public ReadOnlyCollection<object> Parameters { get; }
 
+        public QueryConstructor(QueryBase query) : this(query.Info)
+        {
+
+        }
+
         public QueryConstructor(QueryInfo info) : this(info.ToReadOnly())
         {
         }
