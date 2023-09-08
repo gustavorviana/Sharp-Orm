@@ -1,9 +1,16 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using System;
+using System.Globalization;
 
 namespace SharpOrm.Builder
 {
     public interface IQueryConfig
     {
+        /// <summary>
+        /// DateTime kind to be saved in the database.
+        /// </summary>
+        DateTimeKind DateKind { get; set; }
+
         /// <summary>
         /// Indicates if value modifications in the table should be made with "WHERE" (this is not valid for insert-and-select).
         /// </summary>

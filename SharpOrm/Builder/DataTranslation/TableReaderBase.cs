@@ -11,6 +11,7 @@ namespace SharpOrm.Builder.DataTranslation
     public abstract class TableReaderBase : IDisposable
     {
         private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
+        protected readonly IQueryConfig config;
         private bool disposed;
         public bool Disposed => this.disposed;
 
@@ -18,6 +19,11 @@ namespace SharpOrm.Builder.DataTranslation
         /// Gets the translation registry associated with the table translator.
         /// </summary>
         public static TranslationRegistry Registry { get; set; } = new TranslationRegistry();
+
+        public TableReaderBase(IQueryConfig config)
+        {
+            this.config = config;
+        }
 
         /// <summary>
         /// Parses an object of type <typeparamref name="T"/> from the database reader.
@@ -28,9 +34,42 @@ namespace SharpOrm.Builder.DataTranslation
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
         {
             if (typeof(T) == typeof(Row))
-                return (T)(object)reader.GetRow(Registry);
+                return (T)(object)GetRow(reader);
 
             return (T)this.ParseFromReader(typeof(T), reader, "");
+        }
+
+        /// <summary>
+        /// Get row of current reader.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        public Row GetRow(DbDataReader reader)
+        {
+            Cell[] cells = new Cell[reader.FieldCount];
+
+            for (int i = 0; i < cells.Length; i++)
+                cells[i] = GetCell(reader, i);
+
+            return new Row(cells);
+        }
+
+        /// <summary>
+        /// Get Cell by column index.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public Cell GetCell(DbDataReader reader, int index)
+        {
+            if (index < 0 || index > reader.FieldCount)
+                throw new ArgumentOutOfRangeException();
+
+            object value = Registry.FromSql(reader[index], reader.GetFieldType(index));
+            if (ObjectLoader.CanLoad(value, config))
+                value = ObjectLoader.LoadFromDatabase(value, config);
+
+            return new Cell(reader.GetName(index), value);
         }
 
         public abstract void LoadForeignKeys();

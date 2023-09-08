@@ -11,20 +11,12 @@ namespace SharpOrm.Builder.DataTranslation
     /// </summary>
     public class TableReader : TableReaderBase
     {
-        private static TableReader _default = new TableReader();
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
         private readonly string[] foreignsTables = null;
         private readonly int maxDepth = 0;
         private int currentDepth = 0;
-        /// <summary>
-        /// Default instance of TableReader class.
-        /// </summary>
-        public static TableReader Default
-        {
-            get => _default;
-            set => _default = value ?? throw new ArgumentNullException();
-        }
+        
         /// <summary>
         /// Property to check whether foreign tables need to be found.
         /// </summary>
@@ -35,13 +27,13 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         public bool CreateForeignIfNoDepth { get; set; }
 
-        public TableReader(string[] tables, int maxDepth)
+        public TableReader(IQueryConfig config, string[] tables, int maxDepth) : base(config)
         {
             this.foreignsTables = tables;
             this.maxDepth = maxDepth;
         }
 
-        public TableReader()
+        public TableReader(IQueryConfig config) : base(config)
         {
 
         }
@@ -110,7 +102,7 @@ namespace SharpOrm.Builder.DataTranslation
                 if (index < 0)
                     throw new KeyNotFoundException($"Could not find column in the database with key {fullName}. Failed to load value for {column.DeclaringType.FullName}.{column.Name}.");
 
-                column.Set(obj, reader[index]);
+                column.Set(obj, ObjectLoader.LoadFromDatabase(reader[index], this.config));
                 return;
             }
 

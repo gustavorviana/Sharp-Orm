@@ -1,9 +1,13 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using System;
 
 namespace SharpOrm.Builder
 {
     public abstract class QueryConfig : IQueryConfig
     {
+        /// <inheritdoc/>
+        public DateTimeKind DateKind { get; set; }
+
         /// <inheritdoc/>
         public bool OnlySafeModifications { get; }
 
@@ -29,7 +33,7 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public TableReaderBase CreateTableReader(string[] tables, int maxDepth)
         {
-            return new TableReader(tables, maxDepth) { CreateForeignIfNoDepth = this.ForeignLoader };
+            return new TableReader(this, tables, maxDepth) { CreateForeignIfNoDepth = this.ForeignLoader };
         }
 
         /// <inheritdoc/>

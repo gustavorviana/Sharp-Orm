@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using System;
+using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 
@@ -253,6 +255,41 @@ namespace UnityTest
 
             var names = q.ExecuteArrayScalar<string>();
             Assert.AreEqual(5, names.Length);
+        }
+
+        [TestMethod]
+        public void PaginateWithForeign()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            var order = query.WithForeigns(1, "Customers", "Address").Paginate(1, 1).FirstOrDefault();
+
+            Assert.IsNotNull(order.Customer);
+            Assert.AreEqual(order.CustomerId, order.Customer.Id);
+
+            Assert.IsNull(order.Customer.Address);
+        }
+
+        [TestMethod]
+        public void DateUtcConversion()
+        {
+            var config = new MysqlQueryConfig { DateKind = DateTimeKind.Utc };
+            using var query1 = new Query<TestTable>(Connection, config);
+
+            DateTime date = DateTime.Now;
+            query1.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
+            DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
+            AreEqualsDate(date, dbDate);
+
+            using var query2 = new Query<TestTable>(Connection);
+            dbDate = query2.Select("record_created").ExecuteScalar<DateTime>();
+            AreEqualsDate(date.ToUniversalTime(), dbDate);
+        }
+
+        public static void AreEqualsDate(DateTime expected, DateTime actual)
+        {
+            Assert.AreEqual(expected.Date, actual.Date);
+            Assert.AreEqual(decimal.Truncate((decimal)expected.TimeOfDay.TotalSeconds), decimal.Truncate((decimal)actual.TimeOfDay.TotalSeconds));
         }
 
         public static void ConfigureInitialCustomerAndOrder()

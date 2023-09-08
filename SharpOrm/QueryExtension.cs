@@ -567,17 +567,6 @@ namespace SharpOrm
         #region DbDataReader
 
         /// <summary>
-        /// Reads and parses the current row of the DbDataReader into an object of type T.
-        /// </summary>
-        /// <typeparam name="T">The type of object to parse the row into.</typeparam>
-        /// <param name="reader">The DbDataReader containing the current row data.</param>
-        /// <returns>An object of type T populated with data from the current row of the reader.</returns>
-        public static T ReadObject<T>(this DbDataReader reader) where T : new()
-        {
-            return TableReader.Default.ParseFromReader<T>(reader);
-        }
-
-        /// <summary>
         /// Checks if the DbDataReader contains a column with the specified name.
         /// </summary>
         /// <param name="reader">The DbDataReader to check for the column.</param>
@@ -590,38 +579,6 @@ namespace SharpOrm
                     return true;
 
             return false;
-        }
-
-        /// <summary>
-        /// Get row of current reader.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <returns></returns>
-        public static Row GetRow(this DbDataReader reader, TranslationRegistry registry = null)
-        {
-            if (registry == null)
-                registry = TableReaderBase.Registry;
-
-            Cell[] cells = new Cell[reader.FieldCount];
-
-            for (int i = 0; i < cells.Length; i++)
-                cells[i] = reader.GetCell(i, registry);
-
-            return new Row(cells);
-        }
-
-        /// <summary>
-        /// Get Cell by column index.
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, int index, TranslationRegistry registry)
-        {
-            if (index < 0 || index > reader.FieldCount)
-                throw new ArgumentOutOfRangeException();
-
-            return new Cell(reader.GetName(index), registry.FromSql(reader[index], reader.GetFieldType(index)));
         }
 
         /// <summary>

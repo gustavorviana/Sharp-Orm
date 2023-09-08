@@ -3,6 +3,7 @@ using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -113,7 +114,7 @@ namespace SharpOrm
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
         /// <param name="peerPage">The number of items per page.</param>
-        /// <param name="currentPage">The current page number.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
         /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
@@ -291,12 +292,20 @@ namespace SharpOrm
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
 
-            query.foreignsTables = this.foreignsTables;
-            query.foreignsDepth = this.foreignsDepth;
-
             this.OnClone(query);
 
             return query;
+        }
+
+        protected override void OnClone(Query cloned)
+        {
+            base.OnClone(cloned);
+
+            if (!(cloned is Query<T> query))
+                return;
+
+            query.foreignsTables = this.foreignsTables;
+            query.foreignsDepth = this.foreignsDepth;
         }
     }
 
@@ -545,7 +554,7 @@ namespace SharpOrm
 
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    list.Add((T)TableReaderBase.Registry.FromSql(reader[0], typeof(T)));
+                    list.Add((T)TableReaderBase.Registry.FromSql(LoadDbObject(reader[0]), typeof(T)));
 
             return list.ToArray();
         }
@@ -571,8 +580,13 @@ namespace SharpOrm
             {
                 object result = cmd.ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
-                return result;
+                return LoadDbObject(result);
             }
+        }
+
+        private object LoadDbObject(object obj)
+        {
+            return ObjectLoader.LoadFromDatabase(obj, this.Info.Config);
         }
 
         #region DML SQL commands

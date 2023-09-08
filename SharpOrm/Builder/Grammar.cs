@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.DataTranslation;
+using System;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
@@ -206,7 +207,7 @@ namespace SharpOrm.Builder
         {
             var p = this.Command.CreateParameter();
             p.ParameterName = name;
-            p.Value = value;
+            p.Value = ObjectLoader.SaveToDatabase(value, this.Info.Config);
 
             this.Command.Parameters.Add(p);
             return p;
