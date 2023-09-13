@@ -45,7 +45,7 @@ namespace SharpOrm.Builder
 
             this.Type = type;
             this.Name = type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
-            this.Columns = this.GetColumns(config).Distinct().ToArray();
+            this.Columns = this.GetColumns(config).ToArray();
         }
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
@@ -68,20 +68,15 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool readForeignKey = false)
         {
-            var fkCol = this.Columns.FirstOrDefault(c => !string.IsNullOrEmpty(c.ForeignKey));
-            bool hasPriorityFk = this.Columns.Any(c => c.Name == fkCol?.ForeignKey);
-
             foreach (var column in this.Columns)
             {
-                bool isFkColumn = column == fkCol;
-                if (isFkColumn && hasPriorityFk)
-                    continue;
+                bool isFk = !string.IsNullOrEmpty(column.ForeignKey);
 
-                object value = isFkColumn ? this.GetFkValue(owner, column.GetRaw(owner), column) : ProcessValue(column, owner, readForeignKey);
+                object value = isFk ? this.GetFkValue(owner, column.GetRaw(owner), column) : ProcessValue(column, owner, readForeignKey);
                 if ((column.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
-                yield return new Cell(isFkColumn ? column.ForeignKey : column.Name, value);
+                yield return new Cell(isFk ? column.ForeignKey : column.Name, value);
             }
         }
 
@@ -91,8 +86,10 @@ namespace SharpOrm.Builder
             if (!readForeignKey || !column.Type.IsClass || string.IsNullOrEmpty(column.ForeignKey) || TranslationUtils.IsNull(obj))
                 return obj;
 
-            var table = new TableInfo(column.Type);
-            return table.Columns.FirstOrDefault(c => c.Key).Get(obj);
+            if (obj is null)
+                return null;
+
+            return new TableInfo(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
