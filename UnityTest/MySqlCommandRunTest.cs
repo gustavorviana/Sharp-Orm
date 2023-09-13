@@ -37,6 +37,33 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void DeepSelect()
+        {
+            const uint Id = 1;
+            const int Addr = 1;
+            const string Name = "User 1";
+            const string Email = "my@email.com";
+            using var addrQuery = new Query<Address>();
+            using var query = new Query<CustomCustomer>();
+
+            query.Delete();
+            addrQuery.Delete();
+
+            addrQuery.Insert(new Address { Id = 1, Name = "Addr", Street = "str" });
+            query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
+
+            var customer = query.FirstOrDefault();
+
+            Assert.IsNotNull(customer, "Customer failed");
+            Assert.IsNotNull(customer.Address, "Address failed");
+            Assert.AreEqual(Id, customer.Id, "Customer Id failed");
+            Assert.AreEqual(Name, customer.Name, "Customer Name failed");
+            Assert.AreEqual(Email, customer.Email, "Customer Email failed");
+            Assert.AreEqual(Addr, customer.Address.Id, "Address Id failed");
+            Assert.AreEqual(Addr, customer.Address.CustomId, "Address CustomId failed");
+        }
+
+        [TestMethod]
         public void SelectDistinct()
         {
             const int Id = 1;
