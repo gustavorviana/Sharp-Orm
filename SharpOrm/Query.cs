@@ -319,6 +319,8 @@ namespace SharpOrm
         public bool Distinct { get; set; }
         public int? Limit { get; set; }
         public int? Offset { get; set; }
+        internal string[] deleteJoins = null;
+
         public ConnectionCreator Creator { get; protected set; } = ConnectionCreator.Default;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
@@ -599,6 +601,15 @@ namespace SharpOrm
         private object LoadDbObject(object obj)
         {
             return ObjectLoader.LoadFromDatabase(obj, this.Info.Config);
+        }
+
+        public Query JoinToDelete(params string[] join)
+        {
+            if (join == null || join.Length == 0)
+                throw new ArgumentNullException(nameof(join));
+
+            this.deleteJoins = join;
+            return this;
         }
 
         #region DML SQL commands

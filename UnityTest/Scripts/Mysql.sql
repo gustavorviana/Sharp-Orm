@@ -8,21 +8,24 @@ CREATE TABLE IF NOT EXISTS `address` (
   `name` VARCHAR(50),
   `street` VARCHAR(100)
 );
+
 CREATE TABLE IF NOT EXISTS `customers` (
   `id` INT PRIMARY KEY,
   `address_id` INT NULL,
   `name` VARCHAR(50),
   `email` VARCHAR(100),
-  FOREIGN KEY (`address_id`) REFERENCES `address`(`id`)
+  FOREIGN KEY (`address_id`) REFERENCES `address`(`id`) ON DELETE CASCADE
 );
+
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` INT PRIMARY KEY,
   `customer_id` INT,
   `product` VARCHAR(50),
   `quantity` INT,
   `status` VARCHAR(20),
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`)
+  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE
 );
+
 CREATE TABLE IF NOT EXISTS `TestTable` (
   `id` INT NOT NULL PRIMARY KEY,
   `id2` INT NULL,

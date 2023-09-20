@@ -157,7 +157,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void DeleteJoin()
+        public void DeleteWhereJoin()
         {
             using var q = NewQuery(TABLE, "t1");
             q.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");

@@ -69,7 +69,6 @@ namespace UnityTest
             const uint Id = 1;
             const string Name = "User 1";
             const string Email = "my@email.com";
-            using var addrQuery = new Query<Address>();
             using var query = new Query<Customer>();
 
             query.Delete();
@@ -217,7 +216,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void DeleteJoin()
+        public void DeleteWhereJoin()
         {
             ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);

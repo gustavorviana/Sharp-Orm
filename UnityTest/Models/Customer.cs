@@ -10,7 +10,7 @@ namespace UnityTest.Models
         public string Email { get; set; }
 
         [Column("address_id")]
-        public int AddressId { get; set; }
+        public int? AddressId { get; set; }
 
         [ForeignKey("address_id")]
         public Address Address { get; set; }

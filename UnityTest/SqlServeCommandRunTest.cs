@@ -75,7 +75,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void DeleteJoin()
+        public void DeleteWhereJoin()
         {
             ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);

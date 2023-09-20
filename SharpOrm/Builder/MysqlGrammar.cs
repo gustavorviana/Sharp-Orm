@@ -34,14 +34,25 @@ namespace SharpOrm.Builder
         protected override void ConfigureDelete()
         {
             this.QueryBuilder.AppendFormat("DELETE");
-
-            if (this.Info.Joins.Count > 0)
-                this.QueryBuilder.AppendFormat(" {0}", this.Info.TableName.TryGetAlias(this.Info.Config));
-
+            this.ApplyDeleteJoins();
             this.QueryBuilder.AppendFormat(" FROM {0}", this.Info.TableName.GetName(true, this.Info.Config));
 
             this.ApplyJoins();
             this.WriteWhere(true);
+        }
+
+        private void ApplyDeleteJoins()
+        {
+            if (this.Info.Joins.Count == 0)
+                return;
+
+            this.QueryBuilder.AppendFormat(" {0}", this.Info.TableName.TryGetAlias(this.Info.Config));
+
+            if (!(this.Query.deleteJoins?.Length >= 1))
+                return;
+
+            foreach (var join in this.Info.Joins)
+                this.QueryBuilder.AppendFormat(",{0}", join.Info.TableName.TryGetAlias(join.Info.Config));
         }
 
         protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)

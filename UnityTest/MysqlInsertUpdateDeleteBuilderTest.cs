@@ -158,7 +158,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void DeleteJoin()
+        public void DeleteWhereJoin()
         {
             using var q = NewQuery(TABLE, "t1");
             q.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
@@ -167,6 +167,18 @@ namespace UnityTest
 
             using var cmd = g.Delete();
             Assert.AreEqual("DELETE `t1` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", cmd.CommandText);
+        }
+        
+        [TestMethod]
+        public void DeleteJoins()
+        {
+            using var q = NewQuery(TABLE, "t1");
+            q.JoinToDelete("t2").Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
+            q.Where("t2.Id", 1);
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.Delete();
+            Assert.AreEqual("DELETE `t1`,`t2` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", cmd.CommandText);
         }
 
         [TestMethod]
