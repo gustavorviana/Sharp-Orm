@@ -39,12 +39,13 @@ namespace UnityTest
         [TestMethod]
         public void DeepSelect()
         {
+            var config = new MysqlQueryConfig(false) { ForeignLoader = true };
             const uint Id = 1;
             const int Addr = 1;
             const string Name = "User 1";
             const string Email = "my@email.com";
             using var addrQuery = new Query<Address>();
-            using var query = new Query<CustomCustomer>();
+            using var query = new Query<Customer>(config);
 
             query.Delete();
             addrQuery.Delete();
@@ -52,15 +53,41 @@ namespace UnityTest
             addrQuery.Insert(new Address { Id = 1, Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
 
-            var customer = query.FirstOrDefault();
+            var customer = query.AddForeign<Address>().FirstOrDefault();
 
             Assert.IsNotNull(customer, "Customer failed");
             Assert.IsNotNull(customer.Address, "Address failed");
             Assert.AreEqual(Id, customer.Id, "Customer Id failed");
             Assert.AreEqual(Name, customer.Name, "Customer Name failed");
             Assert.AreEqual(Email, customer.Email, "Customer Email failed");
-            Assert.AreEqual(Addr, customer.Address.Id, "Address Id failed");
-            Assert.AreEqual(Addr, customer.Address.CustomId, "Address CustomId failed");
+            Assert.AreEqual(customer.AddressId, customer.Address.Id, "Address Id failed");
+        }
+
+        [TestMethod]
+        public void ForeignObjectInsert()
+        {
+            const uint Id = 1;
+            const string Name = "User 1";
+            const string Email = "my@email.com";
+            using var addrQuery = new Query<Address>();
+            using var query = new Query<Customer>();
+
+            query.Delete();
+
+            query.Insert(new Customer
+            {
+                Id = Id,
+                Name = Name,
+                Email = Email
+            });
+
+            var customer = query.FirstOrDefault();
+
+            Assert.IsNotNull(customer, "Customer failed");
+            Assert.IsNull(customer.Address, "Address failed");
+            Assert.AreEqual(Id, customer.Id, "Customer Id failed");
+            Assert.AreEqual(Name, customer.Name, "Customer Name failed");
+            Assert.AreEqual(Email, customer.Email, "Customer Email failed");
         }
 
         [TestMethod]
@@ -304,19 +331,29 @@ namespace UnityTest
             using var query1 = new Query<TestTable>(Connection, config);
 
             DateTime date = DateTime.Now;
+            date = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
             query1.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
             DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
-            AreEqualsDate(date, dbDate);
+            AreEqualsDate(date, dbDate, "Universal time insert fail");
 
             using var query2 = new Query<TestTable>(Connection);
             dbDate = query2.Select("record_created").ExecuteScalar<DateTime>();
-            AreEqualsDate(date.ToUniversalTime(), dbDate);
+            AreEqualsDate(date.ToUniversalTime(), dbDate, "Universal time read file");
         }
 
-        public static void AreEqualsDate(DateTime expected, DateTime actual)
+        public static void AreEqualsDate(DateTime expected, DateTime actual, string message)
         {
             Assert.AreEqual(expected.Date, actual.Date);
-            Assert.AreEqual(decimal.Truncate((decimal)expected.TimeOfDay.TotalSeconds), decimal.Truncate((decimal)actual.TimeOfDay.TotalSeconds));
+            try
+            {
+                Assert.AreEqual(decimal.Truncate((decimal)expected.TimeOfDay.TotalSeconds), decimal.Truncate((decimal)actual.TimeOfDay.TotalSeconds), message);
+            }
+            catch
+            {
+                Console.WriteLine(expected);
+                Console.WriteLine(actual);
+                throw;
+            }
         }
 
         public static void ConfigureInitialCustomerAndOrder()

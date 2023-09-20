@@ -8,7 +8,7 @@ CREATE TABLE [Address] (
 );
 CREATE TABLE [Customers] (
       [id] INT PRIMARY KEY,
-      [address_id] INT,
+      [address_id] INT NULL,
       [name] VARCHAR(50),
       [email] VARCHAR(100),
       FOREIGN KEY ([address_id]) REFERENCES [Address](id)

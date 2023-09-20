@@ -98,16 +98,6 @@ namespace SharpOrm.Builder.DataTranslation
         }
 
         /// <summary>
-        /// Gets the table name of the specified type.
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns>The table name of the specified type.</returns>
-        public static string GetTableNameOf(Type type)
-        {
-            return GetTable(type).Name;
-        }
-
-        /// <summary>
         /// Gets the table info for the specified type.
         /// </summary>
         /// <param name="type">The type.</param>

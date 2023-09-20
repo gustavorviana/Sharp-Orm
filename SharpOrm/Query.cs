@@ -13,7 +13,7 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public static string TableName => TableReaderBase.GetTableNameOf(typeof(T));
+        public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
         private string[] foreignsTables = null;
         private int foreignsDepth = 0;
@@ -42,6 +42,10 @@ namespace SharpOrm
         }
 
         public Query(DbTransaction transaction, string alias = "") : this(transaction, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
+        {
+        }
+
+        public Query(QueryConfig config) : base(config, new DbName(TableName, null))
         {
         }
 
@@ -96,12 +100,12 @@ namespace SharpOrm
         {
             if (this.foreignsTables == null)
             {
-                this.foreignsTables = new string[] { new TableInfo(typeof(K)).Name };
+                this.foreignsTables = new string[] { TableInfo.GetNameOf(typeof(K)) };
             }
             else
             {
                 Array.Resize(ref this.foreignsTables, this.foreignsTables.Length + 1);
-                this.foreignsTables[this.foreignsTables.Length - 1] = new TableInfo(typeof(K)).Name;
+                this.foreignsTables[this.foreignsTables.Length - 1] = TableInfo.GetNameOf(typeof(K));
             }
 
             if (this.foreignsDepth < 1)
@@ -236,10 +240,10 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(obj));
 
             if (columns.Length == 0)
-                return base.Update(this.TableInfo.GetCells(obj, true).ToArray());
+                return base.Update(this.TableInfo.GetCells(obj, this.Info.Config.ForeignLoader).ToArray());
 
             var cells = this.TableInfo
-                .GetCells(obj)
+                .GetCells(obj, this.Info.Config.ForeignLoader)
                 .Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
 
             var toUpdate = cells.ToArray();
@@ -253,7 +257,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string column2)
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
-            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
             join.WhereColumn(column1, "=", column2);
 
             this.Info.Joins.Add(join);
@@ -263,7 +267,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
             join.WhereColumn(column1, operation, column2);
 
             this.Info.Joins.Add(join);
@@ -273,7 +277,7 @@ namespace SharpOrm
         public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
         {
             JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableReaderBase.GetTableNameOf(typeof(C)), alias);
+            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
 
             operation(join);
             this.Info.Joins.Add(join);
@@ -345,6 +349,14 @@ namespace SharpOrm
             : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
         {
             this.Creator = creator;
+        }
+
+        public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
+        {
+        }
+
+        public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
+        {
         }
 
         public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))

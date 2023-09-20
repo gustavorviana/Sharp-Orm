@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 
@@ -44,7 +45,7 @@ namespace SharpOrm.Builder
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
 
             this.Type = type;
-            this.Name = type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
+            this.Name = GetNameOf(type);
             this.Columns = this.GetColumns(config).ToArray();
         }
 
@@ -71,13 +72,25 @@ namespace SharpOrm.Builder
             foreach (var column in this.Columns)
             {
                 bool isFk = !string.IsNullOrEmpty(column.ForeignKey);
+                if (isFk)
+                {
+                    if (readForeignKey && CanLoadForeignColumn(column))
+                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                    continue;
+                }
 
-                object value = isFk ? this.GetFkValue(owner, column.GetRaw(owner), column) : ProcessValue(column, owner, readForeignKey);
+                object value = ProcessValue(column, owner, readForeignKey);
                 if ((column.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
-                yield return new Cell(isFk ? column.ForeignKey : column.Name, value);
+                yield return new Cell(column.Name, value);
             }
+        }
+
+
+        private bool CanLoadForeignColumn(ColumnInfo column)
+        {
+            return !this.Columns.Any(c => !c.Name.Equals(column.ForeignKey, StringComparison.OrdinalIgnoreCase) && c != column);
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
@@ -103,9 +116,19 @@ namespace SharpOrm.Builder
             return pkColumn.Get(fkInstance);
         }
 
+        public object CreateInstance()
+        {
+            return Activator.CreateInstance(this.Type);
+        }
+
         public override string ToString()
         {
             return string.Format("{0}: {1}", this.Name, this.Type);
+        }
+
+        public static string GetNameOf(Type type)
+        {
+            return type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
         }
     }
 }
