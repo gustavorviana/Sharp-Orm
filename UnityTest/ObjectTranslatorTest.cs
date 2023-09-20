@@ -33,6 +33,31 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectValidPk()
+        {
+            var obj = new Customer { AddressId = 1, Address = new Address { Id = 2 } };
+            var cells = new TableInfo(typeof(Customer)).GetCells(obj, true, true).Where(c => c.Name == "address_id").ToArray();
+            Assert.AreEqual(1, cells.Length);
+            Assert.AreEqual(1, cells[0].Value);
+        }
+
+        [TestMethod]
+        public void SelectForeignKeyValue()
+        {
+            var obj = new CustomCustomer { Address = new CustomAddr { Id = 1 } };
+            var cell = new TableInfo(typeof(CustomCustomer)).GetCells(obj, true, true).FirstOrDefault(c => c.Name == "address_id");
+            Assert.AreEqual(1, cell.Value);
+        }
+
+        [TestMethod]
+        public void SelectForeignKeyNullValue()
+        {
+            var obj = new CustomCustomer();
+            var cell = new TableInfo(typeof(CustomCustomer)).GetCells(obj, true, true).FirstOrDefault(c => c.Name == "address_id");
+            Assert.IsNull(cell.Value);
+        }
+
+        [TestMethod]
         public void EnumToSql()
         {
             AssertPropertyValue(0, new() { MyEnum = Status.Unknow }, nameof(TestClass.MyEnum));

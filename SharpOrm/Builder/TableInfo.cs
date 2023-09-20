@@ -87,10 +87,9 @@ namespace SharpOrm.Builder
             }
         }
 
-
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => !c.Name.Equals(column.ForeignKey, StringComparison.OrdinalIgnoreCase) && c != column);
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
@@ -111,7 +110,7 @@ namespace SharpOrm.Builder
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
-                return Activator.CreateInstance(pkColumn.Type);
+                return null;
 
             return pkColumn.Get(fkInstance);
         }

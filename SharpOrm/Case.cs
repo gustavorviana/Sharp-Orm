@@ -42,7 +42,7 @@ namespace SharpOrm
             this.nodes.Add(new CaseNode
             {
                 Column = new Column(column),
-                Expression = new SqlExpression($"IS NULL"),
+                Expression = new SqlExpression("IS NULL"),
                 Then = then,
             });
             return this;
@@ -53,7 +53,7 @@ namespace SharpOrm
             this.nodes.Add(new CaseNode
             {
                 Column = new Column(column),
-                Expression = new SqlExpression($"IS NOT NULL"),
+                Expression = new SqlExpression("IS NOT NULL"),
                 Then = then,
             });
             return this;
