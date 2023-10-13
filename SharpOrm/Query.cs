@@ -568,7 +568,7 @@ namespace SharpOrm
 
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    list.Add((T)TableReaderBase.Registry.FromSql(LoadDbObject(reader[0]), typeof(T)));
+                    list.Add((T)TableReaderBase.Registry.FromSql<T>(LoadDbObject(reader[0])));
 
             return list.ToArray();
         }
@@ -580,7 +580,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return (T)TableReaderBase.Registry.FromSql(this.ExecuteScalar(), typeof(T));
+            return TableReaderBase.Registry.FromSql<T>(this.ExecuteScalar());
         }
 
         /// <summary>

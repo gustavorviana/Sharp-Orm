@@ -35,5 +35,10 @@ namespace SharpOrm.Builder.DataTranslation
             || type == typeof(Int16) || type == typeof(UInt16) || type == typeof(UInt32) || type == typeof(Int64)
             || type == typeof(UInt64);
         }
+
+        public static T FromSql<T>(this TranslationRegistry registry, object value)
+        {
+            return registry.FromSql(value, typeof(T)) is T result ? result : default;
+        }
     }
 }

@@ -69,10 +69,10 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is DBNull)
                 return null;
 
-            if (binaryTranslator.CanWork(expectedType))
+            if (binaryTranslator.CanWork(expectedType) && !(value is null))
                 return binaryTranslator.FromSqlValue(value, expectedType);
 
-            if (numericTranslation.CanWork(expectedType))
+            if (numericTranslation.CanWork(expectedType) && !(value is null))
                 return numericTranslation.FromSqlValue(value, expectedType);
 
             if (expectedType == typeof(Guid))

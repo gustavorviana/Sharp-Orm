@@ -416,6 +416,15 @@ namespace UnityTest
             );
         }
 
+        [TestMethod]
+        public void TryLoadNullInt()
+        {
+            using var qOrder = new Query<Order>(Connection);
+            qOrder.Where("Id", 0);
+            Assert.AreEqual(0, qOrder.ExecuteScalar<int>());
+            Assert.IsNull(qOrder.ExecuteScalar<int?>());
+        }
+
         [TestCleanup]
         [TestInitialize]
         public void CleanupTest()
