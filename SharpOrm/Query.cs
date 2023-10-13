@@ -752,8 +752,13 @@ namespace SharpOrm
         {
             using (var translator = this.Creator.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
+            {
                 while (reader.Read())
+                {
+                    this.Token.ThrowIfCancellationRequested();
                     yield return translator.ParseFromReader<T>(reader);
+                }
+            }
         }
 
         /// <summary>
