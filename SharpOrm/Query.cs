@@ -156,7 +156,7 @@ namespace SharpOrm
                 K[] items;
 
                 using (var reader = this.ExecuteReader())
-                    items = translator.GetEnumerable<K>(reader).ToArray();
+                    items = translator.GetEnumerable<K>(reader, this.Token).ToArray();
 
                 translator.LoadForeignKeys();
                 return items;
@@ -321,6 +321,12 @@ namespace SharpOrm
         internal string[] deleteJoins = null;
 
         public ConnectionCreator Creator { get; protected set; } = ConnectionCreator.Default;
+
+        /// <summary>
+        /// Options for customizing the execution of the grammar.
+        /// </summary>
+        /// <remarks>For example: SqlServerGrammarOptions.NoLock to have queries written with NOLOCK.</remarks>
+        public object GrammarOptions { get; set; }
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }

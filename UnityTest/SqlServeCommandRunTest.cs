@@ -22,7 +22,7 @@ namespace UnityTest
             const int Id = 1;
             const string Name = "User 1";
 
-            var q = new Query<TestTable>(Creator);
+            using var q = new Query<TestTable>(Creator);
             q.Insert(NewRow(Id, Name).Cells);
             q.Distinct = true;
 
@@ -38,7 +38,7 @@ namespace UnityTest
         {
             InsertRows(4);
 
-            var q = new Query<TestTable>(Creator);
+            using var q = new Query<TestTable>(Creator);
             q.Insert(NewRow(6, "User 1").Cells);
             q.OrderBy(NAME);
             q.Distinct = true;
@@ -53,7 +53,7 @@ namespace UnityTest
         [TestMethod]
         public void PaginateWithoutOrderby()
         {
-            var q = new Query<TestTable>(Creator);
+            using var q = new Query<TestTable>(Creator);
             Assert.ThrowsException<InvalidOperationException>(() => q.Paginate(1, 2));
         }
 
@@ -63,7 +63,7 @@ namespace UnityTest
         {
             InsertRows(30);
 
-            var q = new Query<TestTable>(Creator, "p");
+            using var q = new Query<TestTable>(Creator, "p");
             q.Select("p.*");
             q.OrderBy("Id");
             var r = q.Paginate(5, 1);
@@ -124,7 +124,7 @@ namespace UnityTest
         {
             InsertRows(10);
 
-            var q = new Query<TestTable>(Creator);
+            using var q = new Query<TestTable>(Creator);
             q.OrderBy("Id");
             var r = q.Paginate(8, 2);
 
@@ -156,6 +156,42 @@ namespace UnityTest
             Assert.AreEqual(order.CustomerId, order.Customer.Id);
 
             Assert.IsNull(order.Customer.Address);
+        }
+
+        [TestMethod]
+        public void SelectWithNoLock()
+        {
+            const int Id = 1;
+            const string Name = "User 1";
+
+            using var q = new Query<TestTable>(Creator);
+            q.Delete();
+
+            q.EnableNoLock();
+            q.Insert(NewRow(Id, Name).Cells);
+
+            var row = q.FirstRow();
+
+            Assert.IsNotNull(row);
+            Assert.AreEqual(Id, row[ID]);
+            Assert.AreEqual(Name, row[NAME]);
+        }
+
+        [TestMethod]
+        public void DeleteWithNoLock()
+        {
+            using var q = new Query<TestTable>(Creator, "t");
+            q.EnableNoLock();
+            q.Delete();
+        }
+
+        [TestMethod]
+        public void UpdateNoLock()
+        {
+            using var q = new Query<TestTable>(Creator, "t");
+            q.EnableNoLock();
+            q.Where("Id", 0);
+            q.Update(new Cell("Name", "test"));
         }
 
         private static void ConfigureInitialCustomerAndOrder()

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -26,7 +27,7 @@ namespace SharpOrm.Builder.DataTranslation
             this.config = config;
         }
 
-        public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader) where T : new();
+        public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token) where T : new();
         
 
         /// <summary>

@@ -13,6 +13,33 @@ namespace SharpOrm.Builder
         {
         }
 
+        protected override void ConfigureDelete()
+        {
+            this.QueryBuilder.AppendFormat("DELETE");
+            this.ApplyDeleteJoins();
+            this.QueryBuilder.AppendFormat(" FROM {0}", this.Info.TableName.GetName(true, this.Info.Config));
+
+            if (this.Query.IsNoLock())
+                this.QueryBuilder.Append(" WITH (NOLOCK)");
+
+            this.ApplyJoins();
+            this.WriteWhere(true);
+        }
+
+        private void ApplyDeleteJoins()
+        {
+            if (this.Info.Joins.Count == 0 && !this.Query.IsNoLock())
+                return;
+
+            this.QueryBuilder.AppendFormat(" {0}", this.Info.TableName.TryGetAlias(this.Info.Config));
+
+            if (!(this.Query.deleteJoins?.Length >= 1))
+                return;
+
+            foreach (var join in this.Info.Joins)
+                this.QueryBuilder.AppendFormat(",{0}", join.Info.TableName.TryGetAlias(join.Info.Config));
+        }
+
         protected override void ConfigureUpdate(Cell[] cells)
         {
             this.QueryBuilder.AppendFormat(
@@ -21,8 +48,11 @@ namespace SharpOrm.Builder
                 string.Join(", ", cells.Select(c => $"{this.ApplyTableColumnConfig(c.Name)} = {this.RegisterCellValue(c)}"))
             );
 
-            if (this.Info.Joins.Any())
+            if (this.Info.Joins.Any() || this.Query.IsNoLock())
                 this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(false));
+
+            if (this.Query.IsNoLock())
+                this.QueryBuilder.Append(" WITH (NOLOCK)");
 
             this.ApplyJoins();
             this.WriteWhere(true);
@@ -77,6 +107,9 @@ namespace SharpOrm.Builder
 
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
 
+            if (this.Query.IsNoLock())
+                this.QueryBuilder.Append(" WITH (NOLOCK)");
+
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
@@ -119,6 +152,10 @@ namespace SharpOrm.Builder
             else
                 this.QueryBuilder.Append(WriteSelect(countColunm));
             this.QueryBuilder.AppendFormat(" FROM {0}", this.GetTableName(true));
+
+            if (this.Query.IsNoLock())
+                this.QueryBuilder.Append(" WITH (NOLOCK)");
+
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();

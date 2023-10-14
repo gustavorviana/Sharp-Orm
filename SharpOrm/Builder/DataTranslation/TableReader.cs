@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -170,20 +171,26 @@ namespace SharpOrm.Builder.DataTranslation
             cachedValues.Clear();
         }
 
-        public override IEnumerable<T> GetEnumerable<T>(DbDataReader reader)
+        public override IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token)
         {
             var table = GetTable(typeof(T));
             if (table == null || table.HasNonNative)
             {
                 while (reader.Read())
+                {
+                    token.ThrowIfCancellationRequested();
                     yield return this.ParseFromReader<T>(reader);
+                }
 
                 yield break;
             }
 
             var tReader = new RowReader(this, table);
             while (reader.Read())
+            {
+                token.ThrowIfCancellationRequested();
                 yield return (T)tReader.GetRow(reader);
+            }
         }
 
         private class ForeignTable : IEquatable<ForeignTable>
