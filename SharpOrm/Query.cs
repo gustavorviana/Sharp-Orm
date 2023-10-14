@@ -153,6 +153,9 @@ namespace SharpOrm
         {
             using (var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
+                if (this.Transaction != null) translator.SetConnection(this.Transaction);
+                else translator.SetConnection(this.Connection);
+
                 K[] items;
 
                 using (var reader = this.ExecuteReader())

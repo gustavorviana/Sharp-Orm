@@ -141,7 +141,7 @@ namespace SharpOrm.Builder.DataTranslation
         {
             return this.cachedValues.GetOrAdd(new ForeignTable(info), (table) =>
             {
-                using (var query = new Query(table.TableName))
+                using (var query = this.CreateQuery(table.TableName))
                 {
                     query.Where("id", table.KeyValue);
                     query.Limit = 1;

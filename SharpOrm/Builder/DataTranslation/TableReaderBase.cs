@@ -13,14 +13,16 @@ namespace SharpOrm.Builder.DataTranslation
     public abstract class TableReaderBase : IDisposable
     {
         private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
-        protected readonly IQueryConfig config;
-        private bool disposed;
-        public bool Disposed => this.disposed;
-
         /// <summary>
         /// Gets the translation registry associated with the table translator.
         /// </summary>
         public static TranslationRegistry Registry { get; set; } = new TranslationRegistry();
+        protected readonly IQueryConfig config;
+        private bool disposed;
+        public bool Disposed => this.disposed;
+
+        private DbTransaction transaction;
+        private DbConnection connection;
 
         public TableReaderBase(IQueryConfig config)
         {
@@ -28,7 +30,7 @@ namespace SharpOrm.Builder.DataTranslation
         }
 
         public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token) where T : new();
-        
+
 
         /// <summary>
         /// Parses an object of type <typeparamref name="T"/> from the database reader.
@@ -78,7 +80,26 @@ namespace SharpOrm.Builder.DataTranslation
         }
 
         public abstract void LoadForeignKeys();
+        public void SetConnection(DbTransaction transaction)
+        {
+            this.transaction = transaction;
+        }
 
+        public void SetConnection(DbConnection connection)
+        {
+            this.connection = connection;
+        }
+
+        protected Query CreateQuery(string name)
+        {
+            if (this.transaction != null)
+                return new Query(this.transaction, this.config, name);
+
+            if (this.connection != null)
+                return new Query(this.connection, this.config, name);
+
+            return new Query(Connection.ConnectionCreator.Default.GetConnection(), this.config, name);
+        }
         /// <summary>
         /// Parses an object of the specified <paramref name="typeToParse"/> from the database reader.
         /// </summary>
