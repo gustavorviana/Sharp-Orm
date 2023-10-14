@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
@@ -24,6 +25,9 @@ namespace SharpOrm.Builder.DataTranslation
         {
             this.config = config;
         }
+
+        public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader) where T : new();
+        
 
         /// <summary>
         /// Parses an object of type <typeparamref name="T"/> from the database reader.
@@ -104,6 +108,9 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The table info for the specified type.</returns>
         public static TableInfo GetTable(Type type)
         {
+            if (type == typeof(Row))
+                return null;
+
             return cachedTables.GetOrAdd(type, _type => new TableInfo(Registry, _type));
         }
 

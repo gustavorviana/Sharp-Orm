@@ -153,14 +153,13 @@ namespace SharpOrm
         {
             using (var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
-                List<K> list = new List<K>();
+                K[] items;
 
                 using (var reader = this.ExecuteReader())
-                    while (reader.Read())
-                        list.Add(translator.ParseFromReader<K>(reader));
+                    items = translator.GetEnumerable<K>(reader).ToArray();
 
                 translator.LoadForeignKeys();
-                return list;
+                return items;
             }
         }
 

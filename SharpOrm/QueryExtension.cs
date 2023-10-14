@@ -572,6 +572,7 @@ namespace SharpOrm
         /// <param name="reader">The DbDataReader to check for the column.</param>
         /// <param name="key">The name of the column to check for.</param>
         /// <returns>True if the column exists in the reader, otherwise false.</returns>
+        [Obsolete("will be removed in version 1.2.28.")]
         public static bool HasName(this DbDataReader reader, string key)
         {
             for (int i = 0; i < reader.FieldCount; i++)
@@ -579,6 +580,16 @@ namespace SharpOrm
                     return true;
 
             return false;
+        }
+
+        public static object Get(this DbDataReader reader, string key)
+        {
+            key = key.ToLower();
+            for (int i = 0; i < reader.FieldCount; i++)
+                if (reader.GetName(i).ToLower() == key)
+                    return reader[i];
+
+            return DBNull.Value;
         }
 
         /// <summary>

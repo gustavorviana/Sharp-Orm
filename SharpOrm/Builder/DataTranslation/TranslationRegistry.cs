@@ -21,8 +21,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object FromSql(object value, Type expectedType)
         {
-            if (expectedType != null && Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
-                expectedType = underlyingType;
+            expectedType = GetValidTypeFor(expectedType);
 
             if (this.GetFor(expectedType) is ISqlTranslation conversor)
                 return conversor.FromSqlValue(value, expectedType);
@@ -32,6 +31,8 @@ namespace SharpOrm.Builder.DataTranslation
 
         public ISqlTranslation GetFor(Type type)
         {
+            type = GetValidTypeFor(type);
+
             if (this.Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
                 return conversor;
 
@@ -39,6 +40,14 @@ namespace SharpOrm.Builder.DataTranslation
                 return native;
 
             return null;
+        }
+
+        public static Type GetValidTypeFor(Type expectedType)
+        {
+            if (expectedType != null && Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
+                return underlyingType;
+
+            return expectedType;
         }
 
         public ISqlTranslation GetOf(MemberInfo property)

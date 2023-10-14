@@ -21,6 +21,9 @@ namespace SharpOrm.Builder
         /// </summary>
         public string Name { get; }
 
+        public bool HasNonNative { get; private set; }
+        public bool HasFk { get; private set; }
+
         /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
@@ -51,10 +54,40 @@ namespace SharpOrm.Builder
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
         {
+            foreach (var col in this.GetColumnsFromProperties(registry))
+            {
+                bool isFk = !string.IsNullOrEmpty(col.ForeignKey);
+                if (isFk)
+                    this.HasFk = true;
+
+                if (col.IsNative && isFk)
+                    this.HasNonNative = true;
+
+                yield return col;
+            }
+
+            foreach (var col in this.GetColumnsFromFields(registry))
+            {
+                bool isFk = !string.IsNullOrEmpty(col.ForeignKey);
+                if (isFk)
+                    this.HasFk = true;
+
+                if (col.IsNative && isFk)
+                    this.HasNonNative = true;
+
+                yield return col;
+            }
+        }
+
+        private IEnumerable<ColumnInfo> GetColumnsFromProperties(TranslationRegistry registry)
+        {
             foreach (var prop in Type.GetProperties(propertiesFlags))
                 if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, prop);
+        }
 
+        private IEnumerable<ColumnInfo> GetColumnsFromFields(TranslationRegistry registry)
+        {
             foreach (var field in Type.GetFields(propertiesFlags))
                 if (field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
@@ -65,7 +98,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="owner">The owner object.</param>
         /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
-        /// <param name="useForeign">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
+        /// <param name="readForeignKey">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool readForeignKey = false)
         {
