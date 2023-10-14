@@ -1,37 +1,41 @@
-﻿using System;
+﻿using SharpOrm;
+using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace UnityTest.Utils
+namespace UnityTest.Utils.Mock
 {
-    public class DictionaryDataReader : DbDataReader
+    public class MockDataReader : DbDataReader
     {
-        private readonly List<Dictionary<string, object>> data;
+        public readonly Row[] rows;
         private int currentIndex = -1;
+        public int ReadDelay { get; set; }
 
-        public DictionaryDataReader(List<Dictionary<string, object>> data)
+        public MockDataReader(Row[] rows)
         {
-            this.data = data;
+            this.rows = rows;
         }
 
-        public override bool HasRows => data.Count > 0;
-        public override object this[string name] => data[currentIndex][name];
+        public CancellationToken Token { get; set; }
+
+        public override bool HasRows => rows.Length > 0;
+        public override object this[string name] => rows[currentIndex][name];
 
         public override object this[int i] => GetValue(i);
 
         public override int Depth => 0;
 
-        public override bool IsClosed => currentIndex >= data.Count || currentIndex < 0;
+        public override bool IsClosed => currentIndex >= rows.Length || currentIndex < 0;
 
         public override int RecordsAffected => -1;
 
-        public override int FieldCount => data.Count > 0 ? data[0].Count : 0;
+        public override int FieldCount => rows.Length > 0 ? rows[0].Count : 0;
 
         public override void Close()
         {
-            currentIndex = data.Count;
+            currentIndex = rows.Length;
         }
 
         public override bool NextResult()
@@ -41,12 +45,23 @@ namespace UnityTest.Utils
 
         public override bool Read()
         {
-            if (currentIndex < data.Count - 1)
+            if (currentIndex < rows.Length - 1)
             {
                 currentIndex++;
+                this.WaitDelay();
+
                 return true;
             }
             return false;
+        }
+
+        private void WaitDelay()
+        {
+            try
+            {
+                if (this.ReadDelay > 0)
+                    Task.Delay(this.ReadDelay).Wait(this.Token);
+            } catch (OperationCanceledException) { }
         }
 
         public override bool GetBoolean(int i)
@@ -132,15 +147,15 @@ namespace UnityTest.Utils
 
         public override string GetName(int i)
         {
-            return data[currentIndex].Keys.ElementAt(i);
+            return rows[currentIndex][i].Name;
         }
 
         public override int GetOrdinal(string name)
         {
             int index = 0;
-            foreach (var key in data[currentIndex].Keys)
+            foreach (var row in rows[currentIndex])
             {
-                if (key.Equals(name, StringComparison.OrdinalIgnoreCase))
+                if (row.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return index;
 
                 index++;
@@ -169,19 +184,18 @@ namespace UnityTest.Utils
 
         public override IEnumerator GetEnumerator()
         {
-            foreach (var dictionary in data)
+            foreach (var dictionary in rows)
                 yield return dictionary;
         }
 
         public override object GetValue(int ordinal)
         {
-            return data[currentIndex].Values.ElementAt(ordinal) ?? DBNull.Value;
+            return rows[currentIndex][ordinal].Value ?? DBNull.Value;
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            data.Clear();
         }
     }
 }

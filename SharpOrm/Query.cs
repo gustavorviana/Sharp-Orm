@@ -49,7 +49,7 @@ namespace SharpOrm
         {
         }
 
-        public Query(DbConnection connection, IQueryConfig config) : this(connection, config, new DbName(TableName, null))
+        public Query(DbConnection connection, IQueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
         {
         }
 
@@ -151,7 +151,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            using (var translator = this.Creator.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
+            using (var translator = this.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
                 if (this.Transaction != null) translator.SetConnection(this.Transaction);
                 else translator.SetConnection(this.Connection);
@@ -218,7 +218,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(TableReaderBase.ToRow(obj, typeof(T), this.Creator.Config.ForeignLoader).Cells);
+            return this.Insert(TableReaderBase.ToRow(obj, typeof(T), this.Config.ForeignLoader).Cells);
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T), this.Creator.Config.ForeignLoader)).ToArray());
+            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T), this.Config.ForeignLoader)).ToArray());
         }
 
         /// <summary>
@@ -330,6 +330,7 @@ namespace SharpOrm
         /// </summary>
         /// <remarks>For example: SqlServerGrammarOptions.NoLock to have queries written with NOLOCK.</remarks>
         public object GrammarOptions { get; set; }
+        protected IQueryConfig Config { get; }
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
@@ -387,6 +388,7 @@ namespace SharpOrm
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
             this.CommandTimeout = config.CommandTimeout;
             this.Info.TableName = table;
+            this.Config = config;
 
             try
             {
@@ -410,6 +412,7 @@ namespace SharpOrm
             this.Connection = transaction.Connection;
             this.CommandTimeout = config.CommandTimeout;
             this.Info.TableName = name;
+            this.Config = config;
 
             try
             {
@@ -758,7 +761,7 @@ namespace SharpOrm
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
-            using (var translator = this.Creator.Config.CreateTableReader(new string[0], 0))
+            using (var translator = this.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
             {
                 while (reader.Read())
@@ -849,7 +852,7 @@ namespace SharpOrm
         {
             base.Dispose(disposing);
 
-            if (disposing && this.Transaction == null)
+            if (disposing && this.Transaction == null && this.Creator != null)
                 this.Creator.SafeDisposeConnection(this.Connection);
         }
 

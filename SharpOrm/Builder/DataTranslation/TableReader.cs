@@ -261,6 +261,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             private readonly TableReader reader;
             private readonly TableInfo table;
+            private bool hasFirstRead = false;
             public bool IsComplex { get; }
 
             public RowReader(TableReader reader, TableInfo table)
@@ -272,12 +273,12 @@ namespace SharpOrm.Builder.DataTranslation
             public object GetRow(DbDataReader reader)
             {
                 var owner = this.table.CreateInstance();
-
-                if (colsMap.Count != 0)
+                if (hasFirstRead)
                 {
                     foreach (var kv in colsMap)
                         kv.Value.Set(owner, reader[kv.Key]);
 
+                    this.LoadFkObjs(owner, reader);
                     return owner;
                 }
 
@@ -293,6 +294,7 @@ namespace SharpOrm.Builder.DataTranslation
 
                 this.LoadFkObjs(owner, reader);
 
+                this.hasFirstRead = true;
                 return owner;
             }
 
@@ -301,7 +303,7 @@ namespace SharpOrm.Builder.DataTranslation
                 if (!this.table.HasFk)
                     return;
 
-                if (fkMap.Count != 0)
+                if (hasFirstRead)
                 {
                     foreach (var kv in fkMap)
                         this.reader.EnqueueForeign(owner, reader[kv.Key], kv.Value);
@@ -313,8 +315,9 @@ namespace SharpOrm.Builder.DataTranslation
                 {
                     int index = reader.GetIndexOf(col.ForeignKey);
                     if (index == -1)
-                        this.fkMap[index] = col;
+                        continue;
 
+                    this.fkMap[index] = col;
                     this.reader.EnqueueForeign(owner, reader[index], col);
                 }
             }
