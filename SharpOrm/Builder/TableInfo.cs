@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 
@@ -54,40 +53,24 @@ namespace SharpOrm.Builder
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
         {
-            foreach (var col in this.GetColumnsFromProperties(registry))
+            foreach (var col in this.GetAllColumns(registry))
             {
-                bool isFk = !string.IsNullOrEmpty(col.ForeignKey);
-                if (isFk)
+                if (col.IsForeignKey)
                     this.HasFk = true;
 
-                if (col.IsNative && isFk)
-                    this.HasNonNative = true;
-
-                yield return col;
-            }
-
-            foreach (var col in this.GetColumnsFromFields(registry))
-            {
-                bool isFk = !string.IsNullOrEmpty(col.ForeignKey);
-                if (isFk)
-                    this.HasFk = true;
-
-                if (col.IsNative && isFk)
+                if (col.IsNative && col.IsForeignKey)
                     this.HasNonNative = true;
 
                 yield return col;
             }
         }
 
-        private IEnumerable<ColumnInfo> GetColumnsFromProperties(TranslationRegistry registry)
+        private IEnumerable<ColumnInfo> GetAllColumns(TranslationRegistry registry)
         {
             foreach (var prop in Type.GetProperties(propertiesFlags))
                 if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, prop);
-        }
 
-        private IEnumerable<ColumnInfo> GetColumnsFromFields(TranslationRegistry registry)
-        {
             foreach (var field in Type.GetFields(propertiesFlags))
                 if (field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
@@ -104,8 +87,7 @@ namespace SharpOrm.Builder
         {
             foreach (var column in this.Columns)
             {
-                bool isFk = !string.IsNullOrEmpty(column.ForeignKey);
-                if (isFk)
+                if (column.IsForeignKey)
                 {
                     if (readForeignKey && CanLoadForeignColumn(column))
                         yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
@@ -128,7 +110,7 @@ namespace SharpOrm.Builder
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
         {
             object obj = column.Get(owner);
-            if (!readForeignKey || !column.Type.IsClass || string.IsNullOrEmpty(column.ForeignKey) || TranslationUtils.IsNull(obj))
+            if (!readForeignKey || !column.Type.IsClass || !column.IsForeignKey || TranslationUtils.IsNull(obj))
                 return obj;
 
             if (obj is null)

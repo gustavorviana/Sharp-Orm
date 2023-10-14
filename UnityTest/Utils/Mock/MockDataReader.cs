@@ -61,7 +61,8 @@ namespace UnityTest.Utils.Mock
             {
                 if (this.ReadDelay > 0)
                     Task.Delay(this.ReadDelay).Wait(this.Token);
-            } catch (OperationCanceledException) { }
+            }
+            catch (OperationCanceledException) { }
         }
 
         public override bool GetBoolean(int i)

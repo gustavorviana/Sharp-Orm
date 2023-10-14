@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder
+﻿namespace SharpOrm.Builder
 {
     public static class SqlServerExt
     {

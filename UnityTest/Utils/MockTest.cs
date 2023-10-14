@@ -4,14 +4,13 @@ using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Connection;
 using System;
-using UnityTest.Models;
 using UnityTest.Utils.Mock;
 
 namespace UnityTest.Utils
 {
     public class MockTest : BaseTest
     {
-        protected static readonly MultipleConnectionCreator<MockConnection> Creator = new(Config, "");
+        protected static readonly MultipleConnectionCreator<MockConnection> Creator = new(new MysqlQueryConfig(false), "");
         protected static readonly MysqlQueryConfig Config = new(false);
         protected static readonly MockConnection Connection = new();
 
@@ -54,6 +53,5 @@ namespace UnityTest.Utils
         {
             return new MockDataReader(rows);
         }
-
     }
 }

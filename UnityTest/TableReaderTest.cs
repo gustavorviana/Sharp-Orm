@@ -36,11 +36,21 @@ namespace UnityTest
             Assert.IsNull(order.Customer);
         }
 
-        private static Query<T> GetConfiguredQuery<T>(bool foreignLoader = false) where T : class, new()
+        [TestMethod]
+        public void Read100Itens()
+        {
+            const int itens = 100;
+            using var query = GetConfiguredQuery<Order>(itens: itens, queryStr: "SELECT * FROM `Orders`");
+            var orders = query.Get();
+
+            Assert.AreEqual(itens, orders.Length);
+        }
+
+        private static Query<T> GetConfiguredQuery<T>(bool foreignLoader = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1") where T : class, new()
         {
             var config = new MysqlQueryConfig { ForeignLoader = foreignLoader };
             var query = new Query<T>(Connection, config);
-            Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => OrderReader(1));
+            Connection.QueryReaders.Add(queryStr, () => OrderReader(itens));
             return query;
         }
 
@@ -50,16 +60,16 @@ namespace UnityTest
             var src = new CancellationTokenSource();
             Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () =>
             {
+                Task.Run(async () =>
+                {
+                    await Task.Delay(5);
+                    src.Cancel();
+                });
+
                 MockDataReader reader = OrderReader(1);
                 reader.ReadDelay = 500;
                 reader.Token = src.Token;
                 return reader;
-            });
-
-            Task.Run(async () =>
-            {
-                await Task.Delay(10);
-                src.Cancel();
             });
 
             using var query = new Query<Order>(Connection, Config) { Token = src.Token };

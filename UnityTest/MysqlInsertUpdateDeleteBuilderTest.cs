@@ -168,7 +168,7 @@ namespace UnityTest
             using var cmd = g.Delete();
             Assert.AreEqual("DELETE `t1` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", cmd.CommandText);
         }
-        
+
         [TestMethod]
         public void DeleteJoins()
         {

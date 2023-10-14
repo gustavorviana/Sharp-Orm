@@ -47,9 +47,18 @@ namespace UnityTest.Utils.Mock
             {
                 OnGetReader = cmd =>
                 {
-                    if (this.QueryReaders.TryGetValue(cmd.CommandText, out var reader))
-                        return reader();
+                    var now = DateTime.Now;
+                    try
+                    {
+                        if (this.QueryReaders.TryGetValue(cmd.CommandText, out var reader))
+                            return reader();
+                    }
+                    finally
+                    {
+                        System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
+                    }
 
+                    System.Diagnostics.Debug.WriteLine(cmd.CommandText);
                     return null;
                 }
             };
