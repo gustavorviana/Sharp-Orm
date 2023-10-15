@@ -14,15 +14,12 @@ namespace SharpOrm.Builder
     {
         private readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         public Type Type { get; }
-
         /// <summary>
         /// Gets the name of the table.
         /// </summary>
         public string Name { get; }
-
         public bool HasNonNative { get; private set; }
         public bool HasFk { get; private set; }
-
         /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
@@ -83,19 +80,49 @@ namespace SharpOrm.Builder
         /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
         /// <param name="readForeignKey">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
         /// <returns>An enumerable of cells.</returns>
+        [Obsolete("Use " + nameof(GetObjCells), true)]
         public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool readForeignKey = false)
+        {
+            return this.GetObjCells(owner, !ignorePrimaryKey, readForeignKey);
+        }
+
+        public Row GetRow(object owner, bool readPk, bool readFk)
+        {
+            if (owner is Row row)
+                return row;
+
+            return new Row(this.GetObjCells(owner, readPk, readFk).ToArray());
+        }
+
+        public object GetValue(object owner, string name)
+        {
+            name = name.ToLower();
+            if (!(this.Columns.FirstOrDefault(c => c.Name.ToLower() == name) is ColumnInfo col))
+                throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
+
+            return col.Get(owner);
+        }
+
+        /// <summary>
+        /// Gets the cells representing the column values of the specified owner object.
+        /// </summary>
+        /// <param name="owner">The owner object.</param>
+        /// <param name="readPk">True to read the primary key column, false otherwise.</param>
+        /// <param name="readFk">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
+        /// <returns>An enumerable of cells.</returns>
+        public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk)
         {
             foreach (var column in this.Columns)
             {
                 if (column.IsForeignKey)
                 {
-                    if (readForeignKey && CanLoadForeignColumn(column))
+                    if (readFk && CanLoadForeignColumn(column))
                         yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
                     continue;
                 }
 
-                object value = ProcessValue(column, owner, readForeignKey);
-                if ((column.Key && (ignorePrimaryKey || TranslationUtils.IsInvalidPk(value))))
+                object value = ProcessValue(column, owner, readFk);
+                if ((column.Key && (!readPk || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
                 yield return new Cell(column.Name, value);

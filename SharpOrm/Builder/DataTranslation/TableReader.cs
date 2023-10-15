@@ -282,12 +282,14 @@ namespace SharpOrm.Builder.DataTranslation
                     return owner;
                 }
 
+                var columns = new List<ColumnInfo>(table.Columns.Where(c => !c.IsForeignKey));
                 for (int i = 0; i < reader.FieldCount; i++)
                 {
                     var name = reader.GetName(i).ToLower();
-                    if (table.Columns.FirstOrDefault(c => name == c.Name.ToLower()) is ColumnInfo ci)
+                    if (columns.FirstOrDefault(c => name == c.Name.ToLower()) is ColumnInfo ci)
                     {
                         ci.Set(owner, reader[i]);
+                        columns.Remove(ci);
                         colsMap[i] = ci;
                     }
                 }

@@ -2,6 +2,7 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityTest.Models;
@@ -74,6 +75,22 @@ namespace UnityTest
 
             using var query = new Query<Order>(Connection, Config) { Token = src.Token };
             Assert.ThrowsException<OperationCanceledException>(() => query.FirstOrDefault());
+        }
+
+        [TestMethod]
+        public void ReadObjectPk()
+        {
+            var info = new TableInfo(typeof(Order));
+            var obj = new Order { Id = 1 };
+            Assert.IsNotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.ToLower() == "id"));
+        }
+
+        [TestMethod]
+        public void ReadObjectIgnorePk()
+        {
+            var info = new TableInfo(typeof(Order));
+            var obj = new Order { Id = 1 };
+            Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.ToLower() == "id"));
         }
 
         private static MockDataReader OrderReader(int qtd)

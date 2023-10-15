@@ -54,7 +54,7 @@ namespace UnityTest
                 Nick = null
             };
 
-            using var cmd = g.Insert(TableReaderBase.ToRow(table, typeof(TestTable)).Cells);
+            using var cmd = g.Insert(TableReaderBase.ToRow(table, typeof(TestTable), true, false).Cells);
             Assert.AreEqual("INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (1, @v1, NULL, @v2, 2.1, @v3, 1); SELECT LAST_INSERT_ID();", cmd.CommandText);
 
             AreEqualsParameter(cmd.Parameters[0], "@v1", table.Name);

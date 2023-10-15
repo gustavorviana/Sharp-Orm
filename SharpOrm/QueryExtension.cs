@@ -372,8 +372,7 @@ namespace SharpOrm
             if ((columnsToIgnore?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(columnsToIgnore));
 
-            var reader = TableReaderBase.GetTable(typeof(T));
-            return query.Update(reader.GetCells(obj, query.Info.Config.ForeignLoader).Where(i => !columnsToIgnore.Contains(i.Name)).ToArray());
+            return query.Update(query.TableInfo.GetObjCells(obj, false, query.Info.Config.ForeignLoader).Where(i => !columnsToIgnore.Contains(i.Name)).ToArray());
         }
 
         /// <summary>
@@ -383,7 +382,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(TableReaderBase.ToRow(obj, typeof(T), query.Creator.Config.ForeignLoader).Cells);
+            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Creator.Config.ForeignLoader).Cells);
         }
 
         /// <summary>
@@ -450,7 +449,14 @@ namespace SharpOrm
         /// </remarks>
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
-            query.Upsert(TableReaderBase.ToRow(obj, typeof(T), query.Creator.Config.ForeignLoader), toCheckColumns);
+            using (query = (Query<T>)query.Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, query.TableInfo.GetValue(obj, column));
+
+                if (query.Any()) query.Update(obj);
+                else query.Insert(obj);
+            }
         }
 
         /// <summary>

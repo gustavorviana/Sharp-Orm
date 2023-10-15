@@ -44,7 +44,7 @@ namespace UnityTest.Utils
         {
             Row[] rows = new Row[objs.Length];
             for (int i = 0; i < rows.Length; i++)
-                rows[i] = TableReaderBase.ToRow(objs[i], typeof(T), loadForeign);
+                rows[i] = TableReaderBase.ToRow(objs[i], typeof(T), true, loadForeign);
 
             return GetReader(rows);
         }

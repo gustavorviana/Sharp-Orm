@@ -16,11 +16,11 @@ namespace UnityTest
         [TestMethod]
         public void InvalidPk()
         {
-            var cells = table.GetCells(new TestClass()).ToArray();
+            var cells = table.GetObjCells(new TestClass(), true, false).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(6, cells.Length);
 
-            cells = table.GetCells(new TestClass { MyId = 1 }).ToArray();
+            cells = table.GetObjCells(new TestClass { MyId = 1 }, true, false).ToArray();
             Assert.IsTrue(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(7, cells.Length);
         }
@@ -28,7 +28,7 @@ namespace UnityTest
         [TestMethod]
         public void IgnorePk()
         {
-            var cells = table.GetCells(new TestClass { MyId = 1 }, true).ToArray();
+            var cells = table.GetObjCells(new TestClass { MyId = 1 }, false, false).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
         }
 
@@ -36,7 +36,7 @@ namespace UnityTest
         public void SelectValidPk()
         {
             var obj = new Customer { AddressId = 1, Address = new Address { Id = 2 } };
-            var cells = new TableInfo(typeof(Customer)).GetCells(obj, true, true).Where(c => c.Name == "address_id").ToArray();
+            var cells = new TableInfo(typeof(Customer)).GetObjCells(obj, false, true).Where(c => c.Name == "address_id").ToArray();
             Assert.AreEqual(1, cells.Length);
             Assert.AreEqual(1, cells[0].Value);
         }
@@ -45,7 +45,7 @@ namespace UnityTest
         public void SelectForeignKeyValue()
         {
             var obj = new CustomCustomer { Address = new CustomAddr { Id = 1 } };
-            var cell = new TableInfo(typeof(CustomCustomer)).GetCells(obj, true, true).FirstOrDefault(c => c.Name == "address_id");
+            var cell = new TableInfo(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
             Assert.AreEqual(1, cell.Value);
         }
 
@@ -53,7 +53,7 @@ namespace UnityTest
         public void SelectForeignKeyNullValue()
         {
             var obj = new CustomCustomer();
-            var cell = new TableInfo(typeof(CustomCustomer)).GetCells(obj, true, true).FirstOrDefault(c => c.Name == "address_id");
+            var cell = new TableInfo(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
             Assert.IsNull(cell.Value);
         }
 

@@ -217,7 +217,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(TableReaderBase.ToRow(obj, typeof(T), this.Config.ForeignLoader).Cells);
+            return this.Insert(this.TableInfo.GetObjCells(obj, true, this.Config.ForeignLoader).ToArray());
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => TableReaderBase.ToRow(obj, typeof(T), this.Config.ForeignLoader)).ToArray());
+            this.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)).ToArray());
         }
 
         /// <summary>
@@ -240,12 +240,11 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
+            var cells = this.TableInfo.GetObjCells(obj, false, this.Info.Config.ForeignLoader);
             if (columns.Length == 0)
-                return base.Update(this.TableInfo.GetCells(obj, this.Info.Config.ForeignLoader).ToArray());
+                return base.Update(cells.ToArray());
 
-            var cells = this.TableInfo
-                .GetCells(obj, this.Info.Config.ForeignLoader)
-                .Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
+            cells = cells.Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
 
             var toUpdate = cells.ToArray();
             if (toUpdate.Length == 0)
