@@ -18,7 +18,13 @@ namespace SharpOrm.Builder
         /// Gets the name of the table.
         /// </summary>
         public string Name { get; }
+        /// <summary>
+        /// Indicates whether there is any column with a non-native type (Stream is considered native in this context).
+        /// </summary>
         public bool HasNonNative { get; private set; }
+        /// <summary>
+        /// Indicates whether there is any column representing a foreign object.
+        /// </summary>
         public bool HasFk { get; private set; }
         /// <summary>
         /// Gets an array of column information for the table.
@@ -55,7 +61,7 @@ namespace SharpOrm.Builder
                 if (col.IsForeignKey)
                     this.HasFk = true;
 
-                if (col.IsNative && col.IsForeignKey)
+                if (!col.IsNative && !col.IsForeignKey)
                     this.HasNonNative = true;
 
                 yield return col;
@@ -86,6 +92,13 @@ namespace SharpOrm.Builder
             return this.GetObjCells(owner, !ignorePrimaryKey, readForeignKey);
         }
 
+        /// <summary>
+        /// Transforms the object into a Row.
+        /// </summary>
+        /// <param name="owner">Object that should have its columns read.</param>
+        /// <param name="readPk">Indicates whether primary keys can be retrieved.</param>
+        /// <param name="readFk">Indicates whether foreign keys can be retrieved.</param>
+        /// <returns></returns>
         public Row GetRow(object owner, bool readPk, bool readFk)
         {
             if (owner is Row row)
@@ -94,6 +107,13 @@ namespace SharpOrm.Builder
             return new Row(this.GetObjCells(owner, readPk, readFk).ToArray());
         }
 
+        /// <summary>
+        /// Retrieve the value of a column.
+        /// </summary>
+        /// <param name="owner">Object that contains the column.</param>
+        /// <param name="name">Name of the column from which to retrieve the value.</param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
             name = name.ToLower();

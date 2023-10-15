@@ -31,7 +31,6 @@ namespace SharpOrm.Builder.DataTranslation
 
         public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token) where T : new();
 
-
         /// <summary>
         /// Parses an object of type <typeparamref name="T"/> from the database reader.
         /// </summary>
@@ -80,6 +79,7 @@ namespace SharpOrm.Builder.DataTranslation
         }
 
         public abstract void LoadForeignKeys();
+
         public void SetConnection(DbTransaction transaction)
         {
             this.transaction = transaction;
