@@ -575,9 +575,10 @@ namespace SharpOrm
         {
             List<T> list = new List<T>();
 
+            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    list.Add((T)TableReaderBase.Registry.FromSql<T>(LoadDbObject(reader[0])));
+                    list.Add((T)TableReaderBase.Registry.FromSql<T>(tReader.ReadDbObject(reader[0])));
 
             return list.ToArray();
         }
@@ -598,18 +599,14 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
+            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Select())
             {
                 object result = cmd.ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
-                return LoadDbObject(result);
+                return tReader.ReadDbObject(result);
             }
-        }
-
-        private object LoadDbObject(object obj)
-        {
-            return ObjectLoader.LoadFromDatabase(obj, this.Info.Config);
         }
 
         public Query JoinToDelete(params string[] join)

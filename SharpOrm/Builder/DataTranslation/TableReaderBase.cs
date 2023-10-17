@@ -18,6 +18,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         public static TranslationRegistry Registry { get; set; } = new TranslationRegistry();
         protected readonly IQueryConfig config;
+        private readonly bool convertToUtc;
         private bool disposed;
         public bool Disposed => this.disposed;
 
@@ -26,6 +27,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public TableReaderBase(IQueryConfig config)
         {
+            this.convertToUtc = config.DateKind == DateTimeKind.Utc;
             this.config = config;
         }
 
@@ -71,11 +73,15 @@ namespace SharpOrm.Builder.DataTranslation
             if (index < 0 || index > reader.FieldCount)
                 throw new ArgumentOutOfRangeException();
 
-            object value = Registry.FromSql(reader[index], reader.GetFieldType(index));
-            if (ObjectLoader.CanLoad(value, config))
-                value = ObjectLoader.LoadFromDatabase(value, config);
+            return new Cell(reader.GetName(index), ReadDbObject(reader[index]));
+        }
 
-            return new Cell(reader.GetName(index), value);
+        internal object ReadDbObject(object obj)
+        {
+            if (this.convertToUtc && obj is DateTime date)
+                return date.FromDatabase(config); ;
+
+            return obj;
         }
 
         public abstract void LoadForeignKeys();

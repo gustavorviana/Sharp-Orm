@@ -82,7 +82,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <param name="fullName">The full column name.</param>
         private void LoadColumnValue(object owner, ColumnInfo column, DbDataReader reader, int index, string name, string fullName)
         {
-            if (column.IsNative) column.Set(owner, ObjectLoader.LoadFromDatabase(reader[index], this.config));
+            if (column.IsNative) column.Set(owner, this.ReadDbObject(reader[index]));
             else if (column.IsForeignKey) this.EnqueueForeign(owner, reader.Get(column.ForeignKey), column);
             else column.SetRaw(owner, ParseFromReader(column.Type, reader, fullName));
         }
@@ -249,7 +249,7 @@ namespace SharpOrm.Builder.DataTranslation
                 if (hasFirstRead)
                 {
                     foreach (var kv in colsMap)
-                        kv.Value.Set(owner, reader[kv.Key]);
+                        kv.Value.Set(owner, this.reader.ReadDbObject(reader[kv.Key]));
 
                     this.LoadFkObjs(owner, reader);
                     return owner;
@@ -261,7 +261,7 @@ namespace SharpOrm.Builder.DataTranslation
                     var name = reader.GetName(i).ToLower();
                     if (columns.FirstOrDefault(c => name == c.Name.ToLower()) is ColumnInfo ci)
                     {
-                        ci.Set(owner, reader[i]);
+                        ci.Set(owner, this.reader.ReadDbObject(reader[i]));
                         columns.Remove(ci);
                         colsMap[i] = ci;
                     }

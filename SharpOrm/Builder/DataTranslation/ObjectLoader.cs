@@ -4,27 +4,6 @@ namespace SharpOrm.Builder.DataTranslation
 {
     internal static class ObjectLoader
     {
-        public static bool CanLoad(object obj, IQueryConfig config)
-        {
-            return config != null && obj is DateTime;
-        }
-
-        public static object LoadFromDatabase(object obj, IQueryConfig config)
-        {
-            if (obj is DateTime date)
-                return date.FromDatabase(config);
-
-            return obj;
-        }
-
-        public static object SaveToDatabase(object obj, IQueryConfig config)
-        {
-            if (obj is DateTime date)
-                return date.ToDatabase(config);
-
-            return obj;
-        }
-
         public static DateTime ToDatabase(this DateTime date, IQueryConfig config)
         {
             if (config.DateKind == date.Kind || config.DateKind == DateTimeKind.Unspecified)

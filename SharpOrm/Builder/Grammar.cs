@@ -26,6 +26,7 @@ namespace SharpOrm.Builder
         private bool _disposed = false;
         private readonly ParamWriter whereWriter;
         private readonly ParamWriter valuesWriter;
+        protected readonly bool convertToUtc;
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
         protected Query Query { get; }
@@ -35,6 +36,7 @@ namespace SharpOrm.Builder
 
         protected Grammar(Query query)
         {
+            this.convertToUtc = query.Info.Config.DateKind == DateTimeKind.Utc;
             this.whereWriter = new ParamWriter(this, 'c');
             this.valuesWriter = new ParamWriter(this, 'v');
             this.Query = query;
@@ -183,6 +185,7 @@ namespace SharpOrm.Builder
         #endregion
 
         #region Parameters
+
         /// <summary>
         /// Returns a clause parameter value registered in the WHERE clause of the query.
         /// </summary>
@@ -207,11 +210,20 @@ namespace SharpOrm.Builder
         {
             var p = this.Command.CreateParameter();
             p.ParameterName = name;
-            p.Value = ObjectLoader.SaveToDatabase(value, this.Info.Config);
+            p.Value = ToDbValue(value);
 
             this.Command.Parameters.Add(p);
             return p;
         }
+
+        private object ToDbValue(object obj)
+        {
+            if (this.convertToUtc && obj is DateTime date)
+                return date.ToDatabase(this.Query.Info.Config);
+
+            return obj;
+        }
+
         #endregion
 
         /// <summary>
