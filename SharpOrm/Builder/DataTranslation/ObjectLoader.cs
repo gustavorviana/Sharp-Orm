@@ -6,18 +6,15 @@ namespace SharpOrm.Builder.DataTranslation
     {
         public static DateTime ToDatabase(this DateTime date, IQueryConfig config)
         {
-            if (config.DateKind == date.Kind || config.DateKind == DateTimeKind.Unspecified)
+            if (config.DateKind == date.Kind)
                 return date;
 
-            if (config.DateKind == DateTimeKind.Utc)
-                return date.ToUniversalTime();
-
-            return date.ToLocalTime();
+            return config.DateKind == DateTimeKind.Utc ? date.ToUniversalTime() : date.ToLocalTime();
         }
 
         public static DateTime FromDatabase(this DateTime date, IQueryConfig config)
         {
-            if (config.DateKind == DateTimeKind.Unspecified || config.DateKind == DateTimeKind.Local)
+            if (date.Kind == config.DateKind || config.DateKind == DateTimeKind.Local)
                 return date;
 
             return new DateTime(date.Ticks, DateTimeKind.Utc).ToLocalTime();

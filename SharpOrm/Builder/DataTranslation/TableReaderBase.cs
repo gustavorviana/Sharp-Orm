@@ -79,7 +79,7 @@ namespace SharpOrm.Builder.DataTranslation
         internal object ReadDbObject(object obj)
         {
             if (this.convertToUtc && obj is DateTime date)
-                return date.FromDatabase(config); ;
+                return date.FromDatabase(config);
 
             return obj;
         }
