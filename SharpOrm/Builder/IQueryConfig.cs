@@ -11,6 +11,11 @@ namespace SharpOrm.Builder
         DateTimeKind DateKind { get; set; }
 
         /// <summary>
+        /// Timezone to be used for date conversion.
+        /// </summary>
+        TimeZoneInfo LocalTimeZone { get; set; }
+
+        /// <summary>
         /// Indicates if value modifications in the table should be made with "WHERE" (this is not valid for insert-and-select).
         /// </summary>
         bool OnlySafeModifications { get; }

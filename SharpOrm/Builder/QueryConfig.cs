@@ -17,6 +17,9 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public bool ForeignLoader { get; set; }
 
+        /// <inheritdoc/>
+        public TimeZoneInfo LocalTimeZone { get; set; } = TimeZoneInfo.Local;
+
         public QueryConfig() : this(true)
         {
 
