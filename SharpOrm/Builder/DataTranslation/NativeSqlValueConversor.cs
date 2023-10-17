@@ -28,18 +28,8 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>True if the type is nullable, false otherwise.</returns>
         internal static bool IsNative(Type type)
         {
-            return type == null || binaryTranslator.CanWork(type) || IsNullable(type) || type.IsPrimitive ||
-                type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type);
-        }
-
-        /// <summary>
-        /// Determines if a type is nullable.
-        /// </summary>
-        /// <param name="type">The type to check.</param>
-        /// <returns>True if the type is nullable, false otherwise.</returns>
-        internal static bool IsNullable(Type type)
-        {
-            return type == typeof(Nullable<>) || type.Name == "Nullable`1";
+            return type == null || binaryTranslator.CanWork(type) || Nullable.GetUnderlyingType(type) != null || 
+                type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type);
         }
 
         /// <summary>

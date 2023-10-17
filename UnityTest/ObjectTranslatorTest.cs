@@ -166,6 +166,12 @@ namespace UnityTest
             Assert.AreEqual(value, TableReaderBase.Registry.FromSql(value, typeof(int?)));
         }
 
+        [TestMethod]
+        public void CanParseNull()
+        {
+             Assert.AreEqual(true, new NativeSqlValueConversor().CanWork(typeof(int?)));
+        }
+
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
             var prop = table.Columns.FirstOrDefault(c => c.Name == propName);
