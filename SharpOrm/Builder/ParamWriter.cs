@@ -9,7 +9,6 @@ namespace SharpOrm.Builder
 {
     internal class ParamWriter
     {
-        private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         private readonly Grammar grammar;
         private readonly char paramChar;
         private int writes = 0;
@@ -22,72 +21,36 @@ namespace SharpOrm.Builder
 
         public string LoadValue(object value, bool allowAlias)
         {
-            return this.InternalLoadValue(value, allowAlias, false);
-        }
-
-        private string InternalLoadValue(object value, bool allowAlias, bool isValueOfList)
-        {
             if (value is ISqlExpressible expression)
                 value = expression.ToSafeExpression(this.grammar.Info.ToReadOnly(), allowAlias);
 
             if (!(value is SqlExpression exp))
-                return this.LoadParameter(value, allowAlias, isValueOfList);
+                return this.LoadParameter(value, allowAlias);
 
             return new StringBuilder()
                 .AppendReplaced(
                     exp.ToString(),
                     '?',
-                    c => this.LoadParameter(exp.Parameters[c - 1], allowAlias, isValueOfList)
+                    c => this.LoadParameter(exp.Parameters[c - 1], allowAlias)
                 ).ToString();
         }
 
-        private string LoadParameter(object value, bool allowAlias, bool isValueOfList)
+        private string LoadParameter(object value, bool allowAlias)
         {
-            if (value is ICollection col && !this.CanTranslate(value))
-                return string.Format("({0})", this.RegisterCollectionParameters(col, allowAlias, isValueOfList));
-
             value = TableReaderBase.Registry.ToSql(value);
             if (!(value is byte[]) && value is ICollection)
                 throw new NotSupportedException();
 
-            if (ToSql(value) is string sqlValue)
-                return sqlValue;
+            if (QueryConstructor.ToQueryValue(value) is string sql)
+                return sql;
 
             this.writes++;
             return this.grammar.RegisterParameter(string.Format("@{0}{1}", this.paramChar, this.writes), value).ParameterName;
         }
 
-        private bool CanTranslate(object value)
-        {
-            return TableReaderBase.Registry.GetFor(value.GetType()) != null;
-        }
-
-        private string RegisterCollectionParameters(ICollection collection, bool allowAlias, bool isValueOfList)
-        {
-            if (isValueOfList)
-                throw new NotSupportedException("You cannot use a collection as a value in another collection.");
-
-            string items = string.Join(", ", collection.Cast<object>().Select(c => this.LoadValue(c, allowAlias)));
-            if (string.IsNullOrEmpty(items))
-                throw new InvalidOperationException("Cannot use an empty collection in the query.");
-
-            return items;
-        }
-
         public void Reset()
         {
             this.writes = 0;
-        }
-
-        private string ToSql(object value)
-        {
-            if (TranslationUtils.IsNull(value))
-                return "NULL";
-
-            if (TranslationUtils.IsNumeric(value?.GetType()))
-                return ((IConvertible)value).ToString(Invariant);
-
-            return null;
         }
     }
 }

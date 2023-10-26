@@ -2,6 +2,7 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using UnityTest.Utils;
@@ -83,16 +84,83 @@ namespace UnityTest
         [TestMethod]
         public void WhereBetween()
         {
-            DateTime now = DateTime.Now;
-            DateTime past = now.AddDays(-1);
             using var query = NewQuery();
-            query.OrWhereNotBetween("Date", past, now);
+            query.WhereBetween("N", 1, 2).OrWhereBetween("N2", 3, 4);
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Date` NOT BETWEEN @c1 AND @c2", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", past);
-            AreEqualsParameter(cmd.Parameters[1], "@c2", now);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` BETWEEN 1 AND 2 OR `N2` BETWEEN 3 AND 4", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void WhereNotBetween()
+        {
+            using var query = NewQuery();
+            query.WhereNotBetween("N", 1, 2).OrWhereNotBetween("N2", 3, 4);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT BETWEEN 1 AND 2 OR `N2` NOT BETWEEN 3 AND 4", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void WhereExistsExpression()
+        {
+            using var query = NewQuery();
+            query.Exists(new SqlExpression("1")).OrExists(new SqlExpression("?", "5"));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (1) OR EXISTS (@c1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "5");
+        }
+
+        [TestMethod]
+        public void WhereNotExistsExpression()
+        {
+            using var query = NewQuery();
+            query.NotExists(new SqlExpression("1")).OrNotExists(new SqlExpression("?", "5"));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (1) OR NOT EXISTS (@c1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "5");
+        }
+
+        [TestMethod]
+        public void WhereExistsQuery()
+        {
+            using var qTest = NewQuery("Test").Select("Col");
+            qTest.Where("Col", ">", 1);
+
+            using var qTest2 = NewQuery("Test").Select("Col");
+            qTest2.Where("Col1", "=", "2");
+
+            using var query = NewQuery();
+            query.Exists(qTest).OrExists(qTest2);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @c1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "2");
+        }
+
+        [TestMethod]
+        public void WhereNotExistsQuery()
+        {
+            using var qTest = NewQuery("Test").Select("Col");
+            qTest.Where("Col", ">", 1);
+
+            using var qTest2 = NewQuery("Test").Select("Col");
+            qTest2.Where("Col1", "=", "2");
+
+            using var query = NewQuery();
+            query.NotExists(qTest).OrNotExists(qTest2);
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @c1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "2");
         }
 
         [TestMethod]
@@ -126,7 +194,55 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 IN (`Status`,`Status2`) OR 4 IN (`Status3`,`Status4`)", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 IN (`Status`, `Status2`) OR 4 IN (`Status3`, `Status4`)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void WhereInExpression()
+        {
+            using var query = NewQuery();
+            query.WhereIn("N", new SqlExpression("1, ?", "2")).OrWhereIn("N2", new SqlExpression("3, ?", "4"));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, @c1) OR `N2` IN (3, @c2)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void WhereNotInExpression()
+        {
+            using var query = NewQuery();
+            query.WhereNotIn("N", new SqlExpression("1, ?", "2")).OrWhereNotIn("N2", new SqlExpression("3, ?", "4"));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, @c1) OR `N2` NOT IN (3, @c2)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void WhereInList()
+        {
+            using var query = NewQuery();
+            query.WhereIn<int>("N", new List<int> { 1, 2 }).OrWhereIn<string>("N2", new List<string> { "3", "4" });
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, 2) OR `N2` IN (@c1, @c2)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "3");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "4");
+        }
+
+        [TestMethod]
+        public void WhereNotInList()
+        {
+            using var query = NewQuery();
+            query.WhereNotIn<int>("N", new List<int> { 1, 2 }).OrWhereNotIn<string>("N2", new List<string> { "3", "4" });
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, 2) OR `N2` NOT IN (@c1, @c2)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "3");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "4");
         }
 
         [TestMethod]
@@ -137,7 +253,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 NOT IN (`Status`,`Status2`) OR 4 NOT IN (`Status3`,`Status4`)", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1 NOT IN (`Status`, `Status2`) OR 4 NOT IN (`Status3`, `Status4`)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -155,7 +271,7 @@ namespace UnityTest
         public void SelectWhereNotNull()
         {
             using var query = NewQuery();
-            query.WhereNot("Column", null).OrWhereNot("Column2", null);
+            query.WhereNotNull("Column").OrWhereNotNull("Column2");
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
 
@@ -166,7 +282,29 @@ namespace UnityTest
         public void SelectWhereNull()
         {
             using var query = NewQuery();
-            query.Where("Column", null).OrWhereNull("Column2");
+            query.Where("Column", null).WhereNull("Column3").OrWhereNull("Column2");
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL AND `Column3` IS NULL OR `Column2` IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectExpression()
+        {
+            using var query = NewQuery();
+            query.Where(new SqlExpression("`Column` IS NULL"));
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectExpressionOr()
+        {
+            using var query = NewQuery();
+            query.Where(new SqlExpression("`Column` IS NULL")).OrWhere(new SqlExpression("`Column2` IS NULL"));
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
 
@@ -363,6 +501,45 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectWhereStartsWith()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.WhereStartsWith("Name", "Rod").OrWhereStartsWith("Name", "Mar");
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` LIKE @c1 OR `Name` LIKE @c2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "Rod%");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "Mar%");
+        }
+
+        [TestMethod]
+        public void SelectWhereContains()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.WhereContains("Title", "10%").OrWhereContains("Title", "pixel");
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @c1 OR `Title` LIKE @c2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "%10\\%%");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "%pixel%");
+        }
+
+        [TestMethod]
+        public void SelectWhereEndsWith()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.WhereEndsWith("Title", "30%").OrWhereEndsWith("Title", "80%");
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @c1 OR `Title` LIKE @c2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@c1", "%30\\%");
+            AreEqualsParameter(cmd.Parameters[1], "@c2", "%80\\%");
+        }
+
+        [TestMethod]
         public void SelectWhereRawColumn()
         {
             using var query = new Query(Connection, TABLE);
@@ -383,6 +560,28 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
             Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = UPPER(column2)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereCallback()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Where(q => q.Where("C1", 1).Where("C2", 2)).OrWhere(q => q.Where("C3", 3).Where("C4", 5));
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`C1` = 1 AND `C2` = 2) OR (`C3` = 3 AND `C4` = 5)", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectWhereSubCallback()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Where(q => q.Where("C1", 1).Where("C2", 2).Where(q => q.Where("C3", 3).Where("C4", 5)));
+
+            using var g = new MysqlGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`C1` = 1 AND `C2` = 2 AND (`C3` = 3 AND `C4` = 5))", cmd.CommandText);
         }
 
         [TestMethod]
@@ -463,7 +662,7 @@ namespace UnityTest
         [TestMethod]
         public void ColumnCase()
         {
-            const string SQL = "CASE `Column` WHEN ? THEN ? WHEN ? THEN ? END";
+            const string SQL = "CASE `Column` WHEN 1 THEN ? WHEN 0 THEN ? END";
             using var query = NewQuery().OrderBy("Name");
 
             var c = new Case("Column", "Alias").When(1, "Yes").When(0, "No");

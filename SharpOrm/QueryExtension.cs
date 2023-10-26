@@ -56,30 +56,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause with a specified operation and value using an SQL expression.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the comparison on.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="value">The SQL expression representing the value to compare with.</param>
-        public static QueryBase Where(this QueryBase qBase, string column, string operation, SqlExpression value)
-        {
-            return qBase.WriteWhere(column, operation, value, "AND");
-        }
-
-        /// <summary>
-        /// Adds a WHERE clause with a specified operation and value using an SQL expression.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the comparison on.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="value">The SQL expression representing the value to compare with.</param>
-        public static QueryBase Where(this QueryBase qBase, Column column, string operation, SqlExpression value)
-        {
-            return qBase.WriteWhere(column, operation, value, "AND");
-        }
-
-        /// <summary>
         /// Adds a WHERE clause with a specified operation and value.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
@@ -89,18 +65,6 @@ namespace SharpOrm
         public static QueryBase Where(this QueryBase qBase, Column column, string operation, object value)
         {
             return qBase.WriteWhere(column, operation, value, "AND");
-        }
-
-        /// <summary>
-        /// Adds a WHERE clause with a specified operation between two columns.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column1">The first column for comparison.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="column2">The second column for comparison.</param>
-        public static QueryBase Where(this QueryBase qBase, Column column1, string operation, Column column2)
-        {
-            return qBase.WriteWhere(column1, operation, column2, "AND");
         }
 
         /// <summary>
@@ -179,7 +143,7 @@ namespace SharpOrm
         /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase WhereInColumn(this QueryBase qBase, object value, params string[] columns)
         {
-            return WhereInColumn(qBase, false, false, value, columns);
+            return WhereInColumn(qBase, false, value, columns, QueryBase.AND);
         }
 
         /// <summary>
@@ -190,7 +154,7 @@ namespace SharpOrm
         /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase WhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
         {
-            return WhereInColumn(qBase, true, false, value, columns);
+            return WhereInColumn(qBase, true, value, columns, QueryBase.AND);
         }
 
         #endregion
@@ -241,30 +205,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause with a specified operation and SQL expression value.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the comparison on.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="value">The SQL expression representing the value to compare with.</param>
-        public static QueryBase OrWhere(this QueryBase qBase, string column, string operation, SqlExpression value)
-        {
-            return qBase.WriteWhere(column, operation, value, "OR");
-        }
-
-        /// <summary>
-        /// Adds an OR WHERE clause with a specified operation and SQL expression value.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the comparison on.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="value">The SQL expression representing the value to compare with.</param>
-        public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, SqlExpression value)
-        {
-            return qBase.WriteWhere(column, operation, value, "OR");
-        }
-
-        /// <summary>
         /// Adds an OR WHERE clause with a specified operation and value.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
@@ -274,18 +214,6 @@ namespace SharpOrm
         public static QueryBase OrWhere(this QueryBase qBase, Column column, string operation, object value)
         {
             return qBase.WriteWhere(column, operation, value, "OR");
-        }
-
-        /// <summary>
-        /// Adds an OR WHERE clause between two columns with a specified operation.
-        /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column1">The first column for comparison.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="column2">The second column for comparison.</param>
-        public static QueryBase OrWhere(this QueryBase qBase, Column column1, string operation, Column column2)
-        {
-            return qBase.WriteWhere(column1, operation, column2, "OR");
         }
 
         /// <summary>
@@ -364,7 +292,7 @@ namespace SharpOrm
         /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase OrWhereInColumn(this QueryBase qBase, object value, params string[] columns)
         {
-            return WhereInColumn(qBase, false, true, value, columns);
+            return WhereInColumn(qBase, false, value, columns, QueryBase.OR);
         }
 
         /// <summary>
@@ -375,18 +303,22 @@ namespace SharpOrm
         /// <param name="columns">The names of the columns to check.</param>
         public static QueryBase OrWhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
         {
-            return WhereInColumn(qBase, true, true, value, columns);
+            return WhereInColumn(qBase, true, value, columns, QueryBase.OR);
         }
 
         #endregion
 
-        private static QueryBase WhereInColumn(QueryBase qBase, bool not, bool or, object value, IEnumerable<string> columns)
+        private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
         {
-            string @in = not ? "NOT IN" : "IN";
-            columns = columns.Select(qBase.Info.Config.ApplyNomenclature);
-            var exp = new SqlExpression($"? {@in} ({string.Join(",", columns)})", value);
+            qBase.WriteWhereType(whereType);
+            qBase.Info.Where.AddParameter(value);
 
-            return or ? qBase.OrWhere(exp) : qBase.Where(exp);
+            if (not)
+                qBase.Info.Where.Add(" NOT");
+
+            qBase.Info.Where.Add(" IN ").WriteEnumerableAsValue(columns.Select(c => new Column(qBase.Info.Config.ApplyNomenclature(c))), true);
+
+            return qBase;
         }
 
         internal static SqlExpression ToSafeExpression(this ISqlExpressible exp, IReadonlyQueryInfo info, bool allowAlias)

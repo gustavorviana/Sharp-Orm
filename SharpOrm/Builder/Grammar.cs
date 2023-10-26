@@ -100,7 +100,7 @@ namespace SharpOrm.Builder
         /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
-        internal DbCommand InsertQuery(Query query, string[] columnNames)
+        internal DbCommand InsertQuery(QueryBase query, string[] columnNames)
         {
             this.Reset();
 
@@ -113,7 +113,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The query to be configured.</param>
         /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected abstract void ConfigureInsertQuery(Query query, string[] columnNames);
+        protected abstract void ConfigureInsertQuery(QueryBase query, string[] columnNames);
 
         /// <summary>
         /// Inserts a new record into the database table with the specified cell values.

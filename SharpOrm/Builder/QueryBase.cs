@@ -1,5 +1,7 @@
 ﻿using SharpOrm.Errors;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -14,9 +16,9 @@ namespace SharpOrm.Builder
         internal const string AND = "AND";
         internal const string OR = "OR";
 
+        private bool _ignoreWhereType = false;
         private bool _disposed = false;
         protected internal QueryInfo Info { get; }
-        #endregion
 
         public bool Disposed => this._disposed;
         private static string[] AvailableOperations { get; } = {
@@ -36,14 +38,15 @@ namespace SharpOrm.Builder
             "is",
             "is not"
         };
+        #endregion
 
         /// <summary>
         /// Initializes a new instance of the QueryBase class with the specified configuration.
         /// </summary>
         /// <param name="config">The configuration to use for the query.</param>
-        public QueryBase(IQueryConfig config)
+        public QueryBase(IQueryConfig config, DbName table)
         {
-            this.Info = new QueryInfo(config);
+            this.Info = new QueryInfo(config, table);
         }
 
         #region Where
@@ -53,9 +56,9 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expressible">The ISqlExpressible object that contains the expression to be added to the WHERE statement.</param>
         /// <returns>The QueryBase instance to allow for method chaining.</returns>
-        public QueryBase Where(ISqlExpressible expressible)
+        public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
-            return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
+            return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -65,7 +68,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(SqlExpression expression)
         {
-            return this.WriteWhere(ToSql(expression), AND);
+            this.WriteWhereType(AND);
+            this.Info.Where.AddParameter(expression);
+            return this;
         }
 
         /// <summary>
@@ -76,7 +81,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(string column, object value)
         {
-            return this.Where(column, value == null ? "IS" : "=", value);
+            return this.Where(column, value is null ? "IS" : "=", value);
         }
 
         /// <summary>
@@ -87,7 +92,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase WhereNot(string column, object value)
         {
-            return this.Where(column, value == null ? "IS NOT" : "!=", value);
+            return this.Where(column, value is null ? "IS NOT" : "!=", value);
         }
 
         /// <summary>
@@ -127,22 +132,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(QueryCallback callback)
         {
-            var query = new QueryBase(this.Info.Config);
-            callback(query);
-
-            return this.WriteQuery(query, AND);
+            return this.WriteCallback(callback, AND);
         }
 
-        /// <summary>
-        /// Adds a clause to the "WHERE" statement based on an QueryBase object, where the expression is safely converted to a SqlExpression.
-        /// </summary>
-        /// <param name="query">The QueryBase object that contains the expression to be added to the WHERE statement.</param>
-        /// <returns>The QueryBase instance to allow for method chaining.</returns>
-        public QueryBase Where(QueryBase query)
-        {
-            return this.WriteQuery(query, AND);
-        }
-        
         /// <summary>
         /// Adds a value comparison clause between columns in "WHERE"
         /// </summary>
@@ -153,11 +145,10 @@ namespace SharpOrm.Builder
         public QueryBase WhereColumn(string column1, string operation, string column2)
         {
             CheckIsAvailableOperation(operation);
+            this.WriteWhereType(AND);
 
-            column1 = this.Info.Config.ApplyNomenclature(column1);
-            column2 = this.Info.Config.ApplyNomenclature(column2);
-
-            return this.WriteWhere($"{column1} {operation} {column2}", AND);
+            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            return this;
         }
 
         /// <summary>
@@ -191,7 +182,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase Exists(Query query)
         {
-            return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", AND);
+            return this.WriteExists(query, false, AND);
         }
 
         /// <summary>
@@ -201,7 +192,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase Exists(SqlExpression exp)
         {
-            return this.WriteWhere($"EXISTS ({this.ToSql(exp)})", AND);
+            return this.WriteExists(exp, false, AND);
         }
 
         /// <summary>
@@ -211,7 +202,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase NotExists(Query query)
         {
-            return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", AND);
+            return this.WriteExists(query, true, AND);
         }
 
         /// <summary>
@@ -221,7 +212,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase NotExists(SqlExpression exp)
         {
-            return this.WriteWhere($"NOT EXISTS ({this.ToSql(exp)})", AND);
+            return this.WriteExists(exp, true, AND);
         }
 
         #endregion
@@ -231,9 +222,9 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Adds an OR condition to the WHERE clause of the query.
         /// </summary>
-        public QueryBase OrWhere(ISqlExpressible expressible)
+        public QueryBase OrWhere(ISqlExpressible expressible, bool allowAlias = false)
         {
-            return this.OrWhere(expressible.ToSafeExpression(this.Info.ToReadOnly(), false));
+            return this.OrWhere(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -243,7 +234,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(SqlExpression expression)
         {
-            return this.WriteWhere(this.ToSql(expression), OR);
+            this.WriteWhereType(OR);
+            this.Info.Where.AddParameter(expression);
+            return this;
         }
 
         /// <summary>
@@ -254,7 +247,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(string column, object value)
         {
-            return this.OrWhere(column, value == null ? "IS" : "=", value);
+            return this.OrWhere(column, value is null ? "IS" : "=", value);
         }
 
         /// <summary>
@@ -265,7 +258,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhereNot(string column, object value)
         {
-            return this.OrWhere(column, value == null ? "IS NOT" : "!=", value);
+            return this.OrWhere(column, value is null ? "IS NOT" : "!=", value);
         }
 
         /// <summary>
@@ -305,20 +298,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(QueryCallback callback)
         {
-            var query = new QueryBase(this.Info.Config);
-            callback(query);
-
-            return this.WriteQuery(query, OR);
-        }
-
-        /// <summary>
-        /// Adds a clause to the "WHERE" statement based on an QueryBase object, where the expression is safely converted to a SqlExpression.
-        /// </summary>
-        /// <param name="query">The QueryBase object that contains the expression to be added to the WHERE statement.</param>
-        /// <returns>The QueryBase instance to allow for method chaining.</returns>
-        public QueryBase OrWhere(QueryBase query)
-        {
-            return this.WriteQuery(query, OR);
+            return this.WriteCallback(callback, OR);
         }
 
         /// <summary>
@@ -331,11 +311,10 @@ namespace SharpOrm.Builder
         public QueryBase OrWhereColumn(string column1, string operation, string column2)
         {
             CheckIsAvailableOperation(operation);
+            this.WriteWhereType(OR);
 
-            column1 = this.Info.Config.ApplyNomenclature(column1);
-            column2 = this.Info.Config.ApplyNomenclature(column2);
-
-            return this.WriteWhere($"{column1} {operation} {column2}", OR);
+            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            return this;
         }
 
         /// <summary>
@@ -366,7 +345,7 @@ namespace SharpOrm.Builder
         /// <param name="query">The subquery to check.</param>
         public QueryBase OrExists(Query query)
         {
-            return this.WriteWhere($"EXISTS {this.RegisterQuery(query)}", OR);
+            return this.WriteExists(query, false, OR);
         }
 
         /// <summary>
@@ -375,7 +354,7 @@ namespace SharpOrm.Builder
         /// <param name="exp">The subquery to check.</param>
         public QueryBase OrExists(SqlExpression exp)
         {
-            return this.WriteWhere($"EXISTS ({this.ToSql(exp)})", OR);
+            return this.WriteExists(exp, false, OR);
         }
 
         /// <summary>
@@ -384,7 +363,7 @@ namespace SharpOrm.Builder
         /// <param name="query">The subquery to check.</param>
         public QueryBase OrNotExists(Query query)
         {
-            return this.WriteWhere($"NOT EXISTS {this.RegisterQuery(query)}", OR);
+            return this.WriteExists(query, true, OR);
         }
 
         /// <summary>
@@ -393,70 +372,75 @@ namespace SharpOrm.Builder
         /// <param name="exp">The subquery to check.</param>
         public QueryBase OrNotExists(SqlExpression exp)
         {
-            return this.WriteWhere($"NOT EXISTS ({this.ToSql(exp)})", OR);
+            return this.WriteExists(exp, true, OR);
         }
 
         #endregion
 
         #region Where builder
 
-        private QueryBase WriteQuery(QueryBase query, string type)
+        private QueryBase WriteCallback(QueryCallback callback, string whereType)
         {
-            if (query == null)
-                throw new ArgumentNullException(nameof(query));
-
-            if (query == this)
-                throw new InvalidOperationException(Messages.SourceQueryEqualToProvidedQuery);
-
-            if (!query.Info.Where.Empty)
+            int lastSize = this.Info.Where.query.Length;
+            try
             {
-                this.Info.Where.AddParameters(query.Info.Where.Parameters);
-                return this.WriteWhere($"({query.Info.Where})", type);
+                this.WriteWhereType(whereType);
+                this._ignoreWhereType = true;
+
+                this.Info.Where.Add('(');
+                callback(this);
+                this.Info.Where.Add(')');
             }
+            catch
+            {
+                this.Info.Where.query.Length = lastSize;
+                throw;
+            }
+
+            return this;
+        }
+
+        private QueryBase WriteExists(object queryObj, bool not, string whereType)
+        {
+            this.WriteWhereType(whereType);
+
+            if (not) this.Info.Where.Add("NOT ");
+            this.Info.Where.Add("EXISTS ");
+
+            if (queryObj is Query query) this.WriteQuery(query);
+            else this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
 
             return this;
         }
 
         private QueryBase WriteBetween(object toCheck, object arg1, object arg2, bool isNot, string whereType)
         {
-            StringBuilder builder = new StringBuilder();
-            builder.Append(ParseBetweenArgument(toCheck));
+            this.WriteWhereType(whereType);
+            this.WriteBetweenArgument(toCheck);
+
             if (isNot)
-                builder.Append(" NOT");
+                this.Info.Where.Add(" NOT");
 
-            builder.Append(" BETWEEN ");
-            builder.Append(ParseBetweenArgument(arg1));
-            builder.Append(" AND ");
-            builder.Append(ParseBetweenArgument(arg2));
+            this.Info.Where.Add(" BETWEEN ");
+            this.WriteBetweenArgument(arg1);
+            this.Info.Where.Add(" AND ");
+            this.WriteBetweenArgument(arg2);
 
-            return this.WriteWhere(builder.ToString(), whereType);
+            return this;
         }
 
-        private string ParseBetweenArgument(object arg)
+        private QueryConstructor WriteBetweenArgument(object arg)
         {
             if (arg == null)
                 throw new ArgumentNullException(nameof(arg));
 
             if (arg is string strColumn)
-                return this.Info.Config.ApplyNomenclature(strColumn);
+                return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
 
-            if (arg is SqlExpression exp)
-                return ToSql(exp);
-
-            if (arg is ISqlExpressible expConvert)
-                return expConvert.ToSafeExpression(this.Info.ToReadOnly(), false).ToString();
-
-            if (arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive)
-                return this.RegisterParameterValue(arg);
+            if (arg is SqlExpression || arg is ISqlExpressible || arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive || arg is Enum)
+                return this.Info.Where.AddParameter(arg);
 
             throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
-        }
-
-        private string ToSql(SqlExpression expr)
-        {
-            this.Info.Where.AddParameters(expr.Parameters);
-
-            return expr.ToString();
         }
 
         internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
@@ -465,8 +449,21 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(column));
 
             CheckIsAvailableOperation(operation);
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
 
-            return this.WriteWhere($"{this.ParseColumn(column)} {operation} {this.ParseValue(value)}", type);
+            this.WriteWhereType(type);
+            this.ParseColumn(column);
+            this.Info.Where.Add().Add(operation).Add();
+
+            if (isExpressionList)
+                this.Info.Where.Add('(');
+
+            this.WriteValue(value);
+
+            if (isExpressionList)
+                this.Info.Where.Add(')');
+
+            return this;
         }
 
         /// <summary>
@@ -484,16 +481,16 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="column"></param>
         /// <returns></returns>
-        protected string ParseColumn(object column)
+        protected QueryConstructor ParseColumn(object column)
         {
             if (column is string strColumn)
-                return this.Info.Config.ApplyNomenclature(strColumn);
+                return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
 
-            if (column is ISqlExpressible expConvert)
-                column = expConvert.ToExpression(this.Info.ToReadOnly());
+            if (column is ISqlExpressible iExp)
+                column = iExp.ToSafeExpression(this.Info.ToReadOnly(), true);
 
-            if (column is SqlExpression exp && exp.Parameters.Length == 0)
-                return exp.ToString();
+            if (column is SqlExpression exp)
+                return this.Info.Where.Add(exp);
 
             throw new NotSupportedException("The column type is not supported.");
         }
@@ -503,45 +500,29 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected string ParseValue(object value)
+        protected QueryConstructor WriteValue(object value)
         {
-            if (value == null)
-                return "NULL";
+            if (value is ICollection collection)
+                return this.Info.Where.WriteEnumerableAsValue(collection, true);
 
-            if (value is ISqlExpressible expConvert)
-                value = expConvert.ToExpression(this.Info.ToReadOnly());
-
-            if (value is SqlExpression raw)
-                return ToSql(raw);
-
-            return this.RegisterParameterValue(value);
-        }
-
-        internal protected QueryBase WriteWhere(string rawSqlExpression, string type)
-        {
-            if (!this.Info.Where.Empty)
-                this.Info.Where.Add($" {type} ");
-
-            this.Info.Where.Add(rawSqlExpression);
-            return this;
-        }
-
-        private string RegisterParameterValue(object value)
-        {
             if (value is Query query)
-                return this.RegisterQuery(query);
+                return this.WriteQuery(query);
 
-            if (value is Enum) this.Info.Where.AddParameters(Convert.ToInt32(value));
-            else this.Info.Where.AddParameters(value);
-
-            return "?";
+            return this.Info.Where.AddParameter(value);
         }
 
-        private string RegisterQuery(Query query)
+        private QueryConstructor WriteQuery(Query query)
         {
-            this.Info.Where.AddParameters(query.Info.Where.Parameters);
+            return this.Info.Where.Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
+        }
 
-            return $"({query})";
+        internal void WriteWhereType(string type)
+        {
+            if (!this.Info.Where.Empty && !_ignoreWhereType)
+                this.Info.Where.Add("", type, "");
+
+            if (_ignoreWhereType)
+                _ignoreWhereType = false;
         }
 
         #endregion

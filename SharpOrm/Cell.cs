@@ -36,7 +36,7 @@ namespace SharpOrm
 
         public override string ToString()
         {
-            return string.Format("Column ({0}: {1})", this.Name, this.Value);
+            return string.Format("Column ({0}: {1})", this.Name, this.Value is null ? "NULL" : this.Value);
         }
 
         #region IEquatable

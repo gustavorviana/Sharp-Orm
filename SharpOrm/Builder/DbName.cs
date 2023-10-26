@@ -28,6 +28,11 @@ namespace SharpOrm.Builder
             this.Alias = alias;
         }
 
+        public static DbName Of<T>(string alias)
+        {
+            return new DbName(TableInfo.GetNameOf(typeof(T)), alias);
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DbName"/> struct with the specified full name.
         /// </summary>

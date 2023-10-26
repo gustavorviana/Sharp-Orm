@@ -17,14 +17,15 @@ namespace SharpOrm.Builder
 
         public IQueryConfig Config { get; }
 
-        public DbName TableName { get; set; }
+        public DbName TableName { get; }
 
         public string From => this.TableName.Name;
 
         public string Alias => this.TableName.Alias;
 
-        public QueryInfo(IQueryConfig config)
+        public QueryInfo(IQueryConfig config, DbName table)
         {
+            this.TableName = table;
             this._queryInfo = new ReadonlyInfo(this);
             this.Config = config ?? throw new ArgumentNullException(nameof(config));
             this.Where = new QueryConstructor(this.ToReadOnly());

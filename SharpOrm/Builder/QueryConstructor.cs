@@ -1,7 +1,12 @@
-﻿using System;
+﻿using SharpOrm.Builder.DataTranslation;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -11,7 +16,8 @@ namespace SharpOrm.Builder
     /// </summary>
     public sealed class QueryConstructor : IDisposable, ISqlExpressible
     {
-        private readonly StringBuilder query = new StringBuilder();
+        private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+        internal readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
@@ -44,21 +50,6 @@ namespace SharpOrm.Builder
             this.Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
-        public QueryConstructor AddParameter(object val, bool allowAlias = true)
-        {
-            return this.InternalAddParameter(val, true, allowAlias);
-        }
-
-        /// <summary>
-        /// Adds an expression to the query.
-        /// </summary>
-        /// <param name="expression">The expression to add.</param>
-        /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
-        public QueryConstructor AddExpression(ISqlExpressible expression, bool allowAlias = true)
-        {
-            return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
-        }
-
         /// <summary>
         /// Adds a <see cref="QueryConstructor"/> to this instance.
         /// </summary>
@@ -76,21 +67,13 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public QueryConstructor Add(string query, params object[] parameters)
-        {
-            if (query.Count(c => c == '?') != parameters.Length)
-                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
-
-            return this.Add(query.ToString()).AddParameters(parameters);
-        }
-
         /// <summary>
         /// Adds an <see cref="SqlExpression"/> to the query.
         /// </summary>
         /// <param name="expression">The <see cref="SqlExpression"/> to add.</param>
         public QueryConstructor Add(SqlExpression expression)
         {
-            return this.Add(expression.ToString()).AddParameters(expression.Parameters);
+            return this.Add(expression, false);
         }
 
         /// <summary>
@@ -100,41 +83,72 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
         public QueryConstructor Add(SqlExpression expression, bool allowAlias)
         {
-            StringBuilder builder = new StringBuilder(expression.ToString());
-            int[] paramCharIndexes = builder.GetIndexesOfParamsChar().ToArray();
+            return this.Add(expression.ToString(), allowAlias, expression.Parameters);
+        }
 
-            for (int i = paramCharIndexes.Length - 1; i >= 0; i--)
-                if (expression.Parameters[i] is ISqlExpressible iExp)
-                    this.AddParameters(this.InternalAdd(paramCharIndexes[i], builder, iExp, allowAlias));
-                else
-                    this.InternalAddParameter(expression.Parameters[i], false, true);
+        public QueryConstructor Add(string query, params object[] parameters)
+        {
+            return this.Add(query, false, parameters);
+        }
 
-            this.Add(builder.ToString());
+        public QueryConstructor Add(string query, bool allowAlias, params object[] parameters)
+        {
+            if (query.Count(c => c == '?') != parameters.Length)
+                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+
+            this.query.AppendReplaced(query, '?', count =>
+            {
+                var param = parameters[count - 1];
+                if (param is ISqlExpressible iExp)
+                    param = iExp.ToSafeExpression(this.info, allowAlias);
+
+                if (param is Expression exp) this.AddParameters(exp);
+                else this.AddParameter(param, true);
+
+                return null;
+            });
+
             return this;
         }
 
-        private QueryConstructor InternalAddParameter(object val, bool addParamChar, bool allowAlias)
+        public QueryConstructor AddParameter(object val, bool allowAlias = true)
         {
+            if (ToQueryValue(val) is string sql)
+                return this.Add(sql);
+
             if (val is SqlExpression exp)
                 return this.Add(exp, allowAlias);
 
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            if (addParamChar)
-                this.Add("?");
+            this.Add("?");
 
             return this.AddParameters(val);
         }
 
-        private IEnumerable<object> InternalAdd(int argIndex, StringBuilder builder, ISqlExpressible exp, bool allowAlias)
+        /// <summary>
+        /// Adds an expression to the query.
+        /// </summary>
+        /// <param name="expression">The expression to add.</param>
+        /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
+        public QueryConstructor AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {
-            builder.Remove(argIndex, 1);
-            var sqlExp = exp.ToSafeExpression(info, allowAlias);
+            return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
+        }
 
-            builder.Insert(argIndex, sqlExp.ToString());
-            foreach (var item in sqlExp.Parameters)
-                yield return item;
+        public static string ToQueryValue(object value)
+        {
+            if (TranslationUtils.IsNull(value))
+                return "NULL";
+
+            if (value is bool vBool)
+                return vBool ? "1" : "0";
+
+            if (TranslationUtils.IsNumeric(value?.GetType()))
+                return ((IConvertible)value).ToString(Invariant);
+
+            return null;
         }
 
         public QueryConstructor AddFormat(string format, params object[] args)
@@ -143,11 +157,22 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        public QueryConstructor Add(char raw)
+        {
+            this.query.Append(raw);
+            return this;
+        }
+
         public QueryConstructor Add(string raw = " ")
         {
             this.query.Append(raw);
-
             return this;
+        }
+
+        public QueryConstructor Add(params string[] raws)
+        {
+            this.query.Capacity += raws.Sum(txt => txt.Length) + raws.Length;
+            return this.Add(string.Join(" ", raws));
         }
 
         /// <summary>
@@ -169,8 +194,22 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(parameters));
 
             this.parameters.AddRange(parameters);
-
             return this;
+        }
+
+        public QueryConstructor WriteEnumerableAsValue(IEnumerable enumerable, bool allowAlias)
+        {
+            var @enum = enumerable.GetEnumerator();
+            if (!@enum.MoveNext())
+                throw new InvalidOperationException(Messages.CannotUseEmptyCollection);
+
+            this.Add('(');
+            this.AddParameter(@enum.Current, allowAlias);
+
+            while (@enum.MoveNext())
+                this.Add(", ").AddParameter(@enum.Current, allowAlias);
+
+            return this.Add(')');
         }
 
         /// <summary>

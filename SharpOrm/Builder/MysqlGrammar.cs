@@ -9,7 +9,7 @@ namespace SharpOrm.Builder
         {
         }
 
-        protected override void ConfigureInsertQuery(Query query, string[] columnNames)
+        protected override void ConfigureInsertQuery(QueryBase query, string[] columnNames)
         {
             this.QueryBuilder
                 .AppendFormat(

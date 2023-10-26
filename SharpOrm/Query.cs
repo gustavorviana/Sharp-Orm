@@ -65,6 +65,8 @@ namespace SharpOrm
         }
         #endregion
 
+        #region Foreigns
+
         /// <summary>
         /// Specifies the foreign tables to be included in the query result up to the specified depth.
         /// </summary>
@@ -112,6 +114,8 @@ namespace SharpOrm
 
             return this;
         }
+
+        #endregion
 
         /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
@@ -256,32 +260,17 @@ namespace SharpOrm
         #region Join
         public Query Join<C>(string alias, string column1, string column2)
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
-            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
-            join.WhereColumn(column1, "=", column2);
-
-            this.Info.Joins.Add(join);
-            return this;
+            return this.Join<C>(alias, q => q.WhereColumn(column1, column2));
         }
 
         public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
-            join.WhereColumn(column1, operation, column2);
-
-            this.Info.Joins.Add(join);
-            return this;
+            return this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
         }
 
-        public Query Join<C>(string alias, QueryCallback operation, string type = "INNER")
+        public Query Join<C>(string alias, QueryCallback callback, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(TableInfo.GetNameOf(typeof(C)), alias);
-
-            operation(join);
-            this.Info.Joins.Add(join);
-            return this;
+            return base.Join(DbName.Of<C>(alias), callback, type); ;
         }
         #endregion
 
@@ -328,7 +317,7 @@ namespace SharpOrm
         /// </summary>
         /// <remarks>For example: SqlServerGrammarOptions.NoLock to have queries written with NOLOCK.</remarks>
         public object GrammarOptions { get; set; }
-        protected IQueryConfig Config { get; }
+        protected IQueryConfig Config => this.Info.Config;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
@@ -382,12 +371,10 @@ namespace SharpOrm
         {
         }
 
-        public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config)
+        public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config, table)
         {
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
             this.CommandTimeout = config.CommandTimeout;
-            this.Info.TableName = table;
-            this.Config = config;
 
             try
             {
@@ -405,23 +392,11 @@ namespace SharpOrm
 
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(config)
+        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(config, name)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.Connection = transaction.Connection;
             this.CommandTimeout = config.CommandTimeout;
-            this.Info.TableName = name;
-            this.Config = config;
-
-            try
-            {
-                if (transaction.Connection.State != System.Data.ConnectionState.Open)
-                    transaction.Connection.Open();
-            }
-            catch (Exception ex)
-            {
-                throw new DbConnectionException(ex);
-            }
         }
 
         #endregion
@@ -435,10 +410,10 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Select(params string[] columnNames)
         {
-            if ((columnNames?.Length ?? 0) == 0)
+            if (!columnNames.Any())
                 throw new ArgumentNullException(nameof(columnNames), Messages.NoColumnsInserted);
 
-            if (columnNames.Length == 1 && columnNames[0] == "*")
+            if (columnNames.Length == 1 && columnNames.First() == "*")
                 return this.Select(Column.All);
 
             return this.Select(columnNames.Select(name => new Column(name)).ToArray());
@@ -451,7 +426,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Select(params Column[] columns)
         {
-            if ((columns?.Length ?? 0) == 0)
+            if (!columns.Any())
                 throw new ArgumentNullException(nameof(columns), Messages.NoColumnsInserted);
 
             this.Info.Select = columns;
@@ -465,29 +440,23 @@ namespace SharpOrm
 
         public Query Join(string table, string column1, string column2)
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = "INNER" };
-            join.Info.TableName = new DbName(table);
-            join.WhereColumn(column1, "=", column2);
-
-            this.Info.Joins.Add(join);
-            return this;
+            return this.Join(table, q => q.WhereColumn(column1, column2));
         }
 
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(table);
-            join.WhereColumn(column1, operation, column2);
-
-            this.Info.Joins.Add(join);
-            return this;
+            return this.Join(table, q => q.WhereColumn(column1, operation, column2), type);
         }
 
-        public Query Join(string table, QueryCallback operation, string type = "INNER")
+        public Query Join(string table, QueryCallback callback, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery(this.Info.Config) { Type = type };
-            join.Info.TableName = new DbName(table);
-            operation(join);
+            return this.Join(new DbName(table), callback, type);
+        }
+
+        public Query Join(DbName table, QueryCallback callback, string type = "INNER")
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type };
+            callback(join);
             this.Info.Joins.Add(join);
             return this;
         }
@@ -515,36 +484,59 @@ namespace SharpOrm
         /// <summary>
         /// Applies an ascending sort.
         /// </summary>
-        /// <param name="column">Column that must be ordered.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        public Query OrderBy(string column)
+        public Query OrderBy(params string[] columns)
         {
-            return this.OrderBy(new Column(column), SharpOrm.OrderBy.Asc);
+            return this.OrderBy(SharpOrm.OrderBy.Asc, columns);
         }
 
         /// <summary>
         /// Applies descending sort.
         /// </summary>
-        /// <param name="column">Column that must be ordered.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        public Query OrderByDesc(string column)
+        public Query OrderByDesc(params string[] columns)
         {
-            return this.OrderBy(new Column(column), SharpOrm.OrderBy.Desc);
+            return this.OrderBy(SharpOrm.OrderBy.Desc, columns);
         }
 
         /// <summary>
-        /// Signals which field should be ordered and sorting.
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderBy(OrderBy order, params string[] columns)
+        {
+            return this.OrderBy(order, columns.Select(c => new Column(c)).ToArray());
+        }
+
+        /// <summary>
+        /// Applies sorting to the query.
         /// </summary>
         /// <param name="column">Column that must be ordered.</param>
         /// <param name="order">Field ordering.</param>
         /// <returns></returns>
+        [Obsolete("Use Query.OrderBy(OrderBy, params Column[]", true)]
         public Query OrderBy(Column column, OrderBy order)
         {
-            return this.OrderBy(new ColumnOrder(column, order));
+            return this.OrderBy(order, column);
         }
 
         /// <summary>
-        /// Signals which fields should be ordered and sorting.
+        /// Applies sorting to the query.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderBy(OrderBy order, params Column[] columns)
+        {
+            return this.OrderBy(columns.Select(c => new ColumnOrder(c, order)).ToArray());
+        }
+
+        /// <summary>
+        /// Applies sorting to the query.
         /// </summary>
         /// <param name="orders"></param>
         /// <returns></returns>
@@ -556,71 +548,6 @@ namespace SharpOrm
         }
 
         #endregion
-
-        /// <summary>
-        /// Execute SQL Select command and return DataReader.
-        /// </summary>
-        /// <returns></returns>
-        public DbDataReader ExecuteReader()
-        {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select())
-                return cmd.ExecuteReader();
-        }
-
-        /// <summary>
-        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
-        /// </summary>
-        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        public T[] ExecuteArrayScalar<T>()
-        {
-            ISqlTranslation translation = TableReaderBase.Registry.GetFor(typeof(T));
-            Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
-
-            List<T> list = new List<T>();
-
-            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
-            using (var reader = this.ExecuteReader())
-                while (reader.Read())
-                    list.Add((T)translation.FromSqlValue(tReader.ReadDbObject(reader[0]), expectedType));
-
-            return list.ToArray();
-        }
-
-        /// <summary>
-        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
-        /// </summary>
-        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        /// <returns>The first column of the first row in the result set.</returns>
-        public T ExecuteScalar<T>()
-        {
-            return this.ExecuteScalar() is object obj ? TableReaderBase.Registry.FromSql<T>(obj) : default;
-        }
-
-        /// <summary>
-        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
-        /// </summary>
-        /// <returns>The first column of the first row in the result set.</returns>
-        public object ExecuteScalar()
-        {
-            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select())
-            {
-                object result = cmd.ExecuteScalar();
-                this.Token.ThrowIfCancellationRequested();
-                return tReader.ReadDbObject(result);
-            }
-        }
-
-        public Query JoinToDelete(params string[] join)
-        {
-            if (join == null || join.Length == 0)
-                throw new ArgumentNullException(nameof(join));
-
-            this.deleteJoins = join;
-            return this;
-        }
 
         #region DML SQL commands
 
@@ -679,7 +606,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query"></param>
         /// <param name="columnNames"></param>
-        public void Insert(Query query, params string[] columnNames)
+        public void Insert(QueryBase query, params string[] columnNames)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.InsertQuery(query, columnNames))
@@ -793,9 +720,75 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        public T[] ExecuteArrayScalar<T>()
+        {
+            ISqlTranslation translation = TableReaderBase.Registry.GetFor(typeof(T));
+            Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
+
+            List<T> list = new List<T>();
+
+            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
+            using (var reader = this.ExecuteReader())
+                while (reader.Read())
+                    list.Add((T)translation.FromSqlValue(tReader.ReadDbObject(reader[0]), expectedType));
+
+            return list.ToArray();
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public T ExecuteScalar<T>()
+        {
+            return this.ExecuteScalar() is object obj ? TableReaderBase.Registry.FromSql<T>(obj) : default;
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public object ExecuteScalar()
+        {
+            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Select())
+            {
+                object result = cmd.ExecuteScalar();
+                this.Token.ThrowIfCancellationRequested();
+                return tReader.ReadDbObject(result);
+            }
+        }
+
+        /// <summary>
+        /// Execute SQL Select command and return DataReader.
+        /// </summary>
+        /// <returns></returns>
+        public DbDataReader ExecuteReader()
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.Select())
+                return cmd.ExecuteReader();
+        }
+
+        public Query JoinToDelete(params string[] join)
+        {
+            if (join == null || join.Length == 0)
+                throw new ArgumentNullException(nameof(join));
+
+            this.deleteJoins = join;
+            return this;
+        }
+
         #endregion
 
         #region Clone and safety
+
         /// <summary>
         /// Clones the Query object with the parameters of "WHERE".
         /// </summary>
