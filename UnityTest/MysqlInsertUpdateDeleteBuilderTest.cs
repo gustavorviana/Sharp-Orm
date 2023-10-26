@@ -147,6 +147,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void DeleteLimit()
+        {
+            using var q = NewQuery();
+            q.Limit = 5;
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.Delete();
+            Assert.AreEqual("DELETE FROM `TestTable` LIMIT 5", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void DeleteWhere()
         {
             using var q = NewQuery();

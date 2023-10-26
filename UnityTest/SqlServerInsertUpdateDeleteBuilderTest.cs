@@ -146,6 +146,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void DeleteLimit()
+        {
+            using var q = NewQuery(TABLE);
+            q.Limit = 5;
+            using var g = new SqlServerGrammar(q);
+
+            using var cmd = g.Delete();
+            Assert.AreEqual("DELETE TOP(5) FROM [TestTable]", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void DeleteWhere()
         {
             using var q = NewQuery(TABLE);

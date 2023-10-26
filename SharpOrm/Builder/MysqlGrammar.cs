@@ -39,6 +39,9 @@ namespace SharpOrm.Builder
 
             this.ApplyJoins();
             this.WriteWhere(true);
+
+            if (this.Query.Limit > 0)
+                this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);
         }
 
         private void ApplyDeleteJoins()

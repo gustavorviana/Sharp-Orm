@@ -16,6 +16,9 @@ namespace SharpOrm.Builder
         protected override void ConfigureDelete()
         {
             this.QueryBuilder.AppendFormat("DELETE");
+            if (this.Query.Limit > 0)
+                this.QueryBuilder.AppendFormat(" TOP({0})", this.Query.Limit);
+
             this.ApplyDeleteJoins();
             this.QueryBuilder.AppendFormat(" FROM {0}", this.Info.TableName.GetName(true, this.Info.Config));
 
