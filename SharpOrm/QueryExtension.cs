@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm
 {
@@ -114,6 +115,26 @@ namespace SharpOrm
         public static QueryBase WhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.Where(column, "NOT IN", items);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        public static QueryBase WhereIn(this QueryBase qBase, string column, SqlExpression expression)
+        {
+            return qBase.Where(column, "IN", expression);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        public static QueryBase WhereNotIn(this QueryBase qBase, string column, SqlExpression expression)
+        {
+            return qBase.Where(column, "NOT IN", expression);
         }
 
         /// <summary>
@@ -269,6 +290,26 @@ namespace SharpOrm
         public static QueryBase OrWhereNotIn<T>(this QueryBase qBase, string column, params T[] items)
         {
             return qBase.OrWhere(column, "NOT IN", items);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        public static QueryBase OrWhereIn(this QueryBase qBase, string column, SqlExpression expression)
+        {
+            return qBase.OrWhere(column, "IN", expression);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
+        public static QueryBase OrWhereNotIn(this QueryBase qBase, string column, SqlExpression expression)
+        {
+            return qBase.OrWhere(column, "NOT IN", expression);
         }
 
         /// <summary>
