@@ -142,7 +142,7 @@ namespace SharpOrm.Builder
         {
             return this.WriteQuery(query, AND);
         }
-
+        
         /// <summary>
         /// Adds a value comparison clause between columns in "WHERE"
         /// </summary>

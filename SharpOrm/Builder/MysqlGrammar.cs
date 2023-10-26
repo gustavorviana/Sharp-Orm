@@ -156,7 +156,8 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder.AppendFormat(" {0} JOIN {1} ON {2}", join.Type, this.GetTableName(join, true), join.Info.Where);
+            this.QueryBuilder.AppendFormat(" {0} JOIN {1} ON ", join.Type, this.GetTableName(join, true));
+            this.WriteWhereContent(join.Info);
         }
 
         protected override void ConfigureUpdate(Cell[] cells)
@@ -183,13 +184,17 @@ namespace SharpOrm.Builder
                 return;
             }
 
-            this.QueryBuilder
-                .Append(" WHERE ")
-                .AppendReplaced(
-                    this.Info.Where.ToString(),
-                    '?',
-                    (count) => this.RegisterClausuleParameter(this.Info.Where.Parameters[count - 1])
-                );
+            this.QueryBuilder.Append(" WHERE ");
+            this.WriteWhereContent(this.Info);
+        }
+
+        protected void WriteWhereContent(QueryInfo info)
+        {
+            this.QueryBuilder.AppendReplaced(
+                info.Where.ToString(),
+                '?',
+                (count) => this.RegisterClausuleParameter(info.Where.Parameters[count - 1])
+            );
         }
 
         private void ValidateOffset()

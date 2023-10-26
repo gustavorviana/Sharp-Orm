@@ -25,7 +25,7 @@ namespace SharpOrm.Builder
         private CancellationToken? lastRegistry = null;
         private bool _disposed = false;
         private readonly ParamWriter whereWriter;
-        private readonly ParamWriter valuesWriter;
+        private readonly ParamWriter valueWriter;
         protected readonly bool convertToUtc;
 
         protected StringBuilder QueryBuilder { get; } = new StringBuilder();
@@ -38,7 +38,7 @@ namespace SharpOrm.Builder
         {
             this.convertToUtc = query.Info.Config.DateKind == DateTimeKind.Utc;
             this.whereWriter = new ParamWriter(this, 'c');
-            this.valuesWriter = new ParamWriter(this, 'v');
+            this.valueWriter = new ParamWriter(this, 'v');
             this.Query = query;
             this.Reset();
         }
@@ -203,7 +203,7 @@ namespace SharpOrm.Builder
         /// <returns>Value of the cell registered as parameter</returns>
         protected string RegisterCellValue(Cell cell)
         {
-            return this.valuesWriter.LoadValue(cell.Value, true);
+            return this.valueWriter.LoadValue(cell.Value, true);
         }
 
         internal DbParameter RegisterParameter(string name, object value)
@@ -244,7 +244,7 @@ namespace SharpOrm.Builder
 
             this.QueryBuilder.Clear();
             this.whereWriter.Reset();
-            this.valuesWriter.Reset();
+            this.valueWriter.Reset();
         }
 
         protected string GetTableName(bool withAlias)
@@ -288,7 +288,7 @@ namespace SharpOrm.Builder
 
         protected string WriteSelect(Column column)
         {
-            return this.valuesWriter.LoadValue(column, true);
+            return this.valueWriter.LoadValue(column, true);
         }
 
         protected virtual void WriteGroupBy()

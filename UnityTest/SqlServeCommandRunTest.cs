@@ -78,7 +78,6 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -94,11 +93,21 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectJoin()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var qOrder = new Query<Order>(Connection);
+
+            qOrder.Join<Customer>("c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
+            qOrder.Where("c.name", "Ronaldo");
+            Assert.IsNotNull(qOrder.FirstOrDefault());
+        }
+
+        [TestMethod]
         public void UpdateJoin()
         {
             ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");

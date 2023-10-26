@@ -12,6 +12,16 @@ namespace SharpOrm
     {
         #region Where
 
+        public static QueryBase WhereColumn(this QueryBase query, string column1, string column2)
+        {
+            return query.WhereColumn(column1, "=", column2);
+        }
+
+        public static QueryBase WhereNotColumn(this QueryBase query, string column1, string column2)
+        {
+            return query.WhereColumn(column1, "!=", column2);
+        }
+
         /// <summary>
         /// Adds a WHERE clause that checks if the column contains the value.
         /// </summary>
@@ -186,6 +196,16 @@ namespace SharpOrm
         #endregion
 
         #region Or
+
+        public static QueryBase OrWhereColumn(this QueryBase query, string column1, string column2)
+        {
+            return query.OrWhereColumn(column1, "=", column2);
+        }
+
+        public static QueryBase OrWhereNotColumn(this QueryBase query, string column1, string column2)
+        {
+            return query.OrWhereColumn(column1, "!=", column2);
+        }
 
         /// <summary>
         /// Adds an OR WHERE clause that checks if the column contains the specified value.
