@@ -321,7 +321,7 @@ namespace SharpOrm
         public int? Offset { get; set; }
         internal string[] deleteJoins = null;
 
-        public ConnectionCreator Creator { get; protected set; } = ConnectionCreator.Default;
+        public ConnectionCreator Creator { get; protected internal set; } = ConnectionCreator.Default;
 
         /// <summary>
         /// Options for customizing the execution of the grammar.
@@ -332,6 +332,7 @@ namespace SharpOrm
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
+        internal bool notClose = false;
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
@@ -360,11 +361,11 @@ namespace SharpOrm
             this.Creator = creator;
         }
 
-        public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
+        public Query(IQueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
         {
         }
 
-        public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
+        public Query(IQueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
         {
         }
 
@@ -573,12 +574,15 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
+            ISqlTranslation translation = TableReaderBase.Registry.GetFor(typeof(T));
+            Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
+
             List<T> list = new List<T>();
 
             using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    list.Add((T)TableReaderBase.Registry.FromSql<T>(tReader.ReadDbObject(reader[0])));
+                    list.Add((T)translation.FromSqlValue(tReader.ReadDbObject(reader[0]), expectedType));
 
             return list.ToArray();
         }
@@ -590,7 +594,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return TableReaderBase.Registry.FromSql<T>(this.ExecuteScalar());
+            return this.ExecuteScalar() is object obj ? TableReaderBase.Registry.FromSql<T>(obj) : default;
         }
 
         /// <summary>
@@ -758,13 +762,7 @@ namespace SharpOrm
         {
             using (var translator = this.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    this.Token.ThrowIfCancellationRequested();
-                    yield return translator.ParseFromReader<T>(reader);
-                }
-            }
+                return translator.GetEnumerable<T>(reader, this.Token).ToArray();
         }
 
         /// <summary>
@@ -847,7 +845,7 @@ namespace SharpOrm
         {
             base.Dispose(disposing);
 
-            if (disposing && this.Transaction == null && this.Creator != null)
+            if (disposing && this.Transaction == null && this.Creator != null && !this.notClose)
                 this.Creator.SafeDisposeConnection(this.Connection);
         }
 

@@ -28,8 +28,13 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>True if the type is nullable, false otherwise.</returns>
         internal static bool IsNative(Type type)
         {
-            return type == null || binaryTranslator.CanWork(type) || Nullable.GetUnderlyingType(type) != null || 
-                type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type);
+            if (type == null)
+                return true;
+
+            if (Nullable.GetUnderlyingType(type) is Type nType)
+                type = nType;
+
+            return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type) || binaryTranslator.CanWork(type);
         }
 
         /// <summary>
@@ -56,26 +61,26 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent .NET representation of the SQL value.</returns>
         public object FromSqlValue(object value, Type expectedType)
         {
-            if (value is DBNull)
+            if (value is DBNull || value is null)
                 return null;
-
-            if (binaryTranslator.CanWork(expectedType) && !(value is null))
-                return binaryTranslator.FromSqlValue(value, expectedType);
-
-            if (numericTranslation.CanWork(expectedType) && !(value is null))
-                return numericTranslation.FromSqlValue(value, expectedType);
-
-            if (expectedType == typeof(Guid))
-                return value is Guid guid ? guid : Guid.Parse((string)value);
-
-            if (expectedType.IsEnum)
-                return Enum.ToObject(expectedType, value);
 
             if (expectedType == typeof(bool))
                 return Convert.ToBoolean(value);
 
+            if (expectedType.IsEnum)
+                return Enum.ToObject(expectedType, value);
+
+            if (expectedType == typeof(Guid))
+                return value is Guid guid ? guid : Guid.Parse((string)value);
+
             if (expectedType == typeof(TimeSpan) && value is DateTime date)
                 return date.TimeOfDay;
+
+            if (numericTranslation.CanWork(expectedType))
+                return numericTranslation.FromSqlValue(value, expectedType);
+
+            if (binaryTranslator.CanWork(expectedType))
+                return binaryTranslator.FromSqlValue(value, expectedType);
 
             return value;
         }
@@ -88,12 +93,6 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The equivalent SQL representation of the value.</returns>
         public object ToSqlValue(object value, Type type)
         {
-            if (binaryTranslator.CanWork(type))
-                return binaryTranslator.ToSqlValue(value, type);
-
-            if (numericTranslation.CanWork(type))
-                return numericTranslation.ToSqlValue(value, type);
-
             if (TranslationUtils.IsNull(value))
                 return DBNull.Value;
 
@@ -108,6 +107,12 @@ namespace SharpOrm.Builder.DataTranslation
 
             if (value is DateTime || value is TimeSpan)
                 return value;
+
+            if (numericTranslation.CanWork(type))
+                return numericTranslation.ToSqlValue(value, type);
+
+            if (binaryTranslator.CanWork(type))
+                return binaryTranslator.ToSqlValue(value, type);
 
             return value?.ToString();
         }

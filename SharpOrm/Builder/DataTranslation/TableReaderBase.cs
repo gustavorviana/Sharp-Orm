@@ -102,9 +102,9 @@ namespace SharpOrm.Builder.DataTranslation
                 return new Query(this.transaction, this.config, name);
 
             if (this.connection != null)
-                return new Query(this.connection, this.config, name);
+                return new Query(this.connection, this.config, name) { notClose = true };
 
-            return new Query(Connection.ConnectionCreator.Default.GetConnection(), this.config, name);
+            return new Query(this.config, name);
         }
         /// <summary>
         /// Parses an object of the specified <paramref name="typeToParse"/> from the database reader.

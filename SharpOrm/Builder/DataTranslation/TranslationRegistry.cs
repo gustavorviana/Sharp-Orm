@@ -11,6 +11,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object ToSql(object value)
         {
+            if (value is null)
+                return null;
+
             Type type = value?.GetType();
 
             if (this.GetFor(type) is ISqlTranslation conversor)
@@ -21,6 +24,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object FromSql(object value, Type expectedType)
         {
+            if (value is null)
+                return null;
+
             expectedType = GetValidTypeFor(expectedType);
 
             if (this.GetFor(expectedType) is ISqlTranslation conversor)
