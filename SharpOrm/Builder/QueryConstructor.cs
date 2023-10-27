@@ -61,9 +61,7 @@ namespace SharpOrm.Builder
             if (this.Equals(constructor))
                 throw new InvalidOperationException("The same instance cannot be passed as a parameter.");
 
-            this.Add(constructor.query.ToString());
-            this.AddParameters(constructor.Parameters);
-            return this;
+            return this.Add(constructor.query.ToString()).AddParameters(constructor.Parameters);
         }
 
         /// <summary>
@@ -97,13 +95,7 @@ namespace SharpOrm.Builder
 
             this.query.AppendReplaced(query, '?', count =>
             {
-                var param = parameters[count - 1];
-                if (param is ISqlExpressible iExp)
-                    param = iExp.ToSafeExpression(this.info, allowAlias);
-
-                if (param is Expression exp) this.AddParameters(exp);
-                else this.AddParameter(param, true);
-
+                this.AddParameter(parameters[count - 1], true);
                 return null;
             });
 
@@ -121,9 +113,7 @@ namespace SharpOrm.Builder
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            this.Add("?");
-
-            return this.AddParameters(val);
+            return this.Add("?").AddParameters(val);
         }
 
         /// <summary>
@@ -152,8 +142,7 @@ namespace SharpOrm.Builder
 
         public QueryConstructor AddFormat(string format, params object[] args)
         {
-            this.Add(string.Format(format, args));
-            return this;
+            return this.Add(string.Format(format, args));
         }
 
         public QueryConstructor Add(char raw)

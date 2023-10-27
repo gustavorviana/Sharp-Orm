@@ -367,6 +367,15 @@ namespace SharpOrm
 
         }
 
+        public Query(DbConnection connection, DbName table) : this(connection, ConnectionCreator.Default.Config, table)
+        {
+        }
+
+        public Query(DbTransaction transaction, DbName table) : this(transaction, ConnectionCreator.Default.Config, table)
+        {
+
+        }
+
         public Query(DbConnection connection, IQueryConfig config, string table) : this(connection, config, new DbName(table))
         {
         }

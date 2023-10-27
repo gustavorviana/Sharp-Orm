@@ -131,13 +131,12 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.AppendFormat(" OFFSET {0}", this.Query.Offset);
         }
 
-        private bool CanWriteOrderby()
+        protected bool CanWriteOrderby()
         {
             if (this.Info.Select.Length != 1)
                 return true;
 
-            string select = this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower();
-            return !select.StartsWith("count(");
+            return !this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower().StartsWith("count(");
         }
 
         protected void ApplyJoins()
