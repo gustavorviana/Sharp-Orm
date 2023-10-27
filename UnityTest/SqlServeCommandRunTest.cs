@@ -104,6 +104,63 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectGroupBy()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            query.BulkInsert(
+                new Order
+                {
+                    Id = 3,
+                    CustomerId = 1,
+                    Product = "My product",
+                    Quantity = 5,
+                    Status = "Pending"
+                },
+                new Order
+                {
+                    Id = 4,
+                    CustomerId = 2,
+                    Product = "My product 2",
+                    Quantity = 5,
+                    Status = "Ok"
+                }
+            );
+
+            query.GroupBy("Status", "customer_id");
+            Assert.AreEqual(2, query.Count());
+        }
+
+        [TestMethod]
+        public void SelectGroupByHaving()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var query = new Query<Order>(Connection);
+            query.BulkInsert(
+                new Order
+                {
+                    Id = 3,
+                    CustomerId = 1,
+                    Product = "My product",
+                    Quantity = 5,
+                    Status = "Pending"
+                },
+                new Order
+                {
+                    Id = 4,
+                    CustomerId = 2,
+                    Product = "My product 2",
+                    Quantity = 5,
+                    Status = "Ok"
+                }
+            );
+
+            query.GroupBy("Status", "customer_id");
+            query.Having(q => q.Where("Status", "Ok"));
+            Assert.AreEqual(2, query.Count());
+        }
+
+        [TestMethod]
         public void UpdateJoin()
         {
             ConfigureInitialCustomerAndOrder();

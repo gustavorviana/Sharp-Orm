@@ -194,6 +194,28 @@ namespace UnityTest
             Assert.AreEqual("INSERT INTO [TestTable] (UserId,Status) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
         }
 
+        [TestMethod]
+        public void SelectGroupByColumnName()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.GroupBy("Col1", "Col2");
+            using var g = new SqlServerGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] GROUP BY [Col1], [Col2]", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectHavingColumn()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.GroupBy("Col1", "Col2").Having(q => q.Where("Col1", true));
+            using var g = new SqlServerGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] GROUP BY [Col1], [Col2] HAVING [Col1] = 1", cmd.CommandText);
+        }
+
         private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
             Assert.AreEqual(name, param.ParameterName);

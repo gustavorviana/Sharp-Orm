@@ -125,6 +125,43 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectGroupBy()
+        {
+            const string Name = "User 1";
+            using var query = new Query<TestTable>();
+            query.Delete();
+
+            query.BulkInsert(
+                new TestTable { Id = 1, Id2 = 1, Name = Name },
+                new TestTable { Id = 2, Id2 = 1, Name = Name },
+                new TestTable { Id = 3, Id2 = 2, Name = Name },
+                new TestTable { Id = 4, Id2 = 2, Name = Name }
+            );
+
+            query.GroupBy("Id2");
+            Assert.AreEqual(2, query.Count());
+        }
+
+        [TestMethod]
+        public void SelectGroupByHaving()
+        {
+            const string Name = "User 1";
+            using var query = new Query<TestTable>();
+            query.Delete();
+
+            query.BulkInsert(
+                new TestTable { Id = 1, Id2 = 1, Name = Name },
+                new TestTable { Id = 2, Id2 = 2, Name = Name },
+                new TestTable { Id = 3, Id2 = 3, Name = Name },
+                new TestTable { Id = 4, Id2 = 2, Name = Name }
+            );
+
+            query.GroupBy("Id2");
+            query.Having(q => q.Where("Id2", "=", 1));
+            Assert.AreEqual(1, query.Count());
+        }
+
+        [TestMethod]
         public void Update()
         {
             const int Id = 1;

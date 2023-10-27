@@ -296,7 +296,18 @@ namespace SharpOrm.Builder
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
+            this.QueryBuilder.Append(" GROUP BY ").Append(string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
+
+            if (this.Info.Having.Empty)
+                return;
+
+            this.QueryBuilder
+                .Append(" HAVING ")
+                .AppendReplaced(
+                    Info.Having.ToString(),
+                    '?',
+                    (count) => this.RegisterClausuleParameter(Info.Having.Parameters[count - 1])
+                );
         }
 
         /// <summary>

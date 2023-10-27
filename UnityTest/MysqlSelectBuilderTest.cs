@@ -629,6 +629,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void SelectHavingColumn()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.GroupBy("Col1", "Col2").Having(q => q.Where("Col1", true));
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` GROUP BY `Col1`, `Col2` HAVING `Col1` = 1", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void SelectGroupByColumnObj()
         {
             using var query = new Query(Connection, TABLE);

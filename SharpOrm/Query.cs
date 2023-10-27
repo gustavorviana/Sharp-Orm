@@ -479,6 +479,19 @@ namespace SharpOrm
 
         #endregion
 
+        #region Havong
+
+        public Query Having(QueryCallback callback)
+        {
+            var qBase = new QueryBase(this.Config, this.Info.TableName);
+            callback(qBase);
+            this.Info.Having.Add(qBase.Info.Where);
+
+            return this;
+        }
+
+        #endregion
+
         #region OrderBy
 
         /// <summary>

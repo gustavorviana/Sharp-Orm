@@ -169,7 +169,7 @@ namespace UnityTest
         [TestMethod]
         public void CanParseNull()
         {
-             Assert.AreEqual(true, new NativeSqlValueConversor().CanWork(typeof(int?)));
+            Assert.AreEqual(true, new NativeSqlValueConversor().CanWork(typeof(int?)));
         }
 
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
