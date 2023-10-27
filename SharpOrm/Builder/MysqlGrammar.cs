@@ -40,6 +40,9 @@ namespace SharpOrm.Builder
             this.ApplyJoins();
             this.WriteWhere(true);
 
+            if (this.CanWriteOrderby())
+                this.ApplyOrderBy();
+
             if (this.Query.Limit > 0)
                 this.QueryBuilder.AppendFormat(" LIMIT {0}", this.Query.Limit);
         }
@@ -118,7 +121,6 @@ namespace SharpOrm.Builder
 
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
-
 
             this.ValidateOffset();
             if (this.Query.Limit == null)

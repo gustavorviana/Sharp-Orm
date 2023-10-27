@@ -158,6 +158,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void DeleteOrder()
+        {
+            using var q = NewQuery();
+            q.OrderBy("id");
+            using var g = new MysqlGrammar(q);
+
+            using var cmd = g.Delete();
+            Assert.AreEqual("DELETE FROM `TestTable` ORDER BY `id` Asc", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void DeleteWhere()
         {
             using var q = NewQuery();
