@@ -64,22 +64,6 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.Append(" LIMIT ").Append(this.Query.Limit);
         }
 
-        private void ApplyDeleteJoins()
-        {
-            if (!this.Info.Joins.Any())
-                return;
-
-            this.QueryBuilder
-                .Append(' ')
-                .Append(this.Info.TableName.TryGetAlias(this.Info.Config));
-
-            if (!(this.Query.deleteJoins?.Any() ?? false))
-                return;
-
-            foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
-                this.QueryBuilder.AppendFormat(",{0}", join.Info.TableName.TryGetAlias(join.Info.Config));
-        }
-
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
             this.AppendInsertHeader(cells.Select(c => this.ApplyTableColumnConfig(c.Name)));
@@ -115,7 +99,7 @@ namespace SharpOrm.Builder
             this.ConfigureSelect(true, safeDistinct ? null : column);
 
             if (safeDistinct)
-                this.QueryBuilder.AppendFormat(") `count`");
+                this.QueryBuilder.Append(") `count`");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)

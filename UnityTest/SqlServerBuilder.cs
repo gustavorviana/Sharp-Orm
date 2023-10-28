@@ -2,12 +2,13 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using System.Data.Common;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest
 {
     [TestClass]
-    public class SqlServerSelectBuilder : SqlServerTest
+    public class SqlServerBuilder : SqlServerTest
     {
         [TestMethod]
         public void FixColumnName()
@@ -102,7 +103,7 @@ namespace UnityTest
             using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT TOP (1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc", cmd.CommandText);
+            Assert.AreEqual("SELECT TOP(1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc", cmd.CommandText);
         }
 
         [TestMethod]
@@ -113,7 +114,7 @@ namespace UnityTest
             using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT TOP (1) * FROM [TestTable]", cmd.CommandText);
+            Assert.AreEqual("SELECT TOP(1) * FROM [TestTable]", cmd.CommandText);
         }
 
         [TestMethod]
@@ -264,6 +265,19 @@ namespace UnityTest
             Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
         }
+
+
+        [TestMethod]
+        public void DeleteWithNoLock()
+        {
+            using var q = new Query(Connection, new SqlServerQueryConfig(false), new DbName(TABLE, "T"));
+            q.EnableNoLock();
+            using var g = NewConfig.NewGrammar(q);
+
+            using var cmd = g.Delete();
+            Assert.AreEqual("DELETE [T] FROM [TestTable] [T] WITH (NOLOCK)", cmd.CommandText);
+        }
+
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)
         {

@@ -198,6 +198,27 @@ namespace SharpOrm.Builder
         /// </summary>
         protected abstract void ConfigureDelete();
 
+        protected void ApplyDeleteJoins()
+        {
+            if (!this.CanApplyDeleteJoins())
+                return;
+
+            this.QueryBuilder
+                .Append(' ')
+                .Append(this.TryGetTableAlias(this.Query));
+
+            if (!(this.Query.deleteJoins?.Any() ?? false))
+                return;
+
+            foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
+                this.QueryBuilder.Append(',').Append(this.TryGetTableAlias(join));
+        }
+
+        protected virtual bool CanApplyDeleteJoins()
+        {
+            return this.Info.Joins.Any();
+        }
+
         protected bool CanDeleteJoin(QueryInfo info)
         {
             string name = info.TableName.TryGetAlias(this.Info.Config).ToLower();
@@ -210,16 +231,17 @@ namespace SharpOrm.Builder
 
         protected virtual void ApplyOrderBy()
         {
-            this.ApplyOrderBy(this.Info.Orders);
+            this.ApplyOrderBy(this.Info.Orders, false);
         }
 
-        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order)
+        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order, bool colsOnly)
         {
             var en = order.GetEnumerator();
             if (!en.MoveNext())
                 return;
 
-            this.QueryBuilder.Append(" ORDER BY ");
+            if (!colsOnly)
+                this.QueryBuilder.Append(" ORDER BY ");
 
             WriteOrderBy(en.Current);
 
@@ -316,6 +338,11 @@ namespace SharpOrm.Builder
             this.QueryBuilder.Clear();
             this.whereWriter.Reset();
             this.valueWriter.Reset();
+        }
+
+        protected string TryGetTableAlias(QueryBase query)
+        {
+            return query.Info.TableName.TryGetAlias(query.Info.Config);
         }
 
         protected string GetTableName(bool withAlias)
