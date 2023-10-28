@@ -14,6 +14,15 @@ namespace UnityTest
         private static readonly TableInfo table = new(new TranslationRegistry(), typeof(TestClass));
 
         [TestMethod]
+        public void TestInvalidFields()
+        {
+            TableInfo table = new(new TranslationRegistry(), typeof(InvalidFields));
+            Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Id)), "The invalid field 'Id' was retrieved.");
+            Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Value)), "The invalid property 'Value' was retrieved.");
+            Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Name)), "The invalid property 'Name' was retrieved.");
+        }
+
+        [TestMethod]
         public void InvalidPk()
         {
             var cells = table.GetObjCells(new TestClass(), true, false).ToArray();
@@ -183,6 +192,13 @@ namespace UnityTest
         private static void AssertSqlValueConverted(object expected, object value)
         {
             Assert.AreEqual(expected, TableReaderBase.Registry.FromSql(value, expected?.GetType()));
+        }
+
+        private class InvalidFields
+        {
+            public readonly int Id = 1;
+            public int Value { get; }
+            public string Name { set { } }
         }
     }
 }

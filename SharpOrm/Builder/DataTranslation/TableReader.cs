@@ -34,6 +34,11 @@ namespace SharpOrm.Builder.DataTranslation
             this.maxDepth = maxDepth;
         }
 
+        public TableReader() : base(Connection.ConnectionCreator.Default.Config)
+        {
+
+        }
+
         public TableReader(IQueryConfig config) : base(config)
         {
 

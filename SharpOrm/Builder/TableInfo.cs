@@ -71,11 +71,11 @@ namespace SharpOrm.Builder
         private IEnumerable<ColumnInfo> GetAllColumns(TranslationRegistry registry)
         {
             foreach (var prop in Type.GetProperties(propertiesFlags))
-                if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
+                if (prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, prop);
 
             foreach (var field in Type.GetFields(propertiesFlags))
-                if (field.GetCustomAttribute<NotMappedAttribute>() == null)
+                if (!field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
         }
 
