@@ -234,6 +234,15 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
+        public void BulkInsert(IEnumerable<T> objs)
+        {
+            base.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)));
+        }
+
+        /// <summary>
         /// Update table columns using object values.
         /// </summary>
         /// <param name="obj"></param>
@@ -614,6 +623,17 @@ namespace SharpOrm
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
+            return this.Insert((IEnumerable<Cell>)cells);
+        }
+
+
+        /// <summary>
+        /// Inserts one row into the table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns>Id of row.</returns>
+        public int Insert(IEnumerable<Cell> cells)
+        {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.Insert(cells))
             {
@@ -635,11 +655,33 @@ namespace SharpOrm
                 cmd.ExecuteNonQuery();
         }
 
+
+        /// <summary>
+        /// Insert a lot of values ​​using the result of a table (select command);
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="columnNames"></param>
+        public void Insert(SqlExpression expression, params string[] columnNames)
+        {
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            using (DbCommand cmd = grammar.InsertExpression(expression, columnNames))
+                cmd.ExecuteNonQuery();
+        }
+
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
         public void BulkInsert(params Row[] rows)
+        {
+            this.BulkInsert((ICollection<Row>)rows);
+        }
+
+        /// <summary>
+        /// Inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
+        public void BulkInsert(IEnumerable<Row> rows)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             using (DbCommand cmd = grammar.BulkInsert(rows))
@@ -803,7 +845,7 @@ namespace SharpOrm
             if (join == null || join.Length == 0)
                 throw new ArgumentNullException(nameof(join));
 
-            this.deleteJoins = join;
+            this.deleteJoins = join.Select(this.Config.ApplyNomenclature).ToArray();
             return this;
         }
 

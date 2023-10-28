@@ -330,6 +330,18 @@ namespace SharpOrm
 
         #region Query
 
+        public static void InsertLot(this Query query, ICollection<Row> rows, int pageSize)
+        {
+            using (var enumerator = rows.GetEnumerator())
+                while (enumerator.MoveNext())
+                    query.BulkInsert(GetPage(enumerator, pageSize));
+        }
+
+        private static IEnumerable<T> GetPage<T>(IEnumerator<T> enumerator, int pageSize)
+        {
+            do yield return enumerator.Current; while (enumerator.MoveNext() && --pageSize > 0);
+        }
+
         /// <summary>
         /// Get a <see cref="DataTable"/> with values from a SELECT query.
         /// </summary>

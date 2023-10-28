@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
@@ -100,7 +101,7 @@ namespace SharpOrm.Builder
         /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
-        internal DbCommand InsertQuery(QueryBase query, string[] columnNames)
+        internal DbCommand InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
             this.Reset();
 
@@ -113,13 +114,28 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The query to be configured.</param>
         /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected abstract void ConfigureInsertQuery(QueryBase query, string[] columnNames);
+        protected abstract void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames);
+
+        public DbCommand InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
+        {
+            this.Reset();
+
+            this.ConfigureInsertExpression(expression, columnNames);
+            return this.BuildCommand();
+        }
+
+        /// <summary>
+        /// Configures the insert query for a given table and columns.
+        /// </summary>
+        /// <param name="query">The query to be configured.</param>
+        /// <param name="columnNames">The names of the columns to be inserted.</param>
+        protected abstract void ConfigureInsertExpression(SqlExpression expression, IEnumerable<string> columnNames);
 
         /// <summary>
         /// Inserts a new record into the database table with the specified cell values.
         /// </summary>
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
-        public DbCommand Insert(Cell[] cells)
+        public DbCommand Insert(IEnumerable<Cell> cells)
         {
             this.Reset();
             this.ConfigureInsert(cells, true);
@@ -131,13 +147,13 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="cells">The cells to be inserted.</param>
         /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
-        protected abstract void ConfigureInsert(Cell[] cells, bool getGeneratedId);
+        protected abstract void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId);
 
         /// <summary>
         /// Executes a bulk insert operation with the given rows.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        public DbCommand BulkInsert(Row[] rows)
+        public DbCommand BulkInsert(IEnumerable<Row> rows)
         {
             this.Reset();
             this.ConfigureBulkInsert(rows);
@@ -148,13 +164,13 @@ namespace SharpOrm.Builder
         /// Configures the INSERT statement for inserting multiple rows in a bulk operation.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        protected abstract void ConfigureBulkInsert(Row[] rows);
+        protected abstract void ConfigureBulkInsert(IEnumerable<Row> rows);
 
         /// <summary>
         /// Builds and returns a database command object for executing an update operation based on the specified array of cells.
         /// </summary>
         /// <param name="cells">An array of cells containing the values to be updated.</param>
-        public DbCommand Update(Cell[] cells)
+        public DbCommand Update(IEnumerable<Cell> cells)
         {
             this.Reset();
             this.ConfigureUpdate(cells);
@@ -165,7 +181,7 @@ namespace SharpOrm.Builder
         /// This method is used to configure an SQL UPDATE statement with the given cell array.
         /// </summary>
         /// <param name="cells">The cell array to be updated in the table.</param>
-        protected abstract void ConfigureUpdate(Cell[] cells);
+        protected abstract void ConfigureUpdate(IEnumerable<Cell> cells);
 
         /// <summary>
         /// Creates a DELETE command for deleting data from a table.
@@ -181,6 +197,61 @@ namespace SharpOrm.Builder
         /// This method is an abstract method which will be implemented by the derived classes. It is responsible for configuring a DELETE query command.
         /// </summary>
         protected abstract void ConfigureDelete();
+
+        protected bool CanDeleteJoin(QueryInfo info)
+        {
+            string name = info.TableName.TryGetAlias(this.Info.Config).ToLower();
+            foreach (var jName in this.Query.deleteJoins)
+                if (jName.ToLower().Equals(name))
+                    return true;
+
+            return false;
+        }
+
+        protected virtual void ApplyOrderBy()
+        {
+            this.ApplyOrderBy(this.Info.Orders);
+        }
+
+        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order)
+        {
+            var en = order.GetEnumerator();
+            if (!en.MoveNext())
+                return;
+
+            this.QueryBuilder.Append(" ORDER BY ");
+
+            WriteOrderBy(en.Current);
+
+            while (en.MoveNext())
+            {
+                this.QueryBuilder.Append(',');
+                this.WriteOrderBy(en.Current);
+            }
+        }
+
+        protected void WriteOrderBy(ColumnOrder order)
+        {
+            if (order.Order == OrderBy.None)
+                return;
+
+            this.WriteColumn(order.Column);
+            this.QueryBuilder.Append(' ');
+            this.QueryBuilder.Append(order.Order);
+        }
+
+        protected void WriteColumn(Column column)
+        {
+            this.QueryBuilder.Append(column.ToExpression(this.Info.ToReadOnly()));
+        }
+
+        protected void WriteUpdateCell(Cell cell)
+        {
+            this.QueryBuilder
+                .Append(this.ApplyTableColumnConfig(cell.Name))
+                .Append(" = ")
+                .Append(this.RegisterCellValue(cell));
+        }
 
         #endregion
 
@@ -283,7 +354,7 @@ namespace SharpOrm.Builder
 
         protected virtual void WriteSelectColumns()
         {
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(WriteSelect)));
+            this.QueryBuilder.AppendJoin(", ", this.Info.Select.Select(WriteSelect));
         }
 
         protected string WriteSelect(Column column)
@@ -296,7 +367,7 @@ namespace SharpOrm.Builder
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.QueryBuilder.Append(" GROUP BY ").Append(string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
+            this.QueryBuilder.Append(" GROUP BY ").AppendJoin(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly())));
 
             if (this.Info.Having.Empty)
                 return;

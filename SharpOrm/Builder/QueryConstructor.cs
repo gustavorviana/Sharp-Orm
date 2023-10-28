@@ -160,7 +160,8 @@ namespace SharpOrm.Builder
         public QueryConstructor Add(params string[] raws)
         {
             this.query.Capacity += raws.Sum(txt => txt.Length) + raws.Length;
-            return this.Add(string.Join(" ", raws));
+            this.query.AppendJoin(" ", raws);
+            return this;
         }
 
         /// <summary>

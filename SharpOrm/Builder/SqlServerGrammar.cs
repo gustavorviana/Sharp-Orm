@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -43,7 +44,7 @@ namespace SharpOrm.Builder
                 this.QueryBuilder.AppendFormat(",{0}", join.Info.TableName.TryGetAlias(join.Info.Config));
         }
 
-        protected override void ConfigureUpdate(Cell[] cells)
+        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
             this.QueryBuilder.AppendFormat(
                 "UPDATE {0} SET {1}",
@@ -84,7 +85,7 @@ namespace SharpOrm.Builder
             else this.WriteSelect(configureWhereParams, countColumn);
         }
 
-        protected override void ConfigureInsert(Cell[] cells, bool getGeneratedId)
+        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
             base.ConfigureInsert(cells, false);
 

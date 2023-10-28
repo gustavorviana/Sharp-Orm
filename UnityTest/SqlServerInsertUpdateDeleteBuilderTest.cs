@@ -191,7 +191,7 @@ namespace UnityTest
             using var g = new SqlServerGrammar(q);
 
             using var cmd = g.InsertQuery(selectQuery, new[] { "UserId", "Status" });
-            Assert.AreEqual("INSERT INTO [TestTable] (UserId,Status) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] (UserId, Status) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
         }
 
         [TestMethod]
