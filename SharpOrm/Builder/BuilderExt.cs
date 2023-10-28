@@ -45,7 +45,7 @@ namespace SharpOrm.Builder
             }
         }
 
-        internal static StringBuilder AppendJoin(this StringBuilder builder, string separator, IEnumerable<object> values)
+        internal static StringBuilder AppendJoin<T>(this StringBuilder builder, string separator, IEnumerable<T> values)
         {
             using (var en = values.GetEnumerator())
             {

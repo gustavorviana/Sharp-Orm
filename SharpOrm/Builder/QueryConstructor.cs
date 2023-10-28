@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -116,6 +117,14 @@ namespace SharpOrm.Builder
             return this.Add("?").AddParameters(val);
         }
 
+        public QueryConstructor Add(object rawQuery)
+        {
+            if (ToQueryValue(rawQuery) is string strQuery)
+                return this.Add(strQuery);
+
+            return this.Add(rawQuery?.ToString());
+        }
+
         /// <summary>
         /// Adds an expression to the query.
         /// </summary>
@@ -142,16 +151,17 @@ namespace SharpOrm.Builder
 
         public QueryConstructor AddFormat(string format, params object[] args)
         {
-            return this.Add(string.Format(format, args));
+            this.query.AppendFormat(format, args);
+            return this;
         }
 
-        public QueryConstructor Add(char raw)
+        public QueryConstructor Add(char raw = ' ')
         {
             this.query.Append(raw);
             return this;
         }
 
-        public QueryConstructor Add(string raw = " ")
+        public QueryConstructor Add(string raw)
         {
             this.query.Append(raw);
             return this;
@@ -160,7 +170,12 @@ namespace SharpOrm.Builder
         public QueryConstructor Add(params string[] raws)
         {
             this.query.Capacity += raws.Sum(txt => txt.Length) + raws.Length;
-            this.query.AppendJoin(" ", raws);
+            return this.AddJoin(" ", raws);
+        }
+
+        public QueryConstructor AddJoin<T>(string separator, IEnumerable<T> values)
+        {
+            this.query.AppendJoin(separator, values);
             return this;
         }
 
