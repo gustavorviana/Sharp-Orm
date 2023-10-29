@@ -31,6 +31,25 @@ namespace SharpOrm.Builder
             this.WriteWhere(true);
         }
 
+        protected override void WriteJoin(JoinQuery join)
+        {
+            if (string.IsNullOrEmpty(join.Type))
+                join.Type = "INNER";
+
+            this.QueryBuilder
+                .Append(' ')
+                .Append(join.Type)
+                .Append(" JOIN ")
+                .Append(this.GetTableName(join, true));
+
+            if (join.IsNoLock())
+                this.QueryBuilder.Append(" WITH (NOLOCK)");
+
+            this.QueryBuilder.Append(" ON ");
+
+            this.WriteWhereContent(join.Info);
+        }
+
         protected override bool CanApplyDeleteJoins()
         {
             return base.CanApplyDeleteJoins() || this.Query.IsNoLock();
@@ -170,12 +189,12 @@ namespace SharpOrm.Builder
 
         private void ApplyPagination()
         {
-            this.QueryBuilder.AppendFormat(" WHERE [grammar_rownum] ");
+            this.QueryBuilder.Append(" WHERE [grammar_rownum] ");
 
             if (this.Query.Offset != null && this.Query.Limit != null)
                 this.QueryBuilder.AppendFormat("BETWEEN {0} AND {1}", this.Query.Offset + 1, this.Query.Offset + this.Query.Limit);
             else if (this.Query.Offset != null)
-                this.QueryBuilder.AppendFormat("> {0}", this.Query.Offset);
+                this.QueryBuilder.Append("> ").Append(this.Query.Offset);
         }
 
         private void WriteRowNumber()

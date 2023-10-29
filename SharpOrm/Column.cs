@@ -22,6 +22,18 @@ namespace SharpOrm
         /// </summary>
         public string Alias { get; set; }
 
+        private bool? isCount;
+        public bool IsCount
+        {
+            get
+            {
+                if (this.isCount == null)
+                    this.isCount = this.expression?.ToString()?.ToLower() is string exp && exp.StartsWith("count(") && exp.EndsWith(")");
+
+                return this.isCount.Value;
+            }
+        }
+
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
@@ -102,12 +114,12 @@ namespace SharpOrm
 
             StringBuilder builder = new StringBuilder();
             if (!string.IsNullOrEmpty(info.TableName.Alias) && !this.Name.Contains("."))
-                builder.AppendFormat("{0}.", info.Config.ApplyNomenclature(info.TableName.Alias));
+                builder.Append(info.Config.ApplyNomenclature(info.TableName.Alias)).Append('.');
 
             builder.Append(info.Config.ApplyNomenclature(this.Name));
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
-                builder.AppendFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
+                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(this.Alias));
 
             return (SqlExpression)builder;
         }
@@ -129,10 +141,7 @@ namespace SharpOrm
             if (exp?.EndsWith(".*") ?? false)
                 return "*";
 
-            if (exp == null || !exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) || !exp.EndsWith(")"))
-                return "";
-
-            return exp.Substring(6, exp.Length - 2);
+            return this.IsCount ? exp.Substring(6, exp.Length - 2) : "";
         }
 
         #region IEquatable

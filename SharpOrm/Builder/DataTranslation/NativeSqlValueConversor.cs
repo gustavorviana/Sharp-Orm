@@ -18,6 +18,7 @@ namespace SharpOrm.Builder.DataTranslation
             typeof(Guid),
             typeof(TimeSpan)
         };
+        public string GuidFormat { get; set; } = "D";
 
         public bool CanWork(Type type) => IsNative(type);
 
@@ -97,7 +98,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return DBNull.Value;
 
             if (value is Guid guid)
-                return guid.ToString();
+                return guid.ToString(GuidFormat);
 
             if (type.IsEnum)
                 return Convert.ToInt32(value);

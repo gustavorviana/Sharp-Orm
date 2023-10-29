@@ -2,17 +2,17 @@
 {
     public static class SqlServerExt
     {
-        public static void EnableNoLock(this Query query)
+        public static void EnableNoLock(this IGrammarOptions options)
         {
-            query.GrammarOptions = new SqlServerGrammarOptions
+            options.GrammarOptions = new SqlServerGrammarOptions
             {
                 NoLock = true
             };
         }
 
-        public static bool IsNoLock(this Query query)
+        public static bool IsNoLock(this IGrammarOptions options)
         {
-            return query.GrammarOptions is SqlServerGrammarOptions opt && opt.NoLock;
+            return options.GrammarOptions is SqlServerGrammarOptions opt && opt.NoLock;
         }
     }
 }

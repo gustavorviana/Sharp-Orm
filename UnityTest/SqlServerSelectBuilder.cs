@@ -8,7 +8,7 @@ using UnityTest.Utils;
 namespace UnityTest
 {
     [TestClass]
-    public class SqlServerBuilder : SqlServerTest
+    public class SqlServerSelectBuilder : SqlServerTest
     {
         [TestMethod]
         public void FixColumnName()
@@ -236,6 +236,17 @@ namespace UnityTest
 
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] WHERE [Column] IS NULL", cmd.CommandText);
+        }
+
+        [TestMethod]
+        public void SelectJoin()
+        {
+            using var query = new Query(Connection, TABLE);
+            query.Join("Table2 t2", q => q.WhereColumn("t2.IdTable", "TestTable.Id"), grammarOptions: new SqlServerGrammarOptions { NoLock = true });
+            using var g = NewConfig.NewGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] INNER JOIN [Table2] [t2] WITH (NOLOCK) ON [t2].[IdTable] = [TestTable].[Id]", cmd.CommandText);
         }
 
         [TestMethod]

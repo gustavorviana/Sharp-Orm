@@ -39,12 +39,8 @@ namespace SharpOrm
         {
             string[] splitNames = value.Split('.');
             for (int i = 0; i < splitNames.Length; i++)
-            {
-                if (splitNames[i] == "*")
-                    continue;
-
-                splitNames[i] = string.Format("{0}{1}{2}", prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
-            }
+                if (splitNames[i] != "*")
+                    splitNames[i] = string.Format("{0}{1}{2}", prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
 
             return string.Join(".", splitNames);
         }

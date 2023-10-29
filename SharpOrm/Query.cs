@@ -311,7 +311,7 @@ namespace SharpOrm
         }
     }
 
-    public class Query : QueryBase, ICloneable
+    public class Query : QueryBase, ICloneable, IGrammarOptions
     {
         #region Properties
         public bool Distinct { get; set; }
@@ -321,10 +321,6 @@ namespace SharpOrm
 
         public ConnectionCreator Creator { get; protected internal set; } = ConnectionCreator.Default;
 
-        /// <summary>
-        /// Options for customizing the execution of the grammar.
-        /// </summary>
-        /// <remarks>For example: SqlServerGrammarOptions.NoLock to have queries written with NOLOCK.</remarks>
         public object GrammarOptions { get; set; }
         protected IQueryConfig Config => this.Info.Config;
         public DbConnection Connection { get; }
@@ -466,14 +462,19 @@ namespace SharpOrm
             return this.Join(table, q => q.WhereColumn(column1, operation, column2), type);
         }
 
-        public Query Join(string table, QueryCallback callback, string type = "INNER")
+        public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
-            return this.Join(new DbName(table), callback, type);
+            return this.Join(new DbName(table), callback, type, grammarOptions);
         }
 
         public Query Join(DbName table, QueryCallback callback, string type = "INNER")
         {
-            JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type };
+            return this.Join(table, callback, type, this.GrammarOptions);
+        }
+
+        public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        {
+            JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
             callback(join);
             this.Info.Joins.Add(join);
             return this;

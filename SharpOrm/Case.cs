@@ -125,7 +125,7 @@ namespace SharpOrm
             query.Add("END");
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
-                query.AddFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
+                query.Add(" AS ").Add(info.Config.ApplyNomenclature(this.Alias));
 
             return query.ToExpression(info);
         }
@@ -138,7 +138,7 @@ namespace SharpOrm
                 return query.Add().Add(this.expression, false).Add();
 
             if (!string.IsNullOrEmpty(this.Name))
-                return query.AddFormat(" {0} ", info.Config.ApplyNomenclature(this.Name));
+                return query.Add(" ").Add(info.Config.ApplyNomenclature(this.Name)).Add(" ");
 
             return query.Add();
         }

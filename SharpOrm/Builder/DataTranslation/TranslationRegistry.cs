@@ -6,13 +6,18 @@ namespace SharpOrm.Builder.DataTranslation
 {
     public class TranslationRegistry
     {
-        private static readonly NativeSqlValueConversor native = new NativeSqlValueConversor();
+        private readonly NativeSqlValueConversor native = new NativeSqlValueConversor();
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
+        public string GuidFormat
+        {
+            get => native.GuidFormat;
+            set => native.GuidFormat = value;
+        }
 
         public object ToSql(object value)
         {
-            if (value is null)
-                return null;
+            if (value is null || value is DBNull)
+                return DBNull.Value;
 
             Type type = value?.GetType();
 
@@ -24,7 +29,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object FromSql(object value, Type expectedType)
         {
-            if (value is null)
+            if (value is null || value is DBNull)
                 return null;
 
             expectedType = GetValidTypeFor(expectedType);
@@ -56,7 +61,7 @@ namespace SharpOrm.Builder.DataTranslation
             return expectedType;
         }
 
-        public ISqlTranslation GetOf(MemberInfo property)
+        public static ISqlTranslation GetOf(MemberInfo property)
         {
             if (property.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);

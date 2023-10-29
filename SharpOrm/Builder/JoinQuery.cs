@@ -1,7 +1,8 @@
 ﻿namespace SharpOrm.Builder
 {
-    public class JoinQuery : QueryBase
+    public class JoinQuery : QueryBase, IGrammarOptions
     {
+        public object GrammarOptions { get; set; }
         public string Type { get; set; }
 
         public JoinQuery(IQueryConfig config, string table) : this(config, new DbName(table))
