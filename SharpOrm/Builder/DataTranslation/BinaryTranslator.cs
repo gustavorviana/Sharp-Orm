@@ -13,7 +13,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         /// <param name="type">The type to check.</param>
         /// <returns><c>true</c> if the translator can work with the type; otherwise, <c>false</c>.</returns>
-        public virtual bool CanWork(Type type) => type != null && (type == typeof(byte[]) || type == typeof(Stream) || type.IsSubclassOf(typeof(Stream)));
+        public virtual bool CanWork(Type type) => type == typeof(byte[]) || type == typeof(MemoryStream);
 
         /// <summary>
         /// Checks if two types are considered the same for specific cases related to byte arrays and streams.
@@ -23,10 +23,8 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>True if the types are considered the same, otherwise false.</returns>
         internal static bool IsSame(Type type1, Type type2)
         {
-            return (type1 == typeof(byte[]) && type2 == typeof(Stream)) ||
-                    (type2 == typeof(byte[]) && type1 == typeof(Stream)) ||
-                    (type1 == typeof(byte[]) && type2.IsSubclassOf(typeof(Stream))) ||
-                    (type2 == typeof(byte[]) && type1.IsSubclassOf(typeof(Stream)));
+            return (type1 == typeof(byte[]) && type2 == typeof(MemoryStream)) ||
+                    (type2 == typeof(byte[]) && type1 == typeof(MemoryStream));
         }
 
         public virtual object FromSqlValue(object value, Type expectedType)
@@ -74,7 +72,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return ms.ToArray();
 
             if (!(value is Stream stream) || !stream.CanRead)
-                throw new NotSupportedException("Invalid value provided. Expected a Stream or byte[].");
+                throw new NotSupportedException("Invalid value provided. Expected a MemoryStream or byte[].");
 
             using (ms = new MemoryStream())
             {

@@ -114,7 +114,7 @@ namespace UnityTest
         {
             public int Id { get; set; }
             [Column("bin")]
-            public Stream File { get; set; }
+            public MemoryStream File { get; set; }
         }
     }
 }

@@ -128,7 +128,7 @@ namespace UnityTest
             public byte[] bytes;
 #pragma warning restore CS0649 // Field "ColumnInfoTest.BinaryClass.bytes" is never assigned and will always have its default value null.
 
-            public Stream Stream { get; set; }
+            public MemoryStream Stream { get; set; }
         }
     }
 }
