@@ -330,6 +330,13 @@ namespace SharpOrm
 
         #region Query
 
+        public static void InsertLot<T>(this Query<T> query, ICollection<T> rows, int pageSize) where T : class, new()
+        {
+            using (var enumerator = rows.GetEnumerator())
+                while (enumerator.MoveNext())
+                    query.BulkInsert(GetPage(enumerator, pageSize));
+        }
+
         public static void InsertLot(this Query query, ICollection<Row> rows, int pageSize)
         {
             using (var enumerator = rows.GetEnumerator())
