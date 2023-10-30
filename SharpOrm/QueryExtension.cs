@@ -344,9 +344,9 @@ namespace SharpOrm
                     query.BulkInsert(GetPage(enumerator, pageSize));
         }
 
-        private static IEnumerable<T> GetPage<T>(IEnumerator<T> enumerator, int pageSize)
+        internal static IEnumerable<T> GetPage<T>(IEnumerator<T> enumerator, int pageSize)
         {
-            do yield return enumerator.Current; while (enumerator.MoveNext() && --pageSize > 0);
+            do yield return enumerator.Current; while (--pageSize > 0 && enumerator.MoveNext());
         }
 
         /// <summary>

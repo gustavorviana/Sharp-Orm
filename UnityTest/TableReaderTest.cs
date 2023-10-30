@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MySqlX.XDevAPI.Relational;
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +93,22 @@ namespace UnityTest
             var info = new TableInfo(typeof(Order));
             var obj = new Order { Id = 1 };
             Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.ToLower() == "id"));
+        }
+
+        [TestMethod]
+        public void ReadLot()
+        {
+            var array = (IEnumerable<int>)new int[] { 1, 2, 3, 4, 5 };
+            using var enumerator = array.GetEnumerator();
+
+            enumerator.MoveNext();
+            CollectionAssert.AreEqual(new int[] { 1, 2 }, QueryExtension.GetPage(enumerator, 2).ToArray());
+
+            enumerator.MoveNext();
+            CollectionAssert.AreEqual(new int[] { 3, 4 }, QueryExtension.GetPage(enumerator, 2).ToArray());
+
+            enumerator.MoveNext();
+            CollectionAssert.AreEqual(new int[] { 5 }, QueryExtension.GetPage(enumerator, 2).ToArray());
         }
 
         private static MockDataReader OrderReader(int qtd)
