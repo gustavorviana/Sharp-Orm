@@ -13,7 +13,6 @@ namespace SharpOrm.Builder.DataTranslation
     public class TableReader : TableReaderBase
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
-        private readonly ConcurrentDictionary<ForeignTable, object> cachedValues = new ConcurrentDictionary<ForeignTable, object>();
         private readonly string[] foreignsTables = null;
         private readonly int maxDepth = 0;
         private int currentDepth = 0;
@@ -49,12 +48,23 @@ namespace SharpOrm.Builder.DataTranslation
             while (this.FindForeigns && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
-                this.currentDepth = Math.Max(info.Depth, this.currentDepth);
+                if (this.maxDepth > 0 && info.Depth > this.currentDepth)
+                    this.currentDepth = info.Depth;
 
-                if (info.Depth > maxDepth)
-                    continue;
+                if (info.Depth <= this.maxDepth)
+                    info.SetForeignValue(this.GetValueFor(info));
+            }
+        }
 
-                info.SetForeignValue(this.GetValueFor(info));
+        private object GetValueFor(ForeignInfo info)
+        {
+            using (var query = this.CreateQuery(info.TableName))
+            {
+                query.Where("id", info.ForeignKey);
+                query.Limit = 1;
+
+                using (var reader = query.ExecuteReader())
+                    return reader.Read() ? this.ParseFromReader(info.Type, reader, "") : null;
             }
         }
 
@@ -92,40 +102,31 @@ namespace SharpOrm.Builder.DataTranslation
 
         private void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
         {
-            var info = new ForeignInfo(owner, fkValue, column, currentDepth + 1);
             if (!this.FindForeigns)
             {
-                if (this.CreateForeignIfNoDepth && GetObjWithKey(info) is object value)
-                    info.SetForeignValue(value);
+                if (this.CreateForeignIfNoDepth)
+                    column.SetRaw(owner, GetObjWithKey(column.Type, fkValue));
                 return;
             }
 
-            if (this.CanFindForeign(info.TableName))
-                foreignKeyToLoad.Enqueue(info);
+            if (!this.CanFindForeign(TableInfo.GetNameOf(column.Type)))
+                return;
+
+            var info = this.foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
+            if (info == null)
+                foreignKeyToLoad.Enqueue(info = new ForeignInfo(column.Type, fkValue, this.currentDepth + 1));
+
+            if (this.currentDepth + 1 > this.currentDepth)
+                info.AddFkColumn(owner, column);
         }
 
-        private object GetObjWithKey(ForeignInfo info)
+        private object GetObjWithKey(Type tableType, object fk)
         {
-            var fkTable = GetTable(info.ForeignColumn.Type);
+            var fkTable = GetTable(tableType);
             object value = fkTable.CreateInstance();
-            fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, info.ForeignKey);
+            fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, fk);
 
             return value;
-        }
-
-        private object GetValueFor(ForeignInfo info)
-        {
-            return this.cachedValues.GetOrAdd(new ForeignTable(info), (table) =>
-            {
-                using (var query = this.CreateQuery(table.TableName))
-                {
-                    query.Where("id", table.KeyValue);
-                    query.Limit = 1;
-
-                    using (var reader = query.ExecuteReader())
-                        return reader.Read() ? this.ParseFromReader(info.ForeignColumn.Type, reader, "") : null;
-                }
-            });
         }
 
         private bool CanFindForeign(string name)
@@ -136,7 +137,8 @@ namespace SharpOrm.Builder.DataTranslation
             if (this.foreignsTables.Length == 0)
                 return true;
 
-            return this.foreignsTables.Any(t => t.Equals(name, StringComparison.OrdinalIgnoreCase));
+            name = name.ToLower();
+            return this.foreignsTables.Any(t => t.ToLower().Equals(name));
         }
 
         protected override void Dispose(bool disposing)
@@ -144,7 +146,6 @@ namespace SharpOrm.Builder.DataTranslation
             base.Dispose(disposing);
 
             foreignKeyToLoad.Clear();
-            cachedValues.Clear();
         }
 
         public override IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token)
@@ -169,64 +170,37 @@ namespace SharpOrm.Builder.DataTranslation
             }
         }
 
-        private class ForeignTable : IEquatable<ForeignTable>
-        {
-            public string TableName { get; }
-            public object KeyValue { get; }
-
-            public ForeignTable(ForeignInfo info)
-            {
-                this.TableName = info.TableName;
-                this.KeyValue = info.ForeignKey;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return Equals(obj as ForeignTable);
-            }
-
-            public bool Equals(ForeignTable other)
-            {
-                return !(other is null) &&
-                       TableName == other.TableName &&
-                       EqualityComparer<object>.Default.Equals(KeyValue, other.KeyValue);
-            }
-
-            public override int GetHashCode()
-            {
-                return this.TableName.GetHashCode() * this.KeyValue.GetHashCode();
-            }
-
-            public static bool operator ==(ForeignTable left, ForeignTable right)
-            {
-                return EqualityComparer<ForeignTable>.Default.Equals(left, right);
-            }
-
-            public static bool operator !=(ForeignTable left, ForeignTable right)
-            {
-                return !(left == right);
-            }
-        }
-
         private class ForeignInfo
         {
-            public object Owner { get; }
             public object ForeignKey { get; }
-            public ColumnInfo ForeignColumn { get; }
+            public string TableName { get; }
+            public Type Type { get; }
             public int Depth { get; }
-            public string TableName => TableInfo.GetNameOf(ForeignColumn.Type);
 
-            public ForeignInfo(object owner, object foreignKey, ColumnInfo foreignColumn, int depth)
+            private Dictionary<object, ColumnInfo> fkObjs = new Dictionary<object, ColumnInfo>();
+
+            public ForeignInfo(Type type, object foreignKey, int depth)
             {
-                this.Owner = owner;
+                this.TableName = TableInfo.GetNameOf(type);
                 this.ForeignKey = foreignKey;
-                this.ForeignColumn = foreignColumn;
+                this.Type = type;
                 this.Depth = depth;
+            }
+
+            public void AddFkColumn(object owner, ColumnInfo column)
+            {
+                this.fkObjs.Add(owner, column);
             }
 
             public void SetForeignValue(object value)
             {
-                this.ForeignColumn.SetRaw(this.Owner, value);
+                foreach (var item in fkObjs)
+                    item.Value.SetRaw(item.Key, value);
+            }
+
+            public bool IsFk(Type type, object foreignKey)
+            {
+                return this.Type == type && this.ForeignKey.Equals(foreignKey);
             }
         }
 

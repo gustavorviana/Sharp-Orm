@@ -498,7 +498,7 @@ namespace SharpOrm
 
         #endregion
 
-        #region Havong
+        #region Having
 
         public Query Having(QueryCallback callback)
         {

@@ -379,7 +379,6 @@ namespace SharpOrm.Builder
 
         private QueryBase WriteCallback(QueryCallback callback, string whereType)
         {
-            int lastSize = this.Info.Where.query.Length;
             try
             {
                 this.WriteWhereType(whereType);
@@ -387,12 +386,10 @@ namespace SharpOrm.Builder
 
                 this.Info.Where.Add('(');
                 callback(this);
-                this.Info.Where.Add(')');
             }
-            catch
+            finally
             {
-                this.Info.Where.query.Length = lastSize;
-                throw;
+                this.Info.Where.FixLastOpen();
             }
 
             return this;

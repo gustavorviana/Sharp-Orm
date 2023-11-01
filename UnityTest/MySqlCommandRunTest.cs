@@ -266,7 +266,7 @@ namespace UnityTest
             qOrder.Info.Joins.Clear();
             qOrder.Info.Where.Clear();
 
-            Assert.AreEqual(1, qOrder.Count());
+            Assert.AreEqual(2, qOrder.Count());
 
             var order = qOrder.FirstOrDefault();
             Assert.AreEqual("Ok", order.Status);
@@ -352,12 +352,14 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns(1, "Customers", "Address").Paginate(1, 1).FirstOrDefault();
+            var orders = ((Query<Order>)query.Where("customer_id", 2)).WithForeigns(1, "Customers", "Address").Paginate(2, 1);
 
-            Assert.IsNotNull(order.Customer);
-            Assert.AreEqual(order.CustomerId, order.Customer.Id);
+            Assert.IsNotNull(orders[0].Customer);
+            Assert.AreEqual(orders[0].Customer, orders[1].Customer);
+            Assert.AreEqual(orders[0].CustomerId, orders[1].CustomerId);
+            Assert.AreEqual(orders[0].Customer.Id, orders[1].Customer.Id);
 
-            Assert.IsNull(order.Customer.Address);
+            Assert.IsNull(orders[0].Customer.Address);
         }
 
         [TestMethod]
@@ -447,6 +449,14 @@ namespace UnityTest
                     Id = 2,
                     CustomerId = 2,
                     Product = "My product 2",
+                    Quantity = 10,
+                    Status = "Ok"
+                },
+                new Order
+                {
+                    Id = 3,
+                    CustomerId = 2,
+                    Product = "My product 3",
                     Quantity = 10,
                     Status = "Ok"
                 }

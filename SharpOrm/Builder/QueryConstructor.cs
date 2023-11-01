@@ -17,7 +17,7 @@ namespace SharpOrm.Builder
     public sealed class QueryConstructor : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
-        internal readonly StringBuilder query = new StringBuilder();
+        private readonly StringBuilder query = new StringBuilder();
         private readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
@@ -247,6 +247,12 @@ namespace SharpOrm.Builder
         public override string ToString()
         {
             return query.ToString();
+        }
+
+        internal void FixLastOpen()
+        {
+            if (this.query[this.query.Length - 1] == '(') this.query.Remove(this.query.Length - 1, 1);
+            else this.query.Append(')');
         }
 
         #region IDisposable
