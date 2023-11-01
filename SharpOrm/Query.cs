@@ -230,7 +230,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            this.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)).ToArray());
+            base.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)).ToArray());
         }
 
         /// <summary>
@@ -640,7 +640,7 @@ namespace SharpOrm
             {
                 object result = cmd.ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
-                return result is DBNull ? 0 : Convert.ToInt32(result);
+                return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
             }
         }
 
@@ -655,7 +655,6 @@ namespace SharpOrm
             using (DbCommand cmd = grammar.InsertQuery(query, columnNames))
                 cmd.ExecuteNonQuery();
         }
-
 
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);

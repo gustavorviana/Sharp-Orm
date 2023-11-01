@@ -1,5 +1,7 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -403,7 +405,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public static long InsertL(this Query query, Dictionary<string, object> cells)
         {
-            return query.Insert(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+            return query.InsertL(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
         }
 
         /// <summary>
@@ -421,7 +423,7 @@ namespace SharpOrm
             {
                 object result = cmd.ExecuteScalar();
                 query.Token.ThrowIfCancellationRequested();
-                return result is DBNull ? 0 : Convert.ToInt64(result);
+                return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt64(result) : 0;
             }
         }
 
@@ -447,6 +449,12 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
+        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns) where T : new()
+        {
+            foreach (var item in items)
+                query.Upsert(item, toCheckColumns);
+        }
+
         /// <summary>
         /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
         /// </summary>
@@ -459,6 +467,9 @@ namespace SharpOrm
         /// </remarks>
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException("At least one column name must be entered.", nameof(toCheckColumns));
+
             using (query = (Query<T>)query.Clone(false))
             {
                 foreach (var column in toCheckColumns)
@@ -467,6 +478,12 @@ namespace SharpOrm
                 if (query.Any()) query.Update(obj);
                 else query.Insert(obj);
             }
+        }
+
+        public static void BulkUpsert(this Query query, IEnumerable<Row> rows, string[] toCheckColumns)
+        {
+            foreach (var row in rows)
+                query.Upsert(row, toCheckColumns);
         }
 
         /// <summary>
@@ -579,6 +596,16 @@ namespace SharpOrm
         #endregion
 
         #endregion
+
+        internal static DbParameter AddCommand(this DbCommand command, string name, object value)
+        {
+            var param = command.CreateParameter();
+            param.ParameterName = name;
+            param.Value = value;
+            command.Parameters.Add(param);
+
+            return param;
+        }
 
         #region DbDataReader
 
