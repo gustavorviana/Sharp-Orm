@@ -13,5 +13,7 @@
         public const string NoColumnsInserted = "At least one column must be inserted.";
         public const string CannotUseEmptyCase = "You cannot use an empty case.";
         public const string CannotUseEmptyCollection = "You are not allowed to use an empty collection.";
+        public const string TransactionOpen = "The transaction has already been opened.";
+        public const string TransactionNotOpen = "The transaction has not been opened.";
     }
 }

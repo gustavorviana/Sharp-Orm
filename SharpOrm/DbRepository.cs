@@ -22,7 +22,7 @@ namespace SharpOrm
         private bool _disposed;
 
         private DbTransaction _transaction;
-        private DbConnection _transactConnection;
+        private DbConnection _transactionConn;
 
         /// <summary>
         /// Gets the default connection creator for the repository.
@@ -71,30 +71,30 @@ namespace SharpOrm
         /// <summary>
         /// Begins a new database transaction.
         /// </summary>
-        public void BeginTransaction()
+        public virtual void BeginTransaction()
         {
             if (this.HasParentTransaction)
                 return;
 
             if (this.HasTransaction)
-                throw new DatabaseException("A transaction has already been opened.");
+                throw new DatabaseException(Messages.TransactionOpen);
 
-            if (this._transactConnection == null)
-                this._transactConnection = this.Creator.GetConnection();
+            if (this._transactionConn == null)
+                this._transactionConn = this.Creator.GetConnection();
 
-            this._transaction = this._transactConnection.BeginTransaction();
+            this._transaction = this._transactionConn.BeginTransaction();
         }
 
         /// <summary>
         /// Commits the current database transaction.
         /// </summary>
-        public void CommitTransaction()
+        public virtual void CommitTransaction()
         {
             if (this.HasParentTransaction)
                 return;
 
             if (!this.HasTransaction)
-                throw new DatabaseException("A transaction has not been opened.");
+                throw new DatabaseException(Messages.TransactionNotOpen);
 
             this._transaction.Commit();
             this.ClearTransaction();
@@ -103,13 +103,13 @@ namespace SharpOrm
         /// <summary>
         /// Rolls back the current database transaction.
         /// </summary>
-        public void RollbackTransaction()
+        public virtual void RollbackTransaction()
         {
             if (this.HasParentTransaction)
                 return;
 
             if (!this.HasTransaction)
-                throw new DatabaseException("A transaction has not been opened.");
+                throw new DatabaseException(Messages.TransactionNotOpen);
 
             this._transaction.Rollback();
             this.ClearTransaction();
@@ -118,27 +118,30 @@ namespace SharpOrm
         /// <summary>
         /// Clears the current transaction and related resources.
         /// </summary>
-        protected void ClearTransaction()
+        protected virtual void ClearTransaction()
         {
             if (this.HasTransaction && !this.HasParentTransaction)
                 this._transaction.Dispose();
 
             this._transaction = null;
-            if (this._transactConnection == null)
+            if (this._transactionConn == null)
                 return;
 
-            this.Creator.SafeDisposeConnection(this._transactConnection);
-            this._transactConnection = null;
+            this.Creator.SafeDisposeConnection(this._transactionConn);
+            this._transactionConn = null;
         }
 
         /// <summary>
         /// Runs a transaction with the specified callback action.
         /// </summary>
         /// <param name="callback">The callback action to execute within the transaction.</param>
-        protected void RunTransaction(Action callback)
+        public void RunTransaction(Action callback)
         {
             if (this.HasTransaction)
+            {
                 callback();
+                return;
+            }
 
             try
             {
@@ -159,7 +162,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type of result to return.</typeparam>
         /// <param name="callback">The callback function to execute within the transaction.</param>
         /// <returns>The result of the transaction.</returns>
-        protected T RunTransaction<T>(Func<T> callback)
+        public T RunTransaction<T>(Func<T> callback)
         {
             T result = default;
             this.RunTransaction(new Action(() => result = callback()));
@@ -248,6 +251,7 @@ namespace SharpOrm
             this._commands.Add(cmd);
             return cmd;
         }
+        
         #endregion
 
         private void OnCommandDisposed(object sender, EventArgs e)
@@ -305,6 +309,9 @@ namespace SharpOrm
 
             if (!disposing)
             {
+                this._transaction = null;
+                this._transactionConn = null;
+
                 this._commands.Clear();
                 this._connections.Clear();
                 return;

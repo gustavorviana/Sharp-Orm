@@ -38,7 +38,7 @@ namespace UnityTest.Utils.Mock
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
-            throw new NotImplementedException();
+            return new MockTransaction(this);
         }
 
         protected override DbCommand CreateDbCommand()
