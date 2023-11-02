@@ -36,6 +36,10 @@ namespace SharpOrm
         {
         }
 
+        public Query(ConnectionCreator creator, DbName table) : base(creator, table)
+        {
+        }
+
         public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
         {
         }
@@ -348,7 +352,7 @@ namespace SharpOrm
         {
             this.Creator = creator;
         }
-
+        
         public Query(ConnectionCreator creator, DbName table)
             : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
         {
