@@ -192,7 +192,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="alias">An alias for the type in the query.</param>
         /// <returns>A Query object for the specified type with an alias.</returns>
-        protected Query<T> Query<T>(string alias) where T : new()
+        protected Query<T> Query<T>(string alias = "") where T : new()
         {
             return this.Query<T>(DbName.Of<T>(alias));
         }
