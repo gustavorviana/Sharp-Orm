@@ -335,6 +335,7 @@ namespace SharpOrm
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
         public int CommandTimeout { get; set; }
+        private OpenReader lastOpenReader = null;
         #endregion
 
         #region Query
@@ -352,7 +353,7 @@ namespace SharpOrm
         {
             this.Creator = creator;
         }
-        
+
         public Query(ConnectionCreator creator, DbName table)
             : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
         {
@@ -605,9 +606,8 @@ namespace SharpOrm
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Update(cells))
             {
-                int result = cmd.ExecuteNonQuery();
+                int result = grammar.Update(cells).ExecuteNonQuery();
                 this.Token.ThrowIfCancellationRequested();
                 return result;
             }
@@ -631,7 +631,6 @@ namespace SharpOrm
             return this.Insert((IEnumerable<Cell>)cells);
         }
 
-
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
@@ -640,9 +639,8 @@ namespace SharpOrm
         public int Insert(IEnumerable<Cell> cells)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Insert(cells))
             {
-                object result = cmd.ExecuteScalar();
+                object result = grammar.Insert(cells).ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
                 return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
             }
@@ -656,8 +654,7 @@ namespace SharpOrm
         public void Insert(QueryBase query, params string[] columnNames)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.InsertQuery(query, columnNames))
-                cmd.ExecuteNonQuery();
+                grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
         }
 
         /// <summary>
@@ -668,8 +665,7 @@ namespace SharpOrm
         public void Insert(SqlExpression expression, params string[] columnNames)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.InsertExpression(expression, columnNames))
-                cmd.ExecuteNonQuery();
+                grammar.InsertExpression(expression, columnNames).ExecuteNonQuery();
         }
 
         /// <summary>
@@ -688,9 +684,8 @@ namespace SharpOrm
         public void BulkInsert(IEnumerable<Row> rows)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.BulkInsert(rows))
             {
-                cmd.ExecuteScalar();
+                grammar.BulkInsert(rows).ExecuteNonQuery();
                 this.Token.ThrowIfCancellationRequested();
             }
         }
@@ -704,9 +699,8 @@ namespace SharpOrm
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Delete())
             {
-                int result = cmd.ExecuteNonQuery();
+                int result = grammar.Delete().ExecuteNonQuery();
                 this.Token.ThrowIfCancellationRequested();
                 return result;
             }
@@ -719,9 +713,8 @@ namespace SharpOrm
         public long Count()
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Count())
             {
-                object result = cmd.ExecuteScalar();
+                object result = grammar.Count().ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
                 return Convert.ToInt64(result);
             }
@@ -745,9 +738,8 @@ namespace SharpOrm
         public long Count(Column column)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Count(column))
             {
-                object result = cmd.ExecuteScalar();
+                object result = grammar.Count(column).ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
                 return Convert.ToInt64(result);
             }
@@ -825,9 +817,8 @@ namespace SharpOrm
         {
             using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select())
             {
-                object result = cmd.ExecuteScalar();
+                object result = grammar.Select().ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
                 return tReader.ReadDbObject(result);
             }
@@ -839,9 +830,10 @@ namespace SharpOrm
         /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select())
-                return cmd.ExecuteReader();
+            if (this.lastOpenReader is OpenReader last)
+                last.Dispose();
+
+            return (this.lastOpenReader = new OpenReader(this.Info.Config.NewGrammar(this))).reader;
         }
 
         public Query JoinToDelete(params string[] join)
@@ -906,15 +898,60 @@ namespace SharpOrm
         {
             base.Dispose(disposing);
 
+            if (disposing && this.lastOpenReader is OpenReader last)
+                last.Dispose();
+
             if (disposing && this.Transaction == null && this.Creator != null && !this.notClose)
                 this.Creator.SafeDisposeConnection(this.Connection);
+
+            this.lastOpenReader = null;
         }
 
         public override string ToString()
         {
             using (var grammar = this.Info.Config.NewGrammar(this))
-            using (DbCommand cmd = grammar.Select(false))
-                return cmd.CommandText;
+                return grammar.Select(false).CommandText;
+        }
+
+        private class OpenReader : IDisposable
+        {
+            private readonly Grammar grammar;
+            public readonly DbDataReader reader;
+            private bool _disposed;
+
+            public OpenReader(Grammar grammar)
+            {
+                this.grammar = grammar;
+                this.reader = grammar.Select().ExecuteReader();
+            }
+
+            public void Dispose()
+            {
+                if (this._disposed)
+                    return;
+
+                this.Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            ~OpenReader()
+            {
+                this.Dispose(false);
+            }
+
+            protected void Dispose(bool disposing)
+            {
+                if (this._disposed)
+                    return;
+
+                this._disposed = true;
+
+                if (!disposing)
+                    return;
+
+                try { ((IDisposable)this.reader).Dispose(); } catch { }
+                try { this.grammar.Dispose(); } catch { }
+            }
         }
     }
 }

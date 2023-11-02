@@ -180,10 +180,20 @@ namespace SharpOrm
         /// <returns>A Query object for the specified table.</returns>
         protected Query Query(string table)
         {
-            if (this.HasTransaction)
-                return new Query(this._transaction, this.Creator.Config, table) { Token = this.Token };
+            return this.Query(new DbName(table));
+        }
 
-            return new Query(this.Creator, table) { Token = this.Token };
+        /// <summary>
+        /// Creates a Query object for a specific database table.
+        /// </summary>
+        /// <param name="name">The name of the database table to query.</param>
+        /// <returns>A Query object for the specified table.</returns>
+        protected Query Query(DbName name)
+        {
+            if (this.HasTransaction)
+                return new Query(this._transaction, this.Creator.Config, name) { Token = this.Token };
+
+            return new Query(this.Creator, name) { Token = this.Token };
         }
 
         /// <summary>
