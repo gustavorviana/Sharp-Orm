@@ -14,7 +14,6 @@ namespace SharpOrm.Builder
         internal const string AND = "AND";
         internal const string OR = "OR";
 
-        private bool _ignoreWhereType = false;
         private bool _disposed = false;
         protected internal QueryInfo Info { get; }
 
@@ -379,19 +378,13 @@ namespace SharpOrm.Builder
 
         private QueryBase WriteCallback(QueryCallback callback, string whereType)
         {
-            try
-            {
-                this.WriteWhereType(whereType);
-                this._ignoreWhereType = true;
+            var qBase = new QueryBase(this.Info.Config, this.Info.TableName);
+            callback(qBase);
 
-                this.Info.Where.Add('(');
-                callback(this);
-            }
-            finally
-            {
-                this.Info.Where.FixLastOpen();
-            }
+            if (qBase.Info.Where.Empty)
+                return this;
 
+            this.WriteWhereType(whereType).Add('(').Add(qBase.Info.Where).Add(')');
             return this;
         }
 
@@ -511,13 +504,12 @@ namespace SharpOrm.Builder
             return this.Info.Where.Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
         }
 
-        internal void WriteWhereType(string type)
+        internal QueryConstructor WriteWhereType(string type)
         {
-            if (!this.Info.Where.Empty && !_ignoreWhereType)
-                this.Info.Where.Add("", type, "");
+            if (!this.Info.Where.Empty)
+                this.Info.Where.Add(' ').Add(type).Add(' ');
 
-            if (_ignoreWhereType)
-                _ignoreWhereType = false;
+            return this.Info.Where;
         }
 
         #endregion

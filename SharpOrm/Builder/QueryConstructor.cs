@@ -308,15 +308,6 @@ namespace SharpOrm.Builder
             return query.ToString();
         }
 
-        /// <summary>
-        /// Fixes the last open parenthesis in the SQL query by either removing it or adding a closing parenthesis.
-        /// </summary>
-        internal void FixLastOpen()
-        {
-            if (this.query[this.query.Length - 1] == '(') this.query.Remove(this.query.Length - 1, 1);
-            else this.query.Append(')');
-        }
-
         #region IDisposable
         ~QueryConstructor()
         {
