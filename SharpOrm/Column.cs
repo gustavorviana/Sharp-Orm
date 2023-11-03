@@ -113,9 +113,6 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(info.TableName.Alias) && !this.Name.Contains("."))
-                builder.Append(info.Config.ApplyNomenclature(info.TableName.Alias)).Append('.');
-
             builder.Append(info.Config.ApplyNomenclature(this.Name));
 
             if (alias && !string.IsNullOrEmpty(this.Alias))

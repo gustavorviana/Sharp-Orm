@@ -3,6 +3,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using UnityTest.Utils;
@@ -808,6 +809,21 @@ namespace UnityTest
             using var cmd = g.Count();
             Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @c1", cmd.CommandText);
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+        }
+
+        [TestMethod]
+        public void SelectHaving()
+        {
+            using var query = NewQuery();
+            query.Select((Column)"Phone", (Column)"COUNT(Phone) AS 'PhonesCount'");
+            query.GroupBy("Phone");
+            query.Having(h => h.Where(new SqlExpression("COUNT(Phone) > 1")));
+            query.OrderByDesc("PhonesCount");
+
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT Phone, COUNT(Phone) AS 'PhonesCount' FROM `TestTable` GROUP BY `Phone` HAVING COUNT(Phone) > 1 ORDER BY `PhonesCount` Desc", cmd.CommandText);
         }
 
         private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)

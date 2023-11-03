@@ -138,7 +138,7 @@ namespace UnityTest
             using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [table].[Id] Desc) AS [grammar_rownum], [table].[Id], [table].[Name] FROM [TestTable] [table]) [table] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] [table]) [table] WHERE [grammar_rownum] BETWEEN 2 AND 11", cmd.CommandText);
         }
 
         [TestMethod]
