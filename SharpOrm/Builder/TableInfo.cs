@@ -134,10 +134,11 @@ namespace SharpOrm.Builder
         {
             foreach (var column in this.Columns)
             {
+                string propName = column.PropName.ToLower();
                 if (column.IsForeignKey)
                 {
                     if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column), propName);
                     continue;
                 }
 
@@ -145,7 +146,7 @@ namespace SharpOrm.Builder
                 if ((column.Key && (!readPk || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
-                yield return new Cell(column.Name, value);
+                yield return new Cell(column.Name, value, propName);
             }
         }
 

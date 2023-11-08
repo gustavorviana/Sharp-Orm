@@ -261,7 +261,8 @@ namespace SharpOrm
             if (columns.Length == 0)
                 return base.Update(cells.ToArray());
 
-            cells = cells.Where(c => columns.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
+            columns = columns.Select(c => c.ToLower()).ToArray();
+            cells = cells.Where(c => columns.Contains(c.PropName));
 
             var toUpdate = cells.ToArray();
             if (toUpdate.Length == 0)
@@ -590,7 +591,10 @@ namespace SharpOrm
 
         public int Update(Dictionary<string, object> cells)
         {
-            return this.Update(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+            if (!cells.Any())
+                throw new InvalidOperationException(Messages.NoColumnsInserted);
+
+            return this.Update(cells.Select(x => new Cell(x.Key, x.Value)));
         }
 
         /// <summary>
@@ -602,8 +606,20 @@ namespace SharpOrm
         {
             this.CheckIsSafeOperation();
 
-            if (cells.Length == 0)
+            if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
+
+            return this.Update((IEnumerable<Cell>)cells);
+        }
+
+        /// <summary>
+        /// Update rows on table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns></returns>
+        public int Update(IEnumerable<Cell> cells)
+        {
+            this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {

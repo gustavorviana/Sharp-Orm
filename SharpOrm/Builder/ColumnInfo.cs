@@ -70,6 +70,8 @@ namespace SharpOrm.Builder
         /// Indicate whether the column type is a C# primitive type or a Stream.
         /// </summary>
         public bool IsNative { get; }
+
+        internal string PropName => this.column?.Name;
         #endregion
 
         /// <summary>

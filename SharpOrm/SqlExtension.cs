@@ -44,17 +44,5 @@ namespace SharpOrm
 
             return string.Join(".", splitNames);
         }
-
-        /// <summary>
-        /// Checks if the collection of strings contains a specific string using the specified string comparison.
-        /// </summary>
-        /// <param name="values">The collection of strings to search in.</param>
-        /// <param name="toCompare">The string to compare against the collection.</param>
-        /// <param name="stringComparison">The string comparison type to use.</param>
-        /// <returns>True if the collection contains the string, otherwise false.</returns>
-        public static bool Contains(this IEnumerable<string> values, string toCompare, StringComparison stringComparison)
-        {
-            return values.Any(v => v.Equals(toCompare, stringComparison));
-        }
     }
 }

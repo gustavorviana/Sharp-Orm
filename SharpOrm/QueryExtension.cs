@@ -373,18 +373,19 @@ namespace SharpOrm
         /// <typeparam name="T"></typeparam>
         /// <param name="query"></param>
         /// <param name="obj"></param>
-        /// <param name="columnsToIgnore">Columns that should not be updated.</param>
+        /// <param name="columns">Columns that should not be updated.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columnsToIgnore) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns) where T : new()
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            if ((columnsToIgnore?.Length ?? 0) == 0)
-                throw new ArgumentNullException(nameof(columnsToIgnore));
+            if (!columns.Any())
+                throw new ArgumentNullException(nameof(columns));
 
-            return query.Update(query.TableInfo.GetObjCells(obj, false, query.Info.Config.ForeignLoader).Where(i => !columnsToIgnore.Contains(i.Name)).ToArray());
+            columns = columns.Select(c => c.ToLower()).ToArray();
+            return query.Update(query.TableInfo.GetObjCells(obj, false, query.Info.Config.ForeignLoader).Where(c => !columns.Contains(c.PropName)).ToArray());
         }
 
         /// <summary>

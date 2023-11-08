@@ -18,6 +18,13 @@ namespace SharpOrm
         /// </summary>
         public object Value { get; }
 
+        internal string PropName { get; }
+
+        internal Cell(string name, object value, string propName) : this(name, value)
+        {
+            this.PropName = propName;
+        }
+
         /// <summary>
         /// Creates a new instance of a cell with the specified column name and value.
         /// </summary>
