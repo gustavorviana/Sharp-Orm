@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Improvements in the foreign key system.</PackageReleaseNotes>
+		<PackageReleaseNotes>Improvement in the column reading system and bug fixes.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
