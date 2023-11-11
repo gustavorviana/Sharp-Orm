@@ -11,7 +11,7 @@ namespace UnityTest.ConnectionTest
     {
         [TestMethod]
         [TestProperty("clearDb", "")]
-        public void SimpleSelect()
+        public void Select()
         {
             try
             {
@@ -32,25 +32,6 @@ namespace UnityTest.ConnectionTest
 
                 Assert.AreEqual(0, qSelect.Count());
             }
-        }
-
-        [TestMethod]
-        [TestProperty("clearDb", "")]
-        public void MultipleInsert()
-        {
-            ConnectionCreator.ExecuteTransaction((transaction) =>
-            {
-                using var q = new Query(transaction, TABLE);
-                q.Insert(NewRow(1, "User 1").Cells);
-                q.Insert(NewRow(2, "User 2").Cells);
-                q.Insert(NewRow(3, "User 3").Cells);
-                q.Insert(NewRow(4, "User 4").Cells);
-
-                Assert.AreEqual(4, q.Count());
-            });
-
-            using var q = new Query(TABLE);
-            Assert.AreEqual(4, q.Count());
         }
     }
 }

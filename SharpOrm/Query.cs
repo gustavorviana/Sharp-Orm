@@ -87,11 +87,11 @@ namespace SharpOrm
         /// <summary>
         /// Specifies the foreign tables to be included in the query result up to the default depth (10).
         /// </summary>
-        /// <param name="tables">The names of the foreign tables to include.</param>
+        /// <param name="columnName">The names of the foreign tables to include.</param>
         /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
-        public Query<T> WithForeigns(params string[] tables)
+        public Query<T> WithForeigns(params string[] columnName)
         {
-            this.foreignsTables = tables;
+            this.foreignsTables = columnName;
             this.foreignsDepth = 10;
             return this;
         }
@@ -160,13 +160,14 @@ namespace SharpOrm
         {
             using (var translator = this.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
+                translator.Token = this.Token;
                 if (this.Transaction != null) translator.SetConnection(this.Transaction);
                 else translator.SetConnection(this.Connection);
 
                 K[] items;
 
                 using (var reader = this.ExecuteReader())
-                    items = translator.GetEnumerable<K>(reader, this.Token).ToArray();
+                    items = translator.GetEnumerable<K>(reader).ToArray();
 
                 translator.LoadForeignKeys();
                 return items;
@@ -764,8 +765,11 @@ namespace SharpOrm
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
             using (var translator = this.Config.CreateTableReader(new string[0], 0))
-            using (var reader = this.ExecuteReader())
-                return translator.GetEnumerable<T>(reader, this.Token).ToArray();
+            {
+                translator.Token = this.Token;
+                using (var reader = this.ExecuteReader())
+                    return translator.GetEnumerable<T>(reader).ToArray();
+            }
         }
 
         /// <summary>

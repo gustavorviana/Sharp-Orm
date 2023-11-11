@@ -3,13 +3,16 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using UnityTest.Models;
+using UnityTest.Utils;
 
 namespace UnityTest
 {
     [TestClass]
-    public class ObjectTranslatorTest
+    public class ObjectTranslatorTest : MockTest
     {
         private static readonly TableInfo table = new(new TranslationRegistry(), typeof(TestClass));
 
@@ -181,6 +184,27 @@ namespace UnityTest
             Assert.AreEqual(true, new NativeSqlValueConversor().CanWork(typeof(int?)));
         }
 
+        [TestMethod]
+        public void LoadArrayChild()
+        {
+            Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(3, i => new Order { Id = 1 }, true));
+            Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(10, i => new OrderItem
+            {
+                Id = i + 1,
+                OrderId = 1,
+                Value = i * 3 + 1
+            }, true));
+
+            using var query = new Query<Order>(Connection, Config);
+            query.WithForeigns("OrderItems");
+            var obj = query.FirstOrDefault();
+
+            Assert.IsNotNull(obj);
+            Assert.IsTrue(obj.ArrayItems.All(itm => itm.OrderId == 1));
+            Assert.IsTrue(obj.ListItems.All(itm => itm.OrderId == 1));
+            Assert.IsTrue(obj.IListItems.All(itm => itm.OrderId == 1));
+        }
+
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
             var prop = table.Columns.FirstOrDefault(c => c.Name == propName);
@@ -199,6 +223,32 @@ namespace UnityTest
             public readonly int Id = 1;
             public int Value { get; }
             public string Name { set { } }
+        }
+
+        [Table("Orders")]
+        private class Order
+        {
+            public int Id { get; set; }
+
+            [HasMany("id")]
+            public OrderItem[] ArrayItems { get; set; }
+
+            [HasMany("id")]
+            public List<OrderItem> ListItems { get; set; }
+
+            [HasMany("id")]
+            public IList<OrderItem> IListItems { get; set; }
+        }
+
+        [Table("OrderItems")]
+        private class OrderItem
+        {
+            public int Id { get; set; }
+
+            [Column("order_id")]
+            public int OrderId { get; set; }
+
+            public int Value { get; set; }
         }
     }
 }

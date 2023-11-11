@@ -56,6 +56,10 @@ namespace SharpOrm.Builder
         /// </summary>
         public string ForeignKey { get; }
 
+        public string LocalKey { get; }
+
+        public bool IsMany { get; }
+
         /// <summary>
         /// Gets a value indicating whether the column name is auto-generated.
         /// </summary>
@@ -99,9 +103,15 @@ namespace SharpOrm.Builder
             this.column = member;
             this.IsNative = NativeSqlValueConversor.IsNative(type);
             this.Translation = translation ?? registry.GetFor(this.Type);
-            this.ForeignKey = this.GetAttribute<ForeignKeyAttribute>()?.Name;
-            this.IsForeignKey = !string.IsNullOrEmpty(this.ForeignKey);
             this.Required = this.GetAttribute<RequiredAttribute>() != null;
+
+            HasManyAttribute hasManyAttr = this.GetAttribute<HasManyAttribute>();
+            this.IsMany = hasManyAttr != null;
+            this.ForeignKey = hasManyAttr?.ForeignKey;
+            this.LocalKey = hasManyAttr?.LocalKey;
+
+            this.ForeignKey = this.ForeignKey ?? this.GetAttribute<ForeignKeyAttribute>()?.Name;
+            this.IsForeignKey = this.IsMany || !string.IsNullOrEmpty(this.ForeignKey);
 
             ColumnAttribute colAttr = this.GetAttribute<ColumnAttribute>();
 

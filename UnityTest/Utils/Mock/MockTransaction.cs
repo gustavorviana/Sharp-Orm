@@ -17,12 +17,12 @@ namespace UnityTest.Utils.Mock
 
         public override void Commit()
         {
-        
+
         }
 
         public override void Rollback()
         {
-        
+
         }
     }
 }

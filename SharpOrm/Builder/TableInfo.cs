@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.DataTranslation.Reader;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -169,7 +170,7 @@ namespace SharpOrm.Builder
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            var table = TableReaderBase.GetTable(fkColumn.Type);
+            var table = TableReaderBase.GetTable(GetValidType(fkColumn.Type));
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
@@ -190,7 +191,12 @@ namespace SharpOrm.Builder
 
         public static string GetNameOf(Type type)
         {
-            return type.GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
+            return GetValidType(type).GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
+        }
+
+        private static Type GetValidType(Type type)
+        {
+            return HasManyInfo.IsCollection(type) ? HasManyInfo.GetGenericArg(type) : type;
         }
     }
 }

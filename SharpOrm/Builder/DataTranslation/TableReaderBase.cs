@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -25,13 +26,15 @@ namespace SharpOrm.Builder.DataTranslation
         private DbTransaction transaction;
         private DbConnection connection;
 
+        public CancellationToken Token { get; set; }
+
         public TableReaderBase(IQueryConfig config)
         {
             this.convertToUtc = config.DateKind == DateTimeKind.Utc;
             this.config = config;
         }
 
-        public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader, CancellationToken token) where T : new();
+        public abstract IEnumerable<T> GetEnumerable<T>(DbDataReader reader) where T : new();
 
         /// <summary>
         /// Parses an object of type <typeparamref name="T"/> from the database reader.
@@ -41,10 +44,15 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns>The parsed object of type <typeparamref name="T"/>.</returns>
         public T ParseFromReader<T>(DbDataReader reader) where T : new()
         {
-            if (typeof(T) == typeof(Row))
-                return (T)(object)GetRow(reader);
+            return (T)this.ParseFromReader(reader, typeof(T));
+        }
 
-            return (T)this.ParseFromReader(typeof(T), reader, "");
+        public object ParseFromReader(DbDataReader reader, Type type)
+        {
+            if (type == typeof(Row))
+                return GetRow(reader);
+
+            return this.ParseFromReader(type, reader, "");
         }
 
         /// <summary>
@@ -60,6 +68,13 @@ namespace SharpOrm.Builder.DataTranslation
                 cells[i] = GetCell(reader, i);
 
             return new Row(cells);
+        }
+
+        protected Array ToArray(Type type, ICollection collection)
+        {
+            Array array = Array.CreateInstance(type, collection.Count);
+            collection.CopyTo(array, 0);
+            return array;
         }
 
         /// <summary>

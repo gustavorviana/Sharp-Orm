@@ -261,7 +261,7 @@ namespace SharpOrm
             this._commands.Add(cmd);
             return cmd;
         }
-        
+
         #endregion
 
         private void OnCommandDisposed(object sender, EventArgs e)
