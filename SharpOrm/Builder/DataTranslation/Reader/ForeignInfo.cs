@@ -19,6 +19,14 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             this.Depth = depth;
         }
 
+        public ForeignInfo(LambdaColumn column, object foreignKey)
+        {
+            this.TableName = TableInfo.GetNameOf(column.ValueType);
+            this.ForeignKey = foreignKey;
+            this.Type = column.ValueType;
+            this.Depth = -1;
+        }
+
         public void AddFkColumn(object owner, ColumnInfo column)
         {
             this.fkObjs.Add(owner, column);

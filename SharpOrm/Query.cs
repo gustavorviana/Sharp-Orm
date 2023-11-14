@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 
 namespace SharpOrm
@@ -14,6 +15,7 @@ namespace SharpOrm
     {
         public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
+        private readonly List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
         private string[] foreignsTables = null;
         private int foreignsDepth = 0;
 
@@ -77,6 +79,7 @@ namespace SharpOrm
         /// <param name="depth">The depth to which the foreign tables should be included.</param>
         /// <param name="tables">The names of the foreign tables to include.</param>
         /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
+        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
         public Query<T> WithForeigns(int depth, params string[] tables)
         {
             this.foreignsTables = tables;
@@ -87,11 +90,12 @@ namespace SharpOrm
         /// <summary>
         /// Specifies the foreign tables to be included in the query result up to the default depth (10).
         /// </summary>
-        /// <param name="columnName">The names of the foreign tables to include.</param>
+        /// <param name="tables">The names of the foreign tables to include.</param>
         /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
-        public Query<T> WithForeigns(params string[] columnName)
+        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
+        public Query<T> WithForeigns(params string[] tables)
         {
-            this.foreignsTables = columnName;
+            this.foreignsTables = tables;
             this.foreignsDepth = 10;
             return this;
         }
@@ -101,6 +105,7 @@ namespace SharpOrm
         /// </summary>
         /// <typeparam name="K">The type of the foreign table to include.</typeparam>
         /// <returns>The modified Query<T> object with the specified foreign table of type K included.</returns>
+        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
         public Query<T> AddForeign<K>() where K : new()
         {
             if (this.foreignsTables == null)
@@ -116,6 +121,13 @@ namespace SharpOrm
             if (this.foreignsDepth < 1)
                 this.foreignsDepth = 10;
 
+            return this;
+        }
+
+        public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
+        {
+            var cols = new ColumnExpressionVisitor(this.Info).VisitColumn(call);
+            this._fkToLoad.AddRange(cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))));
             return this;
         }
 
@@ -160,6 +172,7 @@ namespace SharpOrm
         {
             using (var translator = this.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
+                translator._fkToLoad = this._fkToLoad;
                 translator.Token = this.Token;
                 if (this.Transaction != null) translator.SetConnection(this.Transaction);
                 else translator.SetConnection(this.Connection);
@@ -312,6 +325,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
+            query._fkToLoad.AddRange(this._fkToLoad);
             query.foreignsTables = this.foreignsTables;
             query.foreignsDepth = this.foreignsDepth;
         }

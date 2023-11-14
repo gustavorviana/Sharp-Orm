@@ -13,6 +13,11 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             this.LocalKey = localKey;
         }
 
+        public HasManyInfo(LambdaColumn column, object foreignKey, string localKey) : base(column, foreignKey)
+        {
+            this.LocalKey = localKey;
+        }
+
         public IList CreateList()
         {
             return (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(HasManyInfo.GetGenericArg(this.Type)));

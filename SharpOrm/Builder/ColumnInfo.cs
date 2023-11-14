@@ -122,6 +122,11 @@ namespace SharpOrm.Builder
             this.Key = this.GetAttribute<KeyAttribute>() != null || this.Name.ToLower() == "id";
         }
 
+        public static string GetName(MemberInfo member)
+        {
+            return member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
+        }
+
         /// <summary>
         /// Gets the specified attribute applied to the column.
         /// </summary>

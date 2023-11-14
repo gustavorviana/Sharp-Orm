@@ -17,6 +17,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <summary>
         /// Gets the translation registry associated with the table translator.
         /// </summary>
+        internal protected List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
         public static TranslationRegistry Registry { get; set; } = new TranslationRegistry();
         protected readonly IQueryConfig config;
         private readonly bool convertToUtc;

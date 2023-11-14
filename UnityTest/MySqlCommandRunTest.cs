@@ -52,7 +52,7 @@ namespace UnityTest
             addrQuery.Insert(new Address { Id = 1, Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
 
-            var customer = query.AddForeign<Address>().FirstOrDefault();
+            var customer = query.AddForeign(f => f.Address.Street).FirstOrDefault();
 
             Assert.IsNotNull(customer, "Customer failed");
             Assert.IsNotNull(customer.Address, "Address failed");
@@ -60,6 +60,7 @@ namespace UnityTest
             Assert.AreEqual(Name, customer.Name, "Customer Name failed");
             Assert.AreEqual(Email, customer.Email, "Customer Email failed");
             Assert.AreEqual(customer.AddressId, customer.Address.Id, "Address Id failed");
+            Assert.IsNotNull(customer.Address.Name);
         }
 
         [TestMethod]
@@ -299,7 +300,8 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns("Customers", "Address").FirstOrDefault();
+            query.AddForeign(f => f.Customer).AddForeign(f => f.Customer.Address);
+            var order = query.FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);
@@ -313,7 +315,7 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns("Customers", "Address").Find(1);
+            var order = query.AddForeign(o => o.Customer.Address).Find(1);
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);
@@ -327,7 +329,7 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns(1, "Customers", "Address").FirstOrDefault();
+            var order = query.AddForeign(o => o.Customer).FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);
