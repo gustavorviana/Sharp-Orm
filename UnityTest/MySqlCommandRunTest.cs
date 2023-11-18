@@ -349,6 +349,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void ExecuteArrayScalarConvertion()
+        {
+            InsertRows(5);
+            using var q = NewQuery();
+            q.Select("Id");
+
+            var names = q.ExecuteArrayScalar<string>();
+            Assert.AreEqual(5, names.Length);
+        }
+
+        [TestMethod]
         public void PaginateWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
