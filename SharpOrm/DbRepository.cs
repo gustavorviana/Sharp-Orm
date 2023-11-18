@@ -312,7 +312,7 @@ namespace SharpOrm
         /// Disposes of the Repository and associated resources.
         /// </summary>
         /// <param name="disposing">True if disposing of managed resources, false if finalizing.</param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (this._disposed)
                 return;
