@@ -754,6 +754,16 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void CountJoinSelect()
+        {
+            using var query = new Query(Connection, TABLE).Join("TestTable2 t2", "t2.Id", "TestTable.Id2").Select("TestTable.*");
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Count();
+            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `TestTable2` `t2` ON `t2`.`Id` = `TestTable`.`Id2`", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void CountDistinctSelect()
         {
             using var query = new Query(Connection, TABLE);
