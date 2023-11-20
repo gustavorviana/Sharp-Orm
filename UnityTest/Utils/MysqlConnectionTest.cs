@@ -20,5 +20,10 @@ namespace UnityTest.Utils
         {
             return new Query(Connection, $"{table} {alias}");
         }
+
+        protected static Query<T> NewQuery<T>(string alias = "") where T : new()
+        {
+            return new Query<T>(Connection, alias);
+        }
     }
 }

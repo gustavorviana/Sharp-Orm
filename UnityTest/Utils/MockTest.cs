@@ -40,6 +40,18 @@ namespace UnityTest.Utils
             return GetReader(values, loadForeign);
         }
 
+        protected static MockConnection GetNonQueryCommand(string expected)
+        {
+            var conn = new MockConnection();
+            conn.OnExecuteNonQuery += (string query) =>
+            {
+                Assert.AreEqual(expected, query);
+                return -1;
+            };
+
+            return conn;
+        }
+
         public static MockDataReader GetReader<T>(T[] objs, bool loadForeign)
         {
             Row[] rows = new Row[objs.Length];

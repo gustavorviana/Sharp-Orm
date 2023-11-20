@@ -156,13 +156,19 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
-            this.QueryBuilder.Append("UPDATE ").Append(this.GetTableName(false));
-            this.ApplyJoins();
+            using (var en = cells.GetEnumerator())
+            {
+                if (!en.MoveNext())
+                    throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-            this.QueryBuilder.Append(" SET ");
-            this.QueryBuilder.AppendJoin(WriteUpdateCell, ", ", cells);
+                this.QueryBuilder.Append("UPDATE ").Append(this.GetTableName(false));
+                this.ApplyJoins();
 
-            this.WriteWhere(true);
+                this.QueryBuilder.Append(" SET ");
+                this.QueryBuilder.AppendJoin(WriteUpdateCell, ", ", en);
+
+                this.WriteWhere(true);
+            }
         }
 
         protected void ApplyJoins()

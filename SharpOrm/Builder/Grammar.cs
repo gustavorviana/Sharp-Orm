@@ -325,7 +325,13 @@ namespace SharpOrm.Builder
         /// </summary>
         protected void Reset()
         {
-            this.Query.Token.ThrowIfCancellationRequested();
+            this.Reset(true);
+        }
+
+        protected void Reset(bool reconfigure)
+        {
+            if (reconfigure)
+                this.Query.Token.ThrowIfCancellationRequested();
 
             if (this.Command != null)
             {
@@ -333,13 +339,17 @@ namespace SharpOrm.Builder
                 this.Command.Dispose();
             }
 
-            this._command = this.Query.Connection.CreateCommand();
-            this._command.Transaction = this.Query.Transaction;
 
-            this.Query.Token.Register(() =>
+            if (reconfigure)
             {
-                try { this.Command.Cancel(); } catch { }
-            });
+                this._command = this.Query.Connection.CreateCommand();
+                this._command.Transaction = this.Query.Transaction;
+
+                this.Query.Token.Register(() =>
+                {
+                    try { this.Command.Cancel(); } catch { }
+                });
+            }
 
             this.QueryBuilder.Clear();
             this.whereWriter.Reset();
@@ -422,7 +432,7 @@ namespace SharpOrm.Builder
             if (this._disposed)
                 return;
 
-            this.Reset();
+            this.Reset(false);
             if (disposing)
             {
                 this.Command.Dispose();

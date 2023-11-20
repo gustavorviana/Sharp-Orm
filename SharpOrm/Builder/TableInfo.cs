@@ -135,7 +135,7 @@ namespace SharpOrm.Builder
         {
             foreach (var column in this.Columns)
             {
-                string propName = column.PropName.ToLower();
+                string propName = column.PropName;
                 if (column.IsForeignKey)
                 {
                     if (readFk && CanLoadForeignColumn(column))

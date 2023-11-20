@@ -5,23 +5,16 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Expressions
 {
     internal class ColumnExpressionVisitor : ExpressionVisitor
     {
-        private readonly QueryInfo _queryInfo;
-        private readonly object _lock = new object();
-        private readonly TranslationRegistry _registry = new TranslationRegistry();
         private readonly List<LambdaColumn> _columns = new List<LambdaColumn>();
-
-        public ColumnExpressionVisitor(QueryInfo queryInfo)
-        {
-            this._queryInfo = queryInfo;
-        }
+        private readonly object _lock = new object();
 
         public override Expression Visit(Expression node)
         {
-            lock (this._lock)
+            lock (_lock)
                 return base.Visit(node);
         }
 
@@ -30,16 +23,16 @@ namespace SharpOrm.Builder
             if (!(node.Member.MemberType == MemberTypes.Property || node.Member.MemberType == MemberTypes.Field))
                 return base.VisitMember(node);
 
-            this._columns.Insert(0, new LambdaColumn(node.Member));
+            _columns.Insert(0, new LambdaColumn(node.Member));
 
             return base.VisitMember(node);
         }
 
         public IEnumerable<LambdaColumn> VisitColumn<T>(Expression<ColumnExpression<T>> check)
         {
-            this._columns.Clear();
-            this.Visit(check);
-            return this._columns;
+            _columns.Clear();
+            Visit(check);
+            return _columns;
         }
     }
 }

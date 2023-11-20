@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using System.Linq;
 using System.Linq.Expressions;
 using UnityTest.Models;
@@ -9,8 +10,6 @@ namespace UnityTest
     [TestClass]
     public class LambdaTest
     {
-        private static readonly QueryInfo QInfo = new(new MysqlQueryConfig(), new DbName("name", "n"));
-
         [TestMethod]
         public void GetOneColumn()
         {
@@ -32,7 +31,7 @@ namespace UnityTest
 
         private static LambdaColumn[] ToColumn(Expression<ColumnExpression<Order>> check)
         {
-            return new ColumnExpressionVisitor(QInfo).VisitColumn(check).ToArray();
+            return new ColumnExpressionVisitor().VisitColumn(check).ToArray();
         }
     }
 }

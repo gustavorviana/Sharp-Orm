@@ -81,6 +81,15 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void UpdateNoColumns()
+        {
+            using var q = NewQuery();
+            using var g = new MysqlGrammar(q);
+
+            Assert.ThrowsException<InvalidOperationException>(() => g.Update(Array.Empty<Cell>()));
+        }
+
+        [TestMethod]
         public void Update()
         {
             using var q = NewQuery();

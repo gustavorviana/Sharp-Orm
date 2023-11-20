@@ -7,6 +7,7 @@ namespace UnityTest.Utils.Mock
 {
     public class MockCommand : DbCommand
     {
+        public Func<string, int> OnExecuteNonQuery;
         public override string CommandText { get; set; }
         public override int CommandTimeout { get; set; }
         public override CommandType CommandType { get; set; }
@@ -27,7 +28,7 @@ namespace UnityTest.Utils.Mock
 
         public override int ExecuteNonQuery()
         {
-            throw new NotImplementedException();
+            return OnExecuteNonQuery?.Invoke(this.CommandText) ?? -1;
         }
 
         public override object ExecuteScalar()

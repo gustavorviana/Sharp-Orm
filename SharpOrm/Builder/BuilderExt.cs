@@ -26,23 +26,17 @@ namespace SharpOrm.Builder
             return builder;
         }
 
-        internal static StringBuilder AppendJoin<T>(this StringBuilder builder, Action<T> callback, string separator, IEnumerable<T> values)
+        internal static StringBuilder AppendJoin<T>(this StringBuilder builder, Action<T> callback, string separator, IEnumerator<T> en)
         {
-            using (var en = values.GetEnumerator())
+            callback(en.Current);
+
+            while (en.MoveNext())
             {
-                if (!en.MoveNext())
-                    return builder;
-
+                builder.Append(separator);
                 callback(en.Current);
-
-                while (en.MoveNext())
-                {
-                    builder.Append(separator);
-                    callback(en.Current);
-                }
-
-                return builder;
             }
+
+            return builder;
         }
 
         internal static StringBuilder AppendJoin<T>(this StringBuilder builder, string separator, IEnumerable<T> values)

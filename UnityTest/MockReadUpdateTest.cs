@@ -13,7 +13,7 @@ using UnityTest.Utils.Mock;
 namespace UnityTest
 {
     [TestClass]
-    public class TableReaderTest : MockTest
+    public class MockReadUpdateTest : MockTest
     {
         [TestMethod]
         public void ReadWithCreateForeignIfNoDepth()
@@ -108,6 +108,26 @@ namespace UnityTest
 
             enumerator.MoveNext();
             CollectionAssert.AreEqual(new int[] { 5 }, QueryExtension.GetPage(enumerator, 2).ToArray());
+        }
+
+        [TestMethod]
+        public void UpdateByPropName()
+        {
+            var config = new MysqlQueryConfig(false);
+            var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
+
+            var query = new Query<Order>(conn, config);
+            query.Update(new Order { Quantity = 1 }, o => o.Quantity);
+        }
+
+        [TestMethod]
+        public void UpdateIgnorePropName()
+        {
+            var config = new MysqlQueryConfig(false);
+            var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
+
+            var query = new Query<Order>(conn, config);
+            query.UpdateExcept(new Order { Quantity = 1 }, o => o.Customer, o => o.CustomerId, o => o.Product, o => o.Status);
         }
 
         private static MockDataReader OrderReader(int qtd)

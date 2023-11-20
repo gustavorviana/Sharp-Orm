@@ -9,7 +9,10 @@ namespace UnityTest.Utils.Mock
     {
         public readonly Dictionary<string, Func<MockDataReader>> QueryReaders = new();
         private ConnectionState state = ConnectionState.Closed;
+        public Func<string, int> OnExecuteNonQuery;
         private string database;
+
+        public bool ThrowIfNoQuery { get; set; }
 
         public override string ConnectionString { get; set; }
 
@@ -45,6 +48,7 @@ namespace UnityTest.Utils.Mock
         {
             return new MockCommand
             {
+                OnExecuteNonQuery = OnExecuteNonQuery,
                 OnGetReader = cmd =>
                 {
                     var now = DateTime.Now;
@@ -57,6 +61,9 @@ namespace UnityTest.Utils.Mock
                     {
                         System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
                     }
+
+                    if (ThrowIfNoQuery)
+                        throw new Exception("Required query not found: " + cmd.CommandText);
 
                     System.Diagnostics.Debug.WriteLine(cmd.CommandText);
                     return null;

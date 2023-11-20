@@ -80,6 +80,15 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void UpdateNoColumns()
+        {
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
+
+            Assert.ThrowsException<InvalidOperationException>(() => g.Update(Array.Empty<Cell>()));
+        }
+
+        [TestMethod]
         public void Update()
         {
             using var q = NewQuery(TABLE);

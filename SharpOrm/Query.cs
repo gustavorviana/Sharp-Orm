@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
@@ -126,7 +127,7 @@ namespace SharpOrm
 
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
-            var cols = new ColumnExpressionVisitor(this.Info).VisitColumn(call);
+            var cols = new ColumnExpressionVisitor().VisitColumn(call);
             this._fkToLoad.AddRange(cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))));
             return this;
         }
@@ -239,7 +240,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(this.TableInfo.GetObjCells(obj, true, this.Config.ForeignLoader).ToArray());
+            return this.Insert(this.GetCellsOf(obj, true));
         }
 
         /// <summary>
@@ -264,25 +265,60 @@ namespace SharpOrm
         /// Update table columns using object values.
         /// </summary>
         /// <param name="obj"></param>
-        /// <param name="columns">If filled in, only inserted columns will be updated.</param>
         /// <returns></returns>
-        public int Update(T obj, params string[] columns)
+        public int Update(T obj)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var cells = this.TableInfo.GetObjCells(obj, false, this.Info.Config.ForeignLoader);
-            if (columns.Length == 0)
-                return base.Update(cells.ToArray());
+            return base.Update(this.GetCellsOf(obj, false));
+        }
 
-            columns = columns.Select(c => c.ToLower()).ToArray();
-            cells = cells.Where(c => columns.Contains(c.PropName));
+        /// <summary>
+        /// Update table columns using object values.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="call1">Call to retrieve the property to be saved.</param>
+        /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public int Update(T obj, Expression<ColumnExpression<T>> call1, params Expression<ColumnExpression<T>>[] calls)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
 
-            var toUpdate = cells.ToArray();
+            if (call1 == null)
+                throw new ArgumentNullException(nameof(call1));
+
+            var props = PropertyExpressionVisitor.VisitProperties(call1, calls).ToArray();
+            return this.Update(this.GetCellsOf(obj, false).Where(c => props.Contains(c.PropName)));
+        }
+
+        /// <summary>
+        /// Update table columns using object values.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="column1">Column to be updated</param>
+        /// <param name="columns">Update table columns using object values..</param>
+        /// <returns></returns>
+        public int Update(T obj, string column1, params string[] columns)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            if (string.IsNullOrEmpty(column1))
+                throw new ArgumentNullException(nameof(column1));
+
+            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false), column1, columns).ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException(Messages.ColumnsNotFound);
 
             return base.Update(toUpdate);
+        }
+
+        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk)
+        {
+            return this.TableInfo.GetObjCells(obj, readPk, this.Info.Config.ForeignLoader);
         }
 
         #region Join
