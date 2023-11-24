@@ -13,7 +13,7 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
+        private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         public Type Type { get; }
         /// <summary>
         /// Gets the name of the table.
@@ -57,7 +57,7 @@ namespace SharpOrm.Builder
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
         {
-            foreach (var col in this.GetAllColumns(registry))
+            foreach (var col in GetColumns(Type, registry))
             {
                 if (col.IsForeignKey)
                     this.HasFk = true;
@@ -69,13 +69,13 @@ namespace SharpOrm.Builder
             }
         }
 
-        private IEnumerable<ColumnInfo> GetAllColumns(TranslationRegistry registry)
+        public static IEnumerable<ColumnInfo> GetColumns(Type type, TranslationRegistry registry)
         {
-            foreach (var prop in Type.GetProperties(propertiesFlags))
+            foreach (var prop in type.GetProperties(propertiesFlags))
                 if (prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in Type.GetFields(propertiesFlags))
+            foreach (var field in type.GetFields(propertiesFlags))
                 if (!field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
         }
