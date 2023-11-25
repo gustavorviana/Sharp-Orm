@@ -30,14 +30,15 @@ namespace UnityTest.Utils
             Connection.QueryReaders.Clear();
         }
 
+        public static MockDataReader GetReader(Func<int, Cell[]> createCallback, int qtd)
+        {
+            return new MockDataReader(i => new Row(createCallback(i)), qtd);
+        }
+
         public static MockDataReader GetReader<T>(int qtd, Func<int, T> createCallback, bool loadForeign)
         {
-            T[] values = new T[qtd];
-
-            for (int i = 0; i < qtd; i++)
-                values[i] = createCallback(i);
-
-            return GetReader(values, loadForeign);
+            Type type = typeof(T);
+            return new MockDataReader(i => TableReaderBase.ToRow(createCallback(i), type, true, loadForeign), qtd);
         }
 
         protected static MockConnection GetNonQueryCommand(string expected)
@@ -50,20 +51,6 @@ namespace UnityTest.Utils
             };
 
             return conn;
-        }
-
-        public static MockDataReader GetReader<T>(T[] objs, bool loadForeign)
-        {
-            Row[] rows = new Row[objs.Length];
-            for (int i = 0; i < rows.Length; i++)
-                rows[i] = TableReaderBase.ToRow(objs[i], typeof(T), true, loadForeign);
-
-            return GetReader(rows);
-        }
-
-        public static MockDataReader GetReader(Row[] rows)
-        {
-            return new MockDataReader(rows);
         }
     }
 }

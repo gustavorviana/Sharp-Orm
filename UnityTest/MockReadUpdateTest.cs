@@ -18,7 +18,7 @@ namespace UnityTest
         [TestMethod]
         public void ReadWithCreateForeignIfNoDepth()
         {
-            using var query = GetConfiguredQuery<Order>(true);
+            using var query = GetConfiguredOrderQuery(true);
             var order = query.FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
@@ -32,7 +32,7 @@ namespace UnityTest
         [TestMethod]
         public void ReadWithOutCreateForeignIfNoDepth()
         {
-            using var query = GetConfiguredQuery<Order>();
+            using var query = GetConfiguredOrderQuery();
             var order = query.FirstOrDefault();
 
             Assert.IsNull(order.Customer);
@@ -42,16 +42,16 @@ namespace UnityTest
         public void Read100Itens()
         {
             const int itens = 100;
-            using var query = GetConfiguredQuery<Order>(itens: itens, queryStr: "SELECT * FROM `Orders`");
+            using var query = GetConfiguredOrderQuery(itens: itens, queryStr: "SELECT * FROM `Orders`");
             var orders = query.Get();
 
             Assert.AreEqual(itens, orders.Length);
         }
 
-        private static Query<T> GetConfiguredQuery<T>(bool foreignLoader = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1") where T : class, new()
+        private static Query<Order> GetConfiguredOrderQuery(bool foreignLoader = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1")
         {
             var config = new MysqlQueryConfig { ForeignLoader = foreignLoader };
-            var query = new Query<T>(Connection, config);
+            var query = new Query<Order>(Connection, config);
             Connection.QueryReaders.Add(queryStr, () => OrderReader(itens));
             return query;
         }
@@ -132,14 +132,13 @@ namespace UnityTest
 
         private static MockDataReader OrderReader(int qtd)
         {
-            return GetReader(qtd, i => new Order
-            {
-                Id = i + 1,
-                CustomerId = (uint)i + 1,
-                Product = $"My product {i + 1}",
-                Quantity = i + 10,
-                Status = "Pending"
-            }, true);
+            return GetReader(i => new Cell[] {
+                new("Id", i + 1),
+                new("customer_id", (uint)i + 1),
+                new("Product", $"My product {i + 1}"),
+                new("Quantity", i + 10),
+                new("Status", "Pending")
+            }, qtd);
         }
     }
 }

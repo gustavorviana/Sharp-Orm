@@ -9,33 +9,38 @@ namespace UnityTest.Utils.Mock
 {
     public class MockDataReader : DbDataReader
     {
-        public readonly Row[] rows;
-        private int currentIndex = -1;
+        private readonly Func<int, Row> rowsCall;
         public int ReadDelay { get; set; }
+        public int Size { get; }
 
-        public MockDataReader(Row[] rows)
+        private int currentIndex = -1;
+
+        public MockDataReader(Func<int, Row> rowsCall, int size)
         {
-            this.rows = rows;
+            this.rowsCall = rowsCall;
+            this.Size = size;
         }
 
         public CancellationToken Token { get; set; }
 
-        public override bool HasRows => rows.Length > 0;
-        public override object this[string name] => rows[currentIndex][name];
+        private Row currentRow = null;
+
+        public override bool HasRows => this.Size > 0;
+        public override object this[string name] => this.currentRow[name];
 
         public override object this[int i] => GetValue(i);
 
-        public override int Depth => 0;
+        public override int Depth => 1;
 
-        public override bool IsClosed => currentIndex >= rows.Length || currentIndex < 0;
+        public override bool IsClosed => !this.HasRows || currentIndex >= this.Size;
 
         public override int RecordsAffected => -1;
 
-        public override int FieldCount => rows.Length > 0 ? rows[0].Count : 0;
+        public override int FieldCount => this.currentRow?.Count ?? 0;
 
         public override void Close()
         {
-            currentIndex = rows.Length;
+            currentIndex = this.Size;
         }
 
         public override bool NextResult()
@@ -45,10 +50,12 @@ namespace UnityTest.Utils.Mock
 
         public override bool Read()
         {
-            if (currentIndex < rows.Length - 1)
+            if (currentIndex < this.Size - 1)
             {
                 currentIndex++;
                 this.WaitDelay();
+
+                this.currentRow = this.rowsCall(this.currentIndex);
 
                 return true;
             }
@@ -148,13 +155,13 @@ namespace UnityTest.Utils.Mock
 
         public override string GetName(int i)
         {
-            return rows[currentIndex][i].Name;
+            return this.currentRow == null ? null : this.currentRow[i].Name;
         }
 
         public override int GetOrdinal(string name)
         {
             int index = 0;
-            foreach (var row in rows[currentIndex])
+            foreach (var row in this.currentRow)
             {
                 if (row.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return index;
@@ -185,13 +192,13 @@ namespace UnityTest.Utils.Mock
 
         public override IEnumerator GetEnumerator()
         {
-            foreach (var dictionary in rows)
+            foreach (var dictionary in this.currentRow)
                 yield return dictionary;
         }
 
         public override object GetValue(int ordinal)
         {
-            return rows[currentIndex][ordinal].Value ?? DBNull.Value;
+            return this.currentRow[ordinal].Value ?? DBNull.Value;
         }
 
         protected override void Dispose(bool disposing)

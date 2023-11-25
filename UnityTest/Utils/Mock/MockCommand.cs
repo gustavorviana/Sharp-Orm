@@ -33,8 +33,8 @@ namespace UnityTest.Utils.Mock
 
         public override object ExecuteScalar()
         {
-            var reader = this.GetReader(); ;
-            if (reader.rows.Length == 0)
+            var reader = this.GetReader();
+            if (reader.Size == 0)
                 return DBNull.Value;
 
             return reader[0];
@@ -61,7 +61,7 @@ namespace UnityTest.Utils.Mock
         {
             var reader = this.OnGetReader?.Invoke(this);
             if (reader == null)
-                return new MockDataReader(Array.Empty<SharpOrm.Row>());
+                return new MockDataReader(i => null, 0);
 
             return reader;
         }

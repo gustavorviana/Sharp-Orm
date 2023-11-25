@@ -187,13 +187,8 @@ namespace UnityTest
         [TestMethod]
         public void LoadArrayChild()
         {
-            Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(3, i => new Order { Id = 1 }, true));
-            Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(10, i => new OrderItem
-            {
-                Id = i + 1,
-                OrderId = 1,
-                Value = i * 3 + 1
-            }, true));
+            Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(i => MakeOrderCells(1), 3));
+            Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
             using var query = new Query<Order>(Connection, Config);
             query.WithForeigns("OrderItems");
@@ -203,6 +198,16 @@ namespace UnityTest
             Assert.IsTrue(obj.ArrayItems.All(itm => itm.OrderId == 1));
             Assert.IsTrue(obj.ListItems.All(itm => itm.OrderId == 1));
             Assert.IsTrue(obj.IListItems.All(itm => itm.OrderId == 1));
+        }
+
+        private static Cell[] MakeOrderCells(int id)
+        {
+            return new Cell[] { new("Id", id) };
+        }
+
+        private static Cell[] MakeOrderItemsCells(int id, int orderId, int value)
+        {
+            return new Cell[] { new("Id", id), new("order_id", orderId), new("Value", value) };
         }
 
         private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
