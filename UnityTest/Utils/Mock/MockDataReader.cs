@@ -19,6 +19,9 @@ namespace UnityTest.Utils.Mock
         {
             this.rowsCall = rowsCall;
             this.Size = size;
+
+            if (size > 0)
+                this.currentRow = this.rowsCall(0);
         }
 
         public CancellationToken Token { get; set; }

@@ -41,7 +41,7 @@ namespace UnityTest
         [TestMethod]
         public void Read100Itens()
         {
-            const int itens = 100;
+            const int itens = 1000;
             using var query = GetConfiguredOrderQuery(itens: itens, queryStr: "SELECT * FROM `Orders`");
             var orders = query.Get();
 

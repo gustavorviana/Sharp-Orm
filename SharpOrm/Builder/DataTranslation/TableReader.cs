@@ -136,7 +136,7 @@ namespace SharpOrm.Builder.DataTranslation
             }
 
             if (this._fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
-                foreignKeyToLoad.Enqueue(column.IsMany ?  new HasManyInfo(lCol, fkValue, column.LocalKey) : new ForeignInfo(lCol, fkValue));
+                foreignKeyToLoad.Enqueue(column.IsMany ? new HasManyInfo(lCol, fkValue, column.LocalKey) : new ForeignInfo(lCol, fkValue));
             else if (!this.CanFindForeign(TableInfo.GetNameOf(column.Type)))
                 return;
 
@@ -189,24 +189,25 @@ namespace SharpOrm.Builder.DataTranslation
 
         private IEnumerable<object> GetEnumerable(DbDataReader reader, Type type)
         {
-            var table = GetTable(type);
-            if (table == null || table.HasNonNative)
+            if (type == typeof(Row))
             {
-                while (reader.Read())
-                {
-                    this.Token.ThrowIfCancellationRequested();
-                    yield return this.ParseFromReader(reader, type);
-                }
+                while (!this.Token.IsCancellationRequested && reader.Read())
+                    yield return this.GetRow(reader);
 
+                this.Token.ThrowIfCancellationRequested();
                 yield break;
             }
 
-            var tReader = new RowReader(this, table);
-            while (reader.Read())
+            var objReader = new MappedObject(Registry, reader, type, "");
+
+            while (!this.Token.IsCancellationRequested && reader.Read())
             {
-                this.Token.ThrowIfCancellationRequested();
-                yield return tReader.GetRow(reader);
+                objReader.NewObject();
+                objReader.ReadFromReader(this);
+                yield return objReader.Instance;
             }
+
+            this.Token.ThrowIfCancellationRequested();
         }
     }
 }
