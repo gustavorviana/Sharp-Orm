@@ -15,6 +15,11 @@ namespace UnityTest.Utils.Mock
 
         private int currentIndex = -1;
 
+        public MockDataReader(params Cell[] cells) : this(i => new Row(cells), 1)
+        {
+
+        }
+
         public MockDataReader(Func<int, Row> rowsCall, int size)
         {
             this.rowsCall = rowsCall;

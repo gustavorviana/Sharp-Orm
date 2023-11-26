@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
+using UnityTest.Utils.Mock;
 
 namespace UnityTest
 {
@@ -166,16 +167,16 @@ namespace UnityTest
         public void NullGuid()
         {
             var guid = Guid.NewGuid();
-            Assert.AreEqual(null, TableReaderBase.Registry.FromSql(DBNull.Value, typeof(Guid)));
-            Assert.AreEqual(guid, TableReaderBase.Registry.FromSql(guid.ToString(), typeof(Guid?)));
+            Assert.AreEqual(null, TranslationRegistry.Default.FromSql(DBNull.Value, typeof(Guid)));
+            Assert.AreEqual(guid, TranslationRegistry.Default.FromSql(guid.ToString(), typeof(Guid?)));
         }
 
         [TestMethod]
         public void NullInt()
         {
             int value = 123;
-            Assert.AreEqual(null, TableReaderBase.Registry.FromSql(DBNull.Value, typeof(int)));
-            Assert.AreEqual(value, TableReaderBase.Registry.FromSql(value, typeof(int?)));
+            Assert.AreEqual(null, TranslationRegistry.Default.FromSql(DBNull.Value, typeof(int)));
+            Assert.AreEqual(value, TranslationRegistry.Default.FromSql(value, typeof(int?)));
         }
 
         [TestMethod]
@@ -200,6 +201,36 @@ namespace UnityTest
             Assert.IsTrue(obj.IListItems.All(itm => itm.OrderId == 1));
         }
 
+        [TestMethod]
+        public void LoadAdvancedObject()
+        {
+            Connection.QueryReaders.Add("SELECT * FROM `RootAdvancedObject` LIMIT 1", GetAdvancedObjectReader);
+
+            using var query = new Query<RootAdvancedObject>(Connection, Config);
+            var obj = query.FirstOrDefault();
+
+            Assert.IsNotNull(obj);
+            Assert.AreEqual(11, obj.Id);
+            Assert.AreEqual(32, obj.Child1.ChildId);
+            Assert.AreEqual(32, obj.Child2.ChildId);
+            Assert.AreEqual(4, obj.Child1.Id);
+            Assert.AreEqual(5, obj.Child2.Id);
+            Assert.AreEqual("Value Child 1", obj.Child1.Value);
+            Assert.AreEqual("Value Child 2", obj.Child2.Value);
+        }
+
+        private MockDataReader GetAdvancedObjectReader()
+        {
+            return new MockDataReader(
+                new Cell("Id", 11),
+                new Cell("Child_Id", 32),
+                new Cell("Child1_Id", 4),
+                new Cell("Child2_Id", 5),
+                new Cell("Child1_Value", "Value Child 1"),
+                new Cell("Child2_Value", "Value Child 2")
+            );
+        }
+
         private static Cell[] MakeOrderCells(int id)
         {
             return new Cell[] { new("Id", id) };
@@ -220,7 +251,24 @@ namespace UnityTest
 
         private static void AssertSqlValueConverted(object expected, object value)
         {
-            Assert.AreEqual(expected, TableReaderBase.Registry.FromSql(value, expected?.GetType()));
+            Assert.AreEqual(expected, TranslationRegistry.Default.FromSql(value, expected?.GetType()));
+        }
+
+        private class RootAdvancedObject
+        {
+            public int Id { get; set; }
+            public ChildAdvancedObject Child1 { get; set; }
+            public ChildAdvancedObject Child2 { get; set; }
+        }
+
+        private class ChildAdvancedObject
+        {
+            public int Id { get; set; }
+
+            [Column("child_id")]
+            public int ChildId { get; set; }
+
+            public string Value { get; set; }
         }
 
         private class InvalidFields
