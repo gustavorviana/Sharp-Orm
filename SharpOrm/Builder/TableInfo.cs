@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.DataTranslation.Reader;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
+        private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
         private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         public Type Type { get; }
         /// <summary>
@@ -36,7 +38,7 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
         /// <param name="type">The type representing the table.</param>
-        public TableInfo(Type type) : this(new TranslationRegistry(), type)
+        public TableInfo(Type type) : this(TranslationRegistry.Default, type)
         {
         }
 
@@ -170,7 +172,7 @@ namespace SharpOrm.Builder
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            var table = TableReaderBase.GetTable(GetValidType(fkColumn.Type));
+            var table = TableInfo.Get(GetValidType(fkColumn.Type));
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
@@ -196,7 +198,20 @@ namespace SharpOrm.Builder
 
         private static Type GetValidType(Type type)
         {
-            return HasManyInfo.IsCollection(type) ? HasManyInfo.GetGenericArg(type) : type;
+            return ReflectionUtils.IsCollection(type) ? ReflectionUtils.GetGenericArg(type) : type;
+        }
+
+        /// <summary>
+        /// Retrieve the object's table by checking the cache list.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>The table info for the specified type.</returns>
+        public static TableInfo Get(Type type)
+        {
+            if (type == typeof(Row))
+                return null;
+
+            return cachedTables.GetOrAdd(type, _type => new TableInfo(_type));
         }
     }
 }

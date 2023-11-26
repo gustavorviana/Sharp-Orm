@@ -11,14 +11,15 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Base class for table translators.
     /// </summary>
+    [Obsolete("Use SharpOrm.Builder.DataTranslation instead. It will be deprecated in version 2.x.x.")]
     public abstract class TableReaderBase : IDisposable
     {
-        private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
         /// <summary>
         /// Gets the translation registry associated with the table translator.
         /// </summary>
         internal protected List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
-        public static TranslationRegistry Registry { get; set; } = new TranslationRegistry();
+        [Obsolete("Use SharpOrm.Builder.DataTranslation.Default instead. It will be deprecated in version 2.x.x.")]
+        public static TranslationRegistry Registry { get => TranslationRegistry.Default; set => TranslationRegistry.Default = value; }
         protected readonly IQueryConfig config;
         private readonly bool convertToUtc;
         private bool disposed;
@@ -71,13 +72,6 @@ namespace SharpOrm.Builder.DataTranslation
             return new Row(cells);
         }
 
-        protected Array ToArray(Type type, ICollection collection)
-        {
-            Array array = Array.CreateInstance(type, collection.Count);
-            collection.CopyTo(array, 0);
-            return array;
-        }
-
         /// <summary>
         /// Get Cell by column index.
         /// </summary>
@@ -115,12 +109,12 @@ namespace SharpOrm.Builder.DataTranslation
         protected Query CreateQuery(string name)
         {
             if (this.transaction != null)
-                return new Query(this.transaction, this.config, name);
+                return new Query(this.transaction, this.config, name) { Token = Token };
 
             if (this.connection != null)
-                return new Query(this.connection, this.config, name) { notClose = true };
+                return new Query(this.connection, this.config, name) { notClose = true, Token = Token };
 
-            return new Query(this.config, name);
+            return new Query(this.config, name) { Token = Token };
         }
         /// <summary>
         /// Parses an object of the specified <paramref name="typeToParse"/> from the database reader.
@@ -150,12 +144,10 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns>The table info for the specified type.</returns>
+        [Obsolete("Use SharpOrm.Builder.GetTable instead. It will be deprecated in version 2.x.x.")]
         public static TableInfo GetTable(Type type)
         {
-            if (type == typeof(Row))
-                return null;
-
-            return cachedTables.GetOrAdd(type, _type => new TableInfo(Registry, _type));
+            return TableInfo.Get(type);
         }
 
         protected virtual void Dispose(bool disposing)

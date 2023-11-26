@@ -15,7 +15,7 @@ namespace SharpOrm
     public class Query<T> : Query where T : new()
     {
         public static string TableName => TableInfo.GetNameOf(typeof(T));
-        protected internal TableInfo TableInfo => TableReaderBase.GetTable(typeof(T));
+        protected internal TableInfo TableInfo => TableInfo.Get(typeof(T));
         private readonly List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
         private string[] foreignsTables = null;
         private int foreignsDepth = 0;
@@ -876,7 +876,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return this.ExecuteScalar() is object obj ? TableReaderBase.Registry.FromSql<T>(obj) : default;
+            return this.ExecuteScalar() is object obj ? TranslationRegistry.Default.FromSql<T>(obj) : default;
         }
 
         /// <summary>

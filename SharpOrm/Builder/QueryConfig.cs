@@ -15,7 +15,15 @@ namespace SharpOrm.Builder
         public int CommandTimeout { get; set; } = 30;
 
         /// <inheritdoc/>
-        public bool ForeignLoader { get; set; }
+        [Obsolete("Use LoadForeignId instead. It will be deprecated in version 2.x.x.")]
+        public bool ForeignLoader
+        {
+            get => this.LoadForeignId;
+            set => this.LoadForeignId = value;
+        }
+
+        /// <inheritdoc/>
+        public bool LoadForeignId { get; set; }
 
         /// <inheritdoc/>
         public TimeZoneInfo LocalTimeZone { get; set; } = TimeZoneInfo.Local;
@@ -33,7 +41,7 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public abstract string ApplyNomenclature(string name);
 
-        /// <inheritdoc/>
+        [Obsolete("It will be deprecated in version 2.x.x.")]
         public TableReaderBase CreateTableReader(string[] tables, int maxDepth)
         {
             return new TableReader(this, tables, maxDepth) { CreateForeignIfNoDepth = this.ForeignLoader };

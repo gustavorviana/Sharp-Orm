@@ -6,6 +6,14 @@ namespace SharpOrm.Builder.DataTranslation
 {
     public class TranslationRegistry
     {
+        private static TranslationRegistry _default = new TranslationRegistry();
+
+        public static TranslationRegistry Default
+        {
+            get => _default;
+            set => _default = value??throw new ArgumentNullException(nameof(Default));
+        }
+
         private readonly NativeSqlValueConversor native = new NativeSqlValueConversor();
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
         public string GuidFormat

@@ -61,7 +61,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             this.instance = Activator.CreateInstance(this.type);
 
             foreach (var children in this.childrens)
-                children.parentColumn.SetRaw(this.parent.Instance, children.NewObject());
+                children.parentColumn.SetRaw(children.parent.Instance, children.NewObject());
 
             return this.instance;
         }

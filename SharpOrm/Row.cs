@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,6 +72,19 @@ namespace SharpOrm
         {
             this.names = cells.Select(column => column.Name).ToArray();
             this.cells = cells;
+        }
+
+        public static Row Parse(object obj, bool readPk = true, bool readFk = false)
+        {
+            return Parse(obj, obj.GetType(), readPk, readFk);
+        }
+
+        public static Row Parse(object obj, Type type, bool readPk = true, bool readFk = false)
+        {
+            if (obj is null) throw new ArgumentNullException(nameof(obj));
+            if (obj is Row row) return row;
+
+            return new Row(TableInfo.Get(type).GetObjCells(obj, readPk, readFk).ToArray());
         }
 
         /// <summary>

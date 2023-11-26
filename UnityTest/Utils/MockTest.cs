@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Connection;
 using System;
 using UnityTest.Utils.Mock;
@@ -38,7 +37,7 @@ namespace UnityTest.Utils
         public static MockDataReader GetReader<T>(int qtd, Func<int, T> createCallback, bool loadForeign)
         {
             Type type = typeof(T);
-            return new MockDataReader(i => TableReaderBase.ToRow(createCallback(i), type, true, loadForeign), qtd);
+            return new MockDataReader(i => Row.Parse(createCallback(i), type, true, loadForeign), qtd);
         }
 
         protected static MockConnection GetNonQueryCommand(string expected)
