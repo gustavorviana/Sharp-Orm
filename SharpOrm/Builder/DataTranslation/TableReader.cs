@@ -10,7 +10,7 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Represents a table translator for database table operations.
     /// </summary>
-    [Obsolete("It will be deprecated in version 2.x.x.")]
+    [Obsolete("It will be removed in version 2.x.x.")]
     public class TableReader : TableReaderBase
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();

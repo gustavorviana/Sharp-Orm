@@ -15,7 +15,7 @@ namespace SharpOrm.Builder
         public int CommandTimeout { get; set; } = 30;
 
         /// <inheritdoc/>
-        [Obsolete("Use LoadForeignId instead. It will be deprecated in version 2.x.x.")]
+        [Obsolete("Use LoadForeignId instead. It will be removed in version 2.x.x.")]
         public bool ForeignLoader
         {
             get => this.LoadForeignId;
@@ -41,7 +41,7 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public abstract string ApplyNomenclature(string name);
 
-        [Obsolete("It will be deprecated in version 2.x.x.")]
+        [Obsolete("It will be removed in version 2.x.x.")]
         public TableReaderBase CreateTableReader(string[] tables, int maxDepth)
         {
             return new TableReader(this, tables, maxDepth) { CreateForeignIfNoDepth = this.ForeignLoader };

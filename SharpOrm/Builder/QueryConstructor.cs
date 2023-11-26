@@ -114,6 +114,20 @@ namespace SharpOrm.Builder
             return this;
         }
 
+
+        /// <summary>
+        /// Adds a SQL query with parameters to the instance.
+        /// </summary>
+        /// <param name="query">The SQL query to be added.</param>
+        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
+        /// <param name="parameters">The parameters to be replaced in the query.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
+        public QueryConstructor AddAndReplace(string query, char toReplace, Func<int, string> func)
+        {
+            this.query.AppendReplaced(query, toReplace, func);
+            return this;
+        }
+
         /// <summary>
         /// Adds a parameter to the SQL query.
         /// </summary>

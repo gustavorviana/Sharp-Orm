@@ -3,7 +3,7 @@ using System;
 
 namespace SharpOrm.Builder
 {
-    [Obsolete("Use SharpOrm.Builder.QueryConfig instead. It will be deprecated in version 2.x.x.")]
+    [Obsolete("Use SharpOrm.Builder.QueryConfig instead. It will be removed in version 2.x.x.")]
     public interface IQueryConfig
     {
         /// <summary>
@@ -29,7 +29,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// If enabled, allows the query to create an object only with its primary key when there is no depth and allows reading the id of a foreign object.
         /// </summary>
-        [Obsolete("Use LoadForeignId instead. It will be deprecated in version 2.x.x.")]
+        [Obsolete("Use LoadForeignId instead. It will be removed in version 2.x.x.")]
         bool ForeignLoader { get; set; }
 
         /// <summary>

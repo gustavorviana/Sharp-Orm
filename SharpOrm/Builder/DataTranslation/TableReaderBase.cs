@@ -11,14 +11,14 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Base class for table translators.
     /// </summary>
-    [Obsolete("Use SharpOrm.Builder.DataTranslation instead. It will be deprecated in version 2.x.x.")]
+    [Obsolete("Use SharpOrm.Builder.DataTranslation instead. It will be removed in version 2.x.x.")]
     public abstract class TableReaderBase : IDisposable
     {
         /// <summary>
         /// Gets the translation registry associated with the table translator.
         /// </summary>
         internal protected List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
-        [Obsolete("Use SharpOrm.Builder.DataTranslation.Default instead. It will be deprecated in version 2.x.x.")]
+        [Obsolete("Use SharpOrm.Builder.DataTranslation.Default instead. It will be removed in version 2.x.x.")]
         public static TranslationRegistry Registry { get => TranslationRegistry.Default; set => TranslationRegistry.Default = value; }
         protected readonly IQueryConfig config;
         private readonly bool convertToUtc;
@@ -144,7 +144,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns>The table info for the specified type.</returns>
-        [Obsolete("Use SharpOrm.Builder.GetTable instead. It will be deprecated in version 2.x.x.")]
+        [Obsolete("Use SharpOrm.Builder.GetTable instead. It will be removed in version 2.x.x.")]
         public static TableInfo GetTable(Type type)
         {
             return TableInfo.Get(type);
