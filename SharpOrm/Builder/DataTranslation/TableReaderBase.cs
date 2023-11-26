@@ -64,7 +64,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns></returns>
         public Row GetRow(DbDataReader reader)
         {
-            return reader.GetRow(this.config);
+            return reader.ReadRow(this.config);
         }
 
         /// <summary>

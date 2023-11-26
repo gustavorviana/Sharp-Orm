@@ -13,7 +13,7 @@ namespace SharpOrm.Builder.DataTranslation
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly DbDataReader reader;
-        private readonly IQueryConfig config;
+        internal readonly IQueryConfig config;
         private readonly MappedObject map;
 
         public DbTransaction Transaction { get; set; }
@@ -33,8 +33,8 @@ namespace SharpOrm.Builder.DataTranslation
         {
             this.config = config;
             this.reader = reader;
-            this.map = new MappedObject(registry, reader, type, "");
             this.fkToLoad = fkToLoad;
+            this.map = new MappedObject(registry, reader, type);
         }
 
         public List<T> ReadToEnd<T>() where T : new()
@@ -53,9 +53,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object Read()
         {
-            this.map.NewObject();
-            this.map.Read(this);
-            return this.map.Instance;
+            return this.map.Read(this);
         }
 
         public void LoadFks()

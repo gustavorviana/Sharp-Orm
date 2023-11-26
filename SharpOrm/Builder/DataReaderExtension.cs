@@ -13,7 +13,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row GetRow(this DbDataReader reader, IQueryConfig config)
+        public static Row ReadRow(this DbDataReader reader, IQueryConfig config)
         {
             Cell[] cells = new Cell[reader.FieldCount];
 

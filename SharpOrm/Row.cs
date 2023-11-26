@@ -13,7 +13,7 @@ namespace SharpOrm
     /// <remarks>
     /// A row is a collection of cells, which represent values in each column of a table.
     /// </remarks>
-    public class Row : IReadOnlyList<Cell>, IEquatable<Row>
+    public sealed class Row : IReadOnlyList<Cell>, IEquatable<Row>
     {
         private readonly Cell[] cells;
         private readonly string[] names;
