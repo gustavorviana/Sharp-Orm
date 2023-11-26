@@ -12,17 +12,17 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private readonly List<MappedObject> childrens = new List<MappedObject>();
         private readonly List<ColumnInfo> fkColumns = new List<ColumnInfo>();
         private readonly List<ColumnInfo> columns = new List<ColumnInfo>();
-        private readonly TranslationRegistry registry;
+        internal readonly TranslationRegistry registry;
         private readonly DbDataReader reader;
         private ColumnInfo parentColumn;
         private MappedObject parent;
 
-        private Type type;
+        internal Type type;
         private object instance;
         public object Instance => this.instance;
         #endregion
 
-        public MappedObject(TranslationRegistry registry, DbDataReader reader, Type type, string prefix)
+        public MappedObject(TranslationRegistry registry, DbDataReader reader, Type type, string prefix = "")
         {
             this.registry = registry;
             this.reader = reader;
@@ -66,12 +66,14 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             return this.instance;
         }
 
+        [Obsolete]
         public void ReadFromReader(TableReader reader)
         {
             for (int i = 0; i < this.reader.FieldCount; i++)
                 this.SetValue(i, this.reader[i], reader);
         }
 
+        [Obsolete]
         private void SetValue(int index, object value, TableReader reader)
         {
             this.EnqueueFk(index, value, reader);
@@ -84,7 +86,33 @@ namespace SharpOrm.Builder.DataTranslation.Reader
                 children.SetValue(index, value, reader);
         }
 
+        [Obsolete]
         private void EnqueueFk(int index, object value, TableReader reader)
+        {
+            foreach (var column in this.fkColumns)
+                if (column.ReaderIndex == index)
+                    reader.EnqueueForeign(this.instance, value, column);
+        }
+
+        public void Read(DbObjectReader reader)
+        {
+            for (int i = 0; i < this.reader.FieldCount; i++)
+                this.SetValue(i, this.reader[i], reader);
+        }
+
+        private void SetValue(int index, object value, DbObjectReader reader)
+        {
+            this.EnqueueFk(index, value, reader);
+
+            foreach (var column in this.columns)
+                if (column.ReaderIndex == index)
+                    column.Set(this.instance, value);
+
+            foreach (var children in this.childrens)
+                children.SetValue(index, value, reader);
+        }
+
+        private void EnqueueFk(int index, object value, DbObjectReader reader)
         {
             foreach (var column in this.fkColumns)
                 if (column.ReaderIndex == index)

@@ -64,12 +64,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns></returns>
         public Row GetRow(DbDataReader reader)
         {
-            Cell[] cells = new Cell[reader.FieldCount];
-
-            for (int i = 0; i < cells.Length; i++)
-                cells[i] = GetCell(reader, i);
-
-            return new Row(cells);
+            return reader.GetRow(this.config);
         }
 
         /// <summary>
@@ -80,18 +75,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns></returns>
         public Cell GetCell(DbDataReader reader, int index)
         {
-            if (index < 0 || index > reader.FieldCount)
-                throw new ArgumentOutOfRangeException();
-
-            return new Cell(reader.GetName(index), ReadDbObject(reader[index]));
-        }
-
-        internal object ReadDbObject(object obj)
-        {
-            if (this.convertToUtc && obj is DateTime date)
-                return date.FromDatabase(config);
-
-            return obj;
+            return reader.GetCell(config, index);
         }
 
         public abstract void LoadForeignKeys();

@@ -856,15 +856,14 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
-            ISqlTranslation translation = TableReaderBase.Registry.GetFor(typeof(T));
+            ISqlTranslation translation = TranslationRegistry.Default.GetFor(typeof(T));
             Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
             List<T> list = new List<T>();
 
-            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (var reader = this.ExecuteReader())
                 while (reader.Read())
-                    list.Add((T)translation.FromSqlValue(tReader.ReadDbObject(reader[0]), expectedType));
+                    list.Add((T)translation.FromSqlValue(DataReaderExtension.LoadDbValue(this.Config, reader[0]), expectedType));
 
             return list.ToArray();
         }
@@ -885,12 +884,11 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            using (var tReader = this.Config.CreateTableReader(new string[0], 0))
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
                 object result = grammar.Select().ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
-                return tReader.ReadDbObject(result);
+                return DataReaderExtension.LoadDbValue(this.Config, result);
             }
         }
 

@@ -40,7 +40,7 @@ namespace SharpOrm.Builder
             if (type.GetGenericArguments() is Type[] types && types.Length > 0 && types[0] != typeof(object))
                 return types[0];
 
-            return typeof(Row);
+            return type;
         }
     }
 }
