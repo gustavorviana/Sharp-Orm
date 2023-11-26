@@ -374,16 +374,15 @@ namespace SharpOrm
         /// <typeparam name="T"></typeparam>
         /// <param name="query"></param>
         /// <param name="obj"></param>
-        /// <param name="call1">First call to retrieve the name of the property.</param>
         /// <param name="calls">Calls to retrieve the names of the properties.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, Expression<ColumnExpression<T>> call1, params Expression<ColumnExpression<T>>[] calls) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls) where T : new()
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var props = PropertyExpressionVisitor.VisitProperties(call1, calls).ToArray();
+            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
             return query.Update(query.GetCellsOf(obj, false).Where(c => !props.Contains(c.PropName)));
         }
 
@@ -393,16 +392,15 @@ namespace SharpOrm
         /// <typeparam name="T"></typeparam>
         /// <param name="query"></param>
         /// <param name="obj"></param>
-        /// <param name="column1">First column that should not be updated.</param>
         /// <param name="columns">Columns that should not be updated.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, string column1, params string[] columns) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns) where T : new()
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false), column1, columns, true));
+            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false), columns, true));
         }
 
         /// <summary>
@@ -412,7 +410,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Creator.Config.ForeignLoader).Cells);
+            return query.InsertL(Query<T>.TableInfo.GetRow(obj, true, query.Creator.Config.LoadForeign).Cells);
         }
 
         /// <summary>
@@ -491,7 +489,7 @@ namespace SharpOrm
             using (query = (Query<T>)query.Clone(false))
             {
                 foreach (var column in toCheckColumns)
-                    query.Where(column, query.TableInfo.GetValue(obj, column));
+                    query.Where(column, Query<T>.TableInfo.GetValue(obj, column));
 
                 if (query.Any()) query.Update(obj);
                 else query.Insert(obj);

@@ -14,9 +14,9 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public static string TableName => TableInfo.GetNameOf(typeof(T));
-        protected internal TableInfo TableInfo => TableInfo.Get(typeof(T));
-        private readonly List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
+        public static string TableName => TableInfo.Name;
+        protected static internal TableInfo TableInfo { get; } = TableInfo.Get(typeof(T));
+        private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
         private string[] foreignsTables = null;
         private int foreignsDepth = 0;
 
@@ -128,7 +128,7 @@ namespace SharpOrm
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var cols = new ColumnExpressionVisitor().VisitColumn(call);
-            this._fkToLoad.AddRange(cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))));
+            TranslationUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
             return this;
         }
 
@@ -171,9 +171,32 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
+            if (this.foreignsDepth > 0)
+                return this.ObsoleteGetEnumerable<K>();
+
+            if (this._fkToLoad.Length == 0)
+                return base.GetEnumerable<K>();
+
+            using (var reader = this.ExecuteReader())
+            {
+                var objReader = new DbObjectReader(this.Config, reader, typeof(T), TranslationRegistry.Default, this._fkToLoad)
+                {
+                    Token = this.Token,
+                    Connection = this.Connection,
+                    Transaction = this.Transaction
+                };
+                
+                var items = objReader.ReadToEnd<K>();
+                reader.Close();
+                objReader.LoadForeigns();
+                return items;
+            }
+        }
+
+        private K[] ObsoleteGetEnumerable<K>() where K : new()
+        {
             using (var translator = this.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
             {
-                translator._fkToLoad = this._fkToLoad;
                 translator.Token = this.Token;
                 if (this.Transaction != null) translator.SetConnection(this.Transaction);
                 else translator.SetConnection(this.Connection);
@@ -210,7 +233,7 @@ namespace SharpOrm
             if ((pksToCheck?.Length ?? 0) == 0)
                 throw new ArgumentNullException(nameof(pksToCheck));
 
-            var columns = this.TableInfo.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+            var columns = TableInfo.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
             if (columns.Length == 0)
                 throw new DatabaseException(Messages.MissingPrimaryKey);
 
@@ -249,7 +272,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(params T[] objs)
         {
-            base.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)).ToArray());
+            base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)).ToArray());
         }
 
         /// <summary>
@@ -258,7 +281,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public void BulkInsert(IEnumerable<T> objs)
         {
-            base.BulkInsert(objs.Select(obj => this.TableInfo.GetRow(obj, true, this.Config.ForeignLoader)));
+            base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)));
         }
 
         /// <summary>
@@ -278,19 +301,18 @@ namespace SharpOrm
         /// Update table columns using object values.
         /// </summary>
         /// <param name="obj"></param>
-        /// <param name="call1">Call to retrieve the property to be saved.</param>
         /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public int Update(T obj, Expression<ColumnExpression<T>> call1, params Expression<ColumnExpression<T>>[] calls)
+        public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            if (call1 == null)
-                throw new ArgumentNullException(nameof(call1));
+            if (calls.Length == 0)
+                throw new ArgumentNullException(nameof(calls));
 
-            var props = PropertyExpressionVisitor.VisitProperties(call1, calls).ToArray();
+            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
             return this.Update(this.GetCellsOf(obj, false).Where(c => props.Contains(c.PropName)));
         }
 
@@ -301,15 +323,15 @@ namespace SharpOrm
         /// <param name="column1">Column to be updated</param>
         /// <param name="columns">Update table columns using object values..</param>
         /// <returns></returns>
-        public int Update(T obj, string column1, params string[] columns)
+        public int Update(T obj, params string[] columns)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            if (string.IsNullOrEmpty(column1))
-                throw new ArgumentNullException(nameof(column1));
+            if (columns.Length == 0)
+                throw new ArgumentNullException(nameof(columns));
 
-            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false), column1, columns).ToArray();
+            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false), columns).ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException(Messages.ColumnsNotFound);
 
@@ -318,7 +340,7 @@ namespace SharpOrm
 
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk)
         {
-            return this.TableInfo.GetObjCells(obj, readPk, this.Info.Config.ForeignLoader);
+            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign);
         }
 
         #region Join
@@ -361,7 +383,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad.AddRange(this._fkToLoad);
+            query._fkToLoad = (LambdaColumn[])this._fkToLoad.Clone();
             query.foreignsTables = this.foreignsTables;
             query.foreignsDepth = this.foreignsDepth;
         }
@@ -814,12 +836,13 @@ namespace SharpOrm
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
-            using (var translator = this.Config.CreateTableReader(new string[0], 0))
-            {
-                translator.Token = this.Token;
-                using (var reader = this.ExecuteReader())
-                    return translator.GetEnumerable<T>(reader).ToArray();
-            }
+            using (var reader = this.ExecuteReader())
+                return new DbObjectReader(this.Config, reader, typeof(T), TranslationRegistry.Default)
+                {
+                    Token = this.Token,
+                    Connection = this.Connection,
+                    Transaction = this.Transaction
+                }.ReadToEnd<T>();
         }
 
         /// <summary>

@@ -47,14 +47,12 @@ namespace SharpOrm
             return string.Join(".", splitNames);
         }
 
-        internal static IEnumerable<Cell> GetCellsByName(IEnumerable<Cell> cells, string column1, IEnumerable<string> columns, bool not = false)
+        internal static IEnumerable<Cell> GetCellsByName(IEnumerable<Cell> cells, IEnumerable<string> columns, bool not = false)
         {
-            column1 = column1.ToLower();
-
             if (not)
-                return cells.Where(c => c.Name.ToLower() != column1 && !columns.ContainsIgnoreCase(c.Name));
+                return cells.Where(c => !columns.ContainsIgnoreCase(c.Name));
 
-            return cells.Where(c => c.Name.ToLower() == column1 || columns.ContainsIgnoreCase(c.Name));
+            return cells.Where(c => columns.ContainsIgnoreCase(c.Name));
         }
 
         internal static bool ContainsIgnoreCase(this IEnumerable<string> values, string toCompare)

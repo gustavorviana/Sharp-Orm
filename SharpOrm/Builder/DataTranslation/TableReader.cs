@@ -21,7 +21,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <summary>
         /// Property to check whether foreign tables need to be found.
         /// </summary>
-        public bool FindForeigns => this.foreignsTables != null || this._fkToLoad.Any();
+        public bool FindForeigns => this.foreignsTables != null;
 
         /// <summary>
         /// Property to determine if a foreign object should be created with id when no depth is specified.
@@ -110,9 +110,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return;
             }
 
-            if (this._fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
-                foreignKeyToLoad.Enqueue(column.IsMany ? new HasManyInfo(lCol, fkValue, column.LocalKey) : new ForeignInfo(lCol, fkValue));
-            else if (!this.CanFindForeign(TableInfo.GetNameOf(column.Type)))
+            if (!this.CanFindForeign(TableInfo.GetNameOf(column.Type)))
                 return;
 
             var info = this.foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));

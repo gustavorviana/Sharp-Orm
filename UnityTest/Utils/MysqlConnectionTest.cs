@@ -11,7 +11,7 @@ namespace UnityTest.Utils
         {
             get
             {
-                ConnectionStr.Boot<MySqlConnection>(() => new MysqlQueryConfig(false), ConnectionStr.Mysql);
+                ConnectionStr.Boot<MySqlConnection>(() => new MysqlQueryConfig(false) { LoadForeign = true }, ConnectionStr.Mysql);
                 return (MySqlConnection)ConnectionCreator.Default.GetConnection();
             }
         }

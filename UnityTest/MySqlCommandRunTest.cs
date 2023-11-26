@@ -38,7 +38,7 @@ namespace UnityTest
         [TestMethod]
         public void DeepSelect()
         {
-            var config = new MysqlQueryConfig(false) { ForeignLoader = true };
+            var config = new MysqlQueryConfig(false) { LoadForeign = true };
             const uint Id = 1;
             const int Addr = 1;
             const string Name = "User 1";
@@ -329,7 +329,7 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var order = query.AddForeign(o => o.Customer).FirstOrDefault();
+            var order = query.WithForeigns("Customers").FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
             Assert.AreEqual(order.CustomerId, order.Customer.Id);

@@ -48,9 +48,9 @@ namespace UnityTest
             Assert.AreEqual(itens, orders.Length);
         }
 
-        private static Query<Order> GetConfiguredOrderQuery(bool foreignLoader = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1")
+        private static Query<Order> GetConfiguredOrderQuery(bool loadForeign = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1")
         {
-            var config = new MysqlQueryConfig { ForeignLoader = foreignLoader };
+            var config = new MysqlQueryConfig { LoadForeign = loadForeign };
             var query = new Query<Order>(Connection, config);
             Connection.QueryReaders.Add(queryStr, () => OrderReader(itens));
             return query;

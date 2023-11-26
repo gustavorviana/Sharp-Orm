@@ -14,10 +14,6 @@ namespace SharpOrm.Builder.DataTranslation
     [Obsolete("Use SharpOrm.Builder.DataTranslation instead. It will be removed in version 2.x.x.")]
     public abstract class TableReaderBase : IDisposable
     {
-        /// <summary>
-        /// Gets the translation registry associated with the table translator.
-        /// </summary>
-        internal protected List<LambdaColumn> _fkToLoad = new List<LambdaColumn>();
         [Obsolete("Use SharpOrm.Builder.DataTranslation.Default instead. It will be removed in version 2.x.x.")]
         public static TranslationRegistry Registry { get => TranslationRegistry.Default; set => TranslationRegistry.Default = value; }
         protected readonly IQueryConfig config;

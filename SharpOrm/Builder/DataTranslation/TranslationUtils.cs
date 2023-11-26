@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -39,6 +41,15 @@ namespace SharpOrm.Builder.DataTranslation
         public static T FromSql<T>(this TranslationRegistry registry, object value)
         {
             return (T)registry.FromSql(value, typeof(T));
+        }
+
+        public static void AddToArray<T>(ref T[] array, IList<T> items)
+        {
+            int lastSize = array.Length;
+            Array.Resize(ref array, array.Length + items.Count);
+
+            for (int i = 0; i < items.Count; i++)
+                array[lastSize + i] = items[i];
         }
     }
 }

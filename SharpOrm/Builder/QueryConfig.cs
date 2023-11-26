@@ -15,15 +15,15 @@ namespace SharpOrm.Builder
         public int CommandTimeout { get; set; } = 30;
 
         /// <inheritdoc/>
-        [Obsolete("Use LoadForeignId instead. It will be removed in version 2.x.x.")]
+        [Obsolete("Use LoadForeign instead. It will be removed in version 2.x.x.")]
         public bool ForeignLoader
         {
-            get => this.LoadForeignId;
-            set => this.LoadForeignId = value;
+            get => this.LoadForeign;
+            set => this.LoadForeign = value;
         }
 
         /// <inheritdoc/>
-        public bool LoadForeignId { get; set; }
+        public bool LoadForeign { get; set; }
 
         /// <inheritdoc/>
         public TimeZoneInfo LocalTimeZone { get; set; } = TimeZoneInfo.Local;

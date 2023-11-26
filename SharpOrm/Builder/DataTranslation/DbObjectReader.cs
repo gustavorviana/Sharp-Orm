@@ -47,7 +47,8 @@ namespace SharpOrm.Builder.DataTranslation
             while (!this.Token.IsCancellationRequested && this.reader.Read())
                 list.Add((T)this.Read());
 
-            this.LoadFks();
+            this.Token.ThrowIfCancellationRequested();
+
             return list;
         }
 
@@ -56,7 +57,7 @@ namespace SharpOrm.Builder.DataTranslation
             return this.map.Read(this);
         }
 
-        public void LoadFks()
+        public void LoadForeigns()
         {
             while (!this.Token.IsCancellationRequested && foreignKeyToLoad.Count > 0)
             {
@@ -77,7 +78,7 @@ namespace SharpOrm.Builder.DataTranslation
                 query.Limit = 1;
 
                 using (var reader = query.ExecuteReader())
-                    return reader.Read() ? this.CreateReaderFor(info, reader) : null;
+                    return reader.Read() ? this.CreateReaderFor(info, reader).Read() : null;
             }
         }
 
@@ -131,7 +132,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             if (this.fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
                 this.AddFkColumn(lCol, owner, fkValue, column);
-            else
+            else if (this.config.LoadForeign)
                 column.SetRaw(owner, GetObjWithKey(column, fkValue));
         }
 

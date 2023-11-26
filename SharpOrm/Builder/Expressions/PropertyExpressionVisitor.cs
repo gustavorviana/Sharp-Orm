@@ -27,12 +27,9 @@ namespace SharpOrm.Builder.Expressions
             return propName;
         }
 
-        public static IEnumerable<string> VisitProperties<T>(Expression<ColumnExpression<T>> call1, Expression<ColumnExpression<T>>[] calls)
+        public static IEnumerable<string> VisitProperties<T>(Expression<ColumnExpression<T>>[] calls)
         {
             var visitor = new PropertyExpressionVisitor();
-
-            if (visitor.VisitProperty(call1) is string property1)
-                yield return property1;
 
             foreach (var call in calls)
                 if (visitor.VisitProperty(call) is string property)
