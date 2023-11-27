@@ -141,9 +141,10 @@ namespace SharpOrm
             return this.IsCount ? exp.Substring(6, exp.Length - 2) : "";
         }
 
-        internal bool IsNameSelectAll()
+        internal bool IsAll()
         {
-            return this.Name?.EndsWith(".*") ?? this.expression?.ToString()?.Contains(".*") ?? false;
+            string column = this.expression?.ToString() ?? this.Name;
+            return column == "*" || column.EndsWith(".*");
         }
 
         #region IEquatable

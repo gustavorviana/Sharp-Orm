@@ -95,7 +95,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <inheritdoc />
         protected override object ParseFromReader(Type typeToParse, DbDataReader reader, string prefix)
         {
-            return new MappedObject(TranslationRegistry.Default, reader, typeToParse, prefix).Read(this);
+            return MappedObject.Create(reader, typeToParse, null, prefix).Read(reader, this);
         }
 
         internal void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
@@ -171,10 +171,10 @@ namespace SharpOrm.Builder.DataTranslation
                 yield break;
             }
 
-            var objReader = new MappedObject(TranslationRegistry.Default, reader, type, "");
+            var objReader = MappedObject.Create(reader, type);
 
             while (!this.Token.IsCancellationRequested && reader.Read())
-                yield return objReader.Read(this);
+                yield return objReader.Read(reader, this);
 
             this.Token.ThrowIfCancellationRequested();
         }

@@ -9,6 +9,7 @@ using System.Threading;
 
 namespace SharpOrm.Builder.DataTranslation
 {
+#pragma warning disable CS0618 // O tipo ou membro é obsoleto
     public class DbObjectReader : IDisposable
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
@@ -26,27 +27,40 @@ namespace SharpOrm.Builder.DataTranslation
         private readonly LambdaColumn[] fkToLoad;
         private bool disposed;
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type) : this(config, reader, type, TranslationRegistry.Default, new LambdaColumn[0])
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type)
+            : this(config, reader, type, TranslationRegistry.Default, new LambdaColumn[0])
         {
 
         }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, LambdaColumn[] fkToLoad) : this(config, reader, type, TranslationRegistry.Default, fkToLoad)
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, LambdaColumn[] fkToLoad)
+            : this(config, reader, type, TranslationRegistry.Default, fkToLoad)
         {
 
         }
 
         public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry, LambdaColumn[] fkToLoad)
+            : this(config, reader, MappedObject.Create(reader, type, registry), registry, fkToLoad)
+        {
+        }
+
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, MappedObject map, TranslationRegistry registry = null)
+            : this(config, reader, map, registry ?? TranslationRegistry.Default, new LambdaColumn[0])
+        {
+        }
+
+
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, MappedObject map, TranslationRegistry registry, LambdaColumn[] fkToLoad)
         {
             this.config = config;
             this.reader = reader;
             this.fkToLoad = fkToLoad;
-            this.map = new MappedObject(registry, reader, type);
+            this.map = map;
         }
 
         public List<T> ReadToEnd<T>() where T : new()
         {
-            if (typeof(T) != this.map.type)
+            if (typeof(T) != this.map.Type)
                 throw new InvalidCastException();
 
             List<T> list = new List<T>();
@@ -64,7 +78,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object Read()
         {
-            return this.map.Read(this);
+            return this.map.Read(this.reader, this);
         }
 
         public void LoadForeigns()
@@ -114,7 +128,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         private DbObjectReader CreateReaderFor(ForeignInfo info, DbDataReader reader)
         {
-            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type), this.map.registry, new LambdaColumn[0]);
+            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type), new LambdaColumn[0]);
         }
 
         internal Query CreateQuery(ForeignInfo info)
@@ -195,4 +209,5 @@ namespace SharpOrm.Builder.DataTranslation
         }
         #endregion
     }
+#pragma warning restore CS0618 // O tipo ou membro é obsoleto
 }

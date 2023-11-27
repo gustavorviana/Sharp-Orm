@@ -75,8 +75,6 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool IsNative { get; }
 
-        internal int ReaderIndex { get; set; }
-
         internal string PropName => this.column?.Name;
         #endregion
 

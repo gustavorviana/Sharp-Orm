@@ -6,50 +6,56 @@ using System.Text;
 
 namespace SharpOrm.Builder.DataTranslation.Reader
 {
-    internal class MappedObject
+    public class MappedObject
     {
         #region Properties\Fields
         private readonly List<MappedObject> childrens = new List<MappedObject>();
-        private readonly List<ColumnInfo> fkColumns = new List<ColumnInfo>();
-        private readonly List<ColumnInfo> columns = new List<ColumnInfo>();
-        internal readonly TranslationRegistry registry;
-        private readonly DbDataReader reader;
+        private readonly List<MappedColumn> fkColumns = new List<MappedColumn>();
+        private readonly List<MappedColumn> columns = new List<MappedColumn>();
+        private readonly object _lock = new object();
         private ColumnInfo parentColumn;
         private MappedObject parent;
 
-        internal Type type;
+        public Type Type { get; }
         private object instance;
         #endregion
 
-        public MappedObject(TranslationRegistry registry, DbDataReader reader, Type type, string prefix = "")
+        public static MappedObject Create<T>(DbDataReader reader, TranslationRegistry registry = null, string prefix = "") where T : class
         {
-            this.registry = registry;
-            this.reader = reader;
-            this.type = type;
-
-            if (this.type != typeof(Row))
-                this.Map(prefix);
+            return Create(reader, typeof(T), registry, prefix);
         }
 
-        private void Map(string prefix)
+        public static MappedObject Create(DbDataReader reader, Type type, TranslationRegistry registry = null, string prefix = "")
+        {
+            if (registry == null)
+                registry = TranslationRegistry.Default;
+
+            return new MappedObject(type).Map(registry, reader, prefix);
+        }
+
+        private MappedObject(Type type)
+        {
+            this.Type = type;
+        }
+
+        private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
-            foreach (var column in TableInfo.GetColumns(this.type, this.registry))
-                if (column.IsForeignKey) AddIfValidId(this.fkColumns, column.ForeignKey, column);
-                else if (column.IsNative) AddIfValidId(this.columns, GetName(column, prefix), column);
-                else this.childrens.Add(new MappedObject(this.registry, this.reader, column.Type, prefix + column.Name) { parentColumn = column, parent = this });
+            foreach (var column in TableInfo.GetColumns(this.Type, registry))
+                if (column.IsForeignKey) AddIfValidId(reader, this.fkColumns, column.ForeignKey, column);
+                else if (column.IsNative) AddIfValidId(reader, this.columns, GetName(column, prefix), column);
+                else this.childrens.Add(new MappedObject(column.Type) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
+
+            return this;
         }
 
-        private void AddIfValidId(List<ColumnInfo> columns, string name, ColumnInfo column)
+        private void AddIfValidId(DbDataReader reader, List<MappedColumn> columns, string name, ColumnInfo column)
         {
-            int index = this.reader.GetIndexOf(name);
-            if (index < 0)
-                return;
-
-            column.ReaderIndex = index;
-            columns.Add(column);
+            int index = reader.GetIndexOf(name);
+            if (index >= 0)
+                columns.Add(new MappedColumn(column, index));
         }
 
         private static string GetName(ColumnInfo column, string prefix)
@@ -58,14 +64,17 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         }
 
         [Obsolete]
-        public object Read(TableReader reader)
+        public object Read(DbDataReader reader, TableReader tableReader)
         {
-            this.NewObject();
+            lock (_lock)
+            {
+                this.NewObject();
 
-            for (int i = 0; i < this.reader.FieldCount; i++)
-                this.SetValue(i, this.reader[i], reader);
+                for (int i = 0; i < reader.FieldCount; i++)
+                    this.SetValue(i, reader[i], tableReader);
 
-            return this.instance;
+                return this.instance;
+            }
         }
 
         [Obsolete]
@@ -74,7 +83,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             this.EnqueueFk(index, value, reader);
 
             foreach (var column in this.columns)
-                if (column.ReaderIndex == index)
+                if (column.Index == index)
                     column.Set(this.instance, value);
 
             foreach (var children in this.childrens)
@@ -85,26 +94,29 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private void EnqueueFk(int index, object value, TableReader reader)
         {
             foreach (var column in this.fkColumns)
-                if (column.ReaderIndex == index)
-                    reader.EnqueueForeign(this.instance, value, column);
+                if (column.Index == index)
+                    reader.EnqueueForeign(this.instance, value, column.Column);
         }
 
-        public object Read(DbObjectReader reader)
+        public object Read(DbDataReader reader, DbObjectReader objReader)
         {
-            if (this.type == typeof(Row))
-                return this.reader.ReadRow(reader.config);
+            lock (this._lock)
+            {
+                if (this.Type == typeof(Row))
+                    return reader.ReadRow(objReader.config);
 
-            this.NewObject();
+                this.NewObject();
 
-            for (int i = 0; i < this.reader.FieldCount; i++)
-                this.SetValue(i, this.reader[i], reader);
+                for (int i = 0; i < reader.FieldCount; i++)
+                    this.SetValue(i, reader[i], objReader);
 
-            return this.instance;
+                return this.instance;
+            }
         }
 
         private object NewObject()
         {
-            this.instance = Activator.CreateInstance(this.type);
+            this.instance = Activator.CreateInstance(this.Type);
 
             foreach (var children in this.childrens)
                 children.parentColumn.SetRaw(children.parent.instance, children.NewObject());
@@ -117,7 +129,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             this.EnqueueFk(index, value, reader);
 
             foreach (var column in this.columns)
-                if (column.ReaderIndex == index)
+                if (column.Index == index)
                     column.Set(this.instance, value);
 
             foreach (var children in this.childrens)
@@ -127,8 +139,25 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private void EnqueueFk(int index, object value, DbObjectReader reader)
         {
             foreach (var column in this.fkColumns)
-                if (column.ReaderIndex == index)
-                    reader.EnqueueForeign(this.instance, value, column);
+                if (column.Index == index)
+                    reader.EnqueueForeign(this.instance, value, column.Column);
+        }
+
+        private class MappedColumn
+        {
+            public ColumnInfo Column { get; }
+            public int Index { get; }
+
+            public MappedColumn(ColumnInfo column, int index)
+            {
+                this.Column = column;
+                this.Index = index;
+            }
+
+            public void Set(object owner, object value)
+            {
+                this.Column.Set(owner, value);
+            }
         }
     }
 }

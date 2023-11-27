@@ -55,16 +55,13 @@ namespace SharpOrm.Builder
 
         private Column GetColumnToCount()
         {
-            if (this.Info.Select.Any(c => c.IsNameSelectAll()))
+            if (this.Query.Distinct)
+                return this.Info.Select.Length == 1 ? this.Info.Select[0] : null;
+
+            if (this.Info.Select.Length > 1 || this.Info.Select.Any(c => c.IsAll()))
                 return Column.All;
 
-            Column first = this.Info.Select.FirstOrDefault();
-            bool distinct = this.Query.Distinct;
-
-            if (!distinct && first == Column.All)
-                return Column.All;
-
-            return this.Info.Select.Length == 1 ? first : null;
+            return this.Info.Select.FirstOrDefault();
         }
 
         /// <summary>
