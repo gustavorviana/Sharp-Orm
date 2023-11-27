@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace SharpOrm.Builder.DataTranslation
 {
-    public class DbObjectReader
+    public class DbObjectReader : IDisposable
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly DbDataReader reader;
@@ -24,9 +24,16 @@ namespace SharpOrm.Builder.DataTranslation
         /// Gets the translation registry associated with the table translator.
         /// </summary>
         private readonly LambdaColumn[] fkToLoad;
+        private bool disposed;
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry) : this(config, reader, type, registry, new LambdaColumn[0])
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type) : this(config, reader, type, TranslationRegistry.Default, new LambdaColumn[0])
         {
+
+        }
+
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, LambdaColumn[] fkToLoad) : this(config, reader, type, TranslationRegistry.Default, fkToLoad)
+        {
+
         }
 
         public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry, LambdaColumn[] fkToLoad)
@@ -47,7 +54,10 @@ namespace SharpOrm.Builder.DataTranslation
             while (!this.Token.IsCancellationRequested && this.reader.Read())
                 list.Add((T)this.Read());
 
-            this.Token.ThrowIfCancellationRequested();
+            if (!this.reader.IsClosed)
+                this.reader.Close();
+
+            this.LoadForeigns();
 
             return list;
         }
@@ -104,7 +114,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         private DbObjectReader CreateReaderFor(ForeignInfo info, DbDataReader reader)
         {
-            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type), this.map.registry);
+            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type), this.map.registry, new LambdaColumn[0]);
         }
 
         internal Query CreateQuery(ForeignInfo info)
@@ -156,5 +166,33 @@ namespace SharpOrm.Builder.DataTranslation
 
             return value;
         }
+
+        #region IDisposable
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+                this.reader.Dispose();
+
+            disposed = true;
+        }
+
+        ~DbObjectReader()
+        {
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            if (this.disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
+            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

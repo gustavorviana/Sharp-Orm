@@ -177,19 +177,13 @@ namespace SharpOrm
             if (this._fkToLoad.Length == 0)
                 return base.GetEnumerable<K>();
 
-            using (var reader = this.ExecuteReader())
+            using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T), this._fkToLoad))
             {
-                var objReader = new DbObjectReader(this.Config, reader, typeof(T), TranslationRegistry.Default, this._fkToLoad)
-                {
-                    Token = this.Token,
-                    Connection = this.Connection,
-                    Transaction = this.Transaction
-                };
-                
-                var items = objReader.ReadToEnd<K>();
-                reader.Close();
-                objReader.LoadForeigns();
-                return items;
+                reader.Token = this.Token;
+                reader.Connection = this.Connection;
+                reader.Transaction = this.Transaction;
+
+                return reader.ReadToEnd<K>();
             }
         }
 
@@ -837,7 +831,7 @@ namespace SharpOrm
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
             using (var reader = this.ExecuteReader())
-                return new DbObjectReader(this.Config, reader, typeof(T), TranslationRegistry.Default)
+                return new DbObjectReader(this.Config, reader, typeof(T))
                 {
                     Token = this.Token,
                     Connection = this.Connection,
