@@ -45,8 +45,8 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is byte[] buffer)
                 return new MemoryStream(buffer);
 
-            if (!(value is Stream stream))
-                throw new NotSupportedException("Invalid value provided. Expected a Stream or byte[].");
+            if (!(value is MemoryStream stream))
+                throw new NotSupportedException("Invalid value provided. Expected a MemoryStream or byte[].");
 
             var ms = new MemoryStream();
             stream.CopyTo(ms);
@@ -71,7 +71,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is MemoryStream ms)
                 return ms.ToArray();
 
-            if (!(value is Stream stream) || !stream.CanRead)
+            if (!(value is MemoryStream stream) || !stream.CanRead)
                 throw new NotSupportedException("Invalid value provided. Expected a MemoryStream or byte[].");
 
             using (ms = new MemoryStream())
