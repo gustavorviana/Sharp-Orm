@@ -15,7 +15,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// Translates a sql value to a c# value.
         /// </summary>
         /// <param name="value">Value received from sql.</param>
-        /// <param name="expectedType">Type of value that the receiver accepts to receive.</param>
+        /// <param name="expectedType">Expected type.</param>
         /// <returns></returns>
         object FromSqlValue(object value, Type expectedType);
 
@@ -23,7 +23,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// Translate a c# object to sql.
         /// </summary>
         /// <param name="value">Value that will be sent to sql.</param>
-        /// <param name="type">Type of value that the column is sending.</param>
+        /// <param name="type">Expected type.</param>
         /// <returns></returns>
         object ToSqlValue(object value, Type type);
     }

@@ -66,7 +66,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return null;
 
             if (expectedType == typeof(string))
-                return value is string ? value : value?.ToString();
+                return value is string ? value : value.ToString();
 
             if (expectedType == typeof(bool))
                 return Convert.ToBoolean(value);

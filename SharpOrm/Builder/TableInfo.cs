@@ -28,6 +28,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Indicates whether there is any column representing a foreign object.
         /// </summary>
+        [Obsolete("It will be removed in version 2.x.x.")]
         public bool HasFk { get; private set; }
         /// <summary>
         /// Gets an array of column information for the table.

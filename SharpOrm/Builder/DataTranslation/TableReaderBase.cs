@@ -11,10 +11,10 @@ namespace SharpOrm.Builder.DataTranslation
     /// <summary>
     /// Base class for table translators.
     /// </summary>
-    [Obsolete("Use SharpOrm.Builder.DataTranslation instead. It will be removed in version 2.x.x.")]
+    [Obsolete("Use SharpOrm.Builder.DataTranslation.DbObjectReader instead. It will be removed in version 2.x.x.")]
     public abstract class TableReaderBase : IDisposable
     {
-        [Obsolete("Use SharpOrm.Builder.DataTranslation.Default instead. It will be removed in version 2.x.x.")]
+        [Obsolete("Use SharpOrm.Builder.DataTranslation.TranslationRegistry.Default instead. It will be removed in version 2.x.x.")]
         public static TranslationRegistry Registry { get => TranslationRegistry.Default; set => TranslationRegistry.Default = value; }
         protected readonly IQueryConfig config;
         private readonly bool convertToUtc;
