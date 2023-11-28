@@ -21,52 +21,40 @@ namespace SharpOrm.Builder.DataTranslation
         public DbConnection Connection { get; set; }
         public CancellationToken Token { get; set; }
 
+        private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
         /// <summary>
-        /// Gets the translation registry associated with the table translator.
+        /// Foreign keys to be loaded.
         /// </summary>
-        private readonly LambdaColumn[] fkToLoad;
+        public LambdaColumn[] FkToLoad { get => this._fkToLoad; set => this._fkToLoad = value ?? throw new ArgumentNullException(nameof(this.FkToLoad)); }
         private bool disposed;
 
         public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type)
-            : this(config, reader, type, TranslationRegistry.Default, new LambdaColumn[0])
+            : this(config, reader, type, TranslationRegistry.Default)
         {
 
         }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, LambdaColumn[] fkToLoad)
-            : this(config, reader, type, TranslationRegistry.Default, fkToLoad)
-        {
-
-        }
-
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry, LambdaColumn[] fkToLoad)
-            : this(config, reader, MappedObject.Create(reader, type, registry), registry, fkToLoad)
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry)
+            : this(config, reader, MappedObject.Create(reader, type, registry), registry)
         {
         }
 
         public DbObjectReader(IQueryConfig config, DbDataReader reader, MappedObject map, TranslationRegistry registry = null)
-            : this(config, reader, map, registry ?? TranslationRegistry.Default, new LambdaColumn[0])
-        {
-        }
-
-
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, MappedObject map, TranslationRegistry registry, LambdaColumn[] fkToLoad)
         {
             this.config = config;
             this.reader = reader;
-            this.fkToLoad = fkToLoad;
             this.map = map;
         }
 
+        /// <summary>
+        /// Reads all available objects in the DbDataReader and their foreign objects.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
         public List<T> ReadToEnd<T>() where T : new()
         {
-            if (typeof(T) != this.map.Type)
-                throw new InvalidCastException();
-
-            List<T> list = new List<T>();
-
-            while (!this.Token.IsCancellationRequested && this.reader.Read())
-                list.Add((T)this.Read());
+            List<T> list = new List<T>(this.GetEnumerable<T>());
 
             if (!this.reader.IsClosed)
                 this.reader.Close();
@@ -76,11 +64,35 @@ namespace SharpOrm.Builder.DataTranslation
             return list;
         }
 
+        /// <summary>
+        /// Returns an IEnumerable that reads all objects from the DbDataReader without reading the foreign keys.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
+        public IEnumerable<T> GetEnumerable<T>()
+        {
+            if (typeof(T) != this.map.Type)
+                throw new InvalidCastException();
+
+            while (!this.Token.IsCancellationRequested && this.reader.Read())
+                yield return (T)this.Read();
+
+            this.Token.ThrowIfCancellationRequested();
+        }
+
+        /// <summary>
+        /// Reads the object at the current position of the reader.
+        /// </summary>
+        /// <returns></returns>
         public object Read()
         {
             return this.map.Read(this.reader, this);
         }
 
+        /// <summary>
+        /// Reads the foreign keys of the objects.
+        /// </summary>
         public void LoadForeigns()
         {
             while (!this.Token.IsCancellationRequested && foreignKeyToLoad.Count > 0)
@@ -128,7 +140,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         private DbObjectReader CreateReaderFor(ForeignInfo info, DbDataReader reader)
         {
-            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type), new LambdaColumn[0]);
+            return new DbObjectReader(this.config, reader, ReflectionUtils.GetGenericArg(info.Type));
         }
 
         internal Query CreateQuery(ForeignInfo info)
@@ -154,7 +166,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            if (this.fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
+            if (this.FkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
                 this.AddFkColumn(lCol, owner, fkValue, column);
             else if (this.config.LoadForeign)
                 column.SetRaw(owner, GetObjWithKey(column, fkValue));

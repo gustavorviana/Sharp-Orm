@@ -51,5 +51,10 @@ namespace SharpOrm.Builder.DataTranslation
             for (int i = 0; i < items.Count; i++)
                 array[lastSize + i] = items[i];
         }
+
+        public static bool IsNullOrEmpty(ICollection collection)
+        {
+            return collection == null || collection.Count == 0;
+        }
     }
 }
