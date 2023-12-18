@@ -22,6 +22,12 @@ namespace SharpOrm.Builder.DataTranslation
             set => native.GuidFormat = value;
         }
 
+        public TimeZoneInfo TimeZone
+        {
+            get => native.TimeZone;
+            set => native.TimeZone = value;
+        }
+
         public object ToSql(object value)
         {
             if (value is null || value is DBNull)

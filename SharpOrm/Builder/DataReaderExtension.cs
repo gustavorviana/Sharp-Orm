@@ -39,6 +39,9 @@ namespace SharpOrm.Builder
 
         internal static object LoadDbValue(IQueryConfig config, object obj)
         {
+            if (obj is DBNull)
+                return null;
+
             if (config.DateKind == DateTimeKind.Utc && obj is DateTime date)
                 return date.FromDatabase(config);
 

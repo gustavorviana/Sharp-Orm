@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.DataTranslation;
+using System;
 using System.Collections.Generic;
 
 namespace SharpOrm
@@ -43,7 +44,24 @@ namespace SharpOrm
 
         public override string ToString()
         {
-            return string.Format("Column ({0}: {1})", this.Name, this.Value is null ? "NULL" : this.Value);
+            return string.Format("Cell ({0}: {1})", this.Name, ValueToString(this.Value));
+        }
+
+        private static string ValueToString(object value)
+        {
+            if (value is null)
+                return "NULL";
+
+            if (value is DBNull)
+                return "NULL";
+
+            if (value is DateTime || value is DateTimeOffset || value is TimeSpan)
+                value = value.ToString();
+
+            if (value is string str)
+                return $"\"{str}\"";
+
+            return value?.ToString();
         }
 
         #region IEquatable
@@ -79,22 +97,57 @@ namespace SharpOrm
 
         public static explicit operator int(Cell cell)
         {
-            return (int)cell.Value;
+            return (int)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(int));
         }
 
         public static explicit operator float(Cell cell)
         {
-            return (float)cell.Value;
+            return (float)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(float));
         }
 
         public static explicit operator decimal(Cell cell)
         {
-            return (decimal)cell.Value;
+            return (decimal)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(decimal));
         }
 
         public static explicit operator bool(Cell cell)
         {
-            return (int)cell == 1;
+            if (cell.Value is bool bVal)
+                return bVal;
+
+            if (cell.Value is int intVal)
+                return intVal == 1;
+
+            throw new InvalidCastException();
+        }
+
+        public static explicit operator int?(Cell cell)
+        {
+            return (int?)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(int));
+        }
+
+        public static explicit operator float?(Cell cell)
+        {
+            return (float?)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(float));
+        }
+
+        public static explicit operator decimal?(Cell cell)
+        {
+            return (decimal?)NativeSqlValueConversor.numericTranslation.FromSqlValue(cell.Value, typeof(decimal));
+        }
+
+        public static explicit operator bool?(Cell cell)
+        {
+            if (cell.Value is null || cell.Value is DBNull)
+                return null;
+
+            if (cell.Value is bool bVal)
+                return bVal;
+
+            if (cell.Value is int intVal)
+                return intVal == 1;
+
+            throw new InvalidCastException();
         }
 
         #endregion

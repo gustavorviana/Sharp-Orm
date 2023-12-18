@@ -28,6 +28,14 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public TimeZoneInfo LocalTimeZone { get; set; } = TimeZoneInfo.Local;
 
+        /// <summary>
+        /// If true, parameters will be used; if false, strings will be manually escaped.
+        /// </summary>
+        /// <remarks>
+        /// Use this option with caution, as it can cause issues in the execution of your scripts.
+        /// </remarks>
+        public bool EscapeStrings { get; set; } = true;
+
         public QueryConfig() : this(true)
         {
 
@@ -49,5 +57,10 @@ namespace SharpOrm.Builder
 
         /// <inheritdoc/>
         public abstract Grammar NewGrammar(Query query);
+
+        public virtual string EscapeString(string value)
+        {
+            return SqlExtension.EscapeString(value);
+        }
     }
 }

@@ -38,6 +38,14 @@ namespace SharpOrm.Builder
         bool LoadForeign { get; set; }
 
         /// <summary>
+        /// If false, parameters will be used; if true, strings will be manually escaped.
+        /// </summary>
+        /// <remarks>
+        /// Use this option with caution, as it can cause issues in the execution of your scripts.
+        /// </remarks>
+        bool EscapeStrings { get; set; }
+
+        /// <summary>
         /// Creates a new grammar object.
         /// </summary>
         /// <param name="query">Query for grammar.</param>
@@ -50,6 +58,8 @@ namespace SharpOrm.Builder
         /// <param name="name"></param>
         /// <returns></returns>
         string ApplyNomenclature(string name);
+
+        string EscapeString(string value);
 
         TableReaderBase CreateTableReader(string[] tables, int maxDepth);
     }

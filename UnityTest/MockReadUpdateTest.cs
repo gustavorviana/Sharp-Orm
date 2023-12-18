@@ -39,6 +39,20 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void ReadDbNull()
+        {
+            var config = new MysqlQueryConfig();
+            var reader = new MockDataReader(new Cell("str", DBNull.Value), new Cell("num", null));
+            reader.Read();
+
+            Assert.AreEqual(DBNull.Value, reader[0]);
+            Assert.AreEqual(DBNull.Value, reader[1]);
+
+            Assert.AreEqual(null, reader.GetCell(config, 0).Value);
+            Assert.AreEqual(null, reader.GetCell(config, 1).Value);
+        }
+
+        [TestMethod]
         public void Read100Itens()
         {
             const int itens = 1000;

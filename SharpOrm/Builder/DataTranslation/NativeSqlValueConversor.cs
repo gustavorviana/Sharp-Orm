@@ -6,7 +6,7 @@ namespace SharpOrm.Builder.DataTranslation
     internal class NativeSqlValueConversor : ISqlTranslation
     {
         private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
-        private static readonly NumericTranslation numericTranslation = new NumericTranslation();
+        internal static readonly NumericTranslation numericTranslation = new NumericTranslation();
         /// <summary>
         /// An array of native types used for fast type checking and conversion.
         /// </summary>
@@ -16,9 +16,12 @@ namespace SharpOrm.Builder.DataTranslation
             typeof(string),
             typeof(DateTime),
             typeof(Guid),
-            typeof(TimeSpan)
+            typeof(TimeSpan),
+            typeof(DateTimeOffset)
         };
         public string GuidFormat { get; set; } = "D";
+
+        public TimeZoneInfo TimeZone { get; set; }
 
         public bool CanWork(Type type) => IsNative(type);
 
@@ -77,8 +80,11 @@ namespace SharpOrm.Builder.DataTranslation
             if (expectedType == typeof(Guid))
                 return value is Guid guid ? guid : Guid.Parse((string)value);
 
-            if (expectedType == typeof(TimeSpan) && value is DateTime date)
-                return date.TimeOfDay;
+            if (expectedType == typeof(DateTime))
+                return ParseDateTime(value);
+
+            if (expectedType == typeof(TimeSpan))
+                return ParseTimespan(value);
 
             if (numericTranslation.CanWork(expectedType))
                 return numericTranslation.FromSqlValue(value, expectedType);
@@ -87,6 +93,27 @@ namespace SharpOrm.Builder.DataTranslation
                 return binaryTranslator.FromSqlValue(value, expectedType);
 
             return value;
+        }
+
+        private object ParseTimespan(object obj)
+        {
+            obj = ParseDateTime(obj);
+
+            if (obj is DateTime date)
+                return date.TimeOfDay;
+
+            return obj;
+        }
+
+        private object ParseDateTime(object obj)
+        {
+            if (obj is DateTimeOffset offset)
+                return TimeZone == null ? offset.DateTime : TimeZoneInfo.ConvertTimeFromUtc(offset.UtcDateTime, TimeZone);
+
+            if (obj is string strDate)
+                return DateTime.TryParse(strDate, out var date) ? date : (DateTime?)null;
+
+            return obj;
         }
 
         /// <summary>
@@ -109,7 +136,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is bool vBool)
                 return vBool ? 1 : 0;
 
-            if (value is DateTime || value is TimeSpan)
+            if (value is DateTime || value is TimeSpan || value is DateTimeOffset)
                 return value;
 
             if (numericTranslation.CanWork(type))
