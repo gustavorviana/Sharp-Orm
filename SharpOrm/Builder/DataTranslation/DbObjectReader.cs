@@ -10,12 +10,18 @@ using System.Threading;
 namespace SharpOrm.Builder.DataTranslation
 {
 #pragma warning disable CS0618 // O tipo ou membro é obsoleto
+    /// <summary>
+    /// Object responsible for reading and managing the DbDataReader.
+    /// </summary>
     public class DbObjectReader : IDisposable
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly DbDataReader reader;
         internal readonly IQueryConfig config;
         private readonly MappedObject map;
+        private bool disposed;
+
+        public DbDataReader Reader => this.reader;
 
         public DbTransaction Transaction { get; set; }
         public DbConnection Connection { get; set; }
@@ -26,7 +32,6 @@ namespace SharpOrm.Builder.DataTranslation
         /// Foreign keys to be loaded.
         /// </summary>
         public LambdaColumn[] FkToLoad { get => this._fkToLoad; set => this._fkToLoad = value ?? throw new ArgumentNullException(nameof(this.FkToLoad)); }
-        private bool disposed;
 
         public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type)
             : this(config, reader, type, TranslationRegistry.Default)
@@ -72,13 +77,19 @@ namespace SharpOrm.Builder.DataTranslation
         /// <exception cref="InvalidCastException"></exception>
         public IEnumerable<T> GetEnumerable<T>()
         {
-            if (typeof(T) != this.map.Type)
-                throw new InvalidCastException();
+            while (this.MoveNext())
+                yield return this.Read<T>();
+        }
 
-            while (!this.Token.IsCancellationRequested && this.reader.Read())
-                yield return (T)this.Read();
-
+        public bool MoveNext()
+        {
             this.Token.ThrowIfCancellationRequested();
+            return this.reader.Read();
+        }
+
+        public T Read<T>()
+        {
+            return (T)this.Read();
         }
 
         /// <summary>
@@ -113,8 +124,8 @@ namespace SharpOrm.Builder.DataTranslation
             {
                 query.Limit = 1;
 
-                using (var reader = query.ExecuteReader())
-                    return reader.Read() ? this.CreateReaderFor(info, reader).Read() : null;
+                using (var reader = this.CreateReaderFor(info, query.ExecuteReader()))
+                    return reader.MoveNext() ? reader.Read() : null;
             }
         }
 
@@ -124,12 +135,9 @@ namespace SharpOrm.Builder.DataTranslation
             {
                 IList collection = ReflectionUtils.CreateList(info.Type);
 
-                using (var reader = query.ExecuteReader())
-                {
-                    var objReader = this.CreateReaderFor(info, reader);
-                    while (reader.Read())
-                        collection.Add(objReader.Read());
-                }
+                using (var reader = this.CreateReaderFor(info, query.ExecuteReader()))
+                    while (reader.MoveNext())
+                        collection.Add(reader.Read());
 
                 if (info.Type.IsArray)
                     return ReflectionUtils.ToArray(info.Type.GetElementType(), collection);

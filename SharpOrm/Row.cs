@@ -81,7 +81,7 @@ namespace SharpOrm
 
         public static Row Parse(object obj, Type type, bool readPk = true, bool readFk = false)
         {
-            if (obj is null) throw new ArgumentNullException(nameof(obj));
+            if (obj is null || obj is DBNull) throw new ArgumentNullException(nameof(obj));
             if (obj is Row row) return row;
 
             return new Row(TableInfo.Get(type).GetObjCells(obj, readPk, readFk).ToArray());

@@ -33,6 +33,18 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void MultipleSelectCount()
+        {
+            using var q = new Query<TestTable>(Creator);
+            q.Delete();
+            InsertRows(4);
+            q.Select(ID, NAME, NICK);
+
+            Assert.AreEqual(4, q.Count());
+            Assert.AreEqual(4, q.Count("*"));
+        }
+
+        [TestMethod]
         public void PaginateDistinct()
         {
             InsertRows(4);

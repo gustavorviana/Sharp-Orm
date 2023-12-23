@@ -36,7 +36,7 @@ namespace SharpOrm.Builder
         private string LoadParameter(object value, bool allowAlias)
         {
             if (this.grammar.Info.Config.EscapeStrings && value is string strVal)
-                return SqlExtension.EscapeString(strVal);
+                return this.grammar.Info.Config.EscapeString(strVal);
 
             value = TableReaderBase.Registry.ToSql(value);
             if (!(value is byte[]) && value is ICollection)

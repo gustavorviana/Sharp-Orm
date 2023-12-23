@@ -11,7 +11,7 @@ namespace SharpOrm.Builder.DataTranslation
         public static TranslationRegistry Default
         {
             get => _default;
-            set => _default = value??throw new ArgumentNullException(nameof(Default));
+            set => _default = value ?? throw new ArgumentNullException(nameof(Default));
         }
 
         private readonly NativeSqlValueConversor native = new NativeSqlValueConversor();

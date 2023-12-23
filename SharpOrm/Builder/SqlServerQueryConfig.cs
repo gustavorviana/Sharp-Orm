@@ -1,7 +1,10 @@
-﻿namespace SharpOrm.Builder
+﻿using System.Text;
+
+namespace SharpOrm.Builder
 {
     public class SqlServerQueryConfig : QueryConfig
     {
+        private const char StrDelimitor = '\'';
         public bool UseOldPagination { get; set; }
 
         public SqlServerQueryConfig()
@@ -30,6 +33,19 @@
         public static string GetLocalConnectionString(string initialCatalog)
         {
             return $@"Data Source=localhost\SQLEXPRESS;Initial Catalog={initialCatalog};Integrated Security=True";
+        }
+
+        public override string EscapeString(string value)
+        {
+            StringBuilder builder = new StringBuilder(value.Length).Append(StrDelimitor);
+
+            foreach (var c in value)
+            {
+                if (c == StrDelimitor) builder.Append(StrDelimitor);
+                builder.Append(c);
+            }
+
+            return builder.Append(StrDelimitor).ToString();
         }
     }
 }

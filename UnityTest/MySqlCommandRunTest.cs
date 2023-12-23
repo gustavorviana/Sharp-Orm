@@ -36,6 +36,18 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void MultipleSelectCount()
+        {
+            InsertRows(4);
+
+            using var q = NewQuery();
+            q.Select(ID, NAME, NICK);
+
+            Assert.AreEqual(4, q.Count());
+            Assert.AreEqual(4, q.Count("*"));
+        }
+
+        [TestMethod]
         public void DeepSelect()
         {
             var config = new MysqlQueryConfig(false) { LoadForeign = true };

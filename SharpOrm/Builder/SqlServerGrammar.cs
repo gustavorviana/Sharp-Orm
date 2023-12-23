@@ -156,9 +156,6 @@ namespace SharpOrm.Builder
 
         private System.Text.StringBuilder WriteCountColumn(Column column)
         {
-            if (this.Info.Select.Length > 1)
-                throw new NotSupportedException("It's not possible to count more than one column.");
-
             string countCol = column?.GetCountColumn();
             if (string.IsNullOrEmpty(countCol))
                 throw new NotSupportedException("The name of a column or '*' must be entered for counting.");

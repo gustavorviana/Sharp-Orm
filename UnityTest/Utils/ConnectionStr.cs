@@ -25,7 +25,7 @@ namespace UnityTest.Utils
             var connString = File.ReadAllText(filePath);
 
             if (string.IsNullOrEmpty(connString))
-                throw new Exception("O arquivo Connection.txt deve conter a string de conexão.");
+                throw new Exception("The Connection.txt file must contain the connection string.");
 
             cached[filePath] = connString;
 

@@ -836,6 +836,20 @@ namespace UnityTest
             Assert.AreEqual("SELECT Phone, COUNT(Phone) AS 'PhonesCount' FROM `TestTable` GROUP BY `Phone` HAVING COUNT(Phone) > 1 ORDER BY `PhonesCount` Desc", cmd.CommandText);
         }
 
+        [TestMethod]
+        public void SelectWithEscapeStrings()
+        {
+            var today = DateTime.Today;
+            
+            var config = new MysqlQueryConfig(false) { LoadForeign = true, EscapeStrings = true };
+            using var query = new Query(Connection, config, TABLE);
+            query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
+
+            using var g = config.NewGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = @c1 AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", cmd.CommandText);
+        }
+
         private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)
         {
             using var query = new Query(Connection, TABLE);

@@ -9,8 +9,6 @@ namespace SharpOrm
 {
     public static class SqlExtension
     {
-        private static string unsafeChars = "\\¥Š₩∖﹨＼\"'`\u00b4ʹʺʻʼˈˊˋ\u02d9\u0300\u0301‘’‚′‵❛❜＇";
-
         /// <summary>
         /// Sanitizes a string value for use in SQL queries, replacing all occurrences
         /// of the % and _ characters with their respective escaped versions.
@@ -67,24 +65,6 @@ namespace SharpOrm
                     return true;
 
             return false;
-        }
-
-        public static string EscapeString(string value)
-        {
-            StringBuilder stringBuilder = new StringBuilder(value.Length);
-            foreach (char c in value)
-            {
-                if (IsUnsafe(c)) stringBuilder.Append("\\");
-
-                stringBuilder.Append(c);
-            }
-
-            return stringBuilder.ToString();
-        }
-
-        public static bool IsUnsafe(char c)
-        {
-            return unsafeChars.Contains(c);
         }
     }
 }

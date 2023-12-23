@@ -11,6 +11,7 @@ namespace UnityTest.Utils
 {
     public class SqlServerTest : BaseTest
     {
+        protected static readonly SqlServerQueryConfig EscapeStringsConfig = new(false) { UseOldPagination = false, EscapeStrings = true };
         protected static readonly SqlServerQueryConfig NewConfig = new(false) { UseOldPagination = false };
         protected static readonly SqlServerQueryConfig OldConfig = new(false) { UseOldPagination = true };
         protected static DbConnection Connection

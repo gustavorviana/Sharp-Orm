@@ -34,7 +34,7 @@ namespace SharpOrm.Builder
         /// <remarks>
         /// Use this option with caution, as it can cause issues in the execution of your scripts.
         /// </remarks>
-        public bool EscapeStrings { get; set; } = true;
+        public bool EscapeStrings { get; set; }
 
         public QueryConfig() : this(true)
         {
@@ -58,9 +58,6 @@ namespace SharpOrm.Builder
         /// <inheritdoc/>
         public abstract Grammar NewGrammar(Query query);
 
-        public virtual string EscapeString(string value)
-        {
-            return SqlExtension.EscapeString(value);
-        }
+        public abstract string EscapeString(string value);
     }
 }

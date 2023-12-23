@@ -484,7 +484,7 @@ namespace SharpOrm
         public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
         {
             if (toCheckColumns.Length < 1)
-                throw new ArgumentException("At least one column name must be entered.", nameof(toCheckColumns));
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
 
             using (query = (Query<T>)query.Clone(false))
             {
@@ -514,7 +514,7 @@ namespace SharpOrm
         public static void Upsert(this Query query, Row row, string[] toCheckColumns)
         {
             if (toCheckColumns.Length < 1)
-                throw new ArgumentException("At least one column name must be entered.", nameof(toCheckColumns));
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
 
             using (query = query.Clone(false))
             {

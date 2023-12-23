@@ -35,7 +35,7 @@ namespace SharpOrm.Builder
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
-                    throw new ArgumentNullException(nameof(rows));
+                    throw new InvalidOperationException(Messages.NoColumnsInserted);
 
                 this.ConfigureInsert(@enum.Current.Cells, false);
 

@@ -425,10 +425,10 @@ namespace SharpOrm.Builder
             if (arg is string strColumn)
                 return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
 
-            if (arg is SqlExpression || arg is ISqlExpressible || arg is DateTime || arg is TimeSpan || arg.GetType().IsPrimitive || arg is Enum)
+            if (arg is SqlExpression || arg is ISqlExpressible || arg is DateTime || arg is DateTimeOffset || arg is TimeSpan || arg.GetType().IsPrimitive || arg is Enum)
                 return this.Info.Where.AddParameter(arg);
 
-            throw new InvalidOperationException("The column type is invalid. Use an Expression or string type.");
+            throw new InvalidOperationException("The column type is invalid. Only the following types can be used: SqlExpression, ISqlExpressible, DateTime, DateTimeOffset, TimeSpan, numbers or Enum.");
         }
 
         internal protected QueryBase WriteWhere(object column, string operation, object value, string type)

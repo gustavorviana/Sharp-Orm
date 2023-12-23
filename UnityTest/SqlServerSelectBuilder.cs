@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using System;
 using System.Data.Common;
 using UnityTest.Models;
 using UnityTest.Utils;
@@ -277,7 +278,6 @@ namespace UnityTest
             AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
         }
 
-
         [TestMethod]
         public void DeleteWithNoLock()
         {
@@ -289,6 +289,17 @@ namespace UnityTest
             Assert.AreEqual("DELETE [T] FROM [TestTable] [T] WITH (NOLOCK)", cmd.CommandText);
         }
 
+        [TestMethod]
+        public void SelectWithEscapeStrings()
+        {
+            var today = DateTime.Today;
+            using var query = new Query(Connection, EscapeStringsConfig, TABLE);
+            query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
+
+            using var g = EscapeStringsConfig.NewGrammar(query);
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Name] = 'Mike' AND [Date] = @c1 AND [Alias] = '\"Mik\";''Mik''#--'", cmd.CommandText);
+        }
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)
         {
