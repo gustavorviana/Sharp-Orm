@@ -243,7 +243,7 @@ namespace SharpOrm
             var cmd = this.CreateCommand(qBuilder.ToString());
 
             for (int i = 0; i < query.Parameters.Count; i++)
-                cmd.AddCommand($"@p{i}", query.Parameters[i]);
+                cmd.AddParam($"@p{i}", query.Parameters[i]);
 
             return cmd;
         }

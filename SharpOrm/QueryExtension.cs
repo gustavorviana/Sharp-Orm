@@ -613,7 +613,7 @@ namespace SharpOrm
 
         #endregion
 
-        internal static DbParameter AddCommand(this DbCommand command, string name, object value)
+        internal static DbParameter AddParam(this DbCommand command, string name, object value)
         {
             var param = command.CreateParameter();
             param.ParameterName = name;

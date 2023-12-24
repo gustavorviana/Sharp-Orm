@@ -10,14 +10,41 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
+    internal class CmdQueryConstructor : QueryConstructor
+    {
+        /*
+         * Param index
+         */
+        private List<int> cmdParams = new List<int>();
+
+        public CmdQueryConstructor(QueryInfo info) : base(info)
+        {
+
+        }
+
+        public void ApplyToCommand(System.Data.Common.DbCommand cmd)
+        {
+            for (int i = 0; i < cmdParams.Count; i++)
+                cmd.AddParam($"@{i}", this.parameters[cmdParams[i]]);
+        }
+
+        protected override QueryConstructor InternalAddParam(object value)
+        {
+            this.AddParameters(value);
+            this.cmdParams.Add(this.parameters.Count);
+
+            return this.Add($"@{this.parameters.Count}");
+        }
+    }
+
     /// <summary>
     /// A class for building SQL queries with parameters.
     /// </summary>
-    public sealed class QueryConstructor : IDisposable, ISqlExpressible
+    public class QueryConstructor : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         private readonly StringBuilder query = new StringBuilder();
-        private readonly List<object> parameters = new List<object>();
+        protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
         /// <summary>
@@ -144,7 +171,15 @@ namespace SharpOrm.Builder
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            return this.Add("?").AddParameters(val);
+            if (this.info.Config.EscapeStrings && val is string strVal)
+                return this.Add(this.info.Config.EscapeString(strVal));
+
+            return this.InternalAddParam(val);
+        }
+
+        protected virtual QueryConstructor InternalAddParam(object value)
+        {
+            return this.Add("?").AddParameters(value);
         }
 
         /// <summary>

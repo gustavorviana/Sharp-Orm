@@ -232,13 +232,13 @@ namespace SharpOrm.Builder
             this.ApplyOrderBy(this.Info.Orders, false);
         }
 
-        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order, bool colsOnly)
+        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order, bool writeOrderByFlag)
         {
             var en = order.GetEnumerator();
             if (!en.MoveNext())
                 return;
 
-            if (!colsOnly)
+            if (!writeOrderByFlag)
                 this.QueryBuilder.Append(" ORDER BY ");
 
             WriteOrderBy(en.Current);
