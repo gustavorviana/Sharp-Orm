@@ -112,6 +112,31 @@ namespace SharpOrm
             return Convert.ToBoolean(cell.Value);
         }
 
+        public static explicit operator Guid(Cell cell)
+        {
+            return Guid.Parse(cell.Value?.ToString());
+        }
+
+        public static explicit operator DateTime(Cell cell)
+        {
+            return (DateTime)TranslationRegistry.Default.FromSql(cell.Value, typeof(DateTime));
+        }
+
+        public static explicit operator TimeSpan(Cell cell)
+        {
+            return (TimeSpan)TranslationRegistry.Default.FromSql(cell.Value, typeof(TimeSpan));
+        }
+
+        public static explicit operator DateTimeOffset(Cell cell)
+        {
+            return (DateTimeOffset)TranslationRegistry.Default.FromSql(cell.Value, typeof(DateTimeOffset));
+        }
+
+        public static explicit operator byte[](Cell cell)
+        {
+            return cell.Value as byte[];
+        }
+
         public static explicit operator int?(Cell cell)
         {
             if (cell.Value is null || cell.Value is DBNull)
@@ -141,7 +166,39 @@ namespace SharpOrm
             if (cell.Value is null || cell.Value is DBNull)
                 return null;
 
-           return Convert.ToBoolean(cell.Value);
+            return Convert.ToBoolean(cell.Value);
+        }
+
+        public static explicit operator Guid?(Cell cell)
+        {
+            if (cell.Value is null || cell.Value is DBNull)
+                return null;
+
+            return Guid.Parse(cell.Value?.ToString());
+        }
+
+        public static explicit operator DateTime?(Cell cell)
+        {
+            if (cell.Value is null || cell.Value is DBNull)
+                return null;
+
+            return (DateTime)TranslationRegistry.Default.FromSql(cell.Value, typeof(DateTime));
+        }
+
+        public static explicit operator TimeSpan?(Cell cell)
+        {
+            if (cell.Value is null || cell.Value is DBNull)
+                return null;
+
+            return (TimeSpan)TranslationRegistry.Default.FromSql(cell.Value, typeof(TimeSpan));
+        }
+
+        public static explicit operator DateTimeOffset?(Cell cell)
+        {
+            if (cell.Value is null || cell.Value is DBNull)
+                return null;
+
+            return (DateTimeOffset)TranslationRegistry.Default.FromSql(cell.Value, typeof(DateTimeOffset));
         }
 
         #endregion
