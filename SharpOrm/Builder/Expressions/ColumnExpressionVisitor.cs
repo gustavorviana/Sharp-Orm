@@ -23,9 +23,20 @@ namespace SharpOrm.Builder.Expressions
             if (!(node.Member.MemberType == MemberTypes.Property || node.Member.MemberType == MemberTypes.Field))
                 return base.VisitMember(node);
 
+            Validate(node);
             _columns.Insert(0, new LambdaColumn(node.Member));
 
             return base.VisitMember(node);
+        }
+
+        private static void Validate(MemberExpression node)
+        {
+            if (!TranslationUtils.IsNative(node.Type, false))
+                return;
+
+            string mType = node.Member.MemberType == MemberTypes.Property ? "property" : "field";
+
+            throw new InvalidOperationException($"It's not possible to load the {mType} '{node.Member.Name}' because its type is incompatible.");
         }
 
         public IEnumerable<LambdaColumn> VisitColumn<T>(Expression<ColumnExpression<T>> check)

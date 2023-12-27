@@ -3,59 +3,15 @@ using System.Linq;
 
 namespace SharpOrm.Builder.DataTranslation
 {
-    internal class NativeSqlValueConversor : ISqlTranslation
+    internal class NativeSqlTranslation : ISqlTranslation
     {
         private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
-        internal static readonly NumericTranslation numericTranslation = new NumericTranslation();
-        /// <summary>
-        /// An array of native types used for fast type checking and conversion.
-        /// </summary>
-        private static readonly Type[] nativeTypes = new Type[]
-        {
-            typeof(DBNull),
-            typeof(string),
-            typeof(DateTime),
-            typeof(Guid),
-            typeof(TimeSpan),
-            typeof(DateTimeOffset)
-        };
+        private static readonly NumericTranslation numericTranslation = new NumericTranslation();
         public string GuidFormat { get; set; } = "D";
 
         public TimeZoneInfo TimeZone { get; set; }
 
-        public bool CanWork(Type type) => IsNative(type);
-
-        /// <summary>
-        /// Determines if a type is nullable.
-        /// </summary>
-        /// <param name="type">The type to check.</param>
-        /// <returns>True if the type is nullable, false otherwise.</returns>
-        internal static bool IsNative(Type type)
-        {
-            if (type == null)
-                return true;
-
-            if (Nullable.GetUnderlyingType(type) is Type nType)
-                type = nType;
-
-            return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || numericTranslation.CanWork(type) || binaryTranslator.CanWork(type);
-        }
-
-        /// <summary>
-        /// Checks if two types are considered similar for specific cases.
-        /// </summary>
-        /// <param name="type1">The first Type to compare.</param>
-        /// <param name="type2">The second Type to compare.</param>
-        /// <returns>True if the types are considered similar, otherwise false.</returns>
-        internal static bool IsSimilar(Type type1, Type type2)
-        {
-            return type1 == type2 ||
-                    (type1 == typeof(string) && type2 == typeof(Guid)) ||
-                    (type2 == typeof(string) && type1 == typeof(Guid)) ||
-                    BinaryTranslator.IsSame(type1, type2) ||
-                    (TranslationUtils.IsNumberWithoutDecimal(type1) == TranslationUtils.IsNumberWithoutDecimal(type2)) ||
-                    (TranslationUtils.IsNumberWithDecimal(type1) == TranslationUtils.IsNumberWithDecimal(type2));
-        }
+        public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type);
 
         /// <summary>
         /// Converts a SQL value to its equivalent .NET representation based on the expected data type.

@@ -17,8 +17,6 @@ namespace SharpOrm
         public static string TableName => TableInfo.Name;
         protected static internal TableInfo TableInfo { get; } = TableInfo.Get(typeof(T));
         private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
-        private string[] foreignsTables = null;
-        private int foreignsDepth = 0;
 
         #region Query
         public Query() : base(TableName)
@@ -72,67 +70,12 @@ namespace SharpOrm
         }
         #endregion
 
-        #region Foreigns
-
-        /// <summary>
-        /// Specifies the foreign tables to be included in the query result up to the specified depth.
-        /// </summary>
-        /// <param name="depth">The depth to which the foreign tables should be included.</param>
-        /// <param name="tables">The names of the foreign tables to include.</param>
-        /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
-        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
-        public Query<T> WithForeigns(int depth, params string[] tables)
-        {
-            this.foreignsTables = tables;
-            this.foreignsDepth = depth;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the foreign tables to be included in the query result up to the default depth (10).
-        /// </summary>
-        /// <param name="tables">The names of the foreign tables to include.</param>
-        /// <returns>The modified Query<T> object with the specified foreign tables included.</returns>
-        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
-        public Query<T> WithForeigns(params string[] tables)
-        {
-            this.foreignsTables = tables;
-            this.foreignsDepth = 10;
-            return this;
-        }
-
-        /// <summary>
-        /// Adds a foreign table of type K to be included in the query result, expanding the query's depth if necessary.
-        /// </summary>
-        /// <typeparam name="K">The type of the foreign table to include.</typeparam>
-        /// <returns>The modified Query<T> object with the specified foreign table of type K included.</returns>
-        [Obsolete("This function is obsolete, use Query<T>.AddForeign(ColumnCall<T> call) instead. It will be removed in version 1.2.5.x.")]
-        public Query<T> AddForeign<K>() where K : new()
-        {
-            if (this.foreignsTables == null)
-            {
-                this.foreignsTables = new string[] { TableInfo.GetNameOf(typeof(K)) };
-            }
-            else
-            {
-                Array.Resize(ref this.foreignsTables, this.foreignsTables.Length + 1);
-                this.foreignsTables[this.foreignsTables.Length - 1] = TableInfo.GetNameOf(typeof(K));
-            }
-
-            if (this.foreignsDepth < 1)
-                this.foreignsDepth = 10;
-
-            return this;
-        }
-
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var cols = new ColumnExpressionVisitor().VisitColumn(call);
             TranslationUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
             return this;
         }
-
-        #endregion
 
         /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
@@ -171,9 +114,6 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            if (this.foreignsDepth > 0)
-                return this.ObsoleteGetEnumerable<K>();
-
             if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
                 return base.GetEnumerable<K>();
 
@@ -185,24 +125,6 @@ namespace SharpOrm
                 reader.Transaction = this.Transaction;
 
                 return reader.ReadToEnd<K>();
-            }
-        }
-
-        private K[] ObsoleteGetEnumerable<K>() where K : new()
-        {
-            using (var translator = this.Config.CreateTableReader(this.foreignsTables, this.foreignsDepth))
-            {
-                translator.Token = this.Token;
-                if (this.Transaction != null) translator.SetConnection(this.Transaction);
-                else translator.SetConnection(this.Connection);
-
-                K[] items;
-
-                using (var reader = this.ExecuteReader())
-                    items = translator.GetEnumerable<K>(reader).ToArray();
-
-                translator.LoadForeignKeys();
-                return items;
             }
         }
 
@@ -236,7 +158,7 @@ namespace SharpOrm
                 throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
 
             for (int i = 0; i < columns.Length; i++)
-                if (!NativeSqlValueConversor.IsSimilar(columns[i].Type, pksToCheck[i]?.GetType()))
+                if (!TranslationUtils.IsSimilar(columns[i].Type, pksToCheck[i]?.GetType()))
                     throw new InvalidCastException(Messages.InsertedTypeMismatch);
 
             return columns.Select(c => c.Name).ToArray();
@@ -379,8 +301,6 @@ namespace SharpOrm
                 return;
 
             query._fkToLoad = (LambdaColumn[])this._fkToLoad.Clone();
-            query.foreignsTables = this.foreignsTables;
-            query.foreignsDepth = this.foreignsDepth;
         }
     }
 

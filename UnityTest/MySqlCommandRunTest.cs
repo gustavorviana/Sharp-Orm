@@ -64,7 +64,8 @@ namespace UnityTest
             addrQuery.Insert(new Address { Id = 1, Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
 
-            var customer = query.AddForeign(f => f.Address.Street).FirstOrDefault();
+            Assert.ThrowsException<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));
+            var customer = query.AddForeign(f => f.Address).FirstOrDefault();
 
             Assert.IsNotNull(customer, "Customer failed");
             Assert.IsNotNull(customer.Address, "Address failed");
@@ -337,19 +338,6 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void SelectWithForeignDepth()
-        {
-            ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
-            var order = query.WithForeigns("Customers").FirstOrDefault();
-
-            Assert.IsNotNull(order.Customer);
-            Assert.AreEqual(order.CustomerId, order.Customer.Id);
-
-            Assert.IsNull(order.Customer.Address);
-        }
-
-        [TestMethod]
         public void ExecuteArrayScalar()
         {
             InsertRows(5);
@@ -376,14 +364,14 @@ namespace UnityTest
         {
             ConfigureInitialCustomerAndOrder();
             using var query = new Query<Order>(Connection);
-            var orders = ((Query<Order>)query.Where("customer_id", 2)).WithForeigns(1, "Customers", "Address").Paginate(2, 1);
+            var orders = ((Query<Order>)query.Where("customer_id", 2)).AddForeign(o => o.Customer.Address).Paginate(2, 1);
 
             Assert.IsNotNull(orders[0].Customer);
             Assert.AreEqual(orders[0].Customer, orders[1].Customer);
             Assert.AreEqual(orders[0].CustomerId, orders[1].CustomerId);
             Assert.AreEqual(orders[0].Customer.Id, orders[1].Customer.Id);
 
-            Assert.IsNull(orders[0].Customer.Address);
+            Assert.IsNotNull(orders[0].Customer.Address);
         }
 
         [TestMethod]

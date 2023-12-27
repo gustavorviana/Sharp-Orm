@@ -101,7 +101,7 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.registry = registry;
             this.column = member;
-            this.IsNative = NativeSqlValueConversor.IsNative(type);
+            this.IsNative = TranslationUtils.IsNative(type, false);
             this.Translation = translation ?? registry.GetFor(this.Type);
             this.Required = this.GetAttribute<RequiredAttribute>() != null;
 

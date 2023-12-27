@@ -32,12 +32,12 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static string GetLocalConnectionString(string initialCatalog)
         {
-            return $@"Data Source=localhost\SQLEXPRESS;Initial Catalog={initialCatalog};Integrated Security=True";
+            return $@"Data Source=localhost;Initial Catalog={initialCatalog};Integrated Security=True";
         }
 
         public override string EscapeString(string value)
         {
-            StringBuilder builder = new StringBuilder(value.Length).Append(StrDelimitor);
+            StringBuilder builder = new StringBuilder(value.Length + 2).Append(StrDelimitor);
 
             foreach (var c in value)
             {

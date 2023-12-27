@@ -14,7 +14,7 @@ namespace SharpOrm.Builder.DataTranslation
             set => _default = value ?? throw new ArgumentNullException(nameof(Default));
         }
 
-        private readonly NativeSqlValueConversor native = new NativeSqlValueConversor();
+        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
         public string GuidFormat
         {

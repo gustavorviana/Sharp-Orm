@@ -182,7 +182,7 @@ namespace UnityTest
         [TestMethod]
         public void CanParseNull()
         {
-            Assert.AreEqual(true, new NativeSqlValueConversor().CanWork(typeof(int?)));
+            Assert.AreEqual(true, new NativeSqlTranslation().CanWork(typeof(int?)));
         }
 
         [TestMethod]
@@ -192,7 +192,7 @@ namespace UnityTest
             Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
             using var query = new Query<Order>(Connection, Config);
-            query.WithForeigns("OrderItems");
+            query.AddForeign(o => o.ArrayItems).AddForeign(o => o.ListItems).AddForeign(o => o.IListItems);
             var obj = query.FirstOrDefault();
 
             Assert.IsNotNull(obj);
