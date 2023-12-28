@@ -21,9 +21,9 @@ namespace UnityTest
             q.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
-            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name], [value]) VALUES (1, @v1, NULL); SELECT SCOPE_IDENTITY();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name], [value]) VALUES (1, @p1, NULL); SELECT SCOPE_IDENTITY();", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", "T1");
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "T1");
         }
 
         [TestMethod]
@@ -54,11 +54,11 @@ namespace UnityTest
             };
 
             using var cmd = g.Insert(Row.Parse(table, typeof(TestTable), true, false).Cells);
-            Assert.AreEqual("INSERT INTO [TestTable] ([Id], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status]) VALUES (1, @v1, NULL, @v2, 2.1, @v3, 1); SELECT SCOPE_IDENTITY();", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([Id], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status]) VALUES (1, @p1, NULL, @p2, 2.1, @p3, 1); SELECT SCOPE_IDENTITY();", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", table.Name);
-            AreEqualsParameter(cmd.Parameters[1], "@v2", table.CreatedAt);
-            AreEqualsParameter(cmd.Parameters[2], "@v3", table.CustomId.ToString());
+            AreEqualsParameter(cmd.Parameters[0], "@p1", table.Name);
+            AreEqualsParameter(cmd.Parameters[1], "@p2", table.CreatedAt);
+            AreEqualsParameter(cmd.Parameters[2], "@p3", table.CustomId.ToString());
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace UnityTest
             var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
 
             using var cmd = g.BulkInsert(rows);
-            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name]) VALUES (1, @v1), (2, @v2), (3, @v3), (4, @v4), (5, @v5)", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name]) VALUES (1, @p1), (2, @p2), (3, @p3), (4, @p4), (5, @p5)", cmd.CommandText);
             TestBulkInsertParams(cmd, rows);
         }
 
@@ -95,10 +95,10 @@ namespace UnityTest
 
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1, [alias] = @v2, [value] = NULL, [status] = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @p1, [alias] = @p2, [value] = NULL, [status] = 1", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
-            AreEqualsParameter(cmd.Parameters[1], "@v2", row[1].Value);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", row[0].Value);
+            AreEqualsParameter(cmd.Parameters[1], "@p2", row[1].Value);
         }
 
         [TestMethod]
@@ -112,11 +112,11 @@ namespace UnityTest
             var caseVal = new Case().When("alias", "IS", null, CaseMsg).Else(ElseMsg);
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", caseVal), new Cell("value", null), new Cell("status", Status.Success));
             using var cmd = g.Update(row.Cells);
-            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1, [alias] = CASE WHEN [alias] IS NULL THEN @v2 ELSE @v3 END, [value] = NULL, [status] = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @p1, [alias] = CASE WHEN [alias] IS NULL THEN @p2 ELSE @p3 END, [value] = NULL, [status] = 1", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", row[0].Value);
-            AreEqualsParameter(cmd.Parameters[1], "@v2", CaseMsg);
-            AreEqualsParameter(cmd.Parameters[2], "@v3", ElseMsg);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", row[0].Value);
+            AreEqualsParameter(cmd.Parameters[1], "@p2", CaseMsg);
+            AreEqualsParameter(cmd.Parameters[2], "@p3", ElseMsg);
         }
 
         [TestMethod]
@@ -138,9 +138,9 @@ namespace UnityTest
             q.Where("id", "=", 1);
 
             using var cmd = g.Update(new Cell[] { new Cell("name", "MyName") });
-            Assert.AreEqual("UPDATE [TestTable] SET [name] = @v1 WHERE [id] = 1", cmd.CommandText);
+            Assert.AreEqual("UPDATE [TestTable] SET [name] = @p1 WHERE [id] = 1", cmd.CommandText);
 
-            AreEqualsParameter(cmd.Parameters[0], "@v1", "MyName");
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "MyName");
         }
 
         [TestMethod]
@@ -199,7 +199,7 @@ namespace UnityTest
             using var g = new SqlServerGrammar(q);
 
             using var cmd = g.InsertQuery(selectQuery, new[] { "UserId", "Status" });
-            Assert.AreEqual("INSERT INTO [TestTable] (UserId, Status) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
+            Assert.AreEqual("INSERT INTO [TestTable] ([UserId], [Status]) SELECT [Id], 1 FROM [User] WHERE [id] = 1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -233,10 +233,10 @@ namespace UnityTest
 
         private static void TestBulkInsertParams(DbCommand command, Row[] rows)
         {
-            var dbParams = command.Parameters.OfType<DbParameter>().Where(p => p.ParameterName.StartsWith("@v")).ToArray();
+            var dbParams = command.Parameters.OfType<DbParameter>().Where(p => p.ParameterName.StartsWith("@p")).ToArray();
 
             for (int i = 0; i < rows.Length; i++)
-                AreEqualsParameter(dbParams[i], $"@v{i + 1}", rows[i][NAME]);
+                AreEqualsParameter(dbParams[i], $"@p{i + 1}", rows[i][NAME]);
         }
     }
 }

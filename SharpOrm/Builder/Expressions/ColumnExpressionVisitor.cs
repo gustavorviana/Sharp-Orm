@@ -35,7 +35,6 @@ namespace SharpOrm.Builder.Expressions
                 return;
 
             string mType = node.Member.MemberType == MemberTypes.Property ? "property" : "field";
-
             throw new InvalidOperationException($"It's not possible to load the {mType} '{node.Member.Name}' because its type is incompatible.");
         }
 

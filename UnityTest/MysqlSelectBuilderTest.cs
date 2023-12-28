@@ -56,8 +56,8 @@ namespace UnityTest
             query.Select(new Case(null, "Col").WhenNull("Column", "No value").When("Column2", 2, null).Else((Column)"Column + ' ' + Column2"));
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT CASE WHEN `Column` IS NULL THEN @v1 WHEN `Column2` = 2 THEN NULL ELSE Column + ' ' + Column2 END AS `Col` FROM `TestTable`", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@v1", "No value");
+            Assert.AreEqual("SELECT CASE WHEN `Column` IS NULL THEN @p1 WHEN `Column2` = 2 THEN NULL ELSE Column + ' ' + Column2 END AS `Col` FROM `TestTable`", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "No value");
         }
 
         [TestMethod]
@@ -112,8 +112,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (1) OR EXISTS (@c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "5");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (1) OR EXISTS (@p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "5");
         }
 
         [TestMethod]
@@ -124,8 +124,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (1) OR NOT EXISTS (@c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "5");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (1) OR NOT EXISTS (@p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "5");
         }
 
         [TestMethod]
@@ -142,8 +142,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "2");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "2");
         }
 
         [TestMethod]
@@ -160,8 +160,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "2");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col` > 1) OR NOT EXISTS (SELECT `Col` FROM `Test` WHERE `Col1` = @p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "2");
         }
 
         [TestMethod]
@@ -172,8 +172,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` IN (1, 2, 3) OR `Status2` IN (@c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Status` IN (1, 2, 3) OR `Status2` IN (@p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "");
         }
 
         [TestMethod]
@@ -206,7 +206,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, @c1) OR `N2` IN (3, @c2)", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, @p1) OR `N2` IN (3, @p2)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -217,7 +217,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, @c1) OR `N2` NOT IN (3, @c2)", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, @p1) OR `N2` NOT IN (3, @p2)", cmd.CommandText);
         }
 
         [TestMethod]
@@ -228,9 +228,9 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, 2) OR `N2` IN (@c1, @c2)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "3");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "4");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` IN (1, 2) OR `N2` IN (@p1, @p2)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "3");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "4");
         }
 
         [TestMethod]
@@ -241,9 +241,9 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, 2) OR `N2` NOT IN (@c1, @c2)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "3");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "4");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `N` NOT IN (1, 2) OR `N2` NOT IN (@p1, @p2)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "3");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "4");
         }
 
         [TestMethod]
@@ -265,7 +265,7 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
 
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` != 0 OR `Column2` != @c1", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Column` != 0 OR `Column2` != @p1", cmd.CommandText);
         }
 
         [TestMethod]
@@ -375,8 +375,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (SELECT `Id` FROM `TestIds` WHERE `Type` = @c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "Unity");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `id` IN (SELECT `Id` FROM `TestIds` WHERE `Type` = @p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "Unity");
         }
 
         private static Query CreateQueryForWhere()
@@ -422,8 +422,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @p1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "value");
         }
 
         [TestMethod]
@@ -434,8 +434,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 LIMIT 10", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @p1 LIMIT 10", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "value");
         }
 
         [TestMethod]
@@ -446,8 +446,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`column` = @c1)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "value");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE (`column` = @p1)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "value");
         }
 
         [TestMethod]
@@ -459,9 +459,9 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = @c1 AND (`column2` = @c2)", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "value1");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "value2");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column1` = @p1 AND (`column2` = @p2)", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "value1");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "value2");
         }
 
         [TestMethod]
@@ -473,9 +473,9 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @c1 OR `column` = @c2", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "teste");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "value");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `column` = @p1 OR `column` = @p2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "teste");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "value");
         }
 
         [TestMethod]
@@ -509,9 +509,9 @@ namespace UnityTest
 
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` LIKE @c1 OR `Name` LIKE @c2", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "Rod%");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "Mar%");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` LIKE @p1 OR `Name` LIKE @p2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "Rod%");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "Mar%");
         }
 
         [TestMethod]
@@ -522,9 +522,9 @@ namespace UnityTest
 
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @c1 OR `Title` LIKE @c2", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "%10\\%%");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "%pixel%");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @p1 OR `Title` LIKE @p2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "%10\\%%");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "%pixel%");
         }
 
         [TestMethod]
@@ -535,9 +535,9 @@ namespace UnityTest
 
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @c1 OR `Title` LIKE @c2", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "%30\\%");
-            AreEqualsParameter(cmd.Parameters[1], "@c2", "%80\\%");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Title` LIKE @p1 OR `Title` LIKE @p2", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "%30\\%");
+            AreEqualsParameter(cmd.Parameters[1], "@p2", "%80\\%");
         }
 
         [TestMethod]
@@ -548,8 +548,8 @@ namespace UnityTest
 
             using var g = new MysqlGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE UPPER(column1) = @c1", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "ABC");
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE UPPER(column1) = @p1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "ABC");
         }
 
         [TestMethod]
@@ -710,9 +710,9 @@ namespace UnityTest
             const string Name = "Test";
             var exp = new SqlExpression("`Name` = ? AND `Active` = ?", Name, true);
 
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = @c1 AND `Active` = 1", ExpressionToSelectSql(exp, out var sqlParams));
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = @p1 AND `Active` = 1", ExpressionToSelectSql(exp, out var sqlParams));
             Assert.AreEqual(1, sqlParams.Length);
-            AreEqualsParameter(sqlParams[0], "@c1", Name);
+            AreEqualsParameter(sqlParams[0], "@p1", Name);
         }
 
         [TestMethod]
@@ -817,8 +817,8 @@ namespace UnityTest
             using var g = new MysqlGrammar(query);
 
             using var cmd = g.Count();
-            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @c1", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+            Assert.AreEqual("SELECT COUNT(*) FROM `TestTable` INNER JOIN `Table2` `t2` ON `t2`.`IdTable` = `TestTable`.`Id` WHERE `t2`.`Column` = @p1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "Value");
         }
 
         [TestMethod]
@@ -847,7 +847,7 @@ namespace UnityTest
 
             using var g = config.NewGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = @c1 AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = @p1 AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", cmd.CommandText);
         }
 
         private static string ExpressionToSelectSql(SqlExpression exp, out DbParameter[] parameters)

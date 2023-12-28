@@ -260,8 +260,8 @@ namespace UnityTest
             using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Count();
-            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @p1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "Value");
         }
 
         [TestMethod]
@@ -274,8 +274,8 @@ namespace UnityTest
             using var g = NewConfig.NewGrammar(query);
 
             using var cmd = g.Count();
-            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @c1", cmd.CommandText);
-            AreEqualsParameter(cmd.Parameters[0], "@c1", "Value");
+            Assert.AreEqual("SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @p1", cmd.CommandText);
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "Value");
         }
 
         [TestMethod]
@@ -298,7 +298,7 @@ namespace UnityTest
 
             using var g = EscapeStringsConfig.NewGrammar(query);
             using var cmd = g.Select();
-            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Name] = 'Mike' AND [Date] = @c1 AND [Alias] = '\"Mik\";''Mik''#--'", cmd.CommandText);
+            Assert.AreEqual("SELECT * FROM [TestTable] WHERE [Name] = 'Mike' AND [Date] = @p1 AND [Alias] = '\"Mik\";''Mik''#--'", cmd.CommandText);
         }
 
         private static void AreEqualsParameter(DbParameter param, string name, object value)

@@ -42,7 +42,7 @@ namespace SharpOrm.Builder
             if (obj is DBNull)
                 return null;
 
-            if (config.DateKind == DateTimeKind.Utc && obj is DateTime date)
+            if (obj is DateTime date && config.DateKind == DateTimeKind.Utc)
                 return date.FromDatabase(config);
 
             return obj;

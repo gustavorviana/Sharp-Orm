@@ -14,30 +14,28 @@ namespace SharpOrm.Builder
     public abstract class Grammar : IDisposable
     {
         #region Fields\Properties
-        [Obsolete("Use Grammar.QueryLogger. It will be removed in version 1.2.5.x.")]
-        public static bool LogQuery { get; set; }
-
         public static Action<string> QueryLogger { get; set; }
 
         private DbCommand _command = null;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposed = false;
-        private readonly ParamWriter whereWriter;
-        private readonly ParamWriter valueWriter;
         protected readonly bool convertToUtc;
 
-        protected StringBuilder QueryBuilder { get; } = new StringBuilder();
+        [Obsolete("Use Constructor instead. It will be removed in version 2.x.x.")]
+        protected StringBuilder QueryBuilder => this.Constructor.query;
+        protected QueryConstructor Constructor { get; }
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
+
+        [Obsolete("It will be removed in version 2.x.x.")]
         protected DbCommand Command => this._command;
         #endregion
 
         protected Grammar(Query query)
         {
+            this.Constructor = new CmdQueryConstructor(query.Info);
             this.convertToUtc = query.Info.Config.DateKind == DateTimeKind.Utc;
-            this.whereWriter = new ParamWriter(this, 'c');
-            this.valueWriter = new ParamWriter(this, 'v');
             this.Query = query;
             this.Reset();
         }
@@ -102,7 +100,6 @@ namespace SharpOrm.Builder
         internal DbCommand InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
             this.Reset();
-
             this.ConfigureInsertQuery(query, columnNames);
             return this.BuildCommand();
         }
@@ -117,7 +114,6 @@ namespace SharpOrm.Builder
         public DbCommand InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
         {
             this.Reset();
-
             this.ConfigureInsertExpression(expression, columnNames);
             return this.BuildCommand();
         }
@@ -201,15 +197,15 @@ namespace SharpOrm.Builder
             if (!this.CanApplyDeleteJoins())
                 return;
 
-            this.QueryBuilder
-                .Append(' ')
-                .Append(this.TryGetTableAlias(this.Query));
+            this.Constructor
+                .Add(' ')
+                .Add(this.TryGetTableAlias(this.Query));
 
             if (!(this.Query.deleteJoins?.Any() ?? false))
                 return;
 
             foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
-                this.QueryBuilder.Append(',').Append(this.TryGetTableAlias(join));
+                this.Constructor.Add(", ").Add(this.TryGetTableAlias(join));
         }
 
         protected virtual bool CanApplyDeleteJoins()
@@ -239,13 +235,13 @@ namespace SharpOrm.Builder
                 return;
 
             if (!writeOrderByFlag)
-                this.QueryBuilder.Append(" ORDER BY ");
+                this.Constructor.Add(" ORDER BY ");
 
             WriteOrderBy(en.Current);
 
             while (en.MoveNext())
             {
-                this.QueryBuilder.Append(',');
+                this.Constructor.Add(", ");
                 this.WriteOrderBy(en.Current);
             }
         }
@@ -256,66 +252,23 @@ namespace SharpOrm.Builder
                 return;
 
             this.WriteColumn(order.Column);
-            this.QueryBuilder.Append(' ');
-            this.QueryBuilder.Append(order.Order);
+            this.Constructor.Add(' ');
+            this.Constructor.Add(order.Order);
         }
 
         protected void WriteColumn(Column column)
         {
-            this.QueryBuilder.Append(column.ToExpression(this.Info.ToReadOnly()));
+            this.Constructor.Add(column.ToExpression(this.Info.ToReadOnly()));
         }
 
         protected void WriteUpdateCell(Cell cell)
         {
-            this.QueryBuilder
-                .Append(this.ApplyTableColumnConfig(cell.Name))
-                .Append(" = ")
-                .Append(this.RegisterCellValue(cell));
+            this.Constructor.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
+            this.Constructor.AddParameter(cell.Value);
         }
 
         #endregion
 
-        #region Parameters
-
-        /// <summary>
-        /// Returns a clause parameter value registered in the WHERE clause of the query.
-        /// </summary>
-        /// <param name="value">The parameter value.</param>
-        /// <returns>The registered clause parameter value.</returns>
-        protected string RegisterClausuleParameter(object value)
-        {
-            return this.whereWriter.LoadValue(value, false);
-        }
-
-        /// <summary>
-        /// Registers the value of a cell as a parameter in the VALUES clause of an INSERT statement.
-        /// </summary>
-        /// <param name="cell">Cell to be registered</param>
-        /// <returns>Value of the cell registered as parameter</returns>
-        protected string RegisterCellValue(Cell cell)
-        {
-            return this.valueWriter.LoadValue(cell.Value, true);
-        }
-
-        internal DbParameter RegisterParameter(string name, object value)
-        {
-            var p = this.Command.CreateParameter();
-            p.ParameterName = name;
-            p.Value = ToDbValue(value);
-
-            this.Command.Parameters.Add(p);
-            return p;
-        }
-
-        private object ToDbValue(object obj)
-        {
-            if (this.convertToUtc && obj is DateTime date)
-                return date.ToDatabase(this.Query.Info.Config);
-
-            return obj;
-        }
-
-        #endregion
 
         /// <summary>
         /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
@@ -330,10 +283,10 @@ namespace SharpOrm.Builder
             if (reconfigure)
                 this.Query.Token.ThrowIfCancellationRequested();
 
-            if (this.Command != null)
+            if (this._command != null)
             {
-                this.Command.Parameters.Clear();
-                this.Command.Dispose();
+                this._command.Parameters.Clear();
+                this._command.Dispose();
             }
 
 
@@ -344,13 +297,11 @@ namespace SharpOrm.Builder
 
                 this.Query.Token.Register(() =>
                 {
-                    try { this.Command.Cancel(); } catch { }
+                    try { this._command.Cancel(); } catch { }
                 });
             }
 
-            this.QueryBuilder.Clear();
-            this.whereWriter.Reset();
-            this.valueWriter.Reset();
+            this.Constructor.Clear();
         }
 
         protected string TryGetTableAlias(QueryBase query)
@@ -372,21 +323,44 @@ namespace SharpOrm.Builder
         {
             this.Query.Token.ThrowIfCancellationRequested();
 
-            this.Command.CommandText = this.QueryBuilder.ToString();
-            this.Command.Transaction = this.Query.Transaction;
-            this.Command.CommandTimeout = this.Query.CommandTimeout;
-            QueryLogger?.Invoke(this.Command.CommandText);
-            return this.Command;
+            this._command.CommandText = this.Constructor.ToString();
+            this._command.Transaction = this.Query.Transaction;
+            this._command.CommandTimeout = this.Query.CommandTimeout;
+            ((CmdQueryConstructor)this.Constructor).ApplyToCommand(this._command);
+            QueryLogger?.Invoke(this._command.CommandText);
+            return this._command;
         }
 
         protected virtual void WriteSelectColumns()
         {
-            this.QueryBuilder.AppendJoin(", ", this.Info.Select.Select(WriteSelect));
+            AddParams(this.Info.Select);
         }
 
-        protected string WriteSelect(Column column)
+        protected void WriteSelect(Column column)
         {
-            return this.valueWriter.LoadValue(column, true);
+            this.Constructor.AddExpression(column, true);
+        }
+
+        protected void AppendCells(IEnumerable<Cell> values)
+        {
+            AddParams(values, cell => cell.Value);
+        }
+
+        protected void AddParams<T>(IEnumerable<T> values, Func<T, object> call = null)
+        {
+            if (call == null)
+                call = obj => obj;
+
+            using (var en = values.GetEnumerator())
+            {
+                if (!en.MoveNext())
+                    return;
+
+                this.Constructor.AddParameter(call(en.Current));
+
+                while (en.MoveNext())
+                    this.Constructor.Add(", ").AddParameter(call(en.Current));
+            }
         }
 
         protected virtual void WriteGroupBy()
@@ -394,17 +368,18 @@ namespace SharpOrm.Builder
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.QueryBuilder.Append(" GROUP BY ").AppendJoin(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly())));
+            this.Constructor.Add(" GROUP BY ");
+            AddParams(this.Info.GroupsBy);
 
             if (this.Info.Having.Empty)
                 return;
 
-            this.QueryBuilder
-                .Append(" HAVING ")
-                .AppendReplaced(
+            this.Constructor
+                .Add(" HAVING ")
+                .AddAndReplace(
                     Info.Having.ToString(),
                     '?',
-                    (count) => this.RegisterClausuleParameter(Info.Having.Parameters[count - 1])
+                    (count) => this.Constructor.AddParameter(Info.Having.Parameters[count - 1])
                 );
         }
 
@@ -431,9 +406,7 @@ namespace SharpOrm.Builder
 
             this.Reset(false);
             if (disposing)
-            {
-                this.Command.Dispose();
-            }
+                this._command.Dispose();
 
             this._disposed = true;
         }

@@ -128,23 +128,16 @@ namespace SharpOrm
 
         internal string GetCountColumn()
         {
-            if (!string.IsNullOrEmpty(this.Name))
-                return this.Name.EndsWith(".*") ? "*" : this.Name;
+            if (this.IsAll())
+                return "*";
 
             string exp = this.expression?.ToString();
-            if (exp == "*")
-                return "*";
-
-            if (exp?.EndsWith(".*") ?? false)
-                return "*";
-
-            return this.IsCount ? exp.Substring(6, exp.Length - 2) : "";
+            return this.IsCount ? exp.Substring(6, exp.Length - 2) : this.Name;
         }
 
         internal bool IsAll()
         {
-            string column = this.expression?.ToString() ?? this.Name;
-            return column == "*" || column.EndsWith(".*");
+            return (this.expression?.ToString() ?? this.Name).EndsWith("*");
         }
 
         #region IEquatable

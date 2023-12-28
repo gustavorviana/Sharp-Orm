@@ -16,16 +16,16 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            this.QueryBuilder.Append("DELETE");
+            this.Constructor.Add("DELETE");
 
             if (this.Query.Limit > 0)
-                this.AppendLimit();
+                this.AddLimit();
 
             this.ApplyDeleteJoins();
-            this.QueryBuilder.Append(" FROM ").Append(this.GetTableName(true));
+            this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
             if (this.Query.IsNoLock())
-                this.QueryBuilder.Append(" WITH (NOLOCK)");
+                this.Constructor.Add(" WITH (NOLOCK)");
 
             this.ApplyJoins();
             this.WriteWhere(true);
@@ -36,16 +36,16 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder
-                .Append(' ')
-                .Append(join.Type)
-                .Append(" JOIN ")
-                .Append(this.GetTableName(join, true));
+            this.Constructor
+                .Add(' ')
+                .Add(join.Type)
+                .Add(" JOIN ")
+                .Add(this.GetTableName(join, true));
 
             if (join.IsNoLock())
-                this.QueryBuilder.Append(" WITH (NOLOCK)");
+                this.Constructor.Add(" WITH (NOLOCK)");
 
-            this.QueryBuilder.Append(" ON ");
+            this.Constructor.Add(" ON ");
 
             this.WriteWhereContent(join.Info);
         }
@@ -62,16 +62,16 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                this.QueryBuilder.Append("UPDATE ").Append(this.GetTableName(false));
-                this.QueryBuilder.Append(" SET ");
-                this.QueryBuilder.AppendJoin(WriteUpdateCell, ", ", en);
+                this.Constructor.Add("UPDATE ").Add(this.GetTableName(false));
+                this.Constructor.Add(" SET ");
+                this.Constructor.AddJoin(WriteUpdateCell, ", ", en);
             }
 
             if (this.Info.Joins.Any() || this.Query.IsNoLock())
-                this.QueryBuilder.Append(" FROM ").Append(this.GetTableName(false));
+                this.Constructor.Add(" FROM ").Add(this.GetTableName(false));
 
             if (this.Query.IsNoLock())
-                this.QueryBuilder.Append(" WITH (NOLOCK)");
+                this.Constructor.Add(" WITH (NOLOCK)");
 
             this.ApplyJoins();
             this.WriteWhere(true);
@@ -81,12 +81,12 @@ namespace SharpOrm.Builder
         {
             bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
             if (isOldOrDistinct)
-                this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+                this.Constructor.Add("SELECT COUNT(*) FROM (");
 
             this.ConfigureSelect(true, column);
 
             if (isOldOrDistinct)
-                this.QueryBuilder.Append(") AS [count]");
+                this.Constructor.Add(") AS [count]");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -105,32 +105,30 @@ namespace SharpOrm.Builder
             base.ConfigureInsert(cells, false);
 
             if (getGeneratedId)
-                this.QueryBuilder.Append("; SELECT SCOPE_IDENTITY();");
+                this.Constructor.Add("; SELECT SCOPE_IDENTITY();");
         }
 
         private void WriteSelect(bool configureWhereParams, Column countColumn)
         {
             bool isCount = countColumn != null;
-            this.QueryBuilder.Append("SELECT");
+            this.Constructor.Add("SELECT");
 
             if (this.Query.Distinct && !this.Info.IsCount() && countColumn == null)
-                this.QueryBuilder.Append(" DISTINCT");
+                this.Constructor.Add(" DISTINCT");
 
             if (HasLimit && !HasOffset && !this.Info.IsCount())
-                this.AppendLimit();
+                this.AddLimit();
 
-            this.QueryBuilder.Append(' ');
+            this.Constructor.Add(' ');
 
             if (isCount)
                 this.WriteCountColumn(countColumn);
             else
                 this.WriteSelectColumns();
 
-            this.QueryBuilder.Append(" FROM ").Append(this.GetTableName(true));
+            this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
-            if (this.Query.IsNoLock())
-                this.QueryBuilder.Append(" WITH (NOLOCK)");
-
+            this.WriteOptions();
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
@@ -143,70 +141,77 @@ namespace SharpOrm.Builder
                 return;
 
             this.ValidateOffsetOrderBy();
-            this.QueryBuilder.Append(" OFFSET ").Append(this.Query.Offset).Append(" ROWS");
+            this.Constructor.Add(" OFFSET ").Add(this.Query.Offset).Add(" ROWS");
 
             if (HasLimit)
-                this.QueryBuilder.Append(" FETCH NEXT ").Append(this.Query.Limit).Append(" ROWS ONLY");
+                this.Constructor.Add(" FETCH NEXT ").Add(this.Query.Limit).Add(" ROWS ONLY");
         }
 
-        private void AppendLimit()
+        private void WriteOptions()
         {
-            this.QueryBuilder.Append(" TOP(").Append(this.Query.Limit).Append(')');
+            if (this.Query.IsNoLock())
+                this.Constructor.Add(" WITH (NOLOCK)");
         }
 
-        private System.Text.StringBuilder WriteCountColumn(Column column)
+        private void AddLimit()
+        {
+            this.Constructor.Add(" TOP(").Add(this.Query.Limit).Add(')');
+        }
+
+        private QueryConstructor WriteCountColumn(Column column)
         {
             string countCol = column?.GetCountColumn();
             if (string.IsNullOrEmpty(countCol))
                 throw new NotSupportedException("The name of a column or '*' must be entered for counting.");
 
-            this.QueryBuilder.Append("COUNT(");
+            this.Constructor.Add("COUNT(");
             if (countCol == "*" || countCol.EndsWith(".*"))
-                return this.QueryBuilder.Append("*)");
+                return this.Constructor.Add("*)");
 
             if (this.Query.Distinct)
-                this.QueryBuilder.Append("DISTINCT ");
+                this.Constructor.Add("DISTINCT ");
 
-            return this.QueryBuilder.Append(WriteSelect(column)).Append(')');
+            WriteSelect(column);
+            return this.Constructor.Add(')');
         }
 
         private void WriteSelectWithOldPagination(bool configureWhereParams, Column countColunm)
         {
-            this.QueryBuilder.Append("SELECT * FROM (");
+            this.Constructor.Add("SELECT * FROM (");
             this.WriteRowNumber();
-            if (countColunm == null)
-                this.WriteSelectColumns();
-            else
-                this.QueryBuilder.Append(WriteSelect(countColunm));
-            this.QueryBuilder.Append(" FROM ").Append(this.GetTableName(true));
+
+            if (countColunm == null) this.WriteSelectColumns();
+            else WriteSelect(countColunm);
+
+            this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
             if (this.Query.IsNoLock())
-                this.QueryBuilder.Append(" WITH (NOLOCK)");
+                this.Constructor.Add(" WITH (NOLOCK)");
 
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
-            this.QueryBuilder.Append(") ").Append(this.TryGetTableAlias(this.Query));
+            this.Constructor.Add(") ").Add(this.TryGetTableAlias(this.Query));
             this.ApplyPagination();
         }
 
         private void ApplyPagination()
         {
-            this.QueryBuilder.Append(" WHERE [grammar_rownum] ");
+            this.Constructor.Add(" WHERE [grammar_rownum] ");
 
             if (this.Query.Offset != null && this.Query.Limit != null)
-                this.QueryBuilder.AppendFormat("BETWEEN {0} AND {1}", this.Query.Offset + 1, this.Query.Offset + this.Query.Limit);
+                this.Constructor.AddFormat("BETWEEN {0} AND {1}", this.Query.Offset + 1, this.Query.Offset + this.Query.Limit);
             else if (this.Query.Offset != null)
-                this.QueryBuilder.Append("> ").Append(this.Query.Offset);
+                this.Constructor.Add("> ").Add(this.Query.Offset);
         }
 
         private void WriteRowNumber()
         {
             this.ValidateOffsetOrderBy();
 
-            this.QueryBuilder.Append("SELECT ROW_NUMBER() OVER(ORDER BY ");
+            this.Constructor.Add("SELECT ROW_NUMBER() OVER(ORDER BY ");
             this.ApplyOrderBy(this.Info.Orders, true);
-            this.QueryBuilder.Append(") AS [grammar_rownum], ");
+            this.Constructor.Add(") AS [grammar_rownum], ");
         }
 
         private void ValidateOffsetOrderBy()

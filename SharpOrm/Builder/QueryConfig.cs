@@ -26,6 +26,7 @@ namespace SharpOrm.Builder
         public bool LoadForeign { get; set; }
 
         /// <inheritdoc/>
+        [Obsolete("Use TranslationRegistry.Default.TimeZone instead. It will be removed in version 2.x.x.")]
         public TimeZoneInfo LocalTimeZone { get; set; } = TimeZoneInfo.Local;
 
         /// <summary>

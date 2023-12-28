@@ -72,8 +72,7 @@ namespace SharpOrm.Connection
             con.Disposed -= OnConnectionDisposed;
 
             lock (this._lock)
-                if (this.connections.Contains(con))
-                    this.connections.Remove(con);
+                this.connections.Remove(con);
         }
 
         /// <summary>

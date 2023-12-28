@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -13,20 +14,20 @@ namespace SharpOrm.Builder
         protected override void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
             this.AppendInsertHeader(columnNames);
-            this.QueryBuilder.AppendReplaced(
+            this.Constructor.AddAndReplace(
                 query.ToString(),
                 '?',
-                (count) => this.RegisterClausuleParameter(query.Info.Where.Parameters[count - 1])
+                (count) => this.Constructor.AddParameter(query.Info.Where.Parameters[count - 1])
             );
         }
 
         protected override void ConfigureInsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
         {
             this.AppendInsertHeader(columnNames);
-            this.QueryBuilder.AppendReplaced(
+            this.Constructor.AddAndReplace(
                 expression.ToString(),
                 '?',
-                (count) => this.RegisterClausuleParameter(expression.Parameters[count - 1])
+                (count) => this.Constructor.AddParameter(expression.Parameters[count - 1])
             );
         }
 
@@ -41,7 +42,7 @@ namespace SharpOrm.Builder
 
                 while (@enum.MoveNext())
                 {
-                    this.QueryBuilder.Append(", ");
+                    this.Constructor.Add(", ");
                     this.AppendInsertCells(@enum.Current.Cells);
                 }
             }
@@ -49,9 +50,9 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            this.QueryBuilder.Append("DELETE");
+            this.Constructor.Add("DELETE");
             this.ApplyDeleteJoins();
-            this.QueryBuilder.Append(" FROM ").Append(this.Info.TableName.GetName(true, this.Info.Config));
+            this.Constructor.Add(" FROM ").Add(this.Info.TableName.GetName(true, this.Info.Config));
 
             this.ApplyJoins();
             this.WriteWhere(true);
@@ -60,32 +61,34 @@ namespace SharpOrm.Builder
                 this.ApplyOrderBy();
 
             if (this.Query.Limit > 0)
-                this.QueryBuilder.Append(" LIMIT ").Append(this.Query.Limit);
+                this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
-            this.AppendInsertHeader(cells.Select(c => this.ApplyTableColumnConfig(c.Name)));
-            this.QueryBuilder.Append("VALUES ");
+            this.AppendInsertHeader(cells.Select(c => c.Name));
+            this.Constructor.Add("VALUES ");
             this.AppendInsertCells(cells);
 
             if (getGeneratedId)
-                this.QueryBuilder.Append("; SELECT LAST_INSERT_ID();");
+                this.Constructor.Add("; SELECT LAST_INSERT_ID();");
         }
 
         protected void AppendInsertHeader(IEnumerable<string> columns)
         {
-            this.QueryBuilder
-                .Append("INSERT INTO ")
-                .Append(this.GetTableName(false))
-                .Append(" (")
-                .AppendJoin(", ", columns)
-                .Append(") ");
+            this.Constructor
+               .Add("INSERT INTO ")
+               .Add(this.GetTableName(false))
+               .Add(" (")
+               .AddJoin(", ", columns.Select(this.Info.Config.ApplyNomenclature))
+               .Add(") ");
         }
 
         protected void AppendInsertCells(IEnumerable<Cell> cells)
         {
-            this.QueryBuilder.Append('(').AppendJoin(", ", cells.Select(c => this.RegisterCellValue(c))).Append(')');
+            this.Constructor.Add('(');
+            this.AppendCells(cells);
+            this.Constructor.Add(")");
         }
 
         protected override void ConfigureCount(Column column)
@@ -93,12 +96,12 @@ namespace SharpOrm.Builder
             bool safeDistinct = (column == null || column == Column.All) && this.Query.Distinct;
 
             if (safeDistinct)
-                this.QueryBuilder.Append("SELECT COUNT(*) FROM (");
+                this.Constructor.Add("SELECT COUNT(*) FROM (");
 
             this.ConfigureSelect(true, safeDistinct ? null : column);
 
             if (safeDistinct)
-                this.QueryBuilder.Append(") `count`");
+                this.Constructor.Add(") `count`");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -109,24 +112,25 @@ namespace SharpOrm.Builder
         private void ConfigureSelect(bool configureWhereParams, Column countColumn)
         {
             bool isCount = countColumn != null;
-            this.QueryBuilder.Append("SELECT ");
+            this.Constructor.Add("SELECT ");
 
             if (isCount)
-                this.QueryBuilder.Append("COUNT(");
+                this.Constructor.Add("COUNT(");
+
             if (this.Query.Distinct)
-                this.QueryBuilder.Append("DISTINCT ");
+                this.Constructor.Add("DISTINCT ");
 
             if (isCount)
             {
-                this.QueryBuilder.Append(string.Join(", ", WriteSelect(countColumn)));
-                this.QueryBuilder.Append(')');
+                WriteSelect(countColumn);
+                this.Constructor.Add(')');
             }
             else
             {
                 this.WriteSelectColumns();
             }
 
-            this.QueryBuilder.Append(" FROM ").Append(this.GetTableName(true));
+            this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
@@ -136,22 +140,24 @@ namespace SharpOrm.Builder
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 
+            this.WritePagination();
+        }
+
+        private void WritePagination()
+        {
             this.ValidateOffset();
             if (this.Query.Limit == null)
                 return;
 
-            this.QueryBuilder.Append(" LIMIT ").Append(this.Query.Limit);
+            this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
 
             if (this.Query.Offset != null)
-                this.QueryBuilder.Append(" OFFSET ").Append(this.Query.Offset);
+                this.Constructor.Add(" OFFSET ").Add(this.Query.Offset);
         }
 
         protected bool CanWriteOrderby()
         {
-            if (this.Info.Select.Length != 1)
-                return true;
-
-            return !this.Info.Select[0].ToExpression(this.Info.ToReadOnly()).ToString().ToLower().StartsWith("count(");
+            return this.Info.Select.Length != 1 || !this.Info.Select[0].IsCount;
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
@@ -161,11 +167,11 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                this.QueryBuilder.Append("UPDATE ").Append(this.GetTableName(false));
+                this.Constructor.Add("UPDATE ").Add(this.GetTableName(false));
                 this.ApplyJoins();
 
-                this.QueryBuilder.Append(" SET ");
-                this.QueryBuilder.AppendJoin(WriteUpdateCell, ", ", en);
+                this.Constructor.Add(" SET ");
+                this.Constructor.AddJoin(WriteUpdateCell, ", ", en);
 
                 this.WriteWhere(true);
             }
@@ -183,12 +189,12 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.QueryBuilder
-                .Append(' ')
-                .Append(join.Type)
-                .Append(" JOIN ")
-                .Append(this.GetTableName(join, true))
-                .Append(" ON ");
+            this.Constructor
+                .Add(' ')
+                .Add(join.Type)
+                .Add(" JOIN ")
+                .Add(this.GetTableName(join, true))
+                .Add(" ON ");
 
             this.WriteWhereContent(join.Info);
         }
@@ -198,17 +204,17 @@ namespace SharpOrm.Builder
             if (this.Info.Where.Empty)
                 return;
 
-            this.QueryBuilder.Append(" WHERE ");
+            this.Constructor.Add(" WHERE ");
             if (configureParameters) this.WriteWhereContent(this.Info);
-            else this.QueryBuilder.Append(this.Info.Where);
+            else this.Constructor.Add(this.Info.Where);
         }
 
         protected void WriteWhereContent(QueryInfo info)
         {
-            this.QueryBuilder.AppendReplaced(
+            this.Constructor.AddAndReplace(
                 info.Where.ToString(),
                 '?',
-                (count) => this.RegisterClausuleParameter(info.Where.Parameters[count - 1])
+                (count) => this.Constructor.AddParameter(info.Where.Parameters[count - 1])
             );
         }
 

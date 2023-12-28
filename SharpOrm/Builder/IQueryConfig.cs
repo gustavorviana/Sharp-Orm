@@ -14,6 +14,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Timezone to be used for date conversion.
         /// </summary>
+        [Obsolete("Use TranslationRegistry.Default.TimeZone instead. It will be removed in version 2.x.x.")]
         TimeZoneInfo LocalTimeZone { get; set; }
 
         /// <summary>

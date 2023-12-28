@@ -25,15 +25,21 @@ namespace SharpOrm.Builder
         public void ApplyToCommand(System.Data.Common.DbCommand cmd)
         {
             for (int i = 0; i < cmdParams.Count; i++)
-                cmd.AddParam($"@{i}", this.parameters[cmdParams[i]]);
+                cmd.AddParam($"@p{i + 1}", this.parameters[cmdParams[i]]);
         }
 
         protected override QueryConstructor InternalAddParam(object value)
         {
             this.AddParameters(value);
-            this.cmdParams.Add(this.parameters.Count);
+            this.cmdParams.Add(this.parameters.Count - 1);
 
-            return this.Add($"@{this.parameters.Count}");
+            return this.Add($"@p{this.parameters.Count}");
+        }
+
+        public override QueryConstructor Clear()
+        {
+            this.cmdParams.Clear();
+            return base.Clear();
         }
     }
 
@@ -43,7 +49,7 @@ namespace SharpOrm.Builder
     public class QueryConstructor : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
-        private readonly StringBuilder query = new StringBuilder();
+        internal readonly StringBuilder query = new StringBuilder();
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
@@ -141,7 +147,6 @@ namespace SharpOrm.Builder
             return this;
         }
 
-
         /// <summary>
         /// Adds a SQL query with parameters to the instance.
         /// </summary>
@@ -156,23 +161,43 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Adds a SQL query with parameters to the instance.
+        /// </summary>
+        /// <param name="query">The SQL query to be added.</param>
+        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
+        /// <param name="parameters">The parameters to be replaced in the query.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
+        public QueryConstructor AddAndReplace(string query, char toReplace, Action<int> call)
+        {
+            this.query.AppendAndReplace(query, toReplace, call);
+            return this;
+        }
+
+        /// <summary>
         /// Adds a parameter to the SQL query.
         /// </summary>
         /// <param name="val">The value of the parameter to be added.</param>
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         public QueryConstructor AddParameter(object val, bool allowAlias = true)
         {
-            if (ToQueryValue(val) is string sql)
-                return this.Add(sql);
-
             if (val is SqlExpression exp)
                 return this.Add(exp, allowAlias);
 
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
+            val = TranslationRegistry.Default.ToSql(val);
+            if (ToQueryValue(val) is string sql)
+                return this.Add(sql);
+
             if (this.info.Config.EscapeStrings && val is string strVal)
                 return this.Add(this.info.Config.EscapeString(strVal));
+
+            if (!(val is byte[]) && val is ICollection)
+                throw new NotSupportedException();
+
+            if (val is DateTime date && this.info.Config.DateKind == DateTimeKind.Utc)
+                val = date.ToDatabase(this.info.Config);
 
             return this.InternalAddParam(val);
         }
@@ -273,7 +298,17 @@ namespace SharpOrm.Builder
         /// <param name="values">An enumerable collection of values to be joined and added to the query.</param>
         public QueryConstructor AddJoin<T>(string separator, IEnumerable<T> values)
         {
-            this.query.AppendJoin(separator, values);
+            BuilderExt.AppendJoin(this.query, separator, values);
+            return this;
+        }
+
+
+        /// <summary>
+        /// Adds multiple values to the query, joining them with a specified separator.
+        /// </summary>
+        public QueryConstructor AddJoin<T>(Action<T> callback, string separator, IEnumerator<T> en)
+        {
+            this.query.AppendJoin(callback, separator, en);
             return this;
         }
 
@@ -332,7 +367,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Clears the query.
         /// </summary>
-        public QueryConstructor Clear()
+        public virtual QueryConstructor Clear()
         {
             this.query.Clear();
             this.parameters.Clear();

@@ -8,6 +8,11 @@ namespace SharpOrm.Builder
     {
         internal static StringBuilder AppendReplaced(this StringBuilder builder, string toAdd, char toReplace, Func<int, string> func)
         {
+            return AppendAndReplace(builder, toAdd, toReplace, index => builder.Append(func(index)));
+        }
+
+        internal static StringBuilder AppendAndReplace(this StringBuilder builder, string toAdd, char toReplace, Action<int> call)
+        {
             builder.Capacity += toAdd.Length;
 
             int count = 0;
@@ -20,7 +25,7 @@ namespace SharpOrm.Builder
                 }
 
                 count++;
-                builder.Append(func(count));
+                call(count);
             }
 
             return builder;
