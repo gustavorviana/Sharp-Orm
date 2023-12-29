@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.2.4.0</AssemblyVersion>
-		<FileVersion>1.2.4.0</FileVersion>
-		<VersionPrefix>1.2.40</VersionPrefix>
+		<AssemblyVersion>1.2.5.0</AssemblyVersion>
+		<FileVersion>1.2.5.0</FileVersion>
+		<VersionPrefix>1.2.50</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -20,7 +20,7 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Improvement in the column reading system and bug fixes.</PackageReleaseNotes>
+		<PackageReleaseNotes>Bug fixes in counting, removal of obsolete code, and various improvements in SQL query creation.</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
