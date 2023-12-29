@@ -81,13 +81,23 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Generates a SELECT statement and returns a DbCommand object to execute it.
         /// </summary>
-        /// <param name="configureWhereParams">Indicates whether to include WHERE clause parameters or not.</param>
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
-        public DbCommand Select(bool configureWhereParams = true)
+        public DbCommand Select()
         {
             this.Reset();
-            this.ConfigureSelect(configureWhereParams);
+            this.ConfigureSelect(true);
             return this.BuildCommand();
+        }
+
+        /// <summary>
+        /// Generates a SELECT statement.
+        /// </summary>
+        /// <returns></returns>
+        public string SelectSqlOnly()
+        {
+            this.Constructor.Clear();
+            this.ConfigureSelect(false);
+            return this.Constructor.ToString();
         }
 
         /// <summary>
@@ -269,7 +279,6 @@ namespace SharpOrm.Builder
 
         #endregion
 
-
         /// <summary>
         /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
         /// </summary>
@@ -288,7 +297,6 @@ namespace SharpOrm.Builder
                 this._command.Parameters.Clear();
                 this._command.Dispose();
             }
-
 
             if (reconfigure)
             {

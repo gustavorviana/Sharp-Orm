@@ -381,7 +381,10 @@ namespace SharpOrm
 
         public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config, table)
         {
-            this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            if (connection == null)
+                return;
+
+            this.Connection = connection;
             this.CommandTimeout = config.CommandTimeout;
 
             try
@@ -906,7 +909,7 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            if (disposing && this.Transaction == null && this.Creator != null && !this.notClose)
+            if (disposing && this.Transaction == null && this.Connection != null && this.Creator != null && !this.notClose)
                 this.Creator.SafeDisposeConnection(this.Connection);
 
             this.lastOpenReader = null;
@@ -915,7 +918,7 @@ namespace SharpOrm
         public override string ToString()
         {
             using (var grammar = this.Info.Config.NewGrammar(this))
-                return grammar.Select(false).CommandText;
+                return grammar.SelectSqlOnly();
         }
 
         private class OpenReader : IDisposable

@@ -625,22 +625,6 @@ namespace SharpOrm
 
         #region DbDataReader
 
-        /// <summary>
-        /// Checks if the DbDataReader contains a column with the specified name.
-        /// </summary>
-        /// <param name="reader">The DbDataReader to check for the column.</param>
-        /// <param name="key">The name of the column to check for.</param>
-        /// <returns>True if the column exists in the reader, otherwise false.</returns>
-        [Obsolete("will be removed in version 1.2.28.")]
-        public static bool HasName(this DbDataReader reader, string key)
-        {
-            for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i) == key)
-                    return true;
-
-            return false;
-        }
-
         public static object Get(this DbDataReader reader, string key)
         {
             key = key.ToLower();
