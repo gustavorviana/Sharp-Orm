@@ -87,6 +87,61 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void ParseDateFromDb()
+        {
+            var registry = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
+            var now = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TestAssert.AreEqualsDate(now, registry.FromSql(TimeZoneInfo.ConvertTimeToUtc(now), typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.AreEqualsDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.Local), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+        }
+
+        [TestMethod]
+        public void ParseDateFromDbWithoutConfig()
+        {
+            var registry = new TranslationRegistry();
+            var now = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TestAssert.AreEqualsDate(now, registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.AreEqualsDate(utcNow, registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+        }
+
+        [TestMethod]
+        public void ToGmtDate()
+        {
+            var registry = new TranslationRegistry { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("GMT Standard Time") };
+            var now = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TestAssert.AreEqualsDate(TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, registry.TimeZone), registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.AreEqualsDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, registry.TimeZone), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+        }
+
+        [TestMethod]
+        public void ParseDateFromCode()
+        {
+            var registry = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
+            var now = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TestAssert.AreEqualsDate(TimeZoneInfo.ConvertTimeToUtc(now), registry.ToSql(now), "DateTime.Now failed.");
+            TestAssert.AreEqualsDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
+        }
+
+        [TestMethod]
+        public void ParseDateFromCodeWithoutConfig()
+        {
+            var registry = new TranslationRegistry();
+            var now = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TestAssert.AreEqualsDate(now, registry.ToSql(now), "DateTime.Now failed.");
+            TestAssert.AreEqualsDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
+        }
+
+        [TestMethod]
         public void DateToSql()
         {
             DateTime expected = DateTime.Now;

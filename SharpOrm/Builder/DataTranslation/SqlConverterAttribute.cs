@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.DataTranslation
         public Type Type { get; }
         public SqlConverterAttribute(Type type)
         {
-            this.Type = type;
+            this.Type = type ?? throw new ArgumentNullException(nameof(type));
         }
     }
 }

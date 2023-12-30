@@ -99,6 +99,7 @@ namespace UnityTest.Utils
                     rows[i - 1] = NewRow(i, $"User {i}");
 
                 using var q = NewQuery(TABLE);
+                q.Delete();
                 q.BulkInsert(rows);
             }
             catch (Exception)

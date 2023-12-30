@@ -384,26 +384,11 @@ namespace UnityTest
             date = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
             query1.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
             DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
-            AreEqualsDate(date, dbDate, "Universal time insert fail");
+            TestAssert.AreEqualsDate(date, dbDate, "Universal time insert fail");
 
             using var query2 = new Query<TestTable>(Connection);
             dbDate = query2.Select("record_created").ExecuteScalar<DateTime>();
-            AreEqualsDate(date.ToUniversalTime(), dbDate, "Universal time read file");
-        }
-
-        public static void AreEqualsDate(DateTime expected, DateTime actual, string message)
-        {
-            Assert.AreEqual(expected.Date, actual.Date);
-            try
-            {
-                Assert.AreEqual(decimal.Truncate((decimal)expected.TimeOfDay.TotalSeconds), decimal.Truncate((decimal)actual.TimeOfDay.TotalSeconds), message);
-            }
-            catch
-            {
-                Console.WriteLine(expected);
-                Console.WriteLine(actual);
-                throw;
-            }
+            TestAssert.AreEqualsDate(date.ToUniversalTime(), dbDate, "Universal time read file");
         }
 
         public static void ConfigureInitialCustomerAndOrder()

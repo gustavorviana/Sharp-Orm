@@ -7,9 +7,33 @@ namespace SharpOrm.Builder.DataTranslation
     {
         private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
         private static readonly NumericTranslation numericTranslation = new NumericTranslation();
+        internal readonly DateTranslation dateTranslation = new DateTranslation();
+
+        /// <summary>
+        /// Format in which the GUID should be read and written in the database.
+        /// </summary>
+        /// <value>Default value in C#: "D"</value>
         public string GuidFormat { get; set; } = "D";
 
-        public TimeZoneInfo TimeZone { get; set; }
+        /// <summary>
+        /// Timezone in which dates should be stored in the database.
+        /// </summary>
+        /// <value><see cref="TimeZoneInfo.Local"/></value>
+        public TimeZoneInfo DbTimeZone
+        {
+            get => dateTranslation.DbTimeZone;
+            set => dateTranslation.DbTimeZone = value;
+        }
+
+        /// <summary>
+        /// Timezone in which dates should be converted to work within the code.
+        /// </summary>
+        /// <value><see cref="TimeZoneInfo.Local"/></value>
+        public TimeZoneInfo TimeZone
+        {
+            get => dateTranslation.CodeTimeZone;
+            set => dateTranslation.CodeTimeZone = value;
+        }
 
         public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type);
 
@@ -36,40 +60,16 @@ namespace SharpOrm.Builder.DataTranslation
             if (expectedType == typeof(Guid))
                 return value is Guid guid ? guid : Guid.Parse((string)value);
 
-            if (expectedType == typeof(DateTime))
-                return ParseDateTime(value);
-
-            if (expectedType == typeof(TimeSpan))
-                return ParseTimespan(value);
-
             if (numericTranslation.CanWork(expectedType))
                 return numericTranslation.FromSqlValue(value, expectedType);
 
             if (binaryTranslator.CanWork(expectedType))
                 return binaryTranslator.FromSqlValue(value, expectedType);
 
+            if (dateTranslation.CanWork(expectedType))
+                return dateTranslation.FromSqlValue(value, expectedType);
+
             return value;
-        }
-
-        private object ParseTimespan(object obj)
-        {
-            obj = ParseDateTime(obj);
-
-            if (obj is DateTime date)
-                return date.TimeOfDay;
-
-            return obj;
-        }
-
-        private object ParseDateTime(object obj)
-        {
-            if (obj is DateTimeOffset offset)
-                return TimeZone == null ? offset.DateTime : TimeZoneInfo.ConvertTimeFromUtc(offset.UtcDateTime, TimeZone);
-
-            if (obj is string strDate)
-                return DateTime.TryParse(strDate, out var date) ? date : (DateTime?)null;
-
-            return obj;
         }
 
         /// <summary>
@@ -92,14 +92,14 @@ namespace SharpOrm.Builder.DataTranslation
             if (value is bool vBool)
                 return vBool ? 1 : 0;
 
-            if (value is DateTime || value is TimeSpan || value is DateTimeOffset)
-                return value;
-
             if (numericTranslation.CanWork(type))
                 return numericTranslation.ToSqlValue(value, type);
 
             if (binaryTranslator.CanWork(type))
                 return binaryTranslator.ToSqlValue(value, type);
+
+            if (dateTranslation.CanWork(type))
+                return dateTranslation.ToSqlValue(value, type);
 
             return value?.ToString();
         }

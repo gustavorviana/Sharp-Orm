@@ -9,6 +9,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// DateTime kind to be saved in the database.
         /// </summary>
+        [Obsolete("Use TranslationRegistry.Default.DbTimeZone instead. It will be removed in version 2.x.x.")]
         DateTimeKind DateKind { get; set; }
 
         /// <summary>

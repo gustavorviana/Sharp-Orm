@@ -2,22 +2,26 @@
 
 namespace SharpOrm.Builder.DataTranslation
 {
+    [Obsolete("It will be removed in version 2.x.x.")]
     internal static class TimeProcessor
     {
         public static DateTime ToDatabase(this DateTime date, IQueryConfig config)
         {
-            if (config.DateKind == date.Kind)
-                return date;
-
-            return config.DateKind == DateTimeKind.Utc ? date.ToUniversalTime() : date;
+            return DateTranslation.ConvertDate(config.LocalTimeZone, GetTimeZone(config.DateKind), date);
         }
 
         public static DateTime FromDatabase(this DateTime date, IQueryConfig config)
         {
-            if (date.Kind == config.DateKind || config.DateKind == DateTimeKind.Local || config.LocalTimeZone == TimeZoneInfo.Utc)
-                return date;
+            return DateTranslation.ConvertDate(GetTimeZone(config.DateKind), config.LocalTimeZone, date);
+        }
 
-            return TimeZoneInfo.ConvertTimeFromUtc(new DateTime(date.Ticks, DateTimeKind.Utc), config.LocalTimeZone);
+        private static TimeZoneInfo GetTimeZone(DateTimeKind kind)
+        {
+            switch (kind)
+            {
+                case DateTimeKind.Utc: return TimeZoneInfo.Utc;
+                default: return TimeZoneInfo.Local;
+            }
         }
     }
 }
