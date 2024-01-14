@@ -39,7 +39,7 @@ namespace SharpOrm.Builder
             this.Having.Clear();
             this.Joins.Clear();
 
-            this.Where.Add(info.Where);
+            info.Where.ApplyTo(this.Where);
             this.Having.Add(info.Having);
             this.Joins.AddRange(info.Joins);
             this.GroupsBy = (Column[])info.GroupsBy.Clone();

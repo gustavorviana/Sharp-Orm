@@ -35,6 +35,10 @@ namespace SharpOrm.Builder
         /// </summary>
         public ColumnInfo[] Columns { get; }
 
+        public string SoftDeleteColumn { get; }
+
+        public bool CanSoftDelete => !(this.SoftDeleteColumn is null);
+
         /// <summary>
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
@@ -56,6 +60,7 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.Name = GetNameOf(type);
             this.Columns = this.GetColumns(config).ToArray();
+            this.SoftDeleteColumn = type.GetCustomAttribute<SoftDeleteAttribute>()?.ColumnName;
         }
 
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)

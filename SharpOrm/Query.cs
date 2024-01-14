@@ -18,6 +18,12 @@ namespace SharpOrm
         protected static internal TableInfo TableInfo { get; } = TableInfo.Get(typeof(T));
         private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
 
+        public TrashedItems TrashedItems
+        {
+            get => this.Info.Where.TrashedItens;
+            set => this.Info.Where.SetTrashedVisibility(value, TableInfo);
+        }
+
         #region Query
         public Query() : base(TableName)
         {
@@ -63,10 +69,14 @@ namespace SharpOrm
 
         public Query(DbConnection connection, IQueryConfig config, DbName name) : base(connection, config, name)
         {
+            if (TableInfo.CanSoftDelete)
+                this.TrashedItems = TrashedItems.Ignore;
         }
 
         public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(transaction, config, name)
         {
+            if (TableInfo.CanSoftDelete)
+                this.TrashedItems = TrashedItems.Ignore;
         }
         #endregion
 
@@ -277,6 +287,54 @@ namespace SharpOrm
         }
         #endregion
 
+        public override int Delete()
+        {
+            return this.Delete(false);
+        }
+
+        /// <summary>
+        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
+        /// </summary>
+        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
+        /// <returns>Number of deleted rows.</returns>
+        public int Delete(bool force)
+        {
+            if (force || !TableInfo.CanSoftDelete)
+                return base.Delete();
+
+            return ForceTrashType(TrashedItems.Ignore, () => this.Update(new Cell(TableInfo.SoftDeleteColumn, DateTime.Now)));
+        }
+
+        /// <summary>
+        /// Restore the values deleted using soft delete.
+        /// </summary>
+        /// <returns>Number of values restored.</returns>
+        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
+        public int Restore()
+        {
+            if (!TableInfo.CanSoftDelete)
+                throw new NotSupportedException("The class does not support restore, only those with SoftDeleteAttribute do.");
+
+            return ForceTrashType(TrashedItems.Only, () => this.Update(new Cell(TableInfo.SoftDeleteColumn, null)));
+        }
+
+        private int ForceTrashType(TrashedItems trash, Func<int> call)
+        {
+            if (!TableInfo.CanSoftDelete || this.Info.Where.TrashedItens == trash)
+                return call();
+
+            var last = this.Info.Where.TrashedItens;
+            try
+            {
+                this.Info.Where.SetTrashedVisibility(trash, TableInfo);
+                return call();
+            }
+            finally
+            {
+                this.Info.Where.SetTrashedVisibility(last, TableInfo);
+            }
+        }
+
         public override Query Clone(bool withWhere)
         {
             Query<T> query = this.Transaction == null ?
@@ -285,8 +343,8 @@ namespace SharpOrm
 
             query.Creator = this.Creator;
 
-            if (withWhere)
-                query.Info.LoadFrom(this.Info);
+            if (withWhere) query.Info.LoadFrom(this.Info);
+            else if (TableInfo.CanSoftDelete) query.Info.Where.SetTrashedVisibility(this.TrashedItems, TableInfo);
 
             this.OnClone(query);
 
@@ -700,8 +758,8 @@ namespace SharpOrm
         /// <summary>
         /// Removes rows from database
         /// </summary>
-        /// <returns></returns>
-        public int Delete()
+        /// <returns>Number of deleted rows.</returns>
+        public virtual int Delete()
         {
             this.CheckIsSafeOperation();
 

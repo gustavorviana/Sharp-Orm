@@ -53,6 +53,9 @@ namespace SharpOrm.Builder
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
+        private string columnName = null;
+        internal TrashedItems TrashedItens { get; set; } = TrashedItems.With;
+
         /// <summary>
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
@@ -389,7 +392,39 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return query.ToString();
+            return this.TrashedItens == TrashedItems.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
+        }
+
+        private string ApplyTrashedFilter(string content)
+        {
+            StringBuilder sb = new StringBuilder(this.columnName);
+
+            if (this.TrashedItens == TrashedItems.Only) sb.Append(" IS NOT NULL");
+            else sb.Append(" IS NULL");
+
+            if (content.Length == 0)
+                return sb.ToString();
+
+            return sb.Append(" AND (").Append(content).Append(')').ToString();
+        }
+
+        public void SetTrashedVisibility(TrashedItems visibility, TableInfo table)
+        {
+            if (visibility != TrashedItems.With && string.IsNullOrEmpty(table.SoftDeleteColumn))
+                throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");
+
+            this.TrashedItens = visibility;
+            this.columnName = table.SoftDeleteColumn;
+        }
+
+        internal QueryConstructor ApplyTo(QueryConstructor query)
+        {
+            query.Add(this);
+
+            query.columnName = this.columnName;
+            query.TrashedItens = this.TrashedItens;
+
+            return query;
         }
 
         #region IDisposable
