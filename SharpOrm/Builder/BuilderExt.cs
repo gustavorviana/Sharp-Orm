@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,6 +7,11 @@ namespace SharpOrm.Builder
 {
     internal static class BuilderExt
     {
+        internal static string Replace(this string str, char toReplace, Func<int, string> func)
+        {
+            return new StringBuilder().AppendReplaced(str, toReplace, func).ToString();
+        }
+
         internal static StringBuilder AppendReplaced(this StringBuilder builder, string toAdd, char toReplace, Func<int, string> func)
         {
             return AppendAndReplace(builder, toAdd, toReplace, index => builder.Append(func(index)));

@@ -248,6 +248,14 @@ namespace SharpOrm
             return cmd;
         }
 
+        protected DbCommand CreateCommand(string query, params object[] args)
+        {
+            var cmd = this.GetConnection().CreateCommand(query, args);
+            cmd.Disposed += OnCommandDisposed;
+            this._commands.Add(cmd);
+            return cmd;
+        }
+
         /// <summary>
         /// Creates a DbCommand from a query string.
         /// </summary>
