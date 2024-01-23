@@ -20,6 +20,7 @@ namespace SharpOrm.Builder
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposed = false;
+        [Obsolete("It will be removed in version 2.x.x.")]
         protected readonly bool convertToUtc;
 
         [Obsolete("Use Constructor instead. It will be removed in version 2.x.x.")]
@@ -282,11 +283,13 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
         /// </summary>
+        [Obsolete("It will be removed in version 2.x.x.")]
         protected void Reset()
         {
             this.Reset(true);
         }
 
+        [Obsolete("It will be removed in version 2.x.x.")]
         protected void Reset(bool reconfigure)
         {
             if (reconfigure)

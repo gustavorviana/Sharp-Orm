@@ -34,10 +34,13 @@ namespace SharpOrm.Builder.DataTranslation
         #endregion
 
         #region ISqlTranslation
-        public bool CanWork(Type type) => type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(string);
+        public bool CanWork(Type type) => type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(string) || type == typeof(FreezedDate);
 
         public object FromSqlValue(object value, Type expectedType)
         {
+            if (expectedType == typeof(FreezedDate))
+                throw new NotSupportedException();
+
             if (expectedType == typeof(DateTime))
                 return ParseDateTimeFromDb(value);
 
@@ -49,6 +52,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         public object ToSqlValue(object value, Type type)
         {
+            if (value is FreezedDate fDate)
+                return fDate.Value;
+
             if (value is DateTime date)
                 return DateToDb(date, type);
 
