@@ -18,7 +18,7 @@ namespace SharpOrm.Builder.DataTranslation
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly DbDataReader reader;
         internal readonly IQueryConfig config;
-        private readonly MappedObject map;
+        private readonly IMappedObject map;
         private bool disposed;
 
         public DbDataReader Reader => this.reader;
@@ -39,12 +39,12 @@ namespace SharpOrm.Builder.DataTranslation
 
         }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry)
-            : this(config, reader, MappedObject.Create(reader, type, registry), registry)
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry = null)
+            : this(config, reader, MappedObject.Create(reader, type, registry))
         {
         }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, MappedObject map, TranslationRegistry registry = null)
+        public DbObjectReader(IQueryConfig config, DbDataReader reader, IMappedObject map)
         {
             this.config = config;
             this.reader = reader;

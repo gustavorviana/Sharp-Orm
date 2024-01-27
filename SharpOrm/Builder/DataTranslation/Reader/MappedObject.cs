@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder.DataTranslation.Reader
 {
-    public class MappedObject
+    public class MappedObject : IMappedObject
     {
         #region Properties\Fields
         private readonly List<MappedObject> childrens = new List<MappedObject>();
@@ -20,15 +21,18 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private object instance;
         #endregion
 
-        public static MappedObject Create<T>(DbDataReader reader, TranslationRegistry registry = null, string prefix = "") where T : class
+        public static IMappedObject Create<T>(DbDataReader reader, TranslationRegistry registry = null, string prefix = "") where T : class
         {
             return Create(reader, typeof(T), registry, prefix);
         }
 
-        public static MappedObject Create(DbDataReader reader, Type type, TranslationRegistry registry = null, string prefix = "")
+        public static IMappedObject Create(DbDataReader reader, Type type, TranslationRegistry registry = null, string prefix = "")
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
+
+            if (type == typeof(object) || type == typeof(ExpandoObject))
+                return new MappedDynamic(registry, reader);
 
             return new MappedObject(type).Map(registry, reader, prefix);
         }

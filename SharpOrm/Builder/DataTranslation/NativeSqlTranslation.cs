@@ -35,7 +35,7 @@ namespace SharpOrm.Builder.DataTranslation
             set => dateTranslation.CodeTimeZone = value;
         }
 
-        public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type);
+        public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type) || dateTranslation.CanWork(type);
 
         /// <summary>
         /// Converts a SQL value to its equivalent .NET representation based on the expected data type.

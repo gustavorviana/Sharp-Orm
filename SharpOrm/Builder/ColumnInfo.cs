@@ -76,6 +76,8 @@ namespace SharpOrm.Builder
         public bool IsNative { get; }
 
         internal string PropName => this.column?.Name;
+
+        private Type _validType = null;
         #endregion
 
         /// <summary>
@@ -144,7 +146,10 @@ namespace SharpOrm.Builder
         /// <param name="value">The value to set.</param>
         public void Set(object owner, object value)
         {
-            this.SetRaw(owner, this.Translation.FromSqlValue(value, TranslationRegistry.GetValidTypeFor(this.Type)));
+            if (this._validType == null)
+                this._validType = TranslationRegistry.GetValidTypeFor(this.Type);
+
+            this.SetRaw(owner, this.Translation.FromSqlValue(value, this._validType));
         }
 
         /// <summary>
@@ -165,7 +170,10 @@ namespace SharpOrm.Builder
         /// <returns>The value of the column.</returns>
         public object Get(object owner)
         {
-            return this.Translation.ToSqlValue(this.GetRaw(owner), TranslationRegistry.GetValidTypeFor(this.Type));
+            if (this._validType == null)
+                this._validType = TranslationRegistry.GetValidTypeFor(this.Type);
+
+            return this.Translation.ToSqlValue(this.GetRaw(owner), this._validType);
         }
 
         /// <summary>

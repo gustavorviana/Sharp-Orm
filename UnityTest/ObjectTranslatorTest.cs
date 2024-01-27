@@ -241,6 +241,31 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void FreezedDateTest()
+        {
+            var registry = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
+            var fNow = FreezedDate.Now;
+
+            Assert.AreEqual(fNow.Value, registry.ToSql(fNow));
+            Assert.AreEqual(fNow.Value.ToUniversalTime(), registry.ToSql(fNow.Value));
+        }
+
+        [TestMethod]
+        public void DynamicTranslatorTest()
+        {
+            const int Id = 1;
+            const string Name = "My Dynamic name";
+
+            Connection.QueryReaders.Add("SELECT * FROM `Dynamic`", () => GetReader(i => new[] { new Cell("Id", Id), new Cell("Name", Name), new Cell("Null", DBNull.Value) }, 1));
+            using var query = new Query(Connection, Config, "Dynamic");
+            var value = query.GetEnumerable<dynamic>().First();
+
+            Assert.AreEqual(value.Id, Id);
+            Assert.AreEqual(value.Name, Name);
+            Assert.IsNull(value.Null);
+        }
+
+        [TestMethod]
         public void LoadArrayChild()
         {
             Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(i => MakeOrderCells(1), 3));
