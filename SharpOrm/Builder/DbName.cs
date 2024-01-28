@@ -30,6 +30,9 @@ namespace SharpOrm.Builder
 
         public static DbName Of<T>(string alias)
         {
+            if (ReflectionUtils.IsDynamic(typeof(T)))
+                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
+
             return new DbName(TableInfo.GetNameOf(typeof(T)), alias);
         }
 

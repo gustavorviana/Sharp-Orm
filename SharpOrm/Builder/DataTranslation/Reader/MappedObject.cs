@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Dynamic;
 using System.Linq;
 using System.Text;
 
@@ -31,7 +30,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
-            if (type == typeof(object) || type == typeof(ExpandoObject))
+            if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(registry, reader);
 
             return new MappedObject(type).Map(registry, reader, prefix);

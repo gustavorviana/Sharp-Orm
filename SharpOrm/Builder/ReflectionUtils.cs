@@ -2,12 +2,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Text;
 
 namespace SharpOrm.Builder
 {
     internal static class ReflectionUtils
     {
+        public static bool IsDynamic(Type type)
+        {
+            return type == typeof(object) || type == typeof(ExpandoObject);
+        }
+
         public static Array ToArray(Type type, ICollection collection)
         {
             Array array = Array.CreateInstance(type, collection.Count);
