@@ -177,6 +177,17 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void WhereInEmpty()
+        {
+            using var query = NewQuery();
+            query.WhereIn("Status", Array.Empty<int>());
+            using var g = new MysqlGrammar(query);
+
+            using var cmd = g.Select();
+            Assert.AreEqual("SELECT * FROM `TestTable` WHERE 1!=1", cmd.CommandText);
+        }
+
+        [TestMethod]
         public void WhereNotIn()
         {
             using var query = NewQuery();

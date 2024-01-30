@@ -343,6 +343,8 @@ namespace SharpOrm
 
             foreach (var conn in this._connections.ToArray())
                 try { conn.Dispose(); } catch { }
+
+            this._disposed = true;
         }
 
         /// <summary>

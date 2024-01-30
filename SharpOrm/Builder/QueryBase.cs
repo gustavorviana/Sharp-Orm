@@ -437,12 +437,18 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(column));
 
             CheckIsAvailableOperation(operation);
-            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
-
             this.WriteWhereType(type);
+
+            if (value is ICollection collection && collection.Count == 0)
+            {
+                this.Info.Where.Add("1!=1");
+                return this;
+            }
+
             this.ParseColumn(column);
             this.Info.Where.Add().Add(operation).Add();
 
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
             if (isExpressionList)
                 this.Info.Where.Add('(');
 
