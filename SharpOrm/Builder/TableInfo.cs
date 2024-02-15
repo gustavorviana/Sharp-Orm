@@ -194,7 +194,13 @@ namespace SharpOrm.Builder
 
         public static string GetNameOf(Type type)
         {
-            return GetValidType(type).GetCustomAttribute<TableAttribute>(false)?.Name ?? type.Name;
+            if (!(GetValidType(type).GetCustomAttribute<TableAttribute>(false) is TableAttribute table) || string.IsNullOrEmpty(table.Name))
+                return type.Name;
+
+            if (string.IsNullOrEmpty(table.Schema))
+                return table.Name;
+
+            return $"{table.Schema}.{table.Name}";
         }
 
         private static Type GetValidType(Type type)

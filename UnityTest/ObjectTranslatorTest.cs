@@ -299,6 +299,13 @@ namespace UnityTest
             Assert.AreEqual("Value Child 2", obj.Child2.Value);
         }
 
+        [TestMethod]
+        public void TableWithSchemaTest()
+        {
+            var info = new TableInfo(typeof(TableWithSchema));
+            Assert.AreEqual("MySchema.MyName", info.Name);
+        }
+
         private MockDataReader GetAdvancedObjectReader()
         {
             return new MockDataReader(
@@ -332,6 +339,11 @@ namespace UnityTest
         private static void AssertSqlValueConverted(object expected, object value)
         {
             Assert.AreEqual(expected, TranslationRegistry.Default.FromSql(value, expected?.GetType()));
+        }
+
+        [Table("MyName", Schema = "MySchema")]
+        private class TableWithSchema
+        {
         }
 
         private class RootAdvancedObject

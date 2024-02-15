@@ -16,11 +16,10 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
+            this.ThrowOffsetNotSupported();
             this.Constructor.Add("DELETE");
 
-            if (this.Query.Limit > 0)
-                this.AddLimit();
-
+            this.AddLimit();
             this.ApplyDeleteJoins();
             this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
@@ -57,12 +56,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
+            this.ThrowOffsetNotSupported();
             using (var en = cells.GetEnumerator())
             {
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
                 this.Constructor.Add("UPDATE ").Add(this.GetTableName(false));
+                this.AddLimit();
                 this.Constructor.Add(" SET ");
                 this.Constructor.AddJoin(WriteUpdateCell, ", ", en);
             }
@@ -116,7 +117,7 @@ namespace SharpOrm.Builder
             if (this.Query.Distinct && !this.Info.IsCount() && countColumn == null)
                 this.Constructor.Add(" DISTINCT");
 
-            if (HasLimit && !HasOffset && !this.Info.IsCount())
+            if (!HasOffset && !this.Info.IsCount())
                 this.AddLimit();
 
             this.Constructor.Add(' ');
@@ -155,7 +156,8 @@ namespace SharpOrm.Builder
 
         private void AddLimit()
         {
-            this.Constructor.Add(" TOP(").Add(this.Query.Limit).Add(')');
+            if (this.Query.Limit is int limit && limit > 0)
+                this.Constructor.Add(" TOP(").Add(limit).Add(')');
         }
 
         private QueryConstructor WriteCountColumn(Column column)

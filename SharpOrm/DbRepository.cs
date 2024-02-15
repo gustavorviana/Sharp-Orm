@@ -17,9 +17,11 @@ namespace SharpOrm
         #region Fields/Properties
         private readonly List<DbConnection> _connections = new List<DbConnection>();
         private readonly List<DbCommand> _commands = new List<DbCommand>();
-        private readonly object _lock = new object();
+        private readonly object _connLock = new object();
+        private readonly object _cmdLock = new object();
         private bool _parentTransact = false;
         private bool _disposed;
+        public bool Disposed => this._disposed;
 
         private DbTransaction _transaction;
         private DbConnection _transactionConn;
@@ -64,6 +66,8 @@ namespace SharpOrm
         /// <param name="transaction">The DbTransaction to set.</param>
         public void SetTransaction(DbTransaction transaction)
         {
+            this.ThrowIfDisposed();
+
             this._transaction = transaction;
             this._parentTransact = transaction != null;
         }
@@ -73,6 +77,8 @@ namespace SharpOrm
         /// </summary>
         public virtual void BeginTransaction()
         {
+            this.ThrowIfDisposed();
+
             if (this.HasParentTransaction)
                 return;
 
@@ -190,6 +196,8 @@ namespace SharpOrm
         /// <returns>A Query object for the specified table.</returns>
         protected Query Query(DbName name)
         {
+            this.ThrowIfDisposed();
+
             if (this.HasTransaction)
                 return new Query(this._transaction, this.Creator.Config, name) { Token = this.Token };
 
@@ -215,6 +223,8 @@ namespace SharpOrm
         /// <returns>A Query object for the specified type with a DbName.</returns>
         protected Query<T> Query<T>(DbName name) where T : new()
         {
+            this.ThrowIfDisposed();
+
             if (this.HasTransaction)
                 return new Query<T>(this._transaction, this.Creator.Config, name) { Token = this.Token };
 
@@ -252,7 +262,10 @@ namespace SharpOrm
         {
             var cmd = this.GetConnection().CreateCommand(query, args);
             cmd.Disposed += OnCommandDisposed;
-            this._commands.Add(cmd);
+
+            lock (this._cmdLock)
+                this._commands.Add(cmd);
+
             return cmd;
         }
 
@@ -266,7 +279,10 @@ namespace SharpOrm
             var cmd = this.GetConnection().CreateCommand();
             cmd.CommandText = query;
             cmd.Disposed += OnCommandDisposed;
-            this._commands.Add(cmd);
+
+            lock (this._cmdLock)
+                this._commands.Add(cmd);
+
             return cmd;
         }
 
@@ -274,7 +290,7 @@ namespace SharpOrm
 
         private void OnCommandDisposed(object sender, EventArgs e)
         {
-            lock (_lock)
+            lock (_cmdLock)
                 if (sender is DbCommand cmd)
                     this._commands.Remove(cmd);
         }
@@ -293,18 +309,23 @@ namespace SharpOrm
         /// </returns>
         protected DbConnection GetConnection(bool forceNew = true)
         {
+            this.ThrowIfDisposed();
+
             if (!forceNew && this.HasTransaction)
                 return this._transaction.Connection;
 
             var conn = this.Creator.GetConnection();
-            this._connections.Add(conn);
+
+            lock (_connLock)
+                this._connections.Add(conn);
+
             conn.Disposed += OnConnectionDisposed;
             return conn;
         }
 
         private void OnConnectionDisposed(object sender, EventArgs e)
         {
-            lock (_lock)
+            lock (_connLock)
                 if (sender is DbConnection con)
                     this._connections.Remove(con);
         }
@@ -352,11 +373,15 @@ namespace SharpOrm
         /// </summary>
         public void Dispose()
         {
-            if (this._disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
+            this.ThrowIfDisposed();
             this.Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         #endregion

@@ -15,7 +15,18 @@ namespace SharpOrm.Builder
 
             this.Name = ColumnInfo.GetName(member);
             this.PropertyName = member.Name;
-            this.ValueType = (member as PropertyInfo).PropertyType ?? ((FieldInfo)member).FieldType;
+            this.ValueType = GetValueType(member);
+        }
+
+        private static Type GetValueType(MemberInfo member)
+        {
+            if (member is PropertyInfo prop)
+                return prop.PropertyType;
+
+            if (member is FieldInfo field)
+                return field.FieldType;
+
+            throw new NotSupportedException();
         }
 
         public bool Equals(LambdaColumn other)

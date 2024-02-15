@@ -50,6 +50,8 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
+            this.ThrowOffsetNotSupported();
+
             this.Constructor.Add("DELETE");
             this.ApplyDeleteJoins();
             this.Constructor.Add(" FROM ").Add(this.Info.TableName.GetName(true, this.Info.Config));
@@ -60,8 +62,7 @@ namespace SharpOrm.Builder
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 
-            if (this.Query.Limit > 0)
-                this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
+           this.AddLimit();
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
@@ -162,6 +163,8 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
+            this.ThrowOffsetNotSupported();
+
             using (var en = cells.GetEnumerator())
             {
                 if (!en.MoveNext())
@@ -175,6 +178,14 @@ namespace SharpOrm.Builder
 
                 this.WriteWhere(true);
             }
+
+            this.AddLimit();
+        }
+
+        private void AddLimit()
+        {
+            if (this.Query.Limit > 0)
+                this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
         }
 
         protected void ApplyJoins()
@@ -222,6 +233,12 @@ namespace SharpOrm.Builder
         {
             if (this.Query.Offset != null && this.Query.Limit == null)
                 throw new InvalidOperationException($"You cannot use {nameof(Query)}.{nameof(Query.Offset)} without {nameof(Query)}.{nameof(Query.Limit)}.");
+        }
+
+        protected void ThrowOffsetNotSupported()
+        {
+            if (this.Query.Offset is int val && val != 0)
+                throw new NotSupportedException("Offset is not supported in this operation.");
         }
     }
 }
