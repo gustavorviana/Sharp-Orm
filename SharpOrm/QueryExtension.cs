@@ -58,6 +58,39 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Adds a WHERE clause that checks if the column not contains the value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to filter.</param>
+        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase WhereNotContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase WhereNotStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", $"{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase WhereNotEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}");
+        }
+
+        /// <summary>
         /// Adds a WHERE clause with a specified operation and value.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
@@ -204,6 +237,39 @@ namespace SharpOrm
         public static QueryBase OrWhereEndsWith(this QueryBase qBase, string column, string value)
         {
             return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not contains the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase OrWhereNotContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase OrWhereNotStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", $"{value.SanitizeSqlValue()}%");
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase OrWhereNotEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}");
         }
 
         /// <summary>
