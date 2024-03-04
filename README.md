@@ -16,8 +16,10 @@ To use a global configuration you need to create a new instance of ConnectionCre
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 
-//For Mysql and Sqlite
-ConnectionCreator.Default = new SingleConnectionCreator(new MysqlQueryConfig(false), connectionString);
+//For Mysql
+ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(new MysqlQueryConfig(false), connectionString);
+//For Sqlite
+ConnectionCreator.Default = new SingleConnectionCreator<MySql.Data.MySqlClient.MySqlConnection>(new MysqlQueryConfig(false), connectionString);
 //For Microsoft Sql Server
 ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), connectionString);
 ```
