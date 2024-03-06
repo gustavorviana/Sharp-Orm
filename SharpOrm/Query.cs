@@ -4,6 +4,7 @@ using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -136,32 +137,42 @@ namespace SharpOrm
         public T Find(params object[] primaryKeysValues)
         {
             using (var query = (Query<T>)this.Clone(false))
-            {
-                var pKeys = this.GetAndValidatePrimaryKey(primaryKeysValues);
-                for (var i = 0; i < primaryKeysValues.Length; i++)
-                    query.Where(pKeys[i], primaryKeysValues[i]);
-
-                return query.FirstOrDefault();
-            }
+                return this.WherePk(primaryKeysValues).FirstOrDefault();
         }
 
-        private string[] GetAndValidatePrimaryKey(object[] pksToCheck)
+        /// <summary>
+        /// Add a clause to retrieve the items that have the primary key of the object.
+        /// </summary>
+        /// <param name="primaryKeysValues">Primary keys.</param>
+        /// <returns></returns>
+        public Query<T> WherePk(params object[] primaryKeysValues)
         {
-            if ((pksToCheck?.Length ?? 0) == 0)
-                throw new ArgumentNullException(nameof(pksToCheck));
+            if (primaryKeysValues.Length == 0) throw new ArgumentNullException(nameof(primaryKeysValues));
 
-            var columns = TableInfo.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
-            if (columns.Length == 0)
+            var pkCols = TableInfo.GetPrimaryKeys();
+            ValidatePkVals(pkCols, primaryKeysValues);
+
+            if (primaryKeysValues.Length == 1)
+                return (Query<T>)this.Where(pkCols[0].Name, primaryKeysValues[0]);
+
+            return (Query<T>)this.Where(query =>
+            {
+                for (var i = 0; i < primaryKeysValues.Length; i++)
+                    query.Where(pkCols[i].Name, primaryKeysValues[i]);
+            });
+        }
+
+        private static void ValidatePkVals(ColumnInfo[] keys, object[] pkValues)
+        {
+            if (keys.Length == 0)
                 throw new DatabaseException(Messages.MissingPrimaryKey);
 
-            if (columns.Length != pksToCheck.Length)
-                throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pksToCheck));
+            if (keys.Length != pkValues.Length)
+                throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pkValues));
 
-            for (int i = 0; i < columns.Length; i++)
-                if (!TranslationUtils.IsSimilar(columns[i].Type, pksToCheck[i]?.GetType()))
+            for (int i = 0; i < keys.Length; i++)
+                if (!TranslationUtils.IsSimilar(keys[i].Type, pkValues[i]?.GetType()))
                     throw new InvalidCastException(Messages.InsertedTypeMismatch);
-
-            return columns.Select(c => c.Name).ToArray();
         }
 
         /// <summary>
@@ -202,7 +213,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Update table columns using object values.
+        /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
@@ -215,7 +226,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Update table columns using object values.
+        /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
@@ -234,11 +245,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Update table columns using object values.
+        /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="column1">Column to be updated</param>
-        /// <param name="columns">Update table columns using object values..</param>
+        /// <param name="columns">Update table keys using object values..</param>
         /// <returns></returns>
         public int Update(T obj, params string[] columns)
         {
@@ -415,7 +426,7 @@ namespace SharpOrm
         #region Selection
 
         /// <summary>
-        /// Select columns of table by name.
+        /// Select keys of table by name.
         /// </summary>
         /// <param name="columnNames"></param>
         /// <returns></returns>
@@ -791,7 +802,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// Executes the query and returns the first column of all rows in the result. All other keys are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
@@ -809,7 +820,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
@@ -819,7 +830,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()

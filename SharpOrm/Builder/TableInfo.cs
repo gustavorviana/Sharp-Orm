@@ -58,6 +58,11 @@ namespace SharpOrm.Builder
             this.Columns = this.GetColumns(config).ToArray();
         }
 
+        public ColumnInfo[] GetPrimaryKeys()
+        {
+            return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+        }
+
         private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
         {
             foreach (var col in GetColumns(Type, registry))
