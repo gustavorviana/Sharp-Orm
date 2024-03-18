@@ -81,6 +81,20 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void CreateCommandWithTransaction()
+        {
+            using var repo = new TestRepository(creator);
+            repo.RunTransaction(() =>
+            {
+                using var cmd1 = repo.CreateCommand("");
+                Assert.IsNotNull(cmd1.Transaction);
+
+                using var cmd2 = repo.CreateCommand("", System.Array.Empty<object>());
+                Assert.IsNotNull(cmd2.Transaction);
+            });
+        }
+
+        [TestMethod]
         public void QueryTransaction()
         {
             using var repo = new TestRepository(creator);

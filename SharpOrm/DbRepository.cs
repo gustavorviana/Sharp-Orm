@@ -194,7 +194,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="name">The name of the database table to query.</param>
         /// <returns>A Query object for the specified table.</returns>
-        protected Query Query(DbName name)
+        protected virtual Query Query(DbName name)
         {
             this.ThrowIfDisposed();
 
@@ -221,7 +221,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="name">The DbName representing the type.</param>
         /// <returns>A Query object for the specified type with a DbName.</returns>
-        protected Query<T> Query<T>(DbName name) where T : new()
+        protected virtual Query<T> Query<T>(DbName name) where T : new()
         {
             this.ThrowIfDisposed();
 
@@ -243,24 +243,41 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="query">The QueryConstructor used to create the command.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(QueryConstructor query)
+        {
+            using (var cmd = this.CreateCommand(query))
+                return cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Creates a DbCommand from a QueryConstructor.
         /// </summary>
         /// <param name="query">The QueryConstructor used to create the command.</param>
         /// <returns>A DbCommand created from the QueryConstructor.</returns>
         protected DbCommand CreateCommand(QueryConstructor query)
         {
-            var qBuilder = new StringBuilder().AppendReplaced(query.ToString(), '?', index => $"@p{index - 1}");
-            var cmd = this.CreateCommand(qBuilder.ToString());
-
-            for (int i = 0; i < query.Parameters.Count; i++)
-                cmd.AddParam($"@p{i}", query.Parameters[i]);
-
-            return cmd;
+            return this.CreateCommand(query.ToString(), query.Parameters);
         }
 
-        protected DbCommand CreateCommand(string query, params object[] args)
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteNonQuery();
+        }
+
+        protected internal DbCommand CreateCommand(string query, params object[] args)
         {
             var cmd = this.GetConnection().CreateCommand(query, args);
+            cmd.Transaction = this._transaction;
             cmd.Disposed += OnCommandDisposed;
 
             lock (this._cmdLock)
@@ -270,15 +287,27 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(string query)
+        {
+            using (var cmd = this.CreateCommand(query))
+                return cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Creates a DbCommand from a query string.
         /// </summary>
         /// <param name="query">The SQL query string.</param>
         /// <returns>A DbCommand created from the query string.</returns>
-        protected DbCommand CreateCommand(string query)
+        protected internal DbCommand CreateCommand(string query)
         {
             var cmd = this.GetConnection().CreateCommand();
-            cmd.CommandText = query;
+            cmd.Transaction = this._transaction;
             cmd.Disposed += OnCommandDisposed;
+            cmd.CommandText = query;
 
             lock (this._cmdLock)
                 this._commands.Add(cmd);
@@ -291,8 +320,15 @@ namespace SharpOrm
         private void OnCommandDisposed(object sender, EventArgs e)
         {
             lock (_cmdLock)
+            {
                 if (sender is DbCommand cmd)
+                {
+                    if (cmd.Transaction == null)
+                        try { cmd.Connection.Dispose(); } catch { }
+
                     this._commands.Remove(cmd);
+                }
+            }
         }
 
         /// <summary>
@@ -307,7 +343,7 @@ namespace SharpOrm
         ///     A DbConnection object, either a newly created connection or the one from the active transaction,
         ///     based on the value of the 'forceNew' parameter.
         /// </returns>
-        protected DbConnection GetConnection(bool forceNew = true)
+        protected virtual DbConnection GetConnection(bool forceNew = true)
         {
             this.ThrowIfDisposed();
 
@@ -378,7 +414,7 @@ namespace SharpOrm
             GC.SuppressFinalize(this);
         }
 
-        private void ThrowIfDisposed()
+        protected void ThrowIfDisposed()
         {
             if (this._disposed)
                 throw new ObjectDisposedException(GetType().Name);
