@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.2.6.0</AssemblyVersion>
-		<FileVersion>1.2.6.0</FileVersion>
-		<VersionPrefix>1.2.60</VersionPrefix>
+		<AssemblyVersion>1.2.7.0</AssemblyVersion>
+		<FileVersion>1.2.7.0</FileVersion>
+		<VersionPrefix>1.2.70</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -20,7 +20,10 @@
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Improvements in date conversion, support for dynamic, support for empty lists in where clauses, and creation of extension for command creation and DbDataReader reading.</PackageReleaseNotes>
+		<PackageReleaseNotes>
+			Transaction and connection management correction in DbRepository, addition of DbRepository.ExecuteNonQuery,
+			and addition of Query&lt;T&gt;.WherePk(params object[]).
+		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
