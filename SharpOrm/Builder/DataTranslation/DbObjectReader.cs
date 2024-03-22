@@ -164,7 +164,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return new Query(this.Transaction, this.config, name) { Token = Token };
 
             if (this.Connection != null)
-                return new Query(this.Connection, this.config, name) { notClose = true, Token = Token };
+                return new Query(this.Connection, this.config, name, false) { Token = Token };
 
             return new Query(this.config, name) { Token = Token };
         }

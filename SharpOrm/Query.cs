@@ -75,7 +75,7 @@ namespace SharpOrm
         {
             this.ApplyValidations();
         }
-        
+
         private void ApplyValidations()
         {
             this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
@@ -346,7 +346,7 @@ namespace SharpOrm
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
-        internal bool notClose = false;
+        private readonly bool disposeConnection = true;
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
@@ -393,7 +393,7 @@ namespace SharpOrm
 
         }
 
-        public Query(DbConnection connection, DbName table) : this(connection, ConnectionCreator.Default.Config, table)
+        public Query(DbConnection connection, DbName table, bool disposeConnection = true) : this(connection, ConnectionCreator.Default.Config, table, disposeConnection)
         {
         }
 
@@ -402,12 +402,13 @@ namespace SharpOrm
 
         }
 
-        public Query(DbConnection connection, IQueryConfig config, string table) : this(connection, config, new DbName(table))
+        public Query(DbConnection connection, IQueryConfig config, string table, bool disposeConnection = true) : this(connection, config, new DbName(table), disposeConnection)
         {
         }
 
-        public Query(DbConnection connection, IQueryConfig config, DbName table) : base(config, table)
+        public Query(DbConnection connection, IQueryConfig config, DbName table, bool disposeConnection = true) : base(config, table)
         {
+            this.disposeConnection = disposeConnection;
             if (connection == null)
                 return;
 
@@ -936,8 +937,9 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            if (disposing && this.Transaction == null && this.Connection != null && this.Creator != null && !this.notClose)
-                this.Creator.SafeDisposeConnection(this.Connection);
+            if (this.disposeConnection)
+                if (this.Creator is null) this.Connection.Dispose();
+                else this.Creator.SafeDisposeConnection(this.Connection);
 
             this.lastOpenReader = null;
         }
