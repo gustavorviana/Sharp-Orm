@@ -276,14 +276,7 @@ namespace SharpOrm
 
         protected internal DbCommand CreateCommand(string query, params object[] args)
         {
-            var cmd = this.GetConnection().CreateCommand(query, args);
-            cmd.Transaction = this._transaction;
-            cmd.Disposed += OnCommandDisposed;
-
-            lock (this._cmdLock)
-                this._commands.Add(cmd);
-
-            return cmd;
+            return this.CreateCommand().SetQuery(query, args);
         }
 
         /// <summary>
@@ -304,10 +297,21 @@ namespace SharpOrm
         /// <returns>A DbCommand created from the query string.</returns>
         protected internal DbCommand CreateCommand(string query)
         {
+            var cmd = this.CreateCommand();
+            cmd.CommandText = query;
+            return cmd;
+        }
+
+        /// <summary>
+        /// Creates a DbCommand.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <returns>A DbCommand created from the query string.</returns>
+        protected DbCommand CreateCommand()
+        {
             var cmd = this.GetConnection().CreateCommand();
             cmd.Transaction = this._transaction;
             cmd.Disposed += OnCommandDisposed;
-            cmd.CommandText = query;
 
             lock (this._cmdLock)
                 this._commands.Add(cmd);
@@ -321,13 +325,13 @@ namespace SharpOrm
         {
             lock (_cmdLock)
             {
-                if (sender is DbCommand cmd)
-                {
-                    if (cmd.Transaction == null)
-                        try { cmd.Connection.Dispose(); } catch { }
+                if (!(sender is DbCommand cmd))
+                    return;
 
-                    this._commands.Remove(cmd);
-                }
+                if (cmd.Transaction is null)
+                    try { cmd.Connection.Dispose(); } catch { }
+
+                this._commands.Remove(cmd);
             }
         }
 
@@ -343,7 +347,7 @@ namespace SharpOrm
         ///     A DbConnection object, either a newly created connection or the one from the active transaction,
         ///     based on the value of the 'forceNew' parameter.
         /// </returns>
-        protected virtual DbConnection GetConnection(bool forceNew = true)
+        protected virtual DbConnection GetConnection(bool forceNew = false)
         {
             this.ThrowIfDisposed();
 

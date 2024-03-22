@@ -27,6 +27,21 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void InsertWithoutId()
+        {
+            using var q = NewQuery(TABLE);
+            using var g = new SqlServerGrammar(q);
+            q.ReturnsInsetionId = false;
+
+            q.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
+
+            using var cmd = g.Insert(new Cell[] { new Cell(ID, 1), new Cell(NAME, "T1"), new Cell("value", null) });
+            Assert.AreEqual("INSERT INTO [TestTable] ([id], [name], [value]) VALUES (1, @p1, NULL)", cmd.CommandText);
+
+            AreEqualsParameter(cmd.Parameters[0], "@p1", "T1");
+        }
+
+        [TestMethod]
         public void InsertWIthRaw()
         {
             using var q = NewQuery(TABLE);

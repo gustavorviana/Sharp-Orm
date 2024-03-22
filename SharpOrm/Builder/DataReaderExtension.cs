@@ -59,16 +59,27 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static DbCommand CreateCommand(this DbConnection connection, string query, params object[] args)
         {
+            return connection.CreateCommand().SetQuery(query, args);
+        }
+
+        /// <summary>
+        /// Apply SQL query and argument to command.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="query">Query to be executed (to signal an argument, use '?').</param>
+        /// <param name="args">Arguments to be used.</param>
+        /// <returns></returns>
+        public static DbCommand SetQuery(this DbCommand command, string query, params object[] args)
+        {
             if (query.Count(c => c == '?') != args.Length)
                 throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
 
-            var cmd = connection.CreateCommand();
-            cmd.CommandText = query.Replace('?', p => $"@p{p}");
+            command.CommandText = query.Replace('?', p => $"@p{p}");
 
             for (int i = 0; i < args.Length; i++)
-                cmd.AddParam($"@p{i + 1}", args[i]);
+                command.AddParam($"@p{i + 1}", args[i]);
 
-            return cmd;
+            return command;
         }
 
         /// <summary>

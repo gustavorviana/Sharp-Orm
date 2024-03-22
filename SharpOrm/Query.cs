@@ -22,7 +22,7 @@ namespace SharpOrm
         #region Query
         public Query() : base(TableName)
         {
-
+            this.ApplyValidations();
         }
 
         public Query(string alias) : this(new DbName(TableName, alias))
@@ -31,15 +31,18 @@ namespace SharpOrm
 
         public Query(DbName name) : base(ConnectionCreator.Default, name)
         {
+            this.ApplyValidations();
 
         }
 
         public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
         {
+            this.ApplyValidations();
         }
 
         public Query(ConnectionCreator creator, DbName table) : base(creator, table)
         {
+            this.ApplyValidations();
         }
 
         public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
@@ -52,6 +55,7 @@ namespace SharpOrm
 
         public Query(QueryConfig config) : base(config, new DbName(TableName, null))
         {
+            this.ApplyValidations();
         }
 
         public Query(DbConnection connection, IQueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
@@ -64,11 +68,19 @@ namespace SharpOrm
 
         public Query(DbConnection connection, IQueryConfig config, DbName name) : base(connection, config, name)
         {
+            this.ApplyValidations();
         }
 
         public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(transaction, config, name)
         {
+            this.ApplyValidations();
         }
+        
+        private void ApplyValidations()
+        {
+            this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
+        }
+
         #endregion
 
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
@@ -198,18 +210,18 @@ namespace SharpOrm
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
-        public void BulkInsert(params T[] objs)
+        public int BulkInsert(params T[] objs)
         {
-            base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)).ToArray());
+            return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)).ToArray());
         }
 
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
-        public void BulkInsert(IEnumerable<T> objs)
+        public int BulkInsert(IEnumerable<T> objs)
         {
-            base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)));
+            return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)));
         }
 
         /// <summary>
@@ -322,6 +334,10 @@ namespace SharpOrm
         public int? Limit { get; set; }
         public int? Offset { get; set; }
         internal string[] deleteJoins = null;
+        /// <summary>
+        /// Indicates whether the ID of the inserted row should be returned. (defaults true)
+        /// </summary>
+        public bool ReturnsInsetionId { get; set; } = true;
 
         public ConnectionCreator Creator { get; protected internal set; } = ConnectionCreator.Default;
 
@@ -690,21 +706,21 @@ namespace SharpOrm
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
-        public void BulkInsert(params Row[] rows)
+        public int BulkInsert(params Row[] rows)
         {
-            this.BulkInsert((ICollection<Row>)rows);
+            return this.BulkInsert((ICollection<Row>)rows);
         }
 
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
-        public void BulkInsert(IEnumerable<Row> rows)
+        public int BulkInsert(IEnumerable<Row> rows)
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                grammar.BulkInsert(rows).ExecuteNonQuery();
                 this.Token.ThrowIfCancellationRequested();
+                return grammar.BulkInsert(rows).ExecuteNonQuery();
             }
         }
 

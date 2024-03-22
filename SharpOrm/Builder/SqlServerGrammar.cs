@@ -105,7 +105,7 @@ namespace SharpOrm.Builder
         {
             base.ConfigureInsert(cells, false);
 
-            if (getGeneratedId)
+            if (getGeneratedId && this.Query.ReturnsInsetionId)
                 this.Constructor.Add("; SELECT SCOPE_IDENTITY();");
         }
 

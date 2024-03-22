@@ -62,7 +62,7 @@ namespace SharpOrm.Builder
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 
-           this.AddLimit();
+            this.AddLimit();
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
@@ -71,7 +71,7 @@ namespace SharpOrm.Builder
             this.Constructor.Add("VALUES ");
             this.AppendInsertCells(cells);
 
-            if (getGeneratedId)
+            if (getGeneratedId && this.Query.ReturnsInsetionId)
                 this.Constructor.Add("; SELECT LAST_INSERT_ID();");
         }
 
