@@ -11,6 +11,20 @@ namespace UnityTest
     public class QueryTest : MysqlTableTest
     {
         [TestMethod]
+        public void OrderBy()
+        {
+            var q = new Query("table");
+            q.OrderBy(SharpOrm.OrderBy.None, "Col1");
+            Assert.AreEqual(0, q.Info.Orders.Length);
+
+            q.OrderBy(SharpOrm.OrderBy.Asc, "Col2");
+            Assert.AreEqual(1, q.Info.Orders.Length);
+
+            q.OrderBy(SharpOrm.OrderBy.Desc, "3");
+            Assert.AreEqual(1, q.Info.Orders.Length);
+        }
+
+        [TestMethod]
         public void Clone()
         {
             var original = new Query("table alias")

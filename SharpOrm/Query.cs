@@ -599,7 +599,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
-            this.Info.Orders = orders;
+            this.Info.Orders = orders.Where(x => x.Order != SharpOrm.OrderBy.None).ToArray();
 
             return this;
         }
