@@ -4,7 +4,6 @@ using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -130,14 +129,21 @@ namespace SharpOrm
             if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
                 return base.GetEnumerable<K>();
 
-            using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T)))
+            try
             {
-                reader.FkToLoad = this._fkToLoad;
-                reader.Token = this.Token;
-                reader.Connection = this.Connection;
-                reader.Transaction = this.Transaction;
+                using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T)))
+                {
+                    reader.FkToLoad = this._fkToLoad;
+                    reader.Token = this.Token;
+                    reader.Connection = this.Connection;
+                    reader.Transaction = this.Transaction;
 
-                return reader.ReadToEnd<K>();
+                    return reader.ReadToEnd<K>();
+                }
+            }
+            finally
+            {
+                this.SafeClose();
             }
         }
 
@@ -414,16 +420,6 @@ namespace SharpOrm
 
             this.Connection = connection;
             this.CommandTimeout = config.CommandTimeout;
-
-            try
-            {
-                if (connection.State != System.Data.ConnectionState.Open)
-                    connection.Open();
-            }
-            catch (Exception ex)
-            {
-                throw new DbConnectionException(ex);
-            }
         }
 
         public Query(DbTransaction transaction, IQueryConfig config, string table) : this(transaction, config, new DbName(table))
@@ -623,8 +619,6 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
-            this.CheckIsSafeOperation();
-
             if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
@@ -638,13 +632,20 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
+            this.Token.ThrowIfCancellationRequested();
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                int result = grammar.Update(cells).ExecuteNonQuery();
-                this.Token.ThrowIfCancellationRequested();
-                return result;
+                try
+                {
+                    int result = grammar.Update(cells).ExecuteNonQuery();
+                    return result;
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -673,11 +674,18 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
+            this.Token.ThrowIfCancellationRequested();
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                object result = grammar.Insert(cells).ExecuteScalar();
-                this.Token.ThrowIfCancellationRequested();
-                return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
+                try
+                {
+                    object result = grammar.Insert(cells).ExecuteScalar();
+                    return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -688,8 +696,16 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public void Insert(QueryBase query, params string[] columnNames)
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
+            this.Token.ThrowIfCancellationRequested();
+            try
+            {
+                using (Grammar grammar = this.Info.Config.NewGrammar(this))
+                    grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
+            }
+            finally
+            {
+                this.SafeClose();
+            }
         }
 
         /// <summary>
@@ -699,8 +715,16 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public void Insert(SqlExpression expression, params string[] columnNames)
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                grammar.InsertExpression(expression, columnNames).ExecuteNonQuery();
+            this.Token.ThrowIfCancellationRequested();
+            try
+            {
+                using (Grammar grammar = this.Info.Config.NewGrammar(this))
+                    grammar.InsertExpression(expression, columnNames).ExecuteNonQuery();
+            }
+            finally
+            {
+                this.SafeClose();
+            }
         }
 
         /// <summary>
@@ -718,10 +742,17 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
+            this.Token.ThrowIfCancellationRequested();
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                this.Token.ThrowIfCancellationRequested();
-                return grammar.BulkInsert(rows).ExecuteNonQuery();
+                try
+                {
+                    return grammar.BulkInsert(rows).ExecuteNonQuery();
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -731,13 +762,20 @@ namespace SharpOrm
         /// <returns></returns>
         public int Delete()
         {
+            this.Token.ThrowIfCancellationRequested();
             this.CheckIsSafeOperation();
 
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                int result = grammar.Delete().ExecuteNonQuery();
-                this.Token.ThrowIfCancellationRequested();
-                return result;
+                try
+                {
+                    int result = grammar.Delete().ExecuteNonQuery();
+                    return result;
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -749,9 +787,16 @@ namespace SharpOrm
         {
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                object result = grammar.Count().ExecuteScalar();
                 this.Token.ThrowIfCancellationRequested();
-                return Convert.ToInt64(result);
+                try
+                {
+                    object result = grammar.Count().ExecuteScalar();
+                    return Convert.ToInt64(result);
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -772,22 +817,19 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
+            this.Token.ThrowIfCancellationRequested();
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                object result = grammar.Count(column).ExecuteScalar();
-                this.Token.ThrowIfCancellationRequested();
-                return Convert.ToInt64(result);
+                try
+                {
+                    object result = grammar.Count(column).ExecuteScalar();
+                    return Convert.ToInt64(result);
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
-        }
-
-        public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
-        {
-            using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T))
-            {
-                Token = this.Token,
-                Connection = this.Connection,
-                Transaction = this.Transaction
-            }) return reader.GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -818,22 +860,53 @@ namespace SharpOrm
             }
         }
 
+        public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
+        {
+            this.Token.ThrowIfCancellationRequested();
+            using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T))
+            {
+                Token = this.Token,
+                Connection = this.Connection,
+                Transaction = this.Transaction
+            })
+            {
+                try
+                {
+                    return reader.GetEnumerable<T>().ToArray();
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
+            }
+        }
+
         /// <summary>
         /// Executes the query and returns the first column of all rows in the result. All other keys are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
-            ISqlTranslation translation = TranslationRegistry.Default.GetFor(typeof(T));
-            Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
+            this.Token.ThrowIfCancellationRequested();
+            try
+            {
+                ISqlTranslation translation = TranslationRegistry.Default.GetFor(typeof(T));
+                Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
-            List<T> list = new List<T>();
+                List<T> list = new List<T>();
 
-            using (var reader = this.ExecuteReader())
-                while (reader.Read())
-                    list.Add((T)translation.FromSqlValue(DataReaderExtension.LoadDbValue(this.Config, reader[0]), expectedType));
+                using (var reader = this.ExecuteReader())
+                    while (!this.Token.IsCancellationRequested && reader.Read())
+                        list.Add((T)translation.FromSqlValue(DataReaderExtension.LoadDbValue(this.Config, reader[0]), expectedType));
 
-            return list.ToArray();
+                this.Token.ThrowIfCancellationRequested();
+
+                return list.ToArray();
+            }
+            finally
+            {
+                this.SafeClose();
+            }
         }
 
         /// <summary>
@@ -852,11 +925,18 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
+            this.Token.ThrowIfCancellationRequested();
             using (Grammar grammar = this.Info.Config.NewGrammar(this))
             {
-                object result = grammar.Select().ExecuteScalar();
-                this.Token.ThrowIfCancellationRequested();
-                return DataReaderExtension.LoadDbValue(this.Config, result);
+                try
+                {
+                    object result = grammar.Select().ExecuteScalar();
+                    return DataReaderExtension.LoadDbValue(this.Config, result);
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
             }
         }
 
@@ -930,6 +1010,12 @@ namespace SharpOrm
 
         #endregion
 
+        protected virtual void SafeClose()
+        {
+            if (this.Transaction is null && this.Connection != null && this.Connection.State != System.Data.ConnectionState.Closed)
+                this.Connection?.Close();
+        }
+
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -938,7 +1024,7 @@ namespace SharpOrm
                 last.Dispose();
 
             if (this.disposeConnection)
-                if (this.Creator is null) this.Connection.Dispose();
+                if (this.Creator is null && this.Transaction is null) this.Connection.Dispose();
                 else this.Creator.SafeDisposeConnection(this.Connection);
 
             this.lastOpenReader = null;

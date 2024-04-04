@@ -4,7 +4,6 @@ using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 
 namespace SharpOrm

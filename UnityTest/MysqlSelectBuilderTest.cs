@@ -851,7 +851,7 @@ namespace UnityTest
         public void SelectWithEscapeStrings()
         {
             var today = DateTime.Today;
-            
+
             var config = new MysqlQueryConfig(false) { LoadForeign = true, EscapeStrings = true };
             using var query = new Query(Connection, config, TABLE);
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");

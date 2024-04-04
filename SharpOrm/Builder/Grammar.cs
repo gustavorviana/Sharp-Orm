@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -334,6 +333,7 @@ namespace SharpOrm.Builder
         {
             this.Query.Token.ThrowIfCancellationRequested();
 
+            this._command.Connection?.OpenIfNeeded();
             this._command.CommandText = this.Constructor.ToString();
             this._command.Transaction = this.Query.Transaction;
             this._command.CommandTimeout = this.Query.CommandTimeout;

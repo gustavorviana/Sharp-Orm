@@ -1,5 +1,5 @@
-﻿using System.Text;
-using System.Linq;
+﻿using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder
 {

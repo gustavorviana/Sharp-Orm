@@ -19,7 +19,7 @@ namespace UnityTest
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void OnMysqlTableTestInit(TestContext context)
         {
-            using var con = Connection;
+            using var con = Connection.OpenIfNeeded();
             using var cmd = con.CreateCommand();
             cmd.CommandText = GetCreateTableSql();
             cmd.ExecuteNonQuery();

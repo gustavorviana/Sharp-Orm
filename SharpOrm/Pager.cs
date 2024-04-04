@@ -167,7 +167,6 @@ namespace SharpOrm
                 this.query.Dispose();
 
             this.items = new T[0];
-
             disposed = true;
         }
 

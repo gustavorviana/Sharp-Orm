@@ -40,6 +40,7 @@ namespace SharpOrm.Connection
         public static void ExecuteTransaction(TransactionCall call)
         {
             DbConnection connection = Default.GetConnection();
+            connection.Open();
             var transaction = connection.BeginTransaction();
 
             try
@@ -55,6 +56,7 @@ namespace SharpOrm.Connection
             finally
             {
                 transaction.Dispose();
+                connection.Close();
                 Default.SafeDisposeConnection(connection);
             }
         }

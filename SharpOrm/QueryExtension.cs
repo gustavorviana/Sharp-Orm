@@ -376,6 +376,21 @@ namespace SharpOrm
 
         #endregion
 
+        internal static DbConnection OpenIfNeeded(this DbConnection connection)
+        {
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                    connection.Open();
+
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                throw new Errors.DbConnectionException(ex);
+            }
+        }
+
         private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
         {
             qBase.WriteWhereType(whereType);

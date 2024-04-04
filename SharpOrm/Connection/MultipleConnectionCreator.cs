@@ -52,8 +52,6 @@ namespace SharpOrm.Connection
             {
                 this.ThrowIfDisposed();
                 var connection = new T { ConnectionString = this._connectionString };
-                if (connection.State == ConnectionState.Closed)
-                    connection.Open();
 
                 connection.Disposed += OnConnectionDisposed;
                 this.connections.Add(connection);

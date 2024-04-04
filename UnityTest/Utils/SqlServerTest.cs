@@ -46,7 +46,7 @@ namespace UnityTest.Utils
             if (q.Count() > 0)
                 return;
 
-            using var conn = Connection;
+            using var conn = Connection.OpenIfNeeded();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = File.ReadAllText("./Scripts/SqlServer.sql");
             cmd.ExecuteNonQuery();
@@ -55,7 +55,7 @@ namespace UnityTest.Utils
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            using var con = Connection;
+            using var con = Connection.OpenIfNeeded();
             using var cmd = con.CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();

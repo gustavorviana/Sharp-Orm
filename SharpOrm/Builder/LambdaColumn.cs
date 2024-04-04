@@ -31,7 +31,7 @@ namespace SharpOrm.Builder
 
         public bool Equals(LambdaColumn other)
         {
-            return other != null && 
+            return other != null &&
                 this.PropertyName == other.PropertyName &&
                 this.DeclaringType == other.DeclaringType &&
                 this.ValueType == other.ValueType &&
