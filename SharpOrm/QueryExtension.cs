@@ -376,7 +376,7 @@ namespace SharpOrm
 
         #endregion
 
-        internal static DbConnection OpenIfNeeded(this DbConnection connection)
+        public static DbConnection OpenIfNeeded(this DbConnection connection)
         {
             try
             {

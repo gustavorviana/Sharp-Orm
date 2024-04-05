@@ -57,6 +57,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static DbCommand CreateCommand(this DbConnection connection, string query, params object[] args)
         {
+            connection.OpenIfNeeded();
             return connection.CreateCommand().SetQuery(query, args);
         }
 

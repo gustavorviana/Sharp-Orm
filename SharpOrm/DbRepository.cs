@@ -87,6 +87,7 @@ namespace SharpOrm
             if (this._transactionConn == null)
                 this._transactionConn = this.Creator.GetConnection();
 
+            this._transactionConn.OpenIfNeeded();
             this._transaction = this._transactionConn.BeginTransaction();
         }
 
@@ -306,9 +307,11 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query">The SQL query string.</param>
         /// <returns>A DbCommand created from the query string.</returns>
-        protected DbCommand CreateCommand()
+        protected DbCommand CreateCommand(bool open = true)
         {
             var cmd = this.GetConnection().CreateCommand();
+            if (open) cmd.Connection.OpenIfNeeded();
+
             cmd.Transaction = this._transaction;
             cmd.Disposed += OnCommandDisposed;
 
