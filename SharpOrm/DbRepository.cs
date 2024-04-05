@@ -25,6 +25,8 @@ namespace SharpOrm
         private DbTransaction _transaction;
         private DbConnection _transactionConn;
 
+        protected int CommandTimeout { get; set; }
+
         /// <summary>
         /// Gets the default connection creator for the repository.
         /// </summary>
@@ -44,6 +46,11 @@ namespace SharpOrm
         /// </summary>
         public CancellationToken Token { get; set; }
         #endregion
+
+        public DbRepository()
+        {
+            this.CommandTimeout = this.Creator.Config.CommandTimeout;
+        }
 
         #region Transactions
 
@@ -305,13 +312,14 @@ namespace SharpOrm
         /// <summary>
         /// Creates a DbCommand.
         /// </summary>
-        /// <param name="query">The SQL query string.</param>
+        /// <param name="open">Signals if the command should already start with the connection open.</param>
         /// <returns>A DbCommand created from the query string.</returns>
-        protected DbCommand CreateCommand(bool open = true)
+        protected virtual DbCommand CreateCommand(bool open = true)
         {
             var cmd = this.GetConnection().CreateCommand();
             if (open) cmd.Connection.OpenIfNeeded();
 
+            cmd.CommandTimeout = this.CommandTimeout;
             cmd.Transaction = this._transaction;
             cmd.Disposed += OnCommandDisposed;
 
@@ -340,20 +348,20 @@ namespace SharpOrm
         /// <summary>
         /// Retrieves a database connection, optionally creating a new one if required.
         /// </summary>
-        /// <param name="forceNew">
+        /// <param name="ignoreTransaction">
         ///     A flag indicating whether to force the creation of a new connection.
         ///     If set to true, a new connection will be created even if there is an active transaction.
         ///     If set to false, the connection from the active transaction, if present, will be returned.
         /// </param>
         /// <returns>
         ///     A DbConnection object, either a newly created connection or the one from the active transaction,
-        ///     based on the value of the 'forceNew' parameter.
+        ///     based on the value of the 'ignoreTransaction' parameter.
         /// </returns>
-        protected virtual DbConnection GetConnection(bool forceNew = false)
+        protected virtual DbConnection GetConnection(bool ignoreTransaction = false)
         {
             this.ThrowIfDisposed();
 
-            if (!forceNew && this.HasTransaction)
+            if (!ignoreTransaction && this.HasTransaction)
                 return this._transaction.Connection;
 
             var conn = this.Creator.GetConnection();
