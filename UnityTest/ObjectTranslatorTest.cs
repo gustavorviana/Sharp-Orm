@@ -2,6 +2,7 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -339,6 +340,13 @@ namespace UnityTest
         private static void AssertSqlValueConverted(object expected, object value)
         {
             Assert.AreEqual(expected, TranslationRegistry.Default.FromSql(value, expected?.GetType()));
+        }
+
+        [TestMethod]
+        public void PropertyExpressionVisitorTest()
+        {
+            var column = new PropertyExpressionVisitor().VisitProperty<OrderItem>(x => x.OrderId);
+            Assert.AreEqual("OrderId", column);
         }
 
         [Table("MyName", Schema = "MySchema")]

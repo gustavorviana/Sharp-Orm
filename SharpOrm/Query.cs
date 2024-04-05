@@ -259,7 +259,7 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(calls));
 
             var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            return this.Update(this.GetCellsOf(obj, false).Where(c => props.Contains(c.PropName)));
+            return this.Update(this.GetCellsOf(obj, false, props));
         }
 
         /// <summary>
@@ -284,9 +284,9 @@ namespace SharpOrm
             return base.Update(toUpdate);
         }
 
-        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk)
+        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true)
         {
-            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign);
+            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains);
         }
 
         #region Join

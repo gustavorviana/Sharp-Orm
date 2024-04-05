@@ -138,15 +138,17 @@ namespace SharpOrm.Builder
         /// <param name="readPk">True to read the primary key column, false otherwise.</param>
         /// <param name="readFk">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
         /// <returns>An enumerable of cells.</returns>
-        public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk)
+        public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true)
         {
             foreach (var column in this.Columns)
             {
-                string propName = column.PropName;
+                if (!(properties is null) && properties.Contains(column.PropName) != needContains)
+                    continue;
+
                 if (column.IsForeignKey)
                 {
                     if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column), propName);
+                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
                     continue;
                 }
 
@@ -154,7 +156,7 @@ namespace SharpOrm.Builder
                 if ((column.Key && (!readPk || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
-                yield return new Cell(column.Name, value, propName);
+                yield return new Cell(column.Name, value);
             }
         }
 

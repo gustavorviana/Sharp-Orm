@@ -464,7 +464,7 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(obj));
 
             var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            return query.Update(query.GetCellsOf(obj, false).Where(c => !props.Contains(c.PropName)));
+            return query.Update(query.GetCellsOf(obj, false, props, false));
         }
 
         /// <summary>
