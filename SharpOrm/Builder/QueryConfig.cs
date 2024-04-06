@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder.DataTranslation;
-using System;
 
 namespace SharpOrm.Builder
 {

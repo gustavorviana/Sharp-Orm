@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder.DataTranslation.Reader
+﻿namespace SharpOrm.Builder.DataTranslation.Reader
 {
     public interface IFkQueue
     {

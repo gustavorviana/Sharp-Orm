@@ -29,7 +29,7 @@ namespace SharpOrm
         private int? commandTimeout = null;
         protected int CommandTimeout
         {
-            get => this.commandTimeout?? this.Creator?.Config?.CommandTimeout ?? 30;
+            get => this.commandTimeout ?? this.Creator?.Config?.CommandTimeout ?? 30;
             set => this.commandTimeout = value;
         }
 

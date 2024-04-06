@@ -17,7 +17,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static Row ReadRow(this DbDataReader reader, TranslationRegistry translation = null)
         {
-            if (translation == null) 
+            if (translation == null)
                 translation = TranslationRegistry.Default;
 
             Cell[] cells = new Cell[reader.FieldCount];
