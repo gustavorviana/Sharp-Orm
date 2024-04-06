@@ -2,7 +2,7 @@ Sharp Orm is a **BETA** library that simplifies the creation of database query. 
 
 There are two ways to work with the library, defining a global configuration or passing the configuration in each query.
 
-In both cases, it is necessary to define a class that implements the interface "SharpOrm.Builder.IQueryConfig" in order to work with the database, this step is necessary for the library to know how to transform objects into a query.
+In both cases, it is necessary to define a class that implements the interface "SharpOrm.Builder.QueryConfig" in order to work with the database, this step is necessary for the library to know how to transform objects into a query.
 
 ## Using global configuration
 
@@ -45,9 +45,9 @@ using SharpOrm.Builder;
 
 var connection = //You connection instance here.
 //For mysql
-IQueryConfig config = new MysqlQueryConfig();
+QueryConfig config = new MysqlQueryConfig();
 //For Microsoft Sql Server
-IQueryConfig config = new SqlServerQueryConfig();
+QueryConfig config = new SqlServerQueryConfig();
 
 using(Query query = new Query(connection, config, "Users"))
 {

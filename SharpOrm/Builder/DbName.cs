@@ -57,7 +57,7 @@ namespace SharpOrm.Builder
         /// Tries to retrieve the alias of the object.
         /// </summary>
         /// <returns>The alias of the object, if set; otherwise, returns the name of the object.</returns>
-        public string TryGetAlias(IQueryConfig config)
+        public string TryGetAlias(QueryConfig config)
         {
             return string.IsNullOrEmpty(this.Alias) ?
                 config.ApplyNomenclature(this.Name) :
@@ -70,7 +70,7 @@ namespace SharpOrm.Builder
         /// <param name="withAlias">Specifies whether to include the alias in the name.</param>
         /// <param name="config">The query configuration used to apply nomenclature.</param>
         /// <returns>The name of the object, with or without the alias, based on the specified parameters.</returns>
-        public string GetName(bool withAlias, IQueryConfig config)
+        public string GetName(bool withAlias, QueryConfig config)
         {
             if (!withAlias || string.IsNullOrEmpty(this.Alias))
                 return config.ApplyNomenclature(this.Name);

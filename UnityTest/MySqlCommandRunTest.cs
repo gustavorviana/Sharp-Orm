@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using System;
 using UnityTest.Models;
 using UnityTest.Utils;
@@ -377,11 +378,12 @@ namespace UnityTest
         [TestMethod]
         public void DateUtcConversion()
         {
-            var config = new MysqlQueryConfig { DateKind = DateTimeKind.Utc };
-            using var query1 = new Query<TestTable>(Connection, config);
+            using var query1 = new Query<TestTable>(Connection, new MysqlQueryConfig
+            {
+                Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc }
+            });
 
-            DateTime date = DateTime.Now;
-            date = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
+            DateTime date = DateTime.Now.RemoveMiliseconds();
             query1.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
             DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
             TestAssert.AreEqualsDate(date, dbDate, "Universal time insert fail");

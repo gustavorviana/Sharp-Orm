@@ -13,12 +13,15 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row ReadRow(this DbDataReader reader, IQueryConfig config)
+        public static Row ReadRow(this DbDataReader reader, TranslationRegistry translation = null)
         {
+            if (translation == null) 
+                translation = TranslationRegistry.Default;
+
             Cell[] cells = new Cell[reader.FieldCount];
 
             for (int i = 0; i < cells.Length; i++)
-                cells[i] = GetCell(reader, config, i);
+                cells[i] = GetCell(reader, translation, i);
 
             return new Row(cells);
         }
@@ -29,23 +32,12 @@ namespace SharpOrm.Builder
         /// <param name="reader"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, IQueryConfig config, int index)
+        public static Cell GetCell(this DbDataReader reader, TranslationRegistry translation, int index)
         {
             if (index < 0 || index > reader.FieldCount)
                 throw new ArgumentOutOfRangeException();
 
-            return new Cell(reader.GetName(index), LoadDbValue(config, reader[index]));
-        }
-
-        internal static object LoadDbValue(IQueryConfig config, object obj)
-        {
-            if (obj is DBNull)
-                return null;
-
-            if (obj is DateTime date && config.DateKind == DateTimeKind.Utc)
-                return date.FromDatabase(config);
-
-            return obj;
+            return new Cell(reader.GetName(index), translation.FromSql(reader[index]));
         }
 
         /// <summary>
@@ -98,9 +90,9 @@ namespace SharpOrm.Builder
         /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd)
+        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
         {
-            ISqlTranslation translation = TranslationRegistry.Default.GetFor(typeof(T));
+            ISqlTranslation translation = (translationRegistry ?? TranslationRegistry.Default).GetFor(typeof(T));
             Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
             using (var reader = cmd.ExecuteReader())
@@ -114,13 +106,13 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
-        public static T ExecuteScalar<T>(this DbCommand cmd)
+        public static T ExecuteScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
         {
             var obj = cmd.ExecuteScalar();
             if (obj is DBNull)
                 return default;
 
-            return TranslationRegistry.Default.FromSql<T>(obj);
+            return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(obj);
         }
     }
 }

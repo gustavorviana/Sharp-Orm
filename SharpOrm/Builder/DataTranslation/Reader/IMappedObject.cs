@@ -4,6 +4,6 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 {
     public interface IMappedObject
     {
-        object Read(DbDataReader reader, DbObjectReader objReader);
+        object Read(DbDataReader reader);
     }
 }

@@ -15,7 +15,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
                 this.converters.Add(new ObjConverter(registry, reader.GetFieldType(i)));
         }
 
-        public object Read(DbDataReader reader, DbObjectReader objReader)
+        public object Read(DbDataReader reader)
         {
             var dObject = (IDictionary<string, object>)new ExpandoObject();
 

@@ -2,7 +2,7 @@
 {
     public interface IReadonlyQueryInfo
     {
-        IQueryConfig Config { get; }
+        QueryConfig Config { get; }
         DbName TableName { get; }
     }
 }

@@ -48,6 +48,7 @@ namespace UnityTest.Utils.Mock
         {
             return new MockCommand
             {
+                Connection = this,
                 OnExecuteNonQuery = OnExecuteNonQuery,
                 OnGetReader = cmd =>
                 {

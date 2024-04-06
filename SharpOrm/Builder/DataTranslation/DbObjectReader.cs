@@ -8,15 +8,14 @@ using System.Threading;
 
 namespace SharpOrm.Builder.DataTranslation
 {
-#pragma warning disable CS0618 // O tipo ou membro é obsoleto
     /// <summary>
     /// Object responsible for reading and managing the DbDataReader.
     /// </summary>
-    public class DbObjectReader : IDisposable
+    public class DbObjectReader : IDisposable, IFkQueue
     {
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly DbDataReader reader;
-        internal readonly IQueryConfig config;
+        internal readonly QueryConfig config;
         private readonly IMappedObject map;
         private bool disposed;
 
@@ -32,18 +31,14 @@ namespace SharpOrm.Builder.DataTranslation
         /// </summary>
         public LambdaColumn[] FkToLoad { get => this._fkToLoad; set => this._fkToLoad = value ?? throw new ArgumentNullException(nameof(this.FkToLoad)); }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type)
-            : this(config, reader, type, TranslationRegistry.Default)
+        public DbObjectReader(QueryConfig config, DbDataReader reader, Type type)
         {
-
+            this.config = config;
+            this.reader = reader;
+            this.map = MappedObject.Create(reader, type, this, config.Translation);
         }
 
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, Type type, TranslationRegistry registry = null)
-            : this(config, reader, MappedObject.Create(reader, type, registry))
-        {
-        }
-
-        public DbObjectReader(IQueryConfig config, DbDataReader reader, IMappedObject map)
+        public DbObjectReader(QueryConfig config, DbDataReader reader, IMappedObject map)
         {
             this.config = config;
             this.reader = reader;
@@ -97,7 +92,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns></returns>
         public object Read()
         {
-            return this.map.Read(this.reader, this);
+            return this.map.Read(this.reader);
         }
 
         /// <summary>
@@ -168,7 +163,7 @@ namespace SharpOrm.Builder.DataTranslation
             return new Query(this.config, name) { Token = Token };
         }
 
-        internal void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
+        void IFkQueue.EnqueueForeign(object owner, object fkValue, ColumnInfo column)
         {
             if (fkValue is null || fkValue is DBNull)
                 return;
@@ -193,7 +188,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         private object GetObjWithKey(ColumnInfo column, object fk)
         {
-            var fkTable = TableInfo.Get(column.Type);
+            var fkTable = new TableInfo(column.Type);
             object value = fkTable.CreateInstance();
             fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, fk);
 
@@ -222,11 +217,9 @@ namespace SharpOrm.Builder.DataTranslation
             if (this.disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
         #endregion
     }
-#pragma warning restore CS0618 // O tipo ou membro é obsoleto
 }

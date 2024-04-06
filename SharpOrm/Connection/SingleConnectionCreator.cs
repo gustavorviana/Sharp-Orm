@@ -7,7 +7,7 @@ namespace SharpOrm.Connection
 {
     public class SingleConnectionCreator : SingleConnectionCreator<SqlConnection>
     {
-        public SingleConnectionCreator(IQueryConfig config, string connectionString) : base(config, connectionString)
+        public SingleConnectionCreator(QueryConfig config, string connectionString) : base(config, connectionString)
         {
         }
     }
@@ -18,9 +18,9 @@ namespace SharpOrm.Connection
         private readonly string _connectionString;
         private DbConnection connection;
 
-        public override IQueryConfig Config { get; }
+        public override QueryConfig Config { get; }
 
-        public SingleConnectionCreator(IQueryConfig config, string connectionString)
+        public SingleConnectionCreator(QueryConfig config, string connectionString)
         {
             this._connectionString = connectionString;
             this.Config = config;

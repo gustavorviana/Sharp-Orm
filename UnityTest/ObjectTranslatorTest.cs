@@ -16,12 +16,12 @@ namespace UnityTest
     [TestClass]
     public class ObjectTranslatorTest : MockTest
     {
-        private static readonly TableInfo table = new(new TranslationRegistry(), typeof(TestClass));
+        private static readonly TableInfo table = new(typeof(TestClass), new TranslationRegistry());
 
         [TestMethod]
         public void TestInvalidFields()
         {
-            TableInfo table = new(new TranslationRegistry(), typeof(InvalidFields));
+            TableInfo table = new(typeof(InvalidFields), new TranslationRegistry());
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Id)), "The invalid field 'Id' was retrieved.");
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Value)), "The invalid property 'Value' was retrieved.");
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Name)), "The invalid property 'Name' was retrieved.");

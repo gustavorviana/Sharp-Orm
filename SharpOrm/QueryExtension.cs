@@ -491,7 +491,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(Query<T>.TableInfo.GetRow(obj, true, query.Creator.Config.LoadForeign).Cells);
+            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Creator.Config.LoadForeign).Cells);
         }
 
         /// <summary>
@@ -570,7 +570,7 @@ namespace SharpOrm
             using (query = (Query<T>)query.Clone(false))
             {
                 foreach (var column in toCheckColumns)
-                    query.Where(column, Query<T>.TableInfo.GetValue(obj, column));
+                    query.Where(column, query.TableInfo.GetValue(obj, column));
 
                 if (query.Any()) query.Update(obj);
                 else query.Insert(obj);

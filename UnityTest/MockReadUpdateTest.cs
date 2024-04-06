@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,15 +42,14 @@ namespace UnityTest
         [TestMethod]
         public void ReadDbNull()
         {
-            var config = new MysqlQueryConfig();
             var reader = new MockDataReader(new Cell("str", DBNull.Value), new Cell("num", null));
             reader.Read();
 
             Assert.AreEqual(DBNull.Value, reader[0]);
             Assert.AreEqual(DBNull.Value, reader[1]);
 
-            Assert.AreEqual(null, reader.GetCell(config, 0).Value);
-            Assert.AreEqual(null, reader.GetCell(config, 1).Value);
+            Assert.AreEqual(null, reader.GetCell(TranslationRegistry.Default, 0).Value);
+            Assert.AreEqual(null, reader.GetCell(TranslationRegistry.Default, 1).Value);
         }
 
         [TestMethod]

@@ -41,7 +41,7 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the QueryBase class with the specified configuration.
         /// </summary>
         /// <param name="config">The configuration to use for the query.</param>
-        public QueryBase(IQueryConfig config, DbName table)
+        public QueryBase(QueryConfig config, DbName table)
         {
             this.Info = new QueryInfo(config, table);
         }

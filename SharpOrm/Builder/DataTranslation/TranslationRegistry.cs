@@ -79,6 +79,25 @@ namespace SharpOrm.Builder.DataTranslation
         /// <param name="value">The value to be converted.</param>
         /// <param name="expectedType">Expected type in C#.</param>
         /// <returns></returns>
+        public object FromSql(object value)
+        {
+            if (value is null || value is DBNull)
+                return null;
+
+            Type expectedType = value.GetType();
+
+            if (this.GetFor(expectedType) is ISqlTranslation conversor)
+                return conversor.FromSqlValue(value, expectedType);
+
+            return value;
+        }
+
+        /// <summary>
+        /// Converts a value from the database to C#.
+        /// </summary>
+        /// <param name="value">The value to be converted.</param>
+        /// <param name="expectedType">Expected type in C#.</param>
+        /// <returns></returns>
         public object FromSql(object value, Type expectedType)
         {
             if (value is null || value is DBNull)

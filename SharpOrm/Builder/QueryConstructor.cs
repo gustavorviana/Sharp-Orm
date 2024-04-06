@@ -185,7 +185,7 @@ namespace SharpOrm.Builder
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            val = TranslationRegistry.Default.ToSql(val);
+            val = (this.info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
             if (ToQueryValue(val) is string sql)
                 return this.Add(sql);
 
@@ -194,9 +194,6 @@ namespace SharpOrm.Builder
 
             if (!(val is byte[]) && val is ICollection)
                 throw new NotSupportedException();
-
-            if (val is DateTime date && this.info.Config.DateKind == DateTimeKind.Utc)
-                val = date.ToDatabase(this.info.Config);
 
             return this.InternalAddParam(val);
         }

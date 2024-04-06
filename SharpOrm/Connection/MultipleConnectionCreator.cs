@@ -12,7 +12,7 @@ namespace SharpOrm.Connection
     /// </summary>
     public class MultipleConnectionCreator : MultipleConnectionCreator<SqlConnection>
     {
-        public MultipleConnectionCreator(IQueryConfig config, string connectionString) : base(config, connectionString)
+        public MultipleConnectionCreator(QueryConfig config, string connectionString) : base(config, connectionString)
         {
         }
     }
@@ -30,14 +30,14 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Gets the query configuration for the connection creator.
         /// </summary>
-        public override IQueryConfig Config { get; }
+        public override QueryConfig Config { get; }
 
         /// <summary>
         /// Initializes a new instance of the MultipleConnectionCreator class.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="connectionString">The connection string for the database.</param>
-        public MultipleConnectionCreator(IQueryConfig config, string connectionString)
+        public MultipleConnectionCreator(QueryConfig config, string connectionString)
         {
             this._connectionString = connectionString;
             this.Config = config;

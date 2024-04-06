@@ -20,7 +20,6 @@ namespace UnityTest.ConnectionTest
                     q.Insert(NewRow(1, "User 1").Cells);
 
                     using var qSelect = new Query(transaction, TABLE);
-
                     Assert.AreEqual(1, qSelect.Count());
                     throw new DatabaseException();
                 });

@@ -14,13 +14,14 @@ namespace SharpOrm
 {
     public class Query<T> : Query where T : new()
     {
-        public static string TableName => TableInfo.Name;
-        protected static internal TableInfo TableInfo { get; } = TableInfo.Get(typeof(T));
+        public static string TableName => TableInfo.GetNameOf(typeof(T));
+        protected internal TableInfo TableInfo { get; }
         private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
 
         #region Query
         public Query() : base(TableName)
         {
+            TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
@@ -30,17 +31,19 @@ namespace SharpOrm
 
         public Query(DbName name) : base(ConnectionCreator.Default, name)
         {
+            TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
-
         }
 
         public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
         {
+            TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
         public Query(ConnectionCreator creator, DbName table) : base(creator, table)
         {
+            TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
@@ -54,24 +57,27 @@ namespace SharpOrm
 
         public Query(QueryConfig config) : base(config, new DbName(TableName, null))
         {
+            TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
-        public Query(DbConnection connection, IQueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
+        public Query(DbConnection connection, QueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
         {
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
+        public Query(DbTransaction transaction, QueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
         {
         }
 
-        public Query(DbConnection connection, IQueryConfig config, DbName name) : base(connection, config, name)
+        public Query(DbConnection connection, QueryConfig config, DbName name) : base(connection, config, name)
         {
+            TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(transaction, config, name)
+        public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(transaction, config, name)
         {
+            TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
@@ -348,7 +354,7 @@ namespace SharpOrm
         public ConnectionCreator Creator { get; protected internal set; } = ConnectionCreator.Default;
 
         public object GrammarOptions { get; set; }
-        protected IQueryConfig Config => this.Info.Config;
+        protected QueryConfig Config => this.Info.Config;
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
@@ -382,11 +388,11 @@ namespace SharpOrm
             this.Creator = creator;
         }
 
-        public Query(IQueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
+        public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
         {
         }
 
-        public Query(IQueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
+        public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
         {
         }
 
@@ -408,11 +414,11 @@ namespace SharpOrm
 
         }
 
-        public Query(DbConnection connection, IQueryConfig config, string table, bool disposeConnection = true) : this(connection, config, new DbName(table), disposeConnection)
+        public Query(DbConnection connection, QueryConfig config, string table, bool disposeConnection = true) : this(connection, config, new DbName(table), disposeConnection)
         {
         }
 
-        public Query(DbConnection connection, IQueryConfig config, DbName table, bool disposeConnection = true) : base(config, table)
+        public Query(DbConnection connection, QueryConfig config, DbName table, bool disposeConnection = true) : base(config, table)
         {
             this.disposeConnection = disposeConnection;
             if (connection == null)
@@ -422,12 +428,12 @@ namespace SharpOrm
             this.CommandTimeout = config.CommandTimeout;
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, string table) : this(transaction, config, new DbName(table))
+        public Query(DbTransaction transaction, QueryConfig config, string table) : this(transaction, config, new DbName(table))
         {
 
         }
 
-        public Query(DbTransaction transaction, IQueryConfig config, DbName name) : base(config, name)
+        public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(config, name)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             this.Connection = transaction.Connection;
@@ -568,18 +574,6 @@ namespace SharpOrm
         /// <summary>
         /// Applies sorting to the query.
         /// </summary>
-        /// <param name="column">Column that must be ordered.</param>
-        /// <param name="order">Field ordering.</param>
-        /// <returns></returns>
-        [Obsolete("Use Query.OrderBy(OrderBy, params Column[]", true)]
-        public Query OrderBy(Column column, OrderBy order)
-        {
-            return this.OrderBy(order, column);
-        }
-
-        /// <summary>
-        /// Applies sorting to the query.
-        /// </summary>
         /// <param name="order">Field ordering.</param>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
@@ -694,13 +688,13 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query"></param>
         /// <param name="columnNames"></param>
-        public void Insert(QueryBase query, params string[] columnNames)
+        public int Insert(QueryBase query, params string[] columnNames)
         {
             this.Token.ThrowIfCancellationRequested();
             try
             {
                 using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                    grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
+                    return grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
             }
             finally
             {
@@ -890,14 +884,14 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             try
             {
-                ISqlTranslation translation = TranslationRegistry.Default.GetFor(typeof(T));
+                ISqlTranslation translation = this.Config.Translation.GetFor(typeof(T));
                 Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
                 List<T> list = new List<T>();
 
                 using (var reader = this.ExecuteReader())
                     while (!this.Token.IsCancellationRequested && reader.Read())
-                        list.Add((T)translation.FromSqlValue(DataReaderExtension.LoadDbValue(this.Config, reader[0]), expectedType));
+                        list.Add((T)translation.FromSqlValue(reader[0], expectedType));
 
                 this.Token.ThrowIfCancellationRequested();
 
@@ -916,7 +910,19 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return this.ExecuteScalar() is object obj ? TranslationRegistry.Default.FromSql<T>(obj) : default;
+            this.Token.ThrowIfCancellationRequested();
+            using (Grammar grammar = this.Info.Config.NewGrammar(this))
+            {
+                try
+                {
+                    object result = grammar.Select().ExecuteScalar();
+                    return this.Config.Translation.FromSql<T>(result);
+                }
+                finally
+                {
+                    this.SafeClose();
+                }
+            }
         }
 
         /// <summary>
@@ -931,7 +937,7 @@ namespace SharpOrm
                 try
                 {
                     object result = grammar.Select().ExecuteScalar();
-                    return DataReaderExtension.LoadDbValue(this.Config, result);
+                    return this.Config.Translation.FromSql(result);
                 }
                 finally
                 {
@@ -941,7 +947,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Execute SQL Select command and return DataReader.
+        /// Execute SQL Select command and return Collections.
         /// </summary>
         /// <returns></returns>
         public DbDataReader ExecuteReader()

@@ -13,8 +13,10 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private static readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
+        private readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
         private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
+        private readonly TranslationRegistry registry;
+
         public Type Type { get; }
         /// <summary>
         /// Gets the name of the table.
@@ -25,11 +27,6 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool HasNonNative { get; private set; }
         /// <summary>
-        /// Indicates whether there is any column representing a foreign object.
-        /// </summary>
-        [Obsolete("It will be removed in version 2.x.x.")]
-        public bool HasFk { get; private set; }
-        /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
         public ColumnInfo[] Columns { get; }
@@ -37,8 +34,8 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
-        /// <param name="type">The type representing the table.</param>
-        public TableInfo(Type type) : this(TranslationRegistry.Default, type)
+        /// <param name="type">The type representing the table.</param>s
+        public TableInfo(Type type) : this(type, TranslationRegistry.Default)
         {
         }
 
@@ -47,14 +44,15 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="config">The translation configuration.</param>
         /// <param name="type">The type representing the table.</param>
-        public TableInfo(TranslationRegistry config, Type type)
+        public TableInfo(Type type, TranslationRegistry config)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
 
             this.Type = type;
+            this.registry = config;
             this.Name = GetNameOf(type);
-            this.Columns = this.GetColumns(config).ToArray();
+            this.Columns = this.GetColumns().ToArray();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
@@ -62,13 +60,10 @@ namespace SharpOrm.Builder
             return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
         }
 
-        private IEnumerable<ColumnInfo> GetColumns(TranslationRegistry registry)
+        private IEnumerable<ColumnInfo> GetColumns()
         {
             foreach (var col in GetColumns(Type, registry))
             {
-                if (col.IsForeignKey)
-                    this.HasFk = true;
-
                 if (!col.IsNative && !col.IsForeignKey)
                     this.HasNonNative = true;
 
@@ -85,19 +80,6 @@ namespace SharpOrm.Builder
             foreach (var field in type.GetFields(propertiesFlags))
                 if (!field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null)
                     yield return new ColumnInfo(registry, field);
-        }
-
-        /// <summary>
-        /// Gets the cells representing the column values of the specified owner object.
-        /// </summary>
-        /// <param name="owner">The owner object.</param>
-        /// <param name="ignorePrimaryKey">True to ignore the primary key column, false otherwise.</param>
-        /// <param name="readForeignKey">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
-        /// <returns>An enumerable of cells.</returns>
-        [Obsolete("Use " + nameof(GetObjCells), true)]
-        public IEnumerable<Cell> GetCells(object owner, bool ignorePrimaryKey = false, bool readForeignKey = false)
-        {
-            return this.GetObjCells(owner, !ignorePrimaryKey, readForeignKey);
         }
 
         /// <summary>
@@ -174,12 +156,12 @@ namespace SharpOrm.Builder
             if (obj is null)
                 return null;
 
-            return new TableInfo(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return new TableInfo(column.Type, this.registry).Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            var table = TableInfo.Get(GetValidType(fkColumn.Type));
+            var table = this.Get(GetValidType(fkColumn.Type));
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
@@ -219,7 +201,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns>The table info for the specified type.</returns>
-        public static TableInfo Get(Type type)
+        private TableInfo Get(Type type)
         {
             if (type == typeof(Row))
                 return null;

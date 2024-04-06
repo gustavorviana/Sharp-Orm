@@ -16,7 +16,7 @@ namespace SharpOrm.Builder
         public ColumnOrder[] Orders { get; set; } = new ColumnOrder[0];
         public Column[] Select { get; set; } = new Column[] { Column.All };
 
-        public IQueryConfig Config { get; }
+        public QueryConfig Config { get; }
 
         public DbName TableName { get; }
 
@@ -24,7 +24,7 @@ namespace SharpOrm.Builder
 
         public string Alias => this.TableName.Alias;
 
-        public QueryInfo(IQueryConfig config, DbName table)
+        public QueryInfo(QueryConfig config, DbName table)
         {
             this.TableName = table;
             this._queryInfo = new ReadonlyInfo(this);
@@ -70,7 +70,7 @@ namespace SharpOrm.Builder
                 this.info = info;
             }
 
-            public IQueryConfig Config => this.info.Config;
+            public QueryConfig Config => this.info.Config;
 
             public DbName TableName => this.info.TableName;
         }

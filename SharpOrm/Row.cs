@@ -84,7 +84,7 @@ namespace SharpOrm
             if (obj is null || obj is DBNull) throw new ArgumentNullException(nameof(obj));
             if (obj is Row row) return row;
 
-            return new Row(TableInfo.Get(type).GetObjCells(obj, readPk, readFk).ToArray());
+            return new Row(new TableInfo(type).GetObjCells(obj, readPk, readFk).ToArray());
         }
 
         /// <summary>

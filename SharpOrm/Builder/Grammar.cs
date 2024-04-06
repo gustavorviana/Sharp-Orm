@@ -19,25 +19,16 @@ namespace SharpOrm.Builder
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposed = false;
-        [Obsolete("It will be removed in version 2.x.x.")]
-        protected readonly bool convertToUtc;
 
-        [Obsolete("Use Constructor instead. It will be removed in version 2.x.x.")]
-        protected StringBuilder QueryBuilder => this.Constructor.query;
         protected QueryConstructor Constructor { get; }
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
-
-        [Obsolete("It will be removed in version 2.x.x.")]
-        protected DbCommand Command => this._command;
         #endregion
 
         protected Grammar(Query query)
         {
             this.Constructor = new CmdQueryConstructor(query.Info);
-            this.convertToUtc = query.Info.Config.DateKind == DateTimeKind.Utc;
             this.Query = query;
-            this.Reset();
         }
 
         #region DML
@@ -279,17 +270,7 @@ namespace SharpOrm.Builder
 
         #endregion
 
-        /// <summary>
-        /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
-        /// </summary>
-        [Obsolete("It will be removed in version 2.x.x.")]
-        protected void Reset()
-        {
-            this.Reset(true);
-        }
-
-        [Obsolete("It will be removed in version 2.x.x.")]
-        protected void Reset(bool reconfigure)
+        private void Reset(bool reconfigure = true)
         {
             if (reconfigure)
                 this.Query.Token.ThrowIfCancellationRequested();
@@ -417,7 +398,7 @@ namespace SharpOrm.Builder
 
             this.Reset(false);
             if (disposing)
-                this._command.Dispose();
+                this._command?.Dispose();
 
             this._disposed = true;
         }

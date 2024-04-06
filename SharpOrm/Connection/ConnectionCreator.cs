@@ -20,7 +20,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Configuration for queries.
         /// </summary>
-        public abstract IQueryConfig Config { get; }
+        public abstract QueryConfig Config { get; }
 
         /// <summary>
         /// Gets a database connection.

@@ -25,7 +25,13 @@ namespace SharpOrm
         private DbTransaction _transaction;
         private DbConnection _transactionConn;
 
-        protected int CommandTimeout { get; set; }
+
+        private int? commandTimeout = null;
+        protected int CommandTimeout
+        {
+            get => this.commandTimeout?? this.Creator?.Config?.CommandTimeout ?? 30;
+            set => this.commandTimeout = value;
+        }
 
         /// <summary>
         /// Gets the default connection creator for the repository.
@@ -46,11 +52,6 @@ namespace SharpOrm
         /// </summary>
         public CancellationToken Token { get; set; }
         #endregion
-
-        public DbRepository()
-        {
-            this.CommandTimeout = this.Creator.Config.CommandTimeout;
-        }
 
         #region Transactions
 
@@ -317,7 +318,7 @@ namespace SharpOrm
         protected virtual DbCommand CreateCommand(bool open = true)
         {
             var cmd = this.GetConnection().CreateCommand();
-            if (open) cmd.Connection.OpenIfNeeded();
+            if (open) cmd.Connection?.OpenIfNeeded();
 
             cmd.CommandTimeout = this.CommandTimeout;
             cmd.Transaction = this._transaction;

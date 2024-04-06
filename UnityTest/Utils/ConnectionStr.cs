@@ -32,7 +32,7 @@ namespace UnityTest.Utils
             return connString;
         }
 
-        public static void Boot<T>(Func<IQueryConfig> config, string connectionString) where T : DbConnection, new()
+        public static void Boot<T>(Func<QueryConfig> config, string connectionString) where T : DbConnection, new()
         {
             if (ConnectionCreator.Default is not SingleConnectionCreator<T>)
                 ConnectionCreator.Default = new SingleConnectionCreator<T>(config(), connectionString);
