@@ -23,10 +23,6 @@ namespace SharpOrm.Builder
         /// </summary>
         public string Name { get; }
         /// <summary>
-        /// Indicates whether there is any column with a non-native type (Stream is considered native in this context).
-        /// </summary>
-        public bool HasNonNative { get; private set; }
-        /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
         public ColumnInfo[] Columns { get; }
@@ -52,23 +48,12 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.registry = config;
             this.Name = GetNameOf(type);
-            this.Columns = this.GetColumns().ToArray();
+            this.Columns = GetColumns(Type, registry).ToArray();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
         {
             return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
-        }
-
-        private IEnumerable<ColumnInfo> GetColumns()
-        {
-            foreach (var col in GetColumns(Type, registry))
-            {
-                if (!col.IsNative && !col.IsForeignKey)
-                    this.HasNonNative = true;
-
-                yield return col;
-            }
         }
 
         public static IEnumerable<ColumnInfo> GetColumns(Type type, TranslationRegistry registry)

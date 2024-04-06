@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
@@ -857,22 +858,7 @@ namespace SharpOrm
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
             this.Token.ThrowIfCancellationRequested();
-            using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T))
-            {
-                Token = this.Token,
-                Connection = this.Connection,
-                Transaction = this.Transaction
-            })
-            {
-                try
-                {
-                    return reader.GetEnumerable<T>().ToArray();
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return new DbObjectEnumerable<T>(this);
         }
 
         /// <summary>
@@ -884,18 +870,9 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             try
             {
-                ISqlTranslation translation = this.Config.Translation.GetFor(typeof(T));
-                Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
-
-                List<T> list = new List<T>();
-
-                using (var reader = this.ExecuteReader())
-                    while (!this.Token.IsCancellationRequested && reader.Read())
-                        list.Add((T)translation.FromSqlValue(reader[0], expectedType));
-
-                this.Token.ThrowIfCancellationRequested();
-
-                return list.ToArray();
+                using (Grammar grammar = this.Info.Config.NewGrammar(this))
+                using (DbCommand cmd = grammar.Select())
+                    return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
             }
             finally
             {
@@ -915,8 +892,7 @@ namespace SharpOrm
             {
                 try
                 {
-                    object result = grammar.Select().ExecuteScalar();
-                    return this.Config.Translation.FromSql<T>(result);
+                    return this.Config.Translation.FromSql<T>(grammar.Select().ExecuteScalar());
                 }
                 finally
                 {
@@ -936,8 +912,7 @@ namespace SharpOrm
             {
                 try
                 {
-                    object result = grammar.Select().ExecuteScalar();
-                    return this.Config.Translation.FromSql(result);
+                    return this.Config.Translation.FromSql(grammar.Select().ExecuteScalar());
                 }
                 finally
                 {
@@ -1016,7 +991,7 @@ namespace SharpOrm
 
         #endregion
 
-        protected virtual void SafeClose()
+        protected internal virtual void SafeClose()
         {
             if (this.Transaction is null && this.Connection != null && this.Connection.State != System.Data.ConnectionState.Closed)
                 this.Connection?.Close();

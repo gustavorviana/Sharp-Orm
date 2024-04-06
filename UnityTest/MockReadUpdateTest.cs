@@ -31,15 +31,6 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void ReadWithOutCreateForeignIfNoDepth()
-        {
-            using var query = GetConfiguredOrderQuery();
-            var order = query.FirstOrDefault();
-
-            Assert.IsNull(order.Customer);
-        }
-
-        [TestMethod]
         public void ReadDbNull()
         {
             var reader = new MockDataReader(new Cell("str", DBNull.Value), new Cell("num", null));

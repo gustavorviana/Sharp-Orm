@@ -1,8 +1,10 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Collections;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 
 namespace SharpOrm.Builder
 {
@@ -79,11 +81,9 @@ namespace SharpOrm.Builder
         /// <typeparam name="T">Type to be converted.</typeparam>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd)
+        public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            using (var reader = new DbObjectReader(new ReadonlyQueryConfig { LoadForeign = true }, cmd.ExecuteReader(), typeof(T)))
-                foreach (var item in reader.GetEnumerable<T>())
-                    yield return item;
+            return new DbObjectEnumerable<T>(registry, cmd.ExecuteReader(), token);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace SharpOrm.Builder
         public static T ExecuteScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
         {
             var obj = cmd.ExecuteScalar();
-            if (obj is DBNull)
+            if (obj is DBNull || obj == null)
                 return default;
 
             return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(obj);
