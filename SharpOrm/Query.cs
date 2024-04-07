@@ -138,15 +138,16 @@ namespace SharpOrm
 
             try
             {
-                using (var reader = new DbObjectReader(this.Config, this.ExecuteReader(), typeof(T)))
+                this.Token.ThrowIfCancellationRequested();
+                FkLoaders fkLoaders = new FkLoaders(this.Config, this._fkToLoad, this.Token)
                 {
-                    reader.FkToLoad = this._fkToLoad;
-                    reader.Token = this.Token;
-                    reader.Connection = this.Connection;
-                    reader.Transaction = this.Transaction;
+                    Connection = this.Connection,
+                    Transaction = this.Transaction
+                };
 
-                    return reader.ReadToEnd<K>();
-                }
+                var list = new DbObjectEnumerable<K>(this) { fkQueue = fkLoaders }.ToList();
+                fkLoaders.LoadForeigns();
+                return list;
             }
             finally
             {

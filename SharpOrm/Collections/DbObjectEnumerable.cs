@@ -1,20 +1,18 @@
-﻿using SharpOrm.Builder;
-using SharpOrm.Builder.DataTranslation;
+﻿using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.DataTranslation.Reader;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 
 namespace SharpOrm.Collections
 {
-    internal class DbObjectEnumerable<T> : IEnumerable<T>, IFkQueue
+    public class DbObjectEnumerable<T> : IEnumerable<T>
     {
         private readonly TranslationRegistry translation;
         private readonly CancellationToken token;
         private readonly DbDataReader reader;
+        internal IFkQueue fkQueue;
 
         public DbObjectEnumerable(Query query) : this(query.Info.Config.Translation, query.ExecuteReader(), query.Token)
         {
@@ -33,18 +31,7 @@ namespace SharpOrm.Collections
 
         private IMappedObject CreateMappedObj()
         {
-            return MappedObject.Create(reader, typeof(T), this, translation);
-        }
-
-        void IFkQueue.EnqueueForeign(object owner, object fkValue, ColumnInfo column)
-        {
-            if (fkValue is DBNull || fkValue is null)
-                return;
-
-            var fkTable = new TableInfo(column.Type);
-            object value = fkTable.CreateInstance();
-            fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, fkValue);
-            column.SetRaw(owner, value);
+            return MappedObject.Create(reader, typeof(T), this.fkQueue ?? new ObjIdFkQueue(), translation);
         }
 
         private class Enumerator : DbObjectEnumerator, IEnumerator<T>
