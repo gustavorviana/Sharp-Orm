@@ -75,6 +75,14 @@ namespace SharpOrm.Builder
             return command;
         }
 
+        internal static void SetCancellationToken(this DbCommand command, CancellationToken token)
+        {
+            token.Register(() =>
+            {
+                try { command.Cancel(); } catch { }
+            });
+        }
+
         /// <summary>
         /// Return the rows as a C# object.
         /// </summary>
@@ -83,7 +91,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            return new DbObjectEnumerable<T>(registry, cmd.ExecuteReader(), token);
+            return new DbObjectEnumerable<T>(registry, cmd, token, false);
         }
 
         /// <summary>

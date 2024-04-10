@@ -58,9 +58,7 @@ namespace SharpOrm.Builder
         /// <returns>The database command configured to perform the record count.</returns>
         public DbCommand Count(Column column)
         {
-            this.Reset();
-            this.ConfigureCount(column);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureCount(column));
         }
 
         /// <summary>
@@ -74,9 +72,7 @@ namespace SharpOrm.Builder
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
         public DbCommand Select()
         {
-            this.Reset();
-            this.ConfigureSelect(true);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureSelect(true));
         }
 
         /// <summary>
@@ -99,9 +95,7 @@ namespace SharpOrm.Builder
 
         internal DbCommand InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
-            this.Reset();
-            this.ConfigureInsertQuery(query, columnNames);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureInsertQuery(query, columnNames));
         }
 
         /// <summary>
@@ -113,9 +107,7 @@ namespace SharpOrm.Builder
 
         public DbCommand InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
         {
-            this.Reset();
-            this.ConfigureInsertExpression(expression, columnNames);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureInsertExpression(expression, columnNames));
         }
 
         /// <summary>
@@ -131,9 +123,7 @@ namespace SharpOrm.Builder
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
         public DbCommand Insert(IEnumerable<Cell> cells)
         {
-            this.Reset();
-            this.ConfigureInsert(cells, true);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureInsert(cells, true));
         }
 
         /// <summary>
@@ -149,9 +139,7 @@ namespace SharpOrm.Builder
         /// <param name="rows">The rows to be inserted.</param>
         public DbCommand BulkInsert(IEnumerable<Row> rows)
         {
-            this.Reset();
-            this.ConfigureBulkInsert(rows);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureBulkInsert(rows));
         }
 
         /// <summary>
@@ -166,9 +154,7 @@ namespace SharpOrm.Builder
         /// <param name="cells">An array of cells containing the values to be updated.</param>
         public DbCommand Update(IEnumerable<Cell> cells)
         {
-            this.Reset();
-            this.ConfigureUpdate(cells);
-            return this.BuildCommand();
+            return this.BuildCommand(() => this.ConfigureUpdate(cells));
         }
 
         /// <summary>
@@ -182,9 +168,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public DbCommand Delete()
         {
-            this.Reset();
-            this.ConfigureDelete();
-            return this.BuildCommand();
+            return this.BuildCommand(this.ConfigureDelete);
         }
 
         /// <summary>
@@ -269,31 +253,6 @@ namespace SharpOrm.Builder
 
         #endregion
 
-        private void Reset(bool reconfigure = true)
-        {
-            if (reconfigure)
-                this.Query.Token.ThrowIfCancellationRequested();
-
-            if (this._command != null)
-            {
-                this._command.Parameters.Clear();
-                this._command.Dispose();
-            }
-
-            if (reconfigure)
-            {
-                this._command = this.Query.Connection.CreateCommand();
-                this._command.Transaction = this.Query.Transaction;
-
-                this.Query.Token.Register(() =>
-                {
-                    try { this._command.Cancel(); } catch { }
-                });
-            }
-
-            this.Constructor.Clear();
-        }
-
         protected string TryGetTableAlias(QueryBase query)
         {
             return query.Info.TableName.TryGetAlias(query.Info.Config);
@@ -309,17 +268,42 @@ namespace SharpOrm.Builder
             return query.Info.TableName.GetName(withAlias, query.Info.Config);
         }
 
-        private DbCommand BuildCommand()
+        private DbCommand BuildCommand(Action builderAction)
+        {
+            this.Reset();
+            builderAction();
+            this.CreateCommand();
+            this.SetCommandQuery();
+
+            return this._command;
+        }
+
+        private void Reset()
         {
             this.Query.Token.ThrowIfCancellationRequested();
+            this.Constructor.Clear();
+            if (this._command == null)
+                return;
 
-            this._command.Connection?.OpenIfNeeded();
-            this._command.CommandText = this.Constructor.ToString();
+            this._command.Parameters.Clear();
+            this._command.Dispose();
+        }
+
+        private void CreateCommand()
+        {
+            this._command = this.Query.Connection?.OpenIfNeeded().CreateCommand();
             this._command.Transaction = this.Query.Transaction;
+
+            this._command.SetCancellationToken(this.Query.Token);
+        }
+
+        private void SetCommandQuery()
+        {
+            this._command.CommandText = this.Constructor.ToString();
             this._command.CommandTimeout = this.Query.CommandTimeout;
+
             ((CmdQueryConstructor)this.Constructor).ApplyToCommand(this._command);
             QueryLogger?.Invoke(this._command.CommandText);
-            return this._command;
         }
 
         protected virtual void WriteSelectColumns()
@@ -395,7 +379,7 @@ namespace SharpOrm.Builder
             if (this._disposed)
                 return;
 
-            this.Reset(false);
+            this.Constructor.Clear();
             if (disposing)
                 this._command?.Dispose();
 

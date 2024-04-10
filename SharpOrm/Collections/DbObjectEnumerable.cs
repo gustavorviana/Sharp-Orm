@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.DataTranslation.Reader;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -11,27 +12,55 @@ namespace SharpOrm.Collections
     {
         private readonly TranslationRegistry translation;
         private readonly CancellationToken token;
-        private readonly DbDataReader reader;
+        private readonly bool closeConnection;
+        private readonly DbCommand command;
         internal IFkQueue fkQueue;
+        private bool hasFirstRun;
 
-        public DbObjectEnumerable(Query query) : this(query.Info.Config.Translation, query.ExecuteReader(), query.Token)
-        {
-
-        }
-
-        public DbObjectEnumerable(TranslationRegistry translation, DbDataReader reader, CancellationToken token)
+        public DbObjectEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, bool closeConnection)
         {
             this.translation = translation;
-            this.reader = reader;
+            this.command = command;
             this.token = token;
         }
 
-        public IEnumerator<T> GetEnumerator() => new Enumerator(reader, this.CreateMappedObj(), token);
-        IEnumerator IEnumerable.GetEnumerator() => new DbObjectEnumerator(reader, this.CreateMappedObj(), token);
+        public IEnumerator<T> GetEnumerator()
+        {
+            this.CheckRun();
+            var reader = command.ExecuteReader();
+            return RegisterDispose(new Enumerator(reader, this.CreateMappedObj(reader), token));
+        }
 
-        private IMappedObject CreateMappedObj()
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            this.CheckRun();
+            var reader = command.ExecuteReader();
+            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token));
+        }
+
+        private void CheckRun()
+        {
+            if (this.hasFirstRun)
+                throw new InvalidOperationException("IEnumerable can be executed only once.");
+
+            this.hasFirstRun = true;
+        }
+
+        private IMappedObject CreateMappedObj(DbDataReader reader)
         {
             return MappedObject.Create(reader, typeof(T), this.fkQueue ?? new ObjIdFkQueue(), translation);
+        }
+
+        private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator
+        {
+            instance.Disposed += (sender, e) =>
+            {
+                this.command.Dispose();
+                if (this.closeConnection && this.command.Connection.State != System.Data.ConnectionState.Closed)
+                    this.command.Connection.Close();
+            };
+
+            return instance;
         }
 
         private class Enumerator : DbObjectEnumerator, IEnumerator<T>

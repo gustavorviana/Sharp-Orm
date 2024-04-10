@@ -133,20 +133,22 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
+            var enumerable = (DbObjectEnumerable<K>)base.GetEnumerable<K>();
             if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
-                return base.GetEnumerable<K>();
+                return enumerable;
 
             try
             {
-                this.Token.ThrowIfCancellationRequested();
                 FkLoaders fkLoaders = new FkLoaders(this.Config, this._fkToLoad, this.Token)
                 {
                     Connection = this.Connection,
                     Transaction = this.Transaction
                 };
 
-                var list = new DbObjectEnumerable<K>(this) { fkQueue = fkLoaders }.ToList();
+                enumerable.fkQueue = fkLoaders;
+                var list = enumerable.ToList();
                 fkLoaders.LoadForeigns();
+
                 return list;
             }
             finally
@@ -859,7 +861,10 @@ namespace SharpOrm
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
             this.Token.ThrowIfCancellationRequested();
-            return new DbObjectEnumerable<T>(this);
+            var grammar = this.Info.Config.NewGrammar(this);
+            var selectCmd = grammar.Select();
+
+            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.Transaction is null);
         }
 
         /// <summary>

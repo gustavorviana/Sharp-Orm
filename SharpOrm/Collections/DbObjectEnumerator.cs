@@ -11,10 +11,14 @@ namespace SharpOrm.Collections
         public CancellationToken Token { get; }
         private readonly DbDataReader reader;
         private readonly IMappedObject map;
-        public bool Disposed { get; private set; }
+        public event EventHandler Disposed;
+        private bool _disposed;
 
         public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token)
         {
+            if (reader.IsClosed)
+                throw new InvalidOperationException($"It is not possible to use a closed {nameof(DbDataReader)}.");
+
             this.reader = reader;
             this.Token = token;
             this.map = map;
@@ -44,13 +48,29 @@ namespace SharpOrm.Collections
             throw new NotImplementedException();
         }
 
-        public void Dispose()
+        #region IDisposable
+
+        ~DbObjectEnumerator()
         {
-            if (this.Disposed)
+            this.Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed)
                 return;
 
-            this.Disposed = true;
+            this._disposed = true;
             this.reader.Dispose();
+            this.Disposed?.Invoke(this, EventArgs.Empty);
         }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }
