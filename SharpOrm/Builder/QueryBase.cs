@@ -49,9 +49,9 @@ namespace SharpOrm.Builder
         #region Where
 
         /// <summary>
-        /// Adds a clause to the "WHERE" statement based on an ISqlExpressible object, where the expression is safely converted to a SqlExpression.
+        /// Adds a clause to the "WHERE" statement based on an ISqlExpressible object, where the values is safely converted to a SqlExpression.
         /// </summary>
-        /// <param name="expressible">The ISqlExpressible object that contains the expression to be added to the WHERE statement.</param>
+        /// <param name="expressible">The ISqlExpressible object that contains the values to be added to the WHERE statement.</param>
         /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
@@ -490,7 +490,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Loads the value object and converts it to a sql expression.
+        /// Loads the value object and converts it to a sql values.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>

@@ -83,9 +83,9 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Column"/> class with the specified SQL expression.
+        /// Initializes a new instance of the <see cref="Column"/> class with the specified SQL values.
         /// </summary>
-        /// <param name="expression">The SQL expression representing the column.</param>
+        /// <param name="expression">The SQL values representing the column.</param>
         public Column(SqlExpression expression)
         {
             this.expression = expression;
@@ -105,7 +105,7 @@ namespace SharpOrm
         /// Converts the column to a <see cref="SqlExpression"/> based on the provided query information.
         /// </summary>
         /// <param name="info">The query information.</param>
-        /// <param name="alias">A flag indicating whether to include the alias in the expression.</param>
+        /// <param name="alias">A flag indicating whether to include the alias in the values.</param>
         /// <returns>A <see cref="SqlExpression"/> representing the column.</returns>
         public virtual SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {

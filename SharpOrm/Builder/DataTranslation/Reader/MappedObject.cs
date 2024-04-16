@@ -21,11 +21,6 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private object instance;
         #endregion
 
-        public static IMappedObject Create<T>(DbDataReader reader, IFkQueue enqueueable, TranslationRegistry registry = null, string prefix = "") where T : class
-        {
-            return Create(reader, typeof(T), enqueueable, registry, prefix);
-        }
-
         public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable, TranslationRegistry registry = null, string prefix = "")
         {
             if (registry == null)

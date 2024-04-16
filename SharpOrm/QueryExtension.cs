@@ -127,7 +127,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
@@ -137,7 +137,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
@@ -309,7 +309,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
@@ -319,7 +319,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>

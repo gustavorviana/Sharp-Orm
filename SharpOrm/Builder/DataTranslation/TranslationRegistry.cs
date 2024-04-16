@@ -5,7 +5,7 @@ using System.Reflection;
 namespace SharpOrm.Builder.DataTranslation
 {
     /// <summary>
-    /// Class responsible for translating values from the database to code and from code to the database.
+    /// Class responsible for translating data between the database and code.
     /// </summary>
     public class TranslationRegistry
     {

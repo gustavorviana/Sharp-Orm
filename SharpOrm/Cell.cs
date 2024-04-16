@@ -54,6 +54,40 @@ namespace SharpOrm
             return value?.ToString();
         }
 
+        #region Operations
+
+        /// <summary>
+        /// Returns a cell with SqlExpression to update the content of a cell, adding the original content with <paramref name="value"/>.
+        /// </summary>
+        /// <param name="column">Column to be updated.</param>
+        /// <param name="value">Value to sum.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static Cell Sum(string column, object value)
+        {
+            if (!TranslationUtils.IsNumeric(value.GetType()))
+                throw new ArgumentException("Only numeric types are allowed.");
+
+            return new Cell(column, (SqlExpression)$"{column}+{value}");
+        }
+
+        /// <summary>
+        /// Returns a cell with SqlExpression to update the content of a cell, subtracting the original content by <paramref name="value"/>.
+        /// </summary>
+        /// <param name="column">Column to be updated.</param>
+        /// <param name="value">Value to subtract.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static Cell Subtract(string column, object value)
+        {
+            if (!TranslationUtils.IsNumeric(value.GetType()))
+                throw new ArgumentException("Only numeric types are allowed.");
+
+            return new Cell(column, (SqlExpression)$"{column}-{value}");
+        }
+
+        #endregion
+
         #region IEquatable
 
         public override bool Equals(object obj)

@@ -216,9 +216,9 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Adds an expression to the query.
+        /// Adds an values to the query.
         /// </summary>
-        /// <param name="expression">The expression to add.</param>
+        /// <param name="expression">The values to add.</param>
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
         public QueryConstructor AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {

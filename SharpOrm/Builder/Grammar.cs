@@ -19,14 +19,15 @@ namespace SharpOrm.Builder
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposed = false;
 
-        protected QueryConstructor Constructor { get; }
+        private CmdQueryConstructor _constructor;
+        protected QueryConstructor Constructor => this._constructor;
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
         #endregion
 
         protected Grammar(Query query)
         {
-            this.Constructor = new CmdQueryConstructor(query.Info);
+            this._constructor = new CmdQueryConstructor(query.Info);
             this.Query = query;
         }
 
@@ -301,8 +302,7 @@ namespace SharpOrm.Builder
         {
             this._command.CommandText = this.Constructor.ToString();
             this._command.CommandTimeout = this.Query.CommandTimeout;
-
-            ((CmdQueryConstructor)this.Constructor).ApplyToCommand(this._command);
+            this._constructor.ApplyToCommand(this._command);
             QueryLogger?.Invoke(this._command.CommandText);
         }
 
