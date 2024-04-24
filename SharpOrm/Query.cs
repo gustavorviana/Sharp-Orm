@@ -362,7 +362,7 @@ namespace SharpOrm
         public DbConnection Connection { get; }
         public DbTransaction Transaction { get; }
         public CancellationToken Token { get; set; }
-        private readonly bool disposeConnection = true;
+        private readonly ConnectionManagement management;
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
@@ -409,7 +409,7 @@ namespace SharpOrm
 
         }
 
-        public Query(DbConnection connection, DbName table, bool disposeConnection = true) : this(connection, ConnectionCreator.Default.Config, table, disposeConnection)
+        public Query(DbConnection connection, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, ConnectionCreator.Default.Config, table, management)
         {
         }
 
@@ -418,13 +418,13 @@ namespace SharpOrm
 
         }
 
-        public Query(DbConnection connection, QueryConfig config, string table, bool disposeConnection = true) : this(connection, config, new DbName(table), disposeConnection)
+        public Query(DbConnection connection, QueryConfig config, string table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, config, new DbName(table), management)
         {
         }
 
-        public Query(DbConnection connection, QueryConfig config, DbName table, bool disposeConnection = true) : base(config, table)
+        public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(config, table)
         {
-            this.disposeConnection = disposeConnection;
+            this.management = management;
             if (connection == null)
                 return;
 
@@ -440,6 +440,7 @@ namespace SharpOrm
         public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(config, name)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+            this.management = ConnectionManagement.LeaveOpen;
             this.Connection = transaction.Connection;
             this.CommandTimeout = config.CommandTimeout;
         }
@@ -999,7 +1000,7 @@ namespace SharpOrm
 
         protected internal virtual void SafeClose()
         {
-            if (this.Transaction is null && this.Connection != null && this.Connection.State != System.Data.ConnectionState.Closed)
+            if (this.management == ConnectionManagement.CloseOnEndOperation && this.Transaction is null && this.Connection != null && this.Connection.State != System.Data.ConnectionState.Closed)
                 this.Connection?.Close();
         }
 
@@ -1010,7 +1011,7 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            if (this.disposeConnection)
+            if (this.management != ConnectionManagement.LeaveOpen)
                 if (this.Creator is null && this.Transaction is null) this.Connection.Dispose();
                 else this.Creator.SafeDisposeConnection(this.Connection);
 
