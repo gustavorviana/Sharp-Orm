@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
@@ -307,6 +308,15 @@ namespace UnityTest
             Assert.AreEqual("MySchema.MyName", info.Name);
         }
 
+        [TestMethod]
+        public void RecursiveCallTest()
+        {
+            Connection.QueryReaders.Add("SELECT * FROM `Recursive` LIMIT 1", GetAdvancedObjectReader);
+
+            using var query = new Query<RecursiveClass>(Connection, Config);
+            Assert.IsNotNull(query.FirstOrDefault());
+        }
+
         private MockDataReader GetAdvancedObjectReader()
         {
             return new MockDataReader(
@@ -347,6 +357,31 @@ namespace UnityTest
         {
             var column = new PropertyExpressionVisitor().VisitProperty<OrderItem>(x => x.OrderId);
             Assert.AreEqual("OrderId", column);
+        }
+
+        [Table("Recursive")]
+        private class RecursiveClass
+        {
+            public int Id { get; set; }
+
+            [SqlConverter(typeof(CustomTranslation))]
+            [Column("Child1_Id")]
+            public RecursiveClass Parent { get; set; }
+        }
+
+        internal class CustomTranslation : ISqlTranslation
+        {
+            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
+
+            public object FromSqlValue(object value, Type expectedType)
+            {
+                return new RecursiveClass { };
+            }
+
+            public object ToSqlValue(object value, Type type)
+            {
+                return value;
+            }
         }
 
         [Table("MyName", Schema = "MySchema")]
