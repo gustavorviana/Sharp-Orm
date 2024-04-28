@@ -46,10 +46,18 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
             foreach (var column in TableInfo.GetColumns(this.Type, registry))
                 if (column.IsForeignKey) AddIfValidId(reader, this.fkColumns, column.ForeignKey, column);
-                else if (column.IsNative || !(column.Translation is NativeSqlTranslation)) AddIfValidId(reader, this.columns, GetName(column, prefix), column);
+                else if (NeedMapAsValue(column)) AddIfValidId(reader, this.columns, GetName(column, prefix), column);
                 else this.childrens.Add(new MappedObject(column.Type, this.registry, this.enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
 
             return this;
+        }
+
+        private static bool NeedMapAsValue(ColumnInfo column)
+        {
+            if (column.Translation is null)
+                return false;
+
+            return column.IsNative || !(column.Translation is NativeSqlTranslation);
         }
 
         private void AddIfValidId(DbDataReader reader, List<MappedColumn> columns, string name, ColumnInfo column)

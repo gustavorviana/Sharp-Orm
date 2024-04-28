@@ -82,6 +82,12 @@ namespace SharpOrm
             this.ApplyValidations();
         }
 
+        public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(connection, config, table, management)
+        {
+            TableInfo = new TableInfo(typeof(T), config.Translation);
+            this.ApplyValidations();
+        }
+
         private void ApplyValidations()
         {
             this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
@@ -1012,7 +1018,7 @@ namespace SharpOrm
                 last.Dispose();
 
             if (this.management != ConnectionManagement.LeaveOpen)
-                if (this.Creator is null && this.Transaction is null) this.Connection.Dispose();
+                if (this.Creator is null && this.Transaction is null) this.Connection?.Dispose();
                 else this.Creator.SafeDisposeConnection(this.Connection);
 
             this.lastOpenReader = null;

@@ -29,7 +29,7 @@ namespace UnityTest
         public static void CleanupDbConnection()
         {
             using var con = Connection;
-            using var cmd = con.CreateCommand();
+            using var cmd = con.OpenIfNeeded().CreateCommand();
             cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
             cmd.ExecuteNonQuery();
         }
