@@ -25,6 +25,11 @@ namespace SharpOrm.Builder
             return new SqlServerGrammar(query);
         }
 
+        public override TableGrammar NewTableGrammar(IReadonlyQueryInfo queryInfo)
+        {
+            return new SqlServerTableGrammar(queryInfo);
+        }
+
         /// <summary>
         /// creates a connection line for the local connection: Data Source=localhost\SQLEXPRESS;Initial Catalog={catalog};Integrated Security=True;
         /// </summary>

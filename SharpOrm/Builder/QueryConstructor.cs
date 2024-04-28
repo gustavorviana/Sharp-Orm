@@ -280,7 +280,7 @@ namespace SharpOrm.Builder
         /// Adds multiple raw strings to the query, joining them with a space separator.
         /// </summary>
         /// <param name="raws">An array of raw strings to be added to the query.</param>
-        public QueryConstructor Add(params string[] raws)
+        public QueryConstructor AddRaws(params string[] raws)
         {
             this.query.Capacity += raws.Sum(txt => txt.Length) + raws.Length;
             return this.AddJoin(" ", raws);
@@ -375,6 +375,15 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="info">The query information.</param>
         public SqlExpression ToExpression(IReadonlyQueryInfo info)
+        {
+            return this.ToExpression();
+        }
+
+        /// <summary>
+        /// Returns an <see cref="SqlExpression"/> representation of the query.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        public SqlExpression ToExpression()
         {
             return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
         }

@@ -71,7 +71,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clusule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -82,7 +82,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -123,7 +123,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clause in parentheses (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clause in parentheses (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="callback">Callback where the clause should be builded.</param>
         /// <returns></returns>
@@ -144,7 +144,7 @@ namespace SharpOrm.Builder
             CheckIsAvailableOperation(operation);
             this.WriteWhereType(AND);
 
-            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            this.Info.Where.AddRaws(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
             return this;
         }
 
@@ -237,7 +237,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// AddRaws a clusule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -248,7 +248,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -289,7 +289,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clause in parentheses (If there are any previous clauses, "OR" is entered before the new clause).
+        /// AddRaws a clause in parentheses (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="callback">Callback where the clause should be builded.</param>
         /// <returns></returns>
@@ -310,7 +310,7 @@ namespace SharpOrm.Builder
             CheckIsAvailableOperation(operation);
             this.WriteWhereType(OR);
 
-            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            this.Info.Where.AddRaws(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
             return this;
         }
 

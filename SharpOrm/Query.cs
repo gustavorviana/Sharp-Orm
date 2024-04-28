@@ -175,7 +175,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Add a clause to retrieve the items that have the primary key of the object.
+        /// AddRaws a clause to retrieve the items that have the primary key of the object.
         /// </summary>
         /// <param name="primaryKeysValues">Primary keys.</param>
         /// <returns></returns>
@@ -871,7 +871,7 @@ namespace SharpOrm
             var grammar = this.Info.Config.NewGrammar(this);
             var selectCmd = grammar.Select();
 
-            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.Transaction is null);
+            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.Transaction is null && this.management != ConnectionManagement.LeaveOpen);
         }
 
         /// <summary>

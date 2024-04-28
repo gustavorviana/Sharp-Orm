@@ -1,10 +1,13 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using System;
 
 namespace SharpOrm.Builder
 {
     public abstract class QueryConfig
     {
         public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
+
+        public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
 
         /// <summary>
         /// Indicates if value modifications in the table should be made with "WHERE" (this is not valid for insert-and-select).
@@ -52,6 +55,11 @@ namespace SharpOrm.Builder
         /// <param name="query">Query for grammar.</param>
         /// <returns></returns>
         public abstract Grammar NewGrammar(Query query);
+
+        public virtual TableGrammar NewTableGrammar(IReadonlyQueryInfo queryInfo)
+        {
+            throw new NotSupportedException();
+        }
 
         public abstract string EscapeString(string value);
     }
