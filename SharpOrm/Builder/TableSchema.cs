@@ -20,6 +20,15 @@ namespace SharpOrm.Builder
             this.Name = name;
         }
 
+        public TableSchema(string name, TableColumnCollection columns)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            this.Columns = columns;
+            this.Name = name;
+        }
+
         public TableSchema(string name, string basedTableName, bool copyData = false, params Column[] columns)
         {
             if (string.IsNullOrEmpty(name))

@@ -491,7 +491,7 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL<T>(this Query<T> query, T obj) where T : new()
         {
-            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Creator.Config.LoadForeign).Cells);
+            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Config.LoadForeign).Cells);
         }
 
         /// <summary>

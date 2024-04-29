@@ -56,7 +56,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public abstract Grammar NewGrammar(Query query);
 
-        public virtual TableGrammar NewTableGrammar(IReadonlyQueryInfo queryInfo)
+        public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
             throw new NotSupportedException();
         }

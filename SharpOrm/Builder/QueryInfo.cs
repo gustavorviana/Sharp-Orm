@@ -26,9 +26,10 @@ namespace SharpOrm.Builder
 
         public QueryInfo(QueryConfig config, DbName table)
         {
-            this.TableName = table;
-            this._queryInfo = new ReadonlyInfo(this);
             this.Config = config ?? throw new ArgumentNullException(nameof(config));
+            this._queryInfo = new ReadonlyQueryInfo(config, table);
+            this.TableName = table;
+
             this.Where = new QueryConstructor(this.ToReadOnly());
             this.Having = new QueryConstructor(this.ToReadOnly());
         }
@@ -59,20 +60,6 @@ namespace SharpOrm.Builder
 
             string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString().ToLower();
             return select.StartsWith("count(");
-        }
-
-        private class ReadonlyInfo : IReadonlyQueryInfo
-        {
-            private readonly QueryInfo info;
-
-            public ReadonlyInfo(QueryInfo info)
-            {
-                this.info = info;
-            }
-
-            public QueryConfig Config => this.info.Config;
-
-            public DbName TableName => this.info.TableName;
         }
     }
 }

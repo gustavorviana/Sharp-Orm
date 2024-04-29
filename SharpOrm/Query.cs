@@ -88,6 +88,12 @@ namespace SharpOrm
             this.ApplyValidations();
         }
 
+        public Query(DbName name, QueryConfig config, ConnectionManager manager) : base(name, config, manager)
+        {
+            TableInfo = new TableInfo(typeof(T), config.Translation);
+            this.ApplyValidations();
+        }
+
         private void ApplyValidations()
         {
             this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
@@ -324,11 +330,7 @@ namespace SharpOrm
 
         public override Query Clone(bool withWhere)
         {
-            Query<T> query = this.Transaction == null ?
-                new Query<T>(this.Creator, this.Info.Alias) :
-                 new Query<T>(this.Transaction, this.Info.Config, this.Info.Alias);
-
-            query.Creator = this.Creator;
+            Query<T> query = new Query<T>(this.Info.TableName, this.Info.Config, this.manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -361,18 +363,21 @@ namespace SharpOrm
         /// </summary>
         public bool ReturnsInsetionId { get; set; } = true;
 
-        public ConnectionCreator Creator { get; protected internal set; } = ConnectionCreator.Default;
-
         public object GrammarOptions { get; set; }
-        protected QueryConfig Config => this.Info.Config;
-        public DbConnection Connection { get; }
-        public DbTransaction Transaction { get; }
+        public QueryConfig Config => this.Info.Config;
+        protected readonly ConnectionManager manager;
+        public DbConnection Connection => this.manager.Connection;
+        public DbTransaction Transaction => this.manager.Transaction;
+
         public CancellationToken Token { get; set; }
-        private readonly ConnectionManagement management;
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
-        public int CommandTimeout { get; set; }
+        public int CommandTimeout
+        {
+            get => this.manager.CommandTimeout;
+            set => this.manager.CommandTimeout = value;
+        }
         private OpenReader lastOpenReader = null;
         #endregion
 
@@ -386,15 +391,12 @@ namespace SharpOrm
         {
         }
 
-        public Query(ConnectionCreator creator, string table) : this(creator, new DbName(table))
+        public Query(ConnectionCreator creator, string table) : this(new DbName(table), creator?.Config, new ConnectionManager(creator))
         {
-            this.Creator = creator;
         }
 
-        public Query(ConnectionCreator creator, DbName table)
-            : this(creator?.GetConnection() ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator), creator.Config, table)
+        public Query(ConnectionCreator creator, DbName table) : this(table, creator.Config, new ConnectionManager(creator))
         {
-            this.Creator = creator;
         }
 
         public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
@@ -427,11 +429,10 @@ namespace SharpOrm
 
         public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(config, table)
         {
-            this.management = management;
             if (connection == null)
                 return;
 
-            this.Connection = connection;
+            this.manager = new ConnectionManager(connection) { Management = management };
             this.CommandTimeout = config.CommandTimeout;
         }
 
@@ -439,12 +440,14 @@ namespace SharpOrm
         {
         }
 
-        public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(config, name)
+        public Query(DbTransaction transaction, QueryConfig config, DbName name) : this(name, config, new ConnectionManager(transaction))
         {
-            this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
-            this.management = ConnectionManagement.LeaveOpen;
-            this.Connection = transaction.Connection;
             this.CommandTimeout = config.CommandTimeout;
+        }
+
+        public Query(DbName name, QueryConfig config, ConnectionManager manager) : base(config, name)
+        {
+            this.manager = manager;
         }
 
         #endregion
@@ -867,7 +870,7 @@ namespace SharpOrm
             var grammar = this.Info.Config.NewGrammar(this);
             var selectCmd = grammar.Select();
 
-            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.management);
+            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.manager.Management);
         }
 
         /// <summary>
@@ -971,8 +974,7 @@ namespace SharpOrm
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = this.Transaction == null ? new Query(this.Creator.GetConnection(), this.Info.Config, this.Info.TableName) : new Query(this.Transaction, this.Info.Config, this.Info.TableName);
-            query.Creator = this.Creator;
+            Query query = new Query(this.Info.TableName, this.Info.Config, this.manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -1002,8 +1004,7 @@ namespace SharpOrm
 
         protected internal virtual void SafeClose()
         {
-            if (this.management == ConnectionManagement.CloseOnEndOperation && this.Transaction is null && this.Connection != null && this.Connection.State != System.Data.ConnectionState.Closed)
-                this.Connection?.Close();
+            this.manager?.CloseByEndOperation();
         }
 
         protected override void Dispose(bool disposing)
@@ -1013,10 +1014,7 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            if (this.management != ConnectionManagement.LeaveOpen && this.Connection != null)
-                if (this.Creator is null && this.Transaction is null) this.Connection.Dispose();
-                else this.Creator.SafeDisposeConnection(this.Connection);
-
+            this.manager?.Dispose();
             this.lastOpenReader = null;
         }
 

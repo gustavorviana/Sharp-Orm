@@ -7,45 +7,37 @@ namespace SharpOrm.Builder
 {
     internal class TableBuilder : IDisposable
     {
-        #region Fields
+        #region Fields/Properties
         private bool disposed;
 
         private TableGrammar grammar;
-        private TableSchema schema;
-        public QueryConfig Config { get; }
-        public DbConnection Connection { get; }
-        public DbTransaction Transaction { get; }
-        public DbName Name => this.grammar.GetName(this.schema);
+
+        public ConnectionManager ConnectionManager { get; }
+        public DbConnection Connection => ConnectionManager.Connection;
+        public DbName Name => this.grammar.Name;
         #endregion
 
         #region Constructor
-        public TableBuilder(TableSchema table) : this(table, ConnectionCreator.Default)
+        public TableBuilder(TableSchema schema) : this(schema, ConnectionCreator.Default.Config)
         {
 
         }
 
-        public TableBuilder(TableSchema table, ConnectionCreator creator) : this(table, creator.Config, creator.GetConnection())
+        public TableBuilder(TableSchema schema, QueryConfig config) : this(schema, config, new ConnectionManager())
         {
-
         }
 
-        public TableBuilder(TableSchema table, QueryConfig config, DbTransaction transaction) : this(table, config, transaction.Connection)
+        public TableBuilder(TableSchema schema, QueryConfig config, ConnectionManager manager)
         {
-            Transaction = transaction;
-        }
-
-        public TableBuilder(TableSchema table, QueryConfig config, DbConnection connection)
-        {
-            Config = config;
-            Connection = connection;
-            this.schema = table;
-            this.grammar = this.Config.NewTableGrammar(new TempTableQuery(this.Config, new DbName(table.Name, "")));
+            this.ConnectionManager = manager;
+            this.grammar = config.NewTableGrammar(schema);
+            this.ConnectionManager.Management = ConnectionManagement.LeaveOpen;
         }
         #endregion
 
         public TableBuilder Create()
         {
-            using (var cmd = GetCommand(this.grammar.Create(this.schema)))
+            using (var cmd = GetCommand(this.grammar.Create()))
                 cmd.ExecuteNonQuery();
 
             return this;
@@ -53,62 +45,40 @@ namespace SharpOrm.Builder
 
         public bool Exists()
         {
-            if (this.schema == null)
-                throw new InvalidOperationException("The table has not been created.");
-
-            using (var cmd = GetCommand(this.grammar.Count(this.schema)))
+            using (var cmd = GetCommand(this.grammar.Count()))
                 return cmd.ExecuteScalar<int>() > 0;
         }
 
-        public void Drop()
+        public void DropTable()
         {
             try
             {
-                using (var cmd = GetCommand(this.grammar.Drop(this.schema)))
+                using (var cmd = GetCommand(this.grammar.Drop()))
                     cmd.ExecuteNonQuery();
             }
             finally
             {
-                if (Connection.State == ConnectionState.Open)
-                    Connection.Close();
+                if (this.ConnectionManager.Connection.State == ConnectionState.Open)
+                    this.ConnectionManager.Connection.Close();
             }
         }
 
         public Query GetQuery()
         {
-            if (Transaction != null)
-                return new Query(Transaction, Config, this.Name);
-
-            return new Query(Connection, Config, this.Name, ConnectionManagement.LeaveOpen);
+            return new Query(this.Name, grammar.Config, this.ConnectionManager);
         }
 
         public Query GetQuery<T>() where T : new()
         {
-            if (Transaction != null)
-                return new Query<T>(Transaction, Config, this.Name);
-
-            return new Query<T>(Connection, Config, this.Name, ConnectionManagement.LeaveOpen);
+            return new Query<T>(this.Name, grammar.Config, this.ConnectionManager);
         }
 
         private DbCommand GetCommand(SqlExpression expression)
         {
-            var cmd = Connection.OpenIfNeeded().CreateCommand();
-            cmd.Transaction = Transaction;
+            var cmd = this.ConnectionManager.Connection.OpenIfNeeded().CreateCommand();
+            cmd.Transaction = this.ConnectionManager.Transaction;
             cmd.SetQuery(expression.ToString(), expression.Parameters);
             return cmd;
-        }
-
-        private class TempTableQuery : IReadonlyQueryInfo
-        {
-            public QueryConfig Config { get; set; }
-
-            public DbName TableName { get; set; }
-
-            public TempTableQuery(QueryConfig config, DbName tableName)
-            {
-                Config = config;
-                TableName = tableName;
-            }
         }
 
         #region IDisposable
@@ -117,7 +87,12 @@ namespace SharpOrm.Builder
             if (disposed)
                 return;
 
-            try { Drop(); } catch { }
+            try
+            {
+                if (this.grammar.Schema.Temporary)
+                    DropTable();
+            }
+            catch { }
 
             disposed = true;
         }

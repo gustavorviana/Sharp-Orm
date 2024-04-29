@@ -35,6 +35,10 @@ namespace UnityTest.Utils
         protected const string STATUS = "custom_status";
         #endregion
 
+        protected static ConnectionManager GetConnectionManager()
+        {
+            return new ConnectionManager(new SingleConnectionCreator(NewConfig, ConnectionStr.SqlServer));
+        }
 
         #region Class Init/Clean
 

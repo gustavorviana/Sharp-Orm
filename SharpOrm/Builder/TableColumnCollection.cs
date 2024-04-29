@@ -9,7 +9,12 @@ namespace SharpOrm.Builder
 {
     public class TableColumnCollection : ICollection<DataColumn>
     {
-        private readonly List<DataColumn> columns = new List<DataColumn>();
+        private readonly List<DataColumn> columns;
+
+        public TableColumnCollection(params DataColumn[] columns)
+        {
+            this.columns = new List<DataColumn>(columns);
+        }
 
         public int Count => this.columns.Count;
 

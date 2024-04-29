@@ -25,9 +25,9 @@ namespace SharpOrm.Builder
             return new SqlServerGrammar(query);
         }
 
-        public override TableGrammar NewTableGrammar(IReadonlyQueryInfo queryInfo)
+        public override TableGrammar NewTableGrammar(TableSchema schema)
         {
-            return new SqlServerTableGrammar(queryInfo);
+            return new SqlServerTableGrammar(this, schema);
         }
 
         /// <summary>

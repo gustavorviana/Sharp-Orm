@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -20,33 +21,35 @@ namespace UnityTest
         [TestMethod]
         public void CreateEmptyByAnother()
         {
+            var manager = GetConnectionManager();
             var schema = new TableSchema("MyTestTable", "Address") { Temporary = true };
-            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), Connection);
-            var expectedCols = GetTableColumns(new DbName("Address"));
+            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), manager);
+            var expectedCols = GetTableColumns(new DbName("Address"), manager);
             table.Create();
 
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, table.Connection));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
             Assert.AreEqual(0, table.GetQuery().Count());
         }
 
         [TestMethod]
         public void CreateByAnother()
         {
+            var manager = GetConnectionManager();
             var schema = new TableSchema("MyTestTable", "Address", true) { Temporary = true };
-            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), Connection);
+            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), manager);
             var expectedRows = InsertAddressValue();
-            var expectedCols = GetTableColumns(new DbName("Address"));
+            var expectedCols = GetTableColumns(new DbName("Address"), manager);
             table.Create();
             var rows = table.GetQuery().ReadRows();
 
             Assert.AreEqual(1, rows.Length);
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, table.Connection));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
             CollectionAssert.AreEqual(expectedRows.Cells, rows[0].Cells);
         }
 
-        private static string[] GetTableColumns(DbName name, DbConnection connection = null)
+        private static string[] GetTableColumns(DbName name, ConnectionManager manager)
         {
-            using var q = new Query(connection ?? Connection, name);
+            using var q = new Query(name, NewConfig, manager);
             q.Where(new SqlExpression("1=2"));
 
             using var reader = q.ExecuteReader();
@@ -84,7 +87,7 @@ namespace UnityTest
         private static TableBuilder GetTableCreator()
         {
             var schema = new TableSchema("MyTestTable") { Temporary = true };
-            var table = new TableBuilder(schema, new SqlServerQueryConfig(), Connection);
+            var table = new TableBuilder(schema, new SqlServerQueryConfig(), new ConnectionManager(Connection));
             schema.Columns.AddUnique("Id");
             schema.Columns.Add<string>("Name");
 

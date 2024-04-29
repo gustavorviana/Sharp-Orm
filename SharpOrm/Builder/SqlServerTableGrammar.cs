@@ -7,18 +7,27 @@ namespace SharpOrm.Builder
 {
     internal class SqlServerTableGrammar : TableGrammar
     {
-        private SqlServerQueryConfig Config => this.queryInfo.Config as SqlServerQueryConfig;
+        public override DbName Name
+        {
+            get
+            {
+                if (this.Schema.Temporary)
+                    return new DbName($"#{this.Schema.Name}", "");
 
-        public SqlServerTableGrammar(IReadonlyQueryInfo queryInfo) : base(queryInfo)
+                return new DbName(this.Schema.Name, "");
+            }
+        }
+
+        public SqlServerTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
         }
 
-        public override SqlExpression Create(TableSchema table)
+        public override SqlExpression Create()
         {
-            if (table.BasedTable != null)
-                return this.CreateBased(table);
+            if (this.Schema.BasedTable != null)
+                return this.CreateBased();
 
-            return new SqlExpression($"CREATE TABLE {GetName(table)} ({string.Join(",", table.Columns.Select(GetColumnDefinition))})");
+            return new SqlExpression($"CREATE TABLE {this.Name} ({string.Join(",", this.Schema.Columns.Select(GetColumnDefinition))})");
         }
 
         private string GetColumnDefinition(DataColumn column)
@@ -93,16 +102,16 @@ namespace SharpOrm.Builder
             throw new ArgumentException($"Unsupported data type: {dataType.Name}");
         }
 
-        private SqlExpression CreateBased(TableSchema table)
+        private SqlExpression CreateBased()
         {
             QueryConstructor query = this.GetConstructor();
             query.Add("SELECT ");
 
-            this.WriteColumns(query, table.BasedTable.Columns);
+            this.WriteColumns(query, this.Schema.BasedTable.Columns);
 
-            query.AddFormat(" INTO [{0}] FROM [{1}]", GetName(table), table.BasedTable.Name);
+            query.AddFormat(" INTO [{0}] FROM [{1}]", this.Name, this.Schema.BasedTable.Name);
 
-            if (!table.BasedTable.CopyData)
+            if (!this.Schema.BasedTable.CopyData)
                 query.Add(" WHERE 1=2;");
 
             return query.ToExpression();
@@ -122,34 +131,25 @@ namespace SharpOrm.Builder
                 query.Add(",").AddExpression(columns[i]);
         }
 
-        public override SqlExpression Drop(TableSchema table)
+        public override SqlExpression Drop()
         {
-            return new SqlExpression("DROP TABLE " + GetName(table));
+            return new SqlExpression("DROP TABLE " + this.Name);
         }
 
-        public override SqlExpression Count(TableSchema table)
+        public override SqlExpression Count()
         {
-            if (table.Temporary)
-                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", GetName(table).Name);
+            if (this.Schema.Temporary)
+                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", this.Name.Name);
 
             var query = this.GetConstructor();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");
 
-            if (!string.IsNullOrEmpty(table.SchemaName))
-                query.Add(" TABLE_SCHEMA = ? AND", table.SchemaName);
+            if (!string.IsNullOrEmpty(this.Schema.SchemaName))
+                query.Add(" TABLE_SCHEMA = ? AND", this.Schema.SchemaName);
 
-            query.Add(" TABLE_NAME = ?;", table.Name);
+            query.Add(" TABLE_NAME = ?;", this.Schema.Name);
 
             return query.ToExpression();
-        }
-
-
-        public override DbName GetName(TableSchema table)
-        {
-            if (table.Temporary)
-                return new DbName($"#{table.Name}", "");
-
-            return new DbName(table.Name, "");
         }
     }
 }

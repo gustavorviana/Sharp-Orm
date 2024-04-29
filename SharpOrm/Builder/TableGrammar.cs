@@ -6,17 +6,21 @@ namespace SharpOrm.Builder
     public abstract class TableGrammar
     {
         protected readonly IReadonlyQueryInfo queryInfo;
+        public TableSchema Schema { get; }
+        public QueryConfig Config => this.queryInfo.Config;
+        public abstract DbName Name { get; }
 
-        public TableGrammar(IReadonlyQueryInfo queryInfo)
+        public TableGrammar(QueryConfig config, TableSchema schema)
         {
-            this.queryInfo = queryInfo;
+            this.Schema = schema;
+            this.queryInfo = new ReadonlyQueryInfo(config, this.Name);
         }
 
-        public abstract SqlExpression Create(TableSchema table);
+        public abstract SqlExpression Create();
 
-        public abstract SqlExpression Drop(TableSchema table);
+        public abstract SqlExpression Drop();
 
-        public abstract SqlExpression Count(TableSchema table);
+        public abstract SqlExpression Count();
 
         protected ColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {
@@ -30,7 +34,5 @@ namespace SharpOrm.Builder
         {
             return new QueryConstructor(queryInfo);
         }
-
-        public abstract DbName GetName(TableSchema schema);
     }
 }
