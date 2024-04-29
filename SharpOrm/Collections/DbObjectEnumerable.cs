@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder.DataTranslation;
+﻿using SharpOrm.Builder;
+using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.DataTranslation.Reader;
 using System;
 using System.Collections;
@@ -12,14 +13,15 @@ namespace SharpOrm.Collections
     {
         private readonly TranslationRegistry translation;
         private readonly CancellationToken token;
-        private readonly bool closeConnection;
+        private readonly ConnectionManagement management;
         private readonly DbCommand command;
         internal IFkQueue fkQueue;
         private bool hasFirstRun;
 
-        public DbObjectEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, bool closeConnection)
+        public DbObjectEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, ConnectionManagement management)
         {
             this.translation = translation;
+            this.management = management;
             this.command = command;
             this.token = token;
         }
@@ -56,7 +58,7 @@ namespace SharpOrm.Collections
             instance.Disposed += (sender, e) =>
             {
                 this.command.Dispose();
-                if (this.closeConnection && this.command.Connection.State != System.Data.ConnectionState.Closed)
+                if (this.command.CanCloseConnection(this.management))
                     this.command.Connection.Close();
             };
 

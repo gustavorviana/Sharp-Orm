@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json.Linq;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;

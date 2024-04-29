@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SharpOrm.Builder.DataTranslation.Reader
+﻿namespace SharpOrm.Builder.DataTranslation.Reader
 {
     internal class HasManyInfo : ForeignInfo
     {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Operators
+﻿namespace SharpOrm.Operators
 {
     public class Min : Column
     {

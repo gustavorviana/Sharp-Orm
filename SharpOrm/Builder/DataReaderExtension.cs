@@ -2,6 +2,7 @@
 using SharpOrm.Collections;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -89,9 +90,9 @@ namespace SharpOrm.Builder
         /// <typeparam name="T">Type to be converted.</typeparam>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default)
+        public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default, ConnectionManagement management = ConnectionManagement.LeaveOpen)
         {
-            return new DbObjectEnumerable<T>(registry, cmd, token, false);
+            return new DbObjectEnumerable<T>(registry, cmd, token, management);
         }
 
         /// <summary>
@@ -121,6 +122,16 @@ namespace SharpOrm.Builder
                 return default;
 
             return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(obj);
+        }
+
+        internal static bool CanCloseConnection(this DbCommand dbCommand, ConnectionManagement management)
+        {
+            return dbCommand.Transaction is null && CanClose(dbCommand.Connection, management);
+        }
+
+        internal static bool CanClose(this DbConnection connection, ConnectionManagement management)
+        {
+            return management != ConnectionManagement.LeaveOpen && (connection.State == ConnectionState.Open || connection.State == ConnectionState.Connecting);
         }
     }
 }

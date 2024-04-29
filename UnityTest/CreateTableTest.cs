@@ -4,7 +4,6 @@ using SharpOrm.Builder;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Net.Http.Headers;
 using UnityTest.Utils;
 
 namespace UnityTest
@@ -23,10 +22,10 @@ namespace UnityTest
         {
             var schema = new TableSchema("MyTestTable", "Address") { Temporary = true };
             using var table = new TableBuilder(schema, new SqlServerQueryConfig(), Connection);
-            var expectedCols = GetTableColumns("Address");
+            var expectedCols = GetTableColumns(new DbName("Address"));
             table.Create();
 
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(schema.Name));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, table.Connection));
             Assert.AreEqual(0, table.GetQuery().Count());
         }
 
@@ -36,18 +35,18 @@ namespace UnityTest
             var schema = new TableSchema("MyTestTable", "Address", true) { Temporary = true };
             using var table = new TableBuilder(schema, new SqlServerQueryConfig(), Connection);
             var expectedRows = InsertAddressValue();
-            var expectedCols = GetTableColumns("Address");
+            var expectedCols = GetTableColumns(new DbName("Address"));
             table.Create();
             var rows = table.GetQuery().ReadRows();
 
             Assert.AreEqual(1, rows.Length);
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(schema.Name));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, table.Connection));
             CollectionAssert.AreEqual(expectedRows.Cells, rows[0].Cells);
         }
 
-        private static string[] GetTableColumns(string name)
+        private static string[] GetTableColumns(DbName name, DbConnection connection = null)
         {
-            using var q = new Query(name);
+            using var q = new Query(connection ?? Connection, name);
             q.Where(new SqlExpression("1=2"));
 
             using var reader = q.ExecuteReader();

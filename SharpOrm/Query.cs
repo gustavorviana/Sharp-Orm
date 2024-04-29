@@ -384,7 +384,6 @@ namespace SharpOrm
         /// <param name="table">Name of the table to be used.</param>
         public Query(string table) : this(ConnectionCreator.Default, table)
         {
-
         }
 
         public Query(ConnectionCreator creator, string table) : this(creator, new DbName(table))
@@ -412,7 +411,6 @@ namespace SharpOrm
 
         public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new DbName(table))
         {
-
         }
 
         public Query(DbConnection connection, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, ConnectionCreator.Default.Config, table, management)
@@ -421,7 +419,6 @@ namespace SharpOrm
 
         public Query(DbTransaction transaction, DbName table) : this(transaction, ConnectionCreator.Default.Config, table)
         {
-
         }
 
         public Query(DbConnection connection, QueryConfig config, string table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, config, new DbName(table), management)
@@ -440,7 +437,6 @@ namespace SharpOrm
 
         public Query(DbTransaction transaction, QueryConfig config, string table) : this(transaction, config, new DbName(table))
         {
-
         }
 
         public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(config, name)
@@ -871,7 +867,7 @@ namespace SharpOrm
             var grammar = this.Info.Config.NewGrammar(this);
             var selectCmd = grammar.Select();
 
-            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.Transaction is null && this.management != ConnectionManagement.LeaveOpen);
+            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.management);
         }
 
         /// <summary>
@@ -1017,8 +1013,8 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            if (this.management != ConnectionManagement.LeaveOpen)
-                if (this.Creator is null && this.Transaction is null) this.Connection?.Dispose();
+            if (this.management != ConnectionManagement.LeaveOpen && this.Connection != null)
+                if (this.Creator is null && this.Transaction is null) this.Connection.Dispose();
                 else this.Creator.SafeDisposeConnection(this.Connection);
 
             this.lastOpenReader = null;
