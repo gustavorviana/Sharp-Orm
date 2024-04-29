@@ -25,7 +25,6 @@ namespace SharpOrm
         private DbTransaction _transaction;
         private DbConnection _transactionConn;
 
-
         private int? commandTimeout = null;
         protected int CommandTimeout
         {
@@ -206,10 +205,7 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            if (this.HasTransaction)
-                return new Query(this._transaction, this.Creator.Config, name) { Token = this.Token };
-
-            return new Query(this.Creator, name) { Token = this.Token };
+            return new Query(name, this.Creator.Config, GetConnectionManager()) { Token = this.Token };
         }
 
         /// <summary>
@@ -233,10 +229,7 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            if (this.HasTransaction)
-                return new Query<T>(this._transaction, this.Creator.Config, name) { Token = this.Token };
-
-            return new Query<T>(this.Creator, name) { Token = this.Token };
+            return new Query<T>(name, this.Creator.Config, GetConnectionManager()) { Token = this.Token };
         }
 
         /// <summary>
@@ -248,6 +241,14 @@ namespace SharpOrm
         protected virtual QueryConstructor Constructor(string table = "", string alias = "")
         {
             return new QueryConstructor(new QueryInfo(this.Creator.Config, new DbName(table, alias)));
+        }
+
+        protected ConnectionManager GetConnectionManager()
+        {
+            if (this._transaction != null)
+                return new ConnectionManager(this._transaction);
+
+            return new ConnectionManager(this.Creator);
         }
 
         /// <summary>

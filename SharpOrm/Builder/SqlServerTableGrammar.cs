@@ -24,7 +24,7 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Create()
         {
-            if (this.Schema.BasedTable != null)
+            if (this.Schema.Based != null)
                 return this.CreateBased();
 
             return new SqlExpression($"CREATE TABLE {this.Name} ({string.Join(",", this.Schema.Columns.Select(GetColumnDefinition))})");
@@ -107,11 +107,11 @@ namespace SharpOrm.Builder
             QueryConstructor query = this.GetConstructor();
             query.Add("SELECT ");
 
-            this.WriteColumns(query, this.Schema.BasedTable.Columns);
+            this.WriteColumns(query, this.Schema.Based.Columns);
 
-            query.AddFormat(" INTO [{0}] FROM [{1}]", this.Name, this.Schema.BasedTable.Name);
+            query.AddFormat(" INTO [{0}] FROM [{1}]", this.Name, this.Schema.Based.Name);
 
-            if (!this.Schema.BasedTable.CopyData)
+            if (!this.Schema.Based.CopyData)
                 query.Add(" WHERE 1=2;");
 
             return query.ToExpression();

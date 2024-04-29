@@ -9,7 +9,7 @@ namespace SharpOrm.Connection
     public class ConnectionManager : IDisposable
     {
         #region Fields/Properties
-        private readonly ConnectionCreator creator;
+        internal readonly ConnectionCreator creator;
         private bool disposed;
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
 

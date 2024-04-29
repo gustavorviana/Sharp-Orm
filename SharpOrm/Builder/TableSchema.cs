@@ -6,9 +6,9 @@ namespace SharpOrm.Builder
     {
         public string SchemaName { get; set; }
         public string Name { get; }
-        public bool Temporary { get; set; }
+        public bool Temporary { get; set; } = true;
 
-        public readonly BasedTableInfo BasedTable;
+        public readonly BaseTable Based;
         public readonly TableColumnCollection Columns;
 
         public TableSchema(string name)
@@ -16,8 +16,8 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            this.Columns = new TableColumnCollection();
-            this.Name = name;
+            Columns = new TableColumnCollection();
+            Name = name;
         }
 
         public TableSchema(string name, TableColumnCollection columns)
@@ -25,8 +25,8 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            this.Columns = columns;
-            this.Name = name;
+            Columns = columns;
+            Name = name;
         }
 
         public TableSchema(string name, string basedTableName, bool copyData = false, params Column[] columns)
@@ -34,21 +34,35 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            if (string.IsNullOrEmpty(basedTableName))
-                throw new ArgumentNullException(nameof(basedTableName));
-
-            this.BasedTable = new BasedTableInfo(basedTableName, columns, copyData);
-            this.Name = name;
+            Based = new BaseTable(basedTableName, copyData, columns);
+            Name = name;
         }
 
-        public class BasedTableInfo
+        private TableSchema(string name, BaseTable basedTable)
+        {
+            this.Name = name;
+            this.Based = basedTable;
+        }
+
+        public TableSchema Clone()
+        {
+            if (this.Based != null)
+                return new TableSchema(this.Name, this.Based);
+
+            return new TableSchema(this.Name, this.Columns);
+        }
+
+        public class BaseTable
         {
             public string Name { get; }
             public Column[] Columns { get; }
             public bool CopyData { get; }
 
-            internal BasedTableInfo(string tableName, Column[] columns, bool copyData)
+            internal BaseTable(string tableName, bool copyData = true, params Column[] columns)
             {
+                if (string.IsNullOrEmpty(tableName))
+                    throw new ArgumentNullException(nameof(tableName));
+
                 Name = tableName;
                 Columns = columns;
                 CopyData = copyData;

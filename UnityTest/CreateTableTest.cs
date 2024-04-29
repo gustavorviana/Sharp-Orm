@@ -15,17 +15,15 @@ namespace UnityTest
         [TestMethod]
         public void CreateByColumnTest()
         {
-            GetTableCreator().Create().Dispose();
+            DbTable.Create(GetSchema()).Dispose();
         }
 
         [TestMethod]
         public void CreateEmptyByAnother()
         {
             var manager = GetConnectionManager();
-            var schema = new TableSchema("MyTestTable", "Address") { Temporary = true };
-            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), manager);
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), manager: manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
-            table.Create();
 
             CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
             Assert.AreEqual(0, table.GetQuery().Count());
@@ -35,11 +33,10 @@ namespace UnityTest
         public void CreateByAnother()
         {
             var manager = GetConnectionManager();
-            var schema = new TableSchema("MyTestTable", "Address", true) { Temporary = true };
-            using var table = new TableBuilder(schema, new SqlServerQueryConfig(), manager);
             var expectedRows = InsertAddressValue();
+
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), manager: manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
-            table.Create();
             var rows = table.GetQuery().ReadRows();
 
             Assert.AreEqual(1, rows.Length);
@@ -69,14 +66,15 @@ namespace UnityTest
         [TestMethod]
         public void CheckExists()
         {
-            using var table = GetTableCreator().Create();
-            Assert.IsTrue(table.Exists());
+            var schema = GetSchema();
+            using var table = DbTable.Create(schema);
+            Assert.IsTrue(DbTable.Exists(table.Manager, schema));
         }
 
         [TestMethod]
         public void InsertData()
         {
-            using var table = GetTableCreator().Create();
+            using var table = DbTable.Create(GetSchema());
             var q = table.GetQuery();
             q.Insert(new Cell("name", "Richard"));
             q.Insert(new Cell("name", "Manuel"));
@@ -84,14 +82,13 @@ namespace UnityTest
             Assert.AreEqual(2, q.Count());
         }
 
-        private static TableBuilder GetTableCreator()
+        private static TableSchema GetSchema()
         {
             var schema = new TableSchema("MyTestTable") { Temporary = true };
-            var table = new TableBuilder(schema, new SqlServerQueryConfig(), new ConnectionManager(Connection));
             schema.Columns.AddUnique("Id");
             schema.Columns.Add<string>("Name");
 
-            return table;
+            return schema;
         }
     }
 }
