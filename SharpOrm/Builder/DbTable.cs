@@ -95,8 +95,9 @@ namespace SharpOrm.Builder
 
         private DbTable(TableGrammar grammar, ConnectionManager manager)
         {
-            manager.Management = ConnectionManagement.LeaveOpen;
-            Manager = manager;
+            ConfigureManager(manager, grammar.Schema);
+            manager.CloseByEndOperation();
+            this.Manager = manager;
             this.grammar = grammar;
         }
 
@@ -116,8 +117,17 @@ namespace SharpOrm.Builder
             if (config is null)
                 config = manager.creator?.Config ?? ConnectionCreator.Default?.Config;
 
-            using (var cmd = manager.GetCommand().SetExpression(config.NewTableGrammar(schema).Count()))
-                return cmd.ExecuteScalar<int>() > 0;
+            ConfigureManager(manager, schema);
+
+            try
+            {
+                using (var cmd = manager.GetCommand().SetExpression(config.NewTableGrammar(schema).Count()))
+                    return cmd.ExecuteScalar<int>() > 0;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
@@ -154,6 +164,12 @@ namespace SharpOrm.Builder
         public Query GetQuery<T>() where T : new()
         {
             return new Query<T>(Name, grammar.Config, Manager);
+        }
+
+        private static void ConfigureManager(ConnectionManager manager, TableSchema schema)
+        {
+            if (manager.Transaction is null && schema.Temporary)
+                manager.Management = ConnectionManagement.LeaveOpen;
         }
 
         #region IDisposable
