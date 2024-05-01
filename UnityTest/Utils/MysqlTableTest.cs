@@ -40,7 +40,7 @@ namespace UnityTest.Utils
         }
         #endregion
 
-        protected static Row NewRow(int id, string name)
+        protected static Row NewRow(int? id, string name)
         {
             return new Row(new Cell(ID, id), new Cell(NAME, name), new Cell(NUMBER, 0M), new Cell(GUIDID, Guid.NewGuid().ToString()), new Cell(STATUS, Status.Unknow));
         }

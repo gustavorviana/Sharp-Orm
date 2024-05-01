@@ -22,7 +22,7 @@ namespace UnityTest
         public void CreateEmptyByAnother()
         {
             var manager = GetConnectionManager();
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), manager: manager);
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), NewConfig, manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
 
             CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
@@ -35,7 +35,7 @@ namespace UnityTest
             var manager = GetConnectionManager();
             var expectedRows = InsertAddressValue();
 
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), manager: manager);
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), NewConfig, manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
             var rows = table.GetQuery().ReadRows();
 
@@ -67,14 +67,14 @@ namespace UnityTest
         public void CheckExists()
         {
             var schema = GetSchema();
-            using var table = DbTable.Create(schema);
-            Assert.IsTrue(DbTable.Exists(table.Manager, schema));
+            using var table = DbTable.Create(schema, NewConfig);
+            Assert.IsTrue(DbTable.Exists(table.Manager, schema, NewConfig));
         }
 
         [TestMethod]
         public void InsertData()
         {
-            using var table = DbTable.Create(GetSchema());
+            using var table = DbTable.Create(GetSchema(), NewConfig);
             var q = table.GetQuery();
             q.Insert(new Cell("name", "Richard"));
             q.Insert(new Cell("name", "Manuel"));

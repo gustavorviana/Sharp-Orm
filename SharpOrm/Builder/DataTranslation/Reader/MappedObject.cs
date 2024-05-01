@@ -21,10 +21,18 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private object instance;
         #endregion
 
-        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable, TranslationRegistry registry = null, string prefix = "")
+        public static T Read<T>(DbDataReader reader, TranslationRegistry registry = null)
+        {
+            return (T)Create(reader, typeof(T), registry: registry).Read(reader);
+        }
+
+        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null, string prefix = "")
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
+
+            if (enqueueable == null)
+                enqueueable = new ObjIdFkQueue();
 
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(registry, reader);

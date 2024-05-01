@@ -28,7 +28,28 @@ namespace SharpOrm.Connection
             try
             {
                 using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
+                {
+                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
                     return cmd.ExecuteScalar();
+                }
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        internal static int ExecuteAndGetAffected(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
+                {
+                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
+                    using (var reader = cmd.ExecuteReader())
+                        return reader.RecordsAffected;
+                }
             }
             finally
             {
@@ -42,7 +63,10 @@ namespace SharpOrm.Connection
             try
             {
                 using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
+                {
+                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
                     return cmd.ExecuteNonQuery();
+                }
             }
             finally
             {
@@ -59,7 +83,7 @@ namespace SharpOrm.Connection
         {
             return manager.GetCommand().SetExpression(expression);
         }
-        
+
         public static DbCommand GetCommand(this ConnectionManager manager)
         {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();

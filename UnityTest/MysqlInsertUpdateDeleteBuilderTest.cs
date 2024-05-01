@@ -2,8 +2,6 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using System;
-using System.Data.Common;
-using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 

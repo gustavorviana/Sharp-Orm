@@ -15,9 +15,11 @@ namespace UnityTest
         public void Insert()
         {
             using var q = NewQuery();
-            q.Insert(NewRow(1, "User 1").Cells);
+            q.Insert(NewRow(120, "User 1").Cells);
+            int lastId = q.Insert(NewRow(null, "User 2").Cells);
 
-            Assert.AreEqual(1, q.Count());
+            Assert.AreEqual(2, q.Count());
+            Assert.AreEqual(121, lastId);
         }
 
         [TestMethod]

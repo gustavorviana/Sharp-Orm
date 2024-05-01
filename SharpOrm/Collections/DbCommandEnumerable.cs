@@ -18,8 +18,11 @@ namespace SharpOrm.Collections
         internal IFkQueue fkQueue;
         private bool hasFirstRun;
 
+        public bool LeaveOpen { get; set; }
+
         public DbCommandEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, ConnectionManagement management)
         {
+            Grammar.QueryLogger?.Invoke(command.CommandText);
             this.translation = translation;
             this.management = management;
             this.command = command;
@@ -30,14 +33,14 @@ namespace SharpOrm.Collections
         {
             this.CheckRun();
             var reader = command.ExecuteReader();
-            return RegisterDispose(new Enumerator(reader, this.CreateMappedObj(reader), token));
+            return RegisterDispose(new DbObjectEnumerator<T>(reader, this.CreateMappedObj(reader), token));
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             this.CheckRun();
             var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token));
+            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token, this.LeaveOpen));
         }
 
         private void CheckRun()
@@ -50,7 +53,7 @@ namespace SharpOrm.Collections
 
         private IMappedObject CreateMappedObj(DbDataReader reader)
         {
-            return MappedObject.Create(reader, typeof(T), this.fkQueue ?? new ObjIdFkQueue(), translation);
+            return MappedObject.Create(reader, typeof(T), this.fkQueue, translation);
         }
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator
@@ -63,15 +66,6 @@ namespace SharpOrm.Collections
             };
 
             return instance;
-        }
-
-        private class Enumerator : DbObjectEnumerator, IEnumerator<T>
-        {
-            public Enumerator(DbDataReader reader, IMappedObject map, CancellationToken token) : base(reader, map, token)
-            {
-            }
-
-            public new T Current => (T)base.Current;
         }
     }
 }

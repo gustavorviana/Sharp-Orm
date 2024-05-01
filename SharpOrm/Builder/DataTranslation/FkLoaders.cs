@@ -105,7 +105,7 @@ namespace SharpOrm.Builder.DataTranslation
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
             var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), this, config.Translation);
-            return new DbObjectEnumerator(reader, mapped, token);
+            return new DbObjectEnumerator(reader, mapped, token, false);
         }
 
         private void AddFkColumn(LambdaColumn lCol, object owner, object fkValue, ColumnInfo column)

@@ -637,12 +637,7 @@ namespace SharpOrm
         public int Update(IEnumerable<Cell> cells)
         {
             this.CheckIsSafeOperation();
-            return this.manager.ExecuteNonQuery(this.GetGrammar().Update(cells), this.Token);
-        }
-
-        public int Insert(Dictionary<string, object> cells)
-        {
-            return this.Insert(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+            return this.manager.ExecuteAndGetAffected(this.GetGrammar().Update(cells), this.Token);
         }
 
         /// <summary>
@@ -665,7 +660,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            object result = this.manager.ExecuteNonQuery(this.GetGrammar().Insert(cells), this.Token);
+            object result = this.manager.ExecuteScalar(this.GetGrammar().Insert(cells), this.Token);
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -676,17 +671,17 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
-            return this.manager.ExecuteNonQuery(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
+            object result = this.manager.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
+            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="query"></param>
         /// <param name="columnNames"></param>
-        public void Insert(SqlExpression expression, params string[] columnNames)
+        public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            this.manager.ExecuteNonQuery(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
+            return this.manager.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
         }
 
         /// <summary>
@@ -704,7 +699,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            return this.manager.ExecuteNonQuery(this.GetGrammar().BulkInsert(rows), this.Token);
+            return this.manager.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows), this.Token);
         }
 
         /// <summary>
@@ -714,7 +709,7 @@ namespace SharpOrm
         public int Delete()
         {
             this.CheckIsSafeOperation();
-            return this.manager.ExecuteNonQuery(this.GetGrammar().Delete(), this.Token);
+            return this.manager.ExecuteAndGetAffected(this.GetGrammar().Delete(), this.Token);
         }
 
         /// <summary>

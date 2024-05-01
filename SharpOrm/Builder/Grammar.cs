@@ -1,8 +1,5 @@
-﻿using SharpOrm.Connection;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -276,7 +273,6 @@ namespace SharpOrm.Builder
             this.Constructor.Clear();
             builderAction();
 
-            QueryLogger?.Invoke(this.Constructor.ToString());
             return this.Constructor.ToExpression();
         }
 
