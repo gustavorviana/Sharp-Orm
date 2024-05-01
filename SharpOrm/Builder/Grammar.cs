@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Connection;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -85,6 +86,13 @@ namespace SharpOrm.Builder
             this.Constructor.Clear();
             this.ConfigureSelect(false);
             return this.Constructor.ToString();
+        }
+
+        public SqlExpression GetSelectExpression()
+        {
+            this.Constructor.Clear();
+            this.ConfigureSelect(false);
+            return this.Constructor.ToExpression();
         }
 
         /// <summary>

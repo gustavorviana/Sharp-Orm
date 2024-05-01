@@ -1,10 +1,10 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Collections;
+using SharpOrm.Connection;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 
 namespace SharpOrm.Builder
@@ -65,13 +65,21 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static DbCommand SetQuery(this DbCommand command, string query, params object[] args)
         {
-            if (query.Count(c => c == '?') != args.Length)
-                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
+            return command.SetExpression(new SqlExpression(query, args));
+        }
 
-            command.CommandText = query.Replace('?', p => $"@p{p}");
+        /// <summary>
+        /// Apply SqlExpression to command.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="expression">Expression to be executed.</param>
+        /// <returns></returns>
+        public static DbCommand SetExpression(this DbCommand command, SqlExpression expression)
+        {
+            command.CommandText = expression.ToString().Replace('?', p => $"@p{p}");
 
-            for (int i = 0; i < args.Length; i++)
-                command.AddParam($"@p{i + 1}", args[i]);
+            for (int i = 0; i < expression.Parameters.Length; i++)
+                command.AddParam($"@p{i + 1}", expression.Parameters[i]);
 
             return command;
         }

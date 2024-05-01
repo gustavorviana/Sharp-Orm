@@ -27,6 +27,11 @@ namespace SharpOrm.Connection
         public DbTransaction Transaction { get; }
         public DbConnection Connection { get; }
         public int CommandTimeout { get; set; }
+
+        public bool CanClose
+        {
+            get => this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
+        }
         #endregion
 
         /// <summary>
@@ -74,13 +79,8 @@ namespace SharpOrm.Connection
 
         public void CloseByEndOperation()
         {
-            if (this.Management == ConnectionManagement.CloseOnEndOperation && this.CanClose())
+            if (this.Management == ConnectionManagement.CloseOnEndOperation && this.CanClose)
                 this.Connection.Close();
-        }
-
-        private bool CanClose()
-        {
-            return this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
         }
 
         public ConnectionManager Clone()

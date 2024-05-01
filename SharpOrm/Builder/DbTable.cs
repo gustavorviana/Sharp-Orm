@@ -1,8 +1,6 @@
 ﻿using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
-using System.Data;
-using System.Data.Common;
 
 namespace SharpOrm.Builder
 {
@@ -66,7 +64,7 @@ namespace SharpOrm.Builder
                 config = manager.creator?.Config ?? ConnectionCreator.Default?.Config;
 
             var grammar = config.NewTableGrammar(schema.Clone());
-            using (var cmd = GetCommand(manager, grammar.Create()))
+            using (var cmd = manager.GetCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
             return new DbTable(grammar, manager);
@@ -118,7 +116,7 @@ namespace SharpOrm.Builder
             if (config is null)
                 config = manager.creator?.Config ?? ConnectionCreator.Default?.Config;
 
-            using (var cmd = GetCommand(manager, config.NewTableGrammar(schema).Count()))
+            using (var cmd = manager.GetCommand().SetExpression(config.NewTableGrammar(schema).Count()))
                 return cmd.ExecuteScalar<int>() > 0;
         }
 
@@ -129,12 +127,12 @@ namespace SharpOrm.Builder
         {
             try
             {
-                using (var cmd = GetCommand(Manager, grammar.Drop()))
+                using (var cmd = Manager.GetCommand().SetExpression(grammar.Drop()))
                     cmd.ExecuteNonQuery();
             }
             finally
             {
-                if (Manager.Connection.State == ConnectionState.Open)
+                if (Manager.CanClose)
                     Manager.Connection.Close();
             }
         }
@@ -156,14 +154,6 @@ namespace SharpOrm.Builder
         public Query GetQuery<T>() where T : new()
         {
             return new Query<T>(Name, grammar.Config, Manager);
-        }
-
-        private static DbCommand GetCommand(ConnectionManager manager, SqlExpression expression)
-        {
-            var cmd = manager.Connection.OpenIfNeeded().CreateCommand();
-            cmd.Transaction = manager.Transaction;
-            cmd.SetQuery(expression.ToString(), expression.Parameters);
-            return cmd;
         }
 
         #region IDisposable

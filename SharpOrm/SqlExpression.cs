@@ -27,7 +27,7 @@ namespace SharpOrm
         /// <summary>
         /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
         /// </summary>
-        /// <param name="value">The SQL values string.</param>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
         /// <param name="parameters">The parameters used in the SQL values.</param>
         public SqlExpression(string value, params object[] parameters)
         {

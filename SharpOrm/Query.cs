@@ -1024,6 +1024,12 @@ namespace SharpOrm
                 return grammar.SelectSqlOnly();
         }
 
+        public SqlExpression ToSqlExpression()
+        {
+            using (var grammar = this.Info.Config.NewGrammar(this))
+                return grammar.GetSelectExpression();
+        }
+
         private class OpenReader : IDisposable
         {
             private readonly Grammar grammar;

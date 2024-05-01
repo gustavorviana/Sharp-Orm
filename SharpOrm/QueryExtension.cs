@@ -376,20 +376,6 @@ namespace SharpOrm
 
         #endregion
 
-        public static DbConnection OpenIfNeeded(this DbConnection connection)
-        {
-            try
-            {
-                if (connection.State == System.Data.ConnectionState.Closed)
-                    connection.Open();
-
-                return connection;
-            }
-            catch (Exception ex)
-            {
-                throw new Errors.DbConnectionException(ex);
-            }
-        }
 
         private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
         {
@@ -693,16 +679,6 @@ namespace SharpOrm
         #endregion
 
         #endregion
-
-        internal static DbParameter AddParam(this DbCommand command, string name, object value)
-        {
-            var param = command.CreateParameter();
-            param.ParameterName = name;
-            param.Value = value;
-            command.Parameters.Add(param);
-
-            return param;
-        }
 
         #region DbDataReader
 

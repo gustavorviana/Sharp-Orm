@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Connection;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using UnityTest.Utils;
@@ -17,7 +18,9 @@ namespace UnityTest
 
         #region Init/Cleanup
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
+#pragma warning disable IDE0060 // Remover o parâmetro não utilizado
         public static void OnMysqlTableTestInit(TestContext context)
+#pragma warning restore IDE0060 // Remover o parâmetro não utilizado
         {
             using var con = Connection.OpenIfNeeded();
             using var cmd = con.CreateCommand();
