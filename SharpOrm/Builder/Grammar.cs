@@ -10,25 +10,19 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Provides the base implementation for building SQL queries using a fluent interface.
     /// </summary>
-    public abstract class Grammar : IDisposable
+    public abstract class Grammar
     {
         #region Fields\Properties
         public static Action<string> QueryLogger { get; set; }
 
-        private DbCommand _command = null;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _disposed = false;
-
-        private CmdQueryConstructor _constructor;
-        protected QueryConstructor Constructor => this._constructor;
+        protected QueryConstructor Constructor { get; }
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
         #endregion
 
         protected Grammar(Query query)
         {
-            this._constructor = new CmdQueryConstructor(query.Info);
+            this.Constructor = new QueryConstructor(query);
             this.Query = query;
         }
 
@@ -38,7 +32,7 @@ namespace SharpOrm.Builder
         /// Performs a record count in the database based on the current Query object configuration.
         /// </summary>
         /// <returns>The database command configured to perform the record count.</returns>
-        public DbCommand Count()
+        public SqlExpression Count()
         {
             return this.Count(this.GetColumnToCount());
         }
@@ -58,9 +52,9 @@ namespace SharpOrm.Builder
         /// Performs a record count in the database based on the current Query object configuration.
         /// </summary>
         /// <returns>The database command configured to perform the record count.</returns>
-        public DbCommand Count(Column column)
+        public SqlExpression Count(Column column)
         {
-            return this.BuildCommand(() => this.ConfigureCount(column));
+            return this.BuildExpression(() => this.ConfigureCount(column));
         }
 
         /// <summary>
@@ -72,9 +66,9 @@ namespace SharpOrm.Builder
         /// Generates a SELECT statement and returns a DbCommand object to execute it.
         /// </summary>
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
-        public DbCommand Select()
+        public SqlExpression Select()
         {
-            return this.BuildCommand(() => this.ConfigureSelect(true));
+            return this.BuildExpression(() => this.ConfigureSelect(true));
         }
 
         /// <summary>
@@ -102,9 +96,9 @@ namespace SharpOrm.Builder
         /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
-        internal DbCommand InsertQuery(QueryBase query, IEnumerable<string> columnNames)
+        internal SqlExpression InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
-            return this.BuildCommand(() => this.ConfigureInsertQuery(query, columnNames));
+            return this.BuildExpression(() => this.ConfigureInsertQuery(query, columnNames));
         }
 
         /// <summary>
@@ -114,9 +108,9 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected abstract void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames);
 
-        public DbCommand InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
+        public SqlExpression InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
         {
-            return this.BuildCommand(() => this.ConfigureInsertExpression(expression, columnNames));
+            return this.BuildExpression(() => this.ConfigureInsertExpression(expression, columnNames));
         }
 
         /// <summary>
@@ -130,9 +124,9 @@ namespace SharpOrm.Builder
         /// Inserts a new record into the database table with the specified cell values.
         /// </summary>
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
-        public DbCommand Insert(IEnumerable<Cell> cells)
+        public SqlExpression Insert(IEnumerable<Cell> cells)
         {
-            return this.BuildCommand(() => this.ConfigureInsert(cells, true));
+            return this.BuildExpression(() => this.ConfigureInsert(cells, true));
         }
 
         /// <summary>
@@ -146,9 +140,9 @@ namespace SharpOrm.Builder
         /// Executes a bulk insert operation with the given rows.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        public DbCommand BulkInsert(IEnumerable<Row> rows)
+        public SqlExpression BulkInsert(IEnumerable<Row> rows)
         {
-            return this.BuildCommand(() => this.ConfigureBulkInsert(rows));
+            return this.BuildExpression(() => this.ConfigureBulkInsert(rows));
         }
 
         /// <summary>
@@ -161,9 +155,9 @@ namespace SharpOrm.Builder
         /// Builds and returns a database command object for executing an update operation based on the specified array of cells.
         /// </summary>
         /// <param name="cells">An array of cells containing the values to be updated.</param>
-        public DbCommand Update(IEnumerable<Cell> cells)
+        public SqlExpression Update(IEnumerable<Cell> cells)
         {
-            return this.BuildCommand(() => this.ConfigureUpdate(cells));
+            return this.BuildExpression(() => this.ConfigureUpdate(cells));
         }
 
         /// <summary>
@@ -175,9 +169,9 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Creates a DELETE command for deleting data from a table.
         /// </summary>
-        public DbCommand Delete()
+        public SqlExpression Delete()
         {
-            return this.BuildCommand(this.ConfigureDelete);
+            return this.BuildExpression(this.ConfigureDelete);
         }
 
         /// <summary>
@@ -277,41 +271,13 @@ namespace SharpOrm.Builder
             return query.Info.TableName.GetName(withAlias, query.Info.Config);
         }
 
-        private DbCommand BuildCommand(Action builderAction)
+        private SqlExpression BuildExpression(Action builderAction)
         {
-            this.Reset();
-            builderAction();
-            this.CreateCommand();
-            this.SetCommandQuery();
-
-            return this._command;
-        }
-
-        private void Reset()
-        {
-            this.Query.Token.ThrowIfCancellationRequested();
             this.Constructor.Clear();
-            if (this._command == null)
-                return;
+            builderAction();
 
-            this._command.Parameters.Clear();
-            this._command.Dispose();
-        }
-
-        private void CreateCommand()
-        {
-            this._command = this.Query.Connection?.OpenIfNeeded().CreateCommand();
-            this._command.Transaction = this.Query.Transaction;
-
-            this._command.SetCancellationToken(this.Query.Token);
-        }
-
-        private void SetCommandQuery()
-        {
-            this._command.CommandText = this.Constructor.ToString();
-            this._command.CommandTimeout = this.Query.CommandTimeout;
-            this._constructor.ApplyToCommand(this._command);
-            QueryLogger?.Invoke(this._command.CommandText);
+            QueryLogger?.Invoke(this.Constructor.ToString());
+            return this.Constructor.ToExpression();
         }
 
         protected virtual void WriteSelectColumns()
@@ -353,7 +319,6 @@ namespace SharpOrm.Builder
 
             this.Constructor.Add(" GROUP BY ");
             AddParams(this.Info.GroupsBy);
-
             if (this.Info.Having.Empty)
                 return;
 
@@ -375,33 +340,5 @@ namespace SharpOrm.Builder
         {
             return this.Info.Config.ApplyNomenclature(name);
         }
-
-        #region IDisposable
-        ~Grammar()
-        {
-            this.Dispose(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (this._disposed)
-                return;
-
-            this.Constructor.Clear();
-            if (disposing)
-                this._command?.Dispose();
-
-            this._disposed = true;
-        }
-
-        public void Dispose()
-        {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
-
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        #endregion
     }
 }

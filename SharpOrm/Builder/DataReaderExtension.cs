@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq.Expressions;
 using System.Threading;
 
 namespace SharpOrm.Builder
@@ -76,20 +77,34 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static DbCommand SetExpression(this DbCommand command, SqlExpression expression)
         {
-            command.CommandText = expression.ToString().Replace('?', p => $"@p{p}");
+            command.CommandText = DecodeExpressionString(expression);
 
             for (int i = 0; i < expression.Parameters.Length; i++)
-                command.AddParam($"@p{i + 1}", expression.Parameters[i]);
+                command.AddParam(GetParamName(i + 1), expression.Parameters[i]);
 
             return command;
         }
 
-        internal static void SetCancellationToken(this DbCommand command, CancellationToken token)
+        internal static string DecodeExpressionString(SqlExpression expression)
         {
-            token.Register(() =>
+            return expression.ToString().Replace('?', GetParamName);
+        }
+
+        internal static string GetParamName(int index)
+        {
+            return $"@p{index}";
+        }
+
+        internal static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
+        {
+            var registry = token.Register(() =>
             {
                 try { command.Cancel(); } catch { }
             });
+
+            command.Disposed += (sender, e) => registry.Dispose();
+
+            return command;
         }
 
         /// <summary>

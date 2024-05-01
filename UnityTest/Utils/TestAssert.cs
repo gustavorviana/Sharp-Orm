@@ -1,5 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SharpOrm;
+using SharpOrm.Builder;
 using System;
+using System.Data.Common;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace UnityTest.Utils
 {
@@ -24,6 +30,51 @@ namespace UnityTest.Utils
                 Console.WriteLine(actual);
                 throw;
             }
+        }
+
+        public static void AreDecoded(string expected, SqlExpression actual)
+        {
+            Assert.AreEqual(expected, DataReaderExtension.DecodeExpressionString(actual));
+        }
+
+        public static void AreEqualsParameters(SqlExpression exp, params int[] paramIndexes)
+        {
+            if (paramIndexes.Length == 0)
+                throw new ArgumentNullException(nameof(paramIndexes));
+
+            using var cmd = new SqlCommand();
+            cmd.SetExpression(exp);
+
+            foreach (var index in paramIndexes)
+                AreValidParam(cmd, index, cmd.Parameters[index].Value);
+        }
+
+        public static void TestExpectedSelectExpression(Query query, string expected, SqlExpression expression, object[] expectedValues)
+        {
+            query.Where(expression);
+            TestExpected(query.Info.Config.NewGrammar(query).Select(), expected, expectedValues);
+        }
+
+        public static void TestExpected(SqlExpression exp, string expectedSql, object[] expectedValues)
+        {
+            using var command = new SqlCommand();
+            command.SetExpression(exp);
+
+            Assert.AreEqual(expectedSql, command.CommandText);
+            Assert.AreEqual(expectedValues.Length, command.Parameters.Count);
+            var dbParams = command.Parameters.OfType<DbParameter>().ToArray();
+
+            for (int i = 0; i < dbParams.Length; i++)
+                AreValidParam(command, i, expectedValues[i]);
+        }
+
+        public static void AreValidParam(DbCommand cmd, int index, object value)
+        {
+            var param = cmd.Parameters[index];
+            Assert.AreEqual(DataReaderExtension.GetParamName(index + 1), param.ParameterName);
+
+            if (value == null || value is DBNull) Assert.IsTrue(param.Value is DBNull);
+            else Assert.AreEqual(value, param.Value);
         }
     }
 }

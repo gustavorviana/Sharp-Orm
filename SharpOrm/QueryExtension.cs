@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Connection;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -491,6 +492,11 @@ namespace SharpOrm
             return query.InsertL(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
         }
 
+        public static T Insert<T>(this Query query, params Cell[] cells)
+        {
+            return query.Config.Translation.FromSql<T>(InsertObj(query, cells));
+        }
+
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
@@ -498,16 +504,16 @@ namespace SharpOrm
         /// <returns>Id of row (long).</returns>
         public static long InsertL(this Query query, params Cell[] cells)
         {
+            object result = InsertObj(query, cells);
+            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt64(result) : 0;
+        }
+
+        private static object InsertObj(this Query query, params Cell[] cells)
+        {
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            using (Grammar grammar = query.Info.Config.NewGrammar(query))
-            using (DbCommand cmd = grammar.Insert(cells))
-            {
-                object result = cmd.ExecuteScalar();
-                query.Token.ThrowIfCancellationRequested();
-                return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt64(result) : 0;
-            }
+            return query.manager.ExecuteScalar(query.GetGrammar().Insert(cells), query.Token);
         }
 
         /// <summary>

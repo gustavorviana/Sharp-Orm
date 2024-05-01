@@ -51,8 +51,7 @@ namespace UnityTest
         {
             var query = new Query("table");
 
-            using var grammar = new MysqlGrammar(query);
-            using var cmd = grammar.Select();
+            using var cmd = query.manager.GetCommand();
             Assert.AreEqual(30, cmd.CommandTimeout);
         }
 
@@ -64,8 +63,7 @@ namespace UnityTest
                 CommandTimeout = 120
             };
 
-            using var grammar = new MysqlGrammar(query);
-            using var cmd = grammar.Select();
+            using var cmd = query.manager.GetCommand();
             Assert.AreEqual(120, cmd.CommandTimeout);
         }
 
@@ -75,8 +73,7 @@ namespace UnityTest
             using var creator = new MultipleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false) { CommandTimeout = 120 }, ConnectionStr.Mysql);
             var query = new Query(creator, "table");
 
-            using var grammar = new MysqlGrammar(query);
-            using var cmd = grammar.Select();
+            using var cmd = query.manager.GetCommand();
             Assert.AreEqual(120, cmd.CommandTimeout);
         }
     }

@@ -10,39 +10,6 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    internal class CmdQueryConstructor : QueryConstructor
-    {
-        /*
-         * Param index
-         */
-        private List<int> cmdParams = new List<int>();
-
-        public CmdQueryConstructor(QueryInfo info) : base(info)
-        {
-
-        }
-
-        public void ApplyToCommand(System.Data.Common.DbCommand cmd)
-        {
-            for (int i = 0; i < cmdParams.Count; i++)
-                cmd.AddParam($"@p{i + 1}", this.parameters[cmdParams[i]]);
-        }
-
-        protected override QueryConstructor InternalAddParam(object value)
-        {
-            this.AddParameters(value);
-            this.cmdParams.Add(this.parameters.Count - 1);
-
-            return this.Add($"@p{this.parameters.Count}");
-        }
-
-        public override QueryConstructor Clear()
-        {
-            this.cmdParams.Clear();
-            return base.Clear();
-        }
-    }
-
     /// <summary>
     /// A class for building SQL queries with parameters.
     /// </summary>

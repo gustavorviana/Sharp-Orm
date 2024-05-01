@@ -165,7 +165,7 @@ namespace SharpOrm
             }
             finally
             {
-                this.SafeClose();
+                this.manager?.CloseByEndOperation();
             }
         }
 
@@ -365,7 +365,7 @@ namespace SharpOrm
 
         public object GrammarOptions { get; set; }
         public QueryConfig Config => this.Info.Config;
-        protected readonly ConnectionManager manager;
+        protected internal readonly ConnectionManager manager;
         public DbConnection Connection => this.manager.Connection;
         public DbTransaction Transaction => this.manager.Transaction;
 
@@ -636,21 +636,8 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
-            this.Token.ThrowIfCancellationRequested();
             this.CheckIsSafeOperation();
-
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    int result = grammar.Update(cells).ExecuteNonQuery();
-                    return result;
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return this.manager.ExecuteNonQuery(this.GetGrammar().Update(cells), this.Token);
         }
 
         public int Insert(Dictionary<string, object> cells)
@@ -678,19 +665,8 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            this.Token.ThrowIfCancellationRequested();
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    object result = grammar.Insert(cells).ExecuteScalar();
-                    return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            object result = this.manager.ExecuteNonQuery(this.GetGrammar().Insert(cells), this.Token);
+            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
         /// <summary>
@@ -700,16 +676,7 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
-            this.Token.ThrowIfCancellationRequested();
-            try
-            {
-                using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                    return grammar.InsertQuery(query, columnNames).ExecuteNonQuery();
-            }
-            finally
-            {
-                this.SafeClose();
-            }
+            return this.manager.ExecuteNonQuery(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
         }
 
         /// <summary>
@@ -719,16 +686,7 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public void Insert(SqlExpression expression, params string[] columnNames)
         {
-            this.Token.ThrowIfCancellationRequested();
-            try
-            {
-                using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                    grammar.InsertExpression(expression, columnNames).ExecuteNonQuery();
-            }
-            finally
-            {
-                this.SafeClose();
-            }
+            this.manager.ExecuteNonQuery(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
         }
 
         /// <summary>
@@ -746,18 +704,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            this.Token.ThrowIfCancellationRequested();
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    return grammar.BulkInsert(rows).ExecuteNonQuery();
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return this.manager.ExecuteNonQuery(this.GetGrammar().BulkInsert(rows), this.Token);
         }
 
         /// <summary>
@@ -766,21 +713,8 @@ namespace SharpOrm
         /// <returns></returns>
         public int Delete()
         {
-            this.Token.ThrowIfCancellationRequested();
             this.CheckIsSafeOperation();
-
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    int result = grammar.Delete().ExecuteNonQuery();
-                    return result;
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return this.manager.ExecuteNonQuery(this.GetGrammar().Delete(), this.Token);
         }
 
         /// <summary>
@@ -789,19 +723,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                this.Token.ThrowIfCancellationRequested();
-                try
-                {
-                    object result = grammar.Count().ExecuteScalar();
-                    return Convert.ToInt64(result);
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return Convert.ToInt64(this.manager.ExecuteScalar(this.GetGrammar().Count(), this.Token));
         }
 
         /// <summary>
@@ -821,19 +743,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
-            this.Token.ThrowIfCancellationRequested();
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    object result = grammar.Count(column).ExecuteScalar();
-                    return Convert.ToInt64(result);
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return Convert.ToInt64(this.manager.ExecuteScalar(this.GetGrammar().Count(column), this.Token));
         }
 
         /// <summary>
@@ -868,9 +778,8 @@ namespace SharpOrm
         {
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
-            var selectCmd = grammar.Select();
 
-            return new DbObjectEnumerable<T>(this.Config.Translation, selectCmd, this.Token, this.manager.Management);
+            return new DbObjectEnumerable<T>(this.Config.Translation, this.manager.GetCommand(grammar.Select()), this.Token, this.manager.Management);
         }
 
         /// <summary>
@@ -882,13 +791,12 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             try
             {
-                using (Grammar grammar = this.Info.Config.NewGrammar(this))
-                using (DbCommand cmd = grammar.Select())
+                using (DbCommand cmd = this.manager.GetCommand(this.GetGrammar().Select()))
                     return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
             }
             finally
             {
-                this.SafeClose();
+                this.manager?.CloseByEndOperation();
             }
         }
 
@@ -899,18 +807,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            this.Token.ThrowIfCancellationRequested();
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    return this.Config.Translation.FromSql<T>(grammar.Select().ExecuteScalar());
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return this.Config.Translation.FromSql<T>(this.manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
         }
 
         /// <summary>
@@ -919,18 +816,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            this.Token.ThrowIfCancellationRequested();
-            using (Grammar grammar = this.Info.Config.NewGrammar(this))
-            {
-                try
-                {
-                    return this.Config.Translation.FromSql(grammar.Select().ExecuteScalar());
-                }
-                finally
-                {
-                    this.SafeClose();
-                }
-            }
+            return this.Config.Translation.FromSql(this.manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
         }
 
         /// <summary>
@@ -942,7 +828,7 @@ namespace SharpOrm
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.Info.Config.NewGrammar(this))).reader;
+            return (this.lastOpenReader = new OpenReader(this.manager.GetCommand(this.GetGrammar().Select(), this.Token))).reader;
         }
 
         public Query JoinToDelete(params string[] join)
@@ -1002,11 +888,6 @@ namespace SharpOrm
 
         #endregion
 
-        protected internal virtual void SafeClose()
-        {
-            this.manager?.CloseByEndOperation();
-        }
-
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -1020,26 +901,29 @@ namespace SharpOrm
 
         public override string ToString()
         {
-            using (var grammar = this.Info.Config.NewGrammar(this))
-                return grammar.SelectSqlOnly();
+            return GetGrammar().SelectSqlOnly();
         }
 
         public SqlExpression ToSqlExpression()
         {
-            using (var grammar = this.Info.Config.NewGrammar(this))
-                return grammar.GetSelectExpression();
+            return GetGrammar().GetSelectExpression();
+        }
+
+        protected internal Grammar GetGrammar()
+        {
+            return this.Info.Config.NewGrammar(this);
         }
 
         private class OpenReader : IDisposable
         {
-            private readonly Grammar grammar;
+            private readonly DbCommand command;
             public readonly DbDataReader reader;
             private bool _disposed;
 
-            public OpenReader(Grammar grammar)
+            public OpenReader(DbCommand command)
             {
-                this.grammar = grammar;
-                this.reader = grammar.Select().ExecuteReader();
+                this.command = command;
+                this.reader = command.ExecuteReader();
             }
 
             public void Dispose()
@@ -1067,7 +951,7 @@ namespace SharpOrm
                     return;
 
                 try { ((IDisposable)this.reader).Dispose(); } catch { }
-                try { this.grammar.Dispose(); } catch { }
+                try { this.command.Dispose(); } catch { }
             }
         }
     }

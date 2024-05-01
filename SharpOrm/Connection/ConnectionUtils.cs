@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
 using System.Data.Common;
+using System.Threading;
 
 namespace SharpOrm.Connection
 {
@@ -20,9 +22,48 @@ namespace SharpOrm.Connection
             }
         }
 
+        internal static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
+                    return cmd.ExecuteScalar();
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        internal static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
+                    return cmd.ExecuteNonQuery();
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
+        {
+            return manager.GetCommand(expression).SetCancellationToken(token);
+        }
+
+        public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
+        {
+            return manager.GetCommand().SetExpression(expression);
+        }
+        
         public static DbCommand GetCommand(this ConnectionManager manager)
         {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();
+            cmd.CommandTimeout = manager.CommandTimeout;
             cmd.Transaction = manager.Transaction;
             return cmd;
         }
