@@ -145,7 +145,7 @@ namespace SharpOrm
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var enumerable = (DbObjectEnumerable<K>)base.GetEnumerable<K>();
+            var enumerable = (DbCommandEnumerable<K>)base.GetEnumerable<K>();
             if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
                 return enumerable;
 
@@ -779,7 +779,7 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
 
-            return new DbObjectEnumerable<T>(this.Config.Translation, this.manager.GetCommand(grammar.Select()), this.Token, this.manager.Management);
+            return new DbCommandEnumerable<T>(this.Config.Translation, this.manager.GetCommand(grammar.Select()), this.Token, this.manager.Management);
         }
 
         /// <summary>

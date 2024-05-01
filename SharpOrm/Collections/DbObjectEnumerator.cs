@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace SharpOrm.Collections
 {
-    internal class DbObjectEnumerator : IEnumerator, IDisposable
+    public class DbObjectEnumerator : IEnumerator, IDisposable
     {
         public CancellationToken Token { get; }
         private readonly DbDataReader reader;

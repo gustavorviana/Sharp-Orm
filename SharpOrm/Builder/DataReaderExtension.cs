@@ -115,7 +115,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static IEnumerable<T> ExecuteSql<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default, ConnectionManagement management = ConnectionManagement.LeaveOpen)
         {
-            return new DbObjectEnumerable<T>(registry, cmd, token, management);
+            return new DbCommandEnumerable<T>(registry, cmd, token, management);
         }
 
         /// <summary>

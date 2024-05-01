@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace SharpOrm.Collections
 {
-    public class DbObjectEnumerable<T> : IEnumerable<T>
+    public class DbCommandEnumerable<T> : IEnumerable<T>
     {
         private readonly TranslationRegistry translation;
         private readonly CancellationToken token;
@@ -18,7 +18,7 @@ namespace SharpOrm.Collections
         internal IFkQueue fkQueue;
         private bool hasFirstRun;
 
-        public DbObjectEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, ConnectionManagement management)
+        public DbCommandEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, ConnectionManagement management)
         {
             this.translation = translation;
             this.management = management;
