@@ -3,10 +3,19 @@ using System;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Class responsible for loading query management information, its configurations, and translations.
+    /// </summary>
     public abstract class QueryConfig
     {
+        /// <summary>
+        /// Instance that will be responsible for managing translations.
+        /// </summary>
         public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
 
+        /// <summary>
+        /// Custom mapping of columns in the database.
+        /// </summary>
         public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
 
         /// <summary>
@@ -32,11 +41,19 @@ namespace SharpOrm.Builder
         /// </remarks>
         public bool EscapeStrings { get; set; }
 
+        /// <summary>
+        /// Create an instance that allows only safe modifications.
+        /// </summary>
         public QueryConfig() : this(true)
         {
 
         }
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <param name="safeModificationsOnly">Signal whether only safe modifications should be made.</param>
+        /// <remarks>Safe modifications are updates and deletes with a WHERE clause.</remarks>
         public QueryConfig(bool safeModificationsOnly)
         {
             this.OnlySafeModifications = safeModificationsOnly;

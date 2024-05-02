@@ -153,7 +153,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query GetQuery()
         {
-            return new Query(Name, grammar.Config, Manager);
+            return new Query(Name, Manager);
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query GetQuery<T>() where T : new()
         {
-            return new Query<T>(Name, grammar.Config, Manager);
+            return new Query<T>(Name, Manager);
         }
 
         private static void ConfigureManager(ConnectionManager manager, TableSchema schema)

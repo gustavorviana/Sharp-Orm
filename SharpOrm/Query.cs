@@ -20,77 +20,108 @@ namespace SharpOrm
         private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
 
         #region Query
-        public Query() : base(TableName)
-        {
-            TableInfo = new TableInfo(typeof(T));
-            this.ApplyValidations();
-        }
 
-        public Query(string alias) : this(new DbName(TableName, alias))
-        {
-        }
+        #region Obsolete
 
-        public Query(DbName name) : base(ConnectionCreator.Default, name)
-        {
-            TableInfo = new TableInfo(typeof(T));
-            this.ApplyValidations();
-        }
-
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 3.0.")]
         public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
         {
             TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 3.0.")]
         public Query(ConnectionCreator creator, DbName table) : base(creator, table)
         {
             TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, string alias = "") : this(transaction, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
         {
         }
 
-        public Query(QueryConfig config) : base(config, new DbName(TableName, null))
-        {
-            TableInfo = new TableInfo(typeof(T), config.Translation);
-            this.ApplyValidations();
-        }
-
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, QueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, QueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, QueryConfig config, DbName name) : base(connection, config, name)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(transaction, config, name)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(connection, config, table, management)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
+        #endregion
 
-        public Query(DbName name, QueryConfig config, ConnectionManager manager) : base(name, config, manager)
+        public Query() : this(TableName, ConnectionCreator.Default)
         {
-            TableInfo = new TableInfo(typeof(T), config.Translation);
+        }
+
+        public Query(QueryConfig config) : this(new DbName(TableName, null), config)
+        {
+        }
+
+        public Query(string alias) : this(new DbName(TableName, alias))
+        {
+        }
+
+        public Query(string alias, ConnectionCreator creator) : this(new DbName(TableName, alias), creator)
+        {
+
+        }
+
+        public Query(string alias, QueryConfig config) : this(new DbName(TableName, alias), config)
+        {
+
+        }
+
+        public Query(string alias, ConnectionManager manager) : this(new DbName(TableName, alias), manager)
+        {
+        }
+
+        public Query(DbName name) : this(name, ConnectionCreator.Default)
+        {
+        }
+
+        public Query(DbName name, ConnectionCreator creator) : this(name, new ConnectionManager(creator))
+        {
+
+        }
+
+        public Query(DbName name, QueryConfig config) : this(name, new ConnectionManager(config))
+        {
+
+        }
+
+        public Query(DbName name, ConnectionManager manager) : base(name, manager)
+        {
+            TableInfo = new TableInfo(typeof(T), manager.Config.Translation);
             this.ApplyValidations();
         }
 
@@ -111,8 +142,8 @@ namespace SharpOrm
         /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
-        /// <param name="peerPage">The number of items per page.</param>
-        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param table="peerPage">The number of items per page.</param>
+        /// <param table="currentPage">The current page number (One based).</param>
         /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
@@ -151,11 +182,7 @@ namespace SharpOrm
 
             try
             {
-                FkLoaders fkLoaders = new FkLoaders(this.Config, this._fkToLoad, this.Token)
-                {
-                    Connection = this.Connection,
-                    Transaction = this.Transaction
-                };
+                FkLoaders fkLoaders = new FkLoaders(this.manager, this._fkToLoad, this.Token);
 
                 enumerable.fkQueue = fkLoaders;
                 var list = enumerable.ToList();
@@ -172,7 +199,7 @@ namespace SharpOrm
         /// <summary>
         /// Searches and returns the first occurrence of an object of type T that matches the values of the provided primary keys.
         /// </summary>
-        /// <param name="primaryKeysValues">The values of the primary keys to search for.</param>
+        /// <param table="primaryKeysValues">The values of the primary keys to search for.</param>
         /// <returns>The first occurrence of an object of type T that matches the provided primary keys.</returns>
         public T Find(params object[] primaryKeysValues)
         {
@@ -183,7 +210,7 @@ namespace SharpOrm
         /// <summary>
         /// AddRaws a clause to retrieve the items that have the primary key of the object.
         /// </summary>
-        /// <param name="primaryKeysValues">Primary keys.</param>
+        /// <param table="primaryKeysValues">Primary keys.</param>
         /// <returns></returns>
         public Query<T> WherePk(params object[] primaryKeysValues)
         {
@@ -227,7 +254,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param table="obj"></param>
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
@@ -237,7 +264,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param name="rows"></param>
+        /// <param table="rows"></param>
         public int BulkInsert(params T[] objs)
         {
             return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)).ToArray());
@@ -246,7 +273,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param name="rows"></param>
+        /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
             return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)));
@@ -255,7 +282,7 @@ namespace SharpOrm
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param table="obj"></param>
         /// <returns></returns>
         public int Update(T obj)
         {
@@ -268,8 +295,8 @@ namespace SharpOrm
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
+        /// <param table="obj"></param>
+        /// <param table="calls">Calls to retrieve the properties that should be saved.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
@@ -287,9 +314,9 @@ namespace SharpOrm
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="column1">Column to be updated</param>
-        /// <param name="columns">Update table keys using object values..</param>
+        /// <param table="obj"></param>
+        /// <param table="column1">Column to be updated</param>
+        /// <param table="columns">Update table keys using object values..</param>
         /// <returns></returns>
         public int Update(T obj, params string[] columns)
         {
@@ -330,7 +357,7 @@ namespace SharpOrm
 
         public override Query Clone(bool withWhere)
         {
-            Query<T> query = new Query<T>(this.Info.TableName, this.Info.Config, this.manager);
+            Query<T> query = new Query<T>(this.Info.TableName, this.manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -383,69 +410,101 @@ namespace SharpOrm
 
         #region Query
 
-        /// <summary>
-        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in SharpOrm.QueryDefaults.Default.
-        /// </summary>
-        /// <param name="table">Name of the table to be used.</param>
-        public Query(string table) : this(ConnectionCreator.Default, table)
+        #region Obsoletes
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 3.0.")]
+        public Query(ConnectionCreator creator, string table) : this(new DbName(table), new ConnectionManager(creator))
         {
         }
 
-        public Query(ConnectionCreator creator, string table) : this(new DbName(table), creator?.Config, new ConnectionManager(creator))
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 3.0.")]
+        public Query(ConnectionCreator creator, DbName table) : this(table, new ConnectionManager(creator))
         {
         }
 
-        public Query(ConnectionCreator creator, DbName table) : this(table, creator.Config, new ConnectionManager(creator))
-        {
-        }
-
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
         public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
         public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new DbName(table))
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, ConnectionCreator.Default.Config, table, management)
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, DbName table) : this(transaction, ConnectionCreator.Default.Config, table)
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, QueryConfig config, string table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, config, new DbName(table), management)
         {
         }
 
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(config, table)
         {
             if (connection == null)
                 return;
 
-            this.manager = new ConnectionManager(connection) { Management = management };
+            this.manager = new ConnectionManager(config, connection) { Management = management };
             this.CommandTimeout = config.CommandTimeout;
         }
 
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
         public Query(DbTransaction transaction, QueryConfig config, string table) : this(transaction, config, new DbName(table))
         {
         }
 
-        public Query(DbTransaction transaction, QueryConfig config, DbName name) : this(name, config, new ConnectionManager(transaction))
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        public Query(DbTransaction transaction, QueryConfig config, DbName name) : this(name, new ConnectionManager(config, transaction))
         {
-            this.CommandTimeout = config.CommandTimeout;
+        }
+        #endregion
+
+        /// <summary>
+        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in ConnectionCreator.Default.
+        /// </summary>
+        /// <param table="table">Name of the table to be used.</param>
+        public Query(string table) : this(table, new ConnectionManager())
+        {
         }
 
-        public Query(DbName name, QueryConfig config, ConnectionManager manager) : base(config, name)
+        public Query(string table, ConnectionCreator creator) : this(new DbName(table), creator)
+        {
+
+        }
+
+        public Query(string table, ConnectionManager manager) : this(new DbName(table), manager)
+        {
+        }
+
+        public Query(DbName table) : this(table, new ConnectionManager())
+        {
+
+        }
+
+        public Query(DbName table, ConnectionCreator creator) : this(table, new ConnectionManager(creator))
+        {
+
+        }
+
+        public Query(DbName table, ConnectionManager manager) : base(manager.Config, table)
         {
             this.manager = manager;
         }
@@ -455,9 +514,9 @@ namespace SharpOrm
         #region Selection
 
         /// <summary>
-        /// Select keys of table by name.
+        /// Select keys of table by table.
         /// </summary>
-        /// <param name="columnNames"></param>
+        /// <param table="columnNames"></param>
         /// <returns></returns>
         public Query Select(params string[] columnNames)
         {
@@ -473,7 +532,7 @@ namespace SharpOrm
         /// <summary>
         /// Select column of table by Column object.
         /// </summary>
-        /// <param name="columns"></param>
+        /// <param table="columns"></param>
         /// <returns></returns>
         public Query Select(params Column[] columns)
         {
@@ -553,7 +612,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies an ascending sort.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
+        /// <param table="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(params string[] columns)
         {
@@ -563,7 +622,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies descending sort.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
+        /// <param table="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderByDesc(params string[] columns)
         {
@@ -573,8 +632,8 @@ namespace SharpOrm
         /// <summary>
         /// Applies an ascending sort.
         /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
+        /// <param table="order">Field ordering.</param>
+        /// <param table="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params string[] columns)
         {
@@ -584,8 +643,8 @@ namespace SharpOrm
         /// <summary>
         /// Applies sorting to the query.
         /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
+        /// <param table="order">Field ordering.</param>
+        /// <param table="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params Column[] columns)
         {
@@ -595,7 +654,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies sorting to the query.
         /// </summary>
-        /// <param name="orders"></param>
+        /// <param table="orders"></param>
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
@@ -619,7 +678,7 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param name="cells"></param>
+        /// <param table="cells"></param>
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
@@ -632,7 +691,7 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param name="cells"></param>
+        /// <param table="cells"></param>
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
@@ -643,7 +702,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
+        /// <param table="cells"></param>
         /// <returns>Id of row.</returns>
         public int Insert(params Cell[] cells)
         {
@@ -656,7 +715,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
+        /// <param table="cells"></param>
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
@@ -667,8 +726,8 @@ namespace SharpOrm
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="query"></param>
-        /// <param name="columnNames"></param>
+        /// <param table="query"></param>
+        /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
             object result = this.manager.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
@@ -678,7 +737,7 @@ namespace SharpOrm
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="columnNames"></param>
+        /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
             return this.manager.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
@@ -687,7 +746,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param name="rows"></param>
+        /// <param table="rows"></param>
         public int BulkInsert(params Row[] rows)
         {
             return this.BulkInsert((ICollection<Row>)rows);
@@ -696,7 +755,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param name="rows"></param>
+        /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
             return this.manager.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows), this.Token);
@@ -724,7 +783,7 @@ namespace SharpOrm
         /// <summary>
         /// Counts the amount of results available. 
         /// </summary>
-        /// <param name="column">Column to count.</param>
+        /// <param table="column">Column to count.</param>
         /// <returns></returns>
         public long Count(string columnName)
         {
@@ -734,7 +793,7 @@ namespace SharpOrm
         /// <summary>
         /// Counts the amount of results available. 
         /// </summary>
-        /// <param name="column">Column to count.</param>
+        /// <param table="column">Column to count.</param>
         /// <returns></returns>
         public long Count(Column column)
         {
@@ -780,7 +839,7 @@ namespace SharpOrm
         /// <summary>
         /// Executes the query and returns the first column of all rows in the result. All other keys are ignored.
         /// </summary>
-        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <typeparam table="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
             this.Token.ThrowIfCancellationRequested();
@@ -798,7 +857,7 @@ namespace SharpOrm
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
-        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <typeparam table="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
@@ -851,11 +910,11 @@ namespace SharpOrm
         /// <summary>
         /// Clones the Query object.
         /// </summary>
-        /// <param name="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
+        /// <param table="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = new Query(this.Info.TableName, this.Info.Config, this.manager);
+            Query query = new Query(this.Info.TableName, this.manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);

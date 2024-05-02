@@ -15,12 +15,12 @@ namespace UnityTest.Utils
 
         protected static Query Query(string table)
         {
-            return new Query(Creator, table);
+            return new Query(table, Creator);
         }
 
         protected static Query<T> Query<T>(string alias) where T : class, new()
         {
-            return new Query<T>(Creator, alias);
+            return new Query<T>(alias, Creator);
         }
 
         [TestInitialize]

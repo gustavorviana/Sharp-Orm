@@ -87,7 +87,10 @@ namespace SharpOrm.Connection
         public static DbCommand GetCommand(this ConnectionManager manager)
         {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();
-            cmd.CommandTimeout = manager.CommandTimeout;
+
+            if (manager.CommandTimeout != 0)
+                cmd.CommandTimeout = manager.CommandTimeout;
+
             cmd.Transaction = manager.Transaction;
             return cmd;
         }

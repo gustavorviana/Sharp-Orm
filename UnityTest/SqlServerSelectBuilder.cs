@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 using System;
 using UnityTest.Models;
 using UnityTest.Utils;
@@ -70,7 +71,7 @@ namespace UnityTest
         [TestMethod]
         public void NewSelectOffset()
         {
-            using var query = new Query(Connection, new SqlServerQueryConfig(false), TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
             var g = NewConfig.NewGrammar(query);
@@ -82,7 +83,7 @@ namespace UnityTest
         [TestMethod]
         public void NewSelectOffsetLimit()
         {
-            using var query = new Query(Connection, new SqlServerQueryConfig(false), TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.OrderBy("Id");
             query.Where("Id", 1);
             query.Offset = 1;
@@ -183,7 +184,7 @@ namespace UnityTest
         [TestMethod]
         public void CountDistinctSelect2()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.Select("Column").Distinct = true;
             var g = NewConfig.NewGrammar(query);
 
@@ -194,7 +195,7 @@ namespace UnityTest
         [TestMethod]
         public void CountDistinctSelect3()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.Select("nick", "name").Distinct = true;
             var g = NewConfig.NewGrammar(query);
 
@@ -219,7 +220,7 @@ namespace UnityTest
         [TestMethod]
         public void CountSelect()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             var g = NewConfig.NewGrammar(query);
 
             var sqlExpression = g.Count();
@@ -229,7 +230,7 @@ namespace UnityTest
         [TestMethod]
         public void CountWhereSelect()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.Where("Column", null);
             var g = NewConfig.NewGrammar(query);
 
@@ -240,7 +241,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectJoin()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query.Join("Table2 t2", q => q.WhereColumn("t2.IdTable", "TestTable.Id"), grammarOptions: new SqlServerGrammarOptions { NoLock = true });
             var g = NewConfig.NewGrammar(query);
 
@@ -251,7 +252,7 @@ namespace UnityTest
         [TestMethod]
         public void CountSelectJoin()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager());
             query
                 .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
                 .Where("t2.Column", "Value");
@@ -265,7 +266,7 @@ namespace UnityTest
         [TestMethod]
         public void CountNewSelectJoin()
         {
-            using var query = new Query(Connection, new SqlServerQueryConfig { UseOldPagination = false }, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager(true));
             query
                 .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
                 .Where("t2.Column", "Value");
@@ -279,7 +280,7 @@ namespace UnityTest
         [TestMethod]
         public void DeleteWithNoLock()
         {
-            using var q = new Query(Connection, new SqlServerQueryConfig(false), new DbName(TABLE, "T"));
+            using var q = new Query(new DbName(TABLE, "T"), new ConnectionManager(new SqlServerQueryConfig(false), Connection));
             q.EnableNoLock();
             var g = NewConfig.NewGrammar(q);
 
@@ -290,7 +291,7 @@ namespace UnityTest
         public void SelectWithEscapeStrings()
         {
             var today = DateTime.Today;
-            using var query = new Query(Connection, EscapeStringsConfig, TABLE);
+            using var query = new Query(TABLE, new ConnectionManager(EscapeStringsConfig, Connection));
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
             var g = EscapeStringsConfig.NewGrammar(query);

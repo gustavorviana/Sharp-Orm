@@ -1,9 +1,11 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm.Builder
 {
@@ -22,7 +24,17 @@ namespace SharpOrm.Builder
 
         public DataColumn this[int index] => this.columns[index];
 
-        public void AddColumnsBy<T>(TranslationRegistry registry)
+        public void AddColumnsExcept<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
+        {
+            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, true).Select(MapColumn));
+        }
+
+        public void AddColumns<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
+        {
+            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, false).Select(MapColumn));
+        }
+
+        public void AddColumns<T>(TranslationRegistry registry)
         {
             this.AddRange(TableInfo.GetColumns(typeof(T), registry).Select(MapColumn));
         }

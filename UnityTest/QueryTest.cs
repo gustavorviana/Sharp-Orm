@@ -71,7 +71,7 @@ namespace UnityTest
         public void ConfigCustomTimeoutTest()
         {
             using var creator = new MultipleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false) { CommandTimeout = 120 }, ConnectionStr.Mysql);
-            var query = new Query(creator, "table");
+            var query = new Query("table", creator);
 
             using var cmd = query.manager.GetCommand();
             Assert.AreEqual(120, cmd.CommandTimeout);

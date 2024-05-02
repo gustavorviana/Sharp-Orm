@@ -205,7 +205,7 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            return new Query(name, this.Creator.Config, GetConnectionManager()) { Token = this.Token };
+            return new Query(name, GetConnectionManager()) { Token = this.Token };
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            return new Query<T>(name, this.Creator.Config, GetConnectionManager()) { Token = this.Token };
+            return new Query<T>(name, GetConnectionManager()) { Token = this.Token };
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace SharpOrm
         protected ConnectionManager GetConnectionManager()
         {
             if (this._transaction != null)
-                return new ConnectionManager(this._transaction);
+                return new ConnectionManager(this.Creator.Config, this._transaction);
 
             return new ConnectionManager(this.Creator);
         }

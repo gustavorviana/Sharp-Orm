@@ -1,9 +1,11 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SharpOrm.Builder
@@ -54,6 +56,15 @@ namespace SharpOrm.Builder
         public ColumnInfo[] GetPrimaryKeys()
         {
             return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+        }
+
+        public static IEnumerable<ColumnInfo> GetColumns<T>(Type type, TranslationRegistry registry, Expression<ColumnExpression<T>>[] calls, bool except)
+        {
+            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
+            var columns = TableInfo.GetColumns(typeof(T), registry);
+
+            if (except) columns.Where(x => !props.Contains(x.PropName));
+            return columns.Where(x => props.Contains(x.PropName));
         }
 
         public static IEnumerable<ColumnInfo> GetColumns(Type type, TranslationRegistry registry)

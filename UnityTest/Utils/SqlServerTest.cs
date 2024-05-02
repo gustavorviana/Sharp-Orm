@@ -35,11 +35,6 @@ namespace UnityTest.Utils
         protected const string STATUS = "custom_status";
         #endregion
 
-        protected static ConnectionManager GetConnectionManager()
-        {
-            return new ConnectionManager(new SingleConnectionCreator(NewConfig, ConnectionStr.SqlServer));
-        }
-
         #region Class Init/Clean
 
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
@@ -68,7 +63,12 @@ namespace UnityTest.Utils
 
         protected static Query NewQuery(string table, string alias = "", bool useNewConfig = true)
         {
-            return new Query(Connection, useNewConfig ? NewConfig : OldConfig, new DbName(table, alias));
+            return new Query(new DbName(table, alias), new ConnectionManager(useNewConfig ? NewConfig : OldConfig, Connection));
+        }
+
+        protected static ConnectionManager GetConnectionManager(bool useNewConfig = true)
+        {
+            return new ConnectionManager(new SingleConnectionCreator(useNewConfig ? NewConfig : OldConfig, ConnectionStr.SqlServer));
         }
 
         protected static Row NewRow(int id, string name)

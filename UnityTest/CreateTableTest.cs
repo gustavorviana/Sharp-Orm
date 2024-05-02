@@ -46,7 +46,7 @@ namespace UnityTest
 
         private static string[] GetTableColumns(DbName name, ConnectionManager manager)
         {
-            using var q = new Query(name, NewConfig, manager);
+            using var q = new Query(name, manager);
             q.Where(new SqlExpression("1=2"));
 
             using var reader = q.ExecuteReader();

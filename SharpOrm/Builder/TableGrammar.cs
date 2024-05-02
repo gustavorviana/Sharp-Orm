@@ -8,6 +8,10 @@ namespace SharpOrm.Builder
         protected readonly IReadonlyQueryInfo queryInfo;
         public TableSchema Schema { get; }
         public QueryConfig Config => this.queryInfo.Config;
+
+        /// <summary>
+        /// Database name in the database's standard format.
+        /// </summary>
         public abstract DbName Name { get; }
 
         public TableGrammar(QueryConfig config, TableSchema schema)

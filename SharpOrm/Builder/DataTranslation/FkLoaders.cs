@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.DataTranslation.Reader;
 using SharpOrm.Collections;
+using SharpOrm.Connection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,16 +16,14 @@ namespace SharpOrm.Builder.DataTranslation
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly CancellationToken token;
         private readonly LambdaColumn[] fkToLoad;
-        private readonly QueryConfig config;
 
-        public DbTransaction Transaction { get; set; }
-        public DbConnection Connection { get; set; }
+        public ConnectionManager Manager { get; }
         #endregion
 
-        public FkLoaders(QueryConfig config, LambdaColumn[] fkToLoad, CancellationToken token)
+        public FkLoaders(ConnectionManager manager, LambdaColumn[] fkToLoad, CancellationToken token)
         {
             this.token = token;
-            this.config = config;
+            this.Manager = manager;
             this.fkToLoad = fkToLoad;
         }
 
@@ -35,7 +34,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             if (this.fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
                 this.AddFkColumn(lCol, owner, fkValue, column);
-            else if (this.config.LoadForeign)
+            else if (this.Manager.Config.LoadForeign)
                 column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(column, fkValue));
         }
 
@@ -93,18 +92,12 @@ namespace SharpOrm.Builder.DataTranslation
 
         private Query CreateQuery(string name)
         {
-            if (this.Transaction != null)
-                return new Query(this.Transaction, this.config, name) { Token = this.token };
-
-            if (this.Connection != null)
-                return new Query(this.Connection, this.config, name, ConnectionManagement.LeaveOpen) { Token = this.token };
-
-            return new Query(this.config, name) { Token = this.token };
+            return new Query(name, this.Manager) { Token = this.token };
         }
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
-            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), this, config.Translation);
+            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), this, this.Manager.Config.Translation);
             return new DbObjectEnumerator(reader, mapped, token, false);
         }
 
