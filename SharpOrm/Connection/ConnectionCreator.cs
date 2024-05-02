@@ -37,8 +37,8 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction.
         /// </summary>
-        [Obsolete("It will be removed in version 3.0.")]
-        public static void ExecuteTransaction(TransactionCall call)
+        [Obsolete("This function is deprecated, use SharpOrm.Connection.ExecuteTransaction(SharpOrm.Connection.TransactionCall). It will be removed in version 3.0.")]
+        public static void ExecuteTransaction(SharpOrm.TransactionCall call)
         {
             DbConnection connection = Default.GetConnection();
             connection.OpenIfNeeded();
@@ -65,8 +65,8 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction and returns a value.
         /// </summary>
-        [Obsolete("It will be removed in version 3.0.")]
-        public static T ExecuteTransaction<T>(TransactionCall<T> func)
+        [Obsolete("This function is deprecated, use SharpOrm.Connection.ExecuteTransaction<T>(SharpOrm.Connection.TransactionCall<T>). It will be removed in version 3.0.")]
+        public static T ExecuteTransaction<T>(SharpOrm.TransactionCall<T> func)
         {
             T value = default;
             ExecuteTransaction((transaction) => value = func(transaction));

@@ -87,8 +87,10 @@ namespace SharpOrm.Connection
 
         private ConnectionManager(ConnectionCreator creator, DbTransaction transaction)
         {
+            this._management = ConnectionManagement.CloseOnDispose;
             this.isMyTransaction = true;
 
+            this.CommandTimeout = creator.Config.CommandTimeout;
             this.Transaction = transaction;
             this.Config = creator.Config;
             this.creator = creator;
@@ -131,8 +133,8 @@ namespace SharpOrm.Connection
         public ConnectionManager Clone()
         {
             if (this.creator != null && this.Transaction != null)
-                return new ConnectionManager(this.creator, this.Transaction) 
-                { CommandTimeout = this.CommandTimeout, _management = this._management };
+                return new ConnectionManager(this.creator, this.Transaction)
+                { _management = this._management };
 
             if (this.creator != null)
                 return new ConnectionManager(this.creator)
@@ -143,7 +145,7 @@ namespace SharpOrm.Connection
                 { CommandTimeout = this.CommandTimeout, _management = this._management };
 
             return new ConnectionManager(this.Config, this.Connection)
-                { CommandTimeout = this.CommandTimeout, _management = this._management };
+            { CommandTimeout = this.CommandTimeout, _management = this._management };
         }
 
         /// <summary>
@@ -157,12 +159,13 @@ namespace SharpOrm.Connection
 
             if (this.creator != null)
                 return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction())
-                { CommandTimeout = this.CommandTimeout, _management = this._management };
+                { _management = this._management };
 
             return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction())
             { CommandTimeout = this.CommandTimeout, _management = this._management };
         }
 
+        #region Transaction
         /// <summary>
         /// If there is a transaction, commit the database transaction.
         /// </summary>
@@ -206,6 +209,42 @@ namespace SharpOrm.Connection
             }
         }
 
+        /// <summary>
+        /// Executes a database transaction.
+        /// </summary>
+        public static void ExecuteTransaction(TransactionCall call)
+        {
+            if (!(ConnectionCreator.Default is ConnectionCreator creator))
+                throw new InvalidOperationException($"It's not possible to start a transaction without setting a value for {nameof(ConnectionCreator)}.{nameof(ConnectionCreator.Default)}.");
+
+            var manager = new ConnectionManager(creator, creator.GetConnection().OpenIfNeeded().BeginTransaction());
+
+            try
+            {
+                call(manager);
+            }
+            catch
+            {
+                manager.Rollback();
+                throw;
+            }
+            finally
+            {
+                manager.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Executes a database transaction and returns a value.
+        /// </summary>
+        public static T ExecuteTransaction<T>(TransactionCall<T> func)
+        {
+            T value = default;
+            ExecuteTransaction((transaction) => value = func(transaction));
+            return value;
+        }
+        #endregion
+
         #region IDisposable
         protected virtual void Dispose(bool disposing)
         {
@@ -219,8 +258,8 @@ namespace SharpOrm.Connection
                 if (!this.isMyTransaction)
                     return;
 
-                this.Commit();
-                try { this.Transaction.Dispose(); } catch (ObjectDisposedException) { }
+                try { this.Commit(); } catch { }
+                try { this.Transaction.Dispose(); } catch { }
             }
 
             if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
