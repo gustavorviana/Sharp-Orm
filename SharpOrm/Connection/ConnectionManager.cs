@@ -10,9 +10,11 @@ namespace SharpOrm.Connection
     public class ConnectionManager : IDisposable
     {
         #region Fields/Properties
-        private readonly ConnectionCreator creator;
-        private bool disposed;
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
+        private readonly bool isMyTransaction = false;
+        private readonly ConnectionCreator creator;
+        private bool finishedTransaction = false;
+        private bool disposed;
 
         /// <summary>
         /// Type of connection management.
@@ -28,6 +30,7 @@ namespace SharpOrm.Connection
                 this._management = value;
             }
         }
+
         /// <summary>
         /// Database transaction.
         /// </summary>
@@ -53,6 +56,7 @@ namespace SharpOrm.Connection
         }
         #endregion
 
+        #region Constructors
         /// <summary>
         /// Creates an instance using the default manager settings.
         /// </summary>
@@ -81,6 +85,15 @@ namespace SharpOrm.Connection
             this.Config = creator.Config;
         }
 
+        private ConnectionManager(ConnectionCreator creator, DbTransaction transaction)
+        {
+            this.isMyTransaction = true;
+
+            this.Transaction = transaction;
+            this.Config = creator.Config;
+            this.creator = creator;
+        }
+
         /// <summary>
         /// Creates an instance using a transaction.
         /// </summary>
@@ -104,6 +117,7 @@ namespace SharpOrm.Connection
             this.CommandTimeout = config.CommandTimeout;
             this.Config = config;
         }
+        #endregion
 
         /// <summary>
         /// Attempt to close the connection using the reason "Operation completed".
@@ -116,13 +130,80 @@ namespace SharpOrm.Connection
 
         public ConnectionManager Clone()
         {
+            if (this.creator != null && this.Transaction != null)
+                return new ConnectionManager(this.creator, this.Transaction) 
+                { CommandTimeout = this.CommandTimeout, _management = this._management };
+
             if (this.creator != null)
-                return new ConnectionManager(this.creator);
+                return new ConnectionManager(this.creator)
+                { CommandTimeout = this.CommandTimeout, _management = this._management };
 
             if (this.Transaction != null)
-                return new ConnectionManager(this.Config, this.Transaction);
+                return new ConnectionManager(this.Config, this.Transaction)
+                { CommandTimeout = this.CommandTimeout, _management = this._management };
 
-            return new ConnectionManager(this.Config, this.Connection);
+            return new ConnectionManager(this.Config, this.Connection)
+                { CommandTimeout = this.CommandTimeout, _management = this._management };
+        }
+
+        /// <summary>
+        /// Create a new ConnectionManager with a transaction from the existing connection (if the instance loads a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it).
+        /// </summary>
+        /// <remarks>The commit will be automatically performed when calling <see cref="Dispose()"/> unless a <see cref="Commit"/> or <see cref="Rollback"/> has been called before.</remarks>
+        public ConnectionManager BeginTransaction()
+        {
+            if (this.Transaction != null)
+                throw new InvalidOperationException("There is already an open transaction.");
+
+            if (this.creator != null)
+                return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction())
+                { CommandTimeout = this.CommandTimeout, _management = this._management };
+
+            return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction())
+            { CommandTimeout = this.CommandTimeout, _management = this._management };
+        }
+
+        /// <summary>
+        /// If there is a transaction, commit the database transaction.
+        /// </summary>
+        /// <returns></returns>
+        private bool Commit()
+        {
+            if (this.finishedTransaction || this.Transaction is null)
+                return false;
+
+            this.finishedTransaction = true;
+
+            try
+            {
+                this.Transaction.Commit();
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// If there is a transaction, rolls back a transaction from a pending state.
+        /// </summary>
+        /// <returns></returns>
+        public bool Rollback()
+        {
+            if (this.finishedTransaction || this.Transaction is null)
+                return false;
+
+            this.finishedTransaction = true;
+            try
+            {
+                this.Transaction.Rollback();
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
         }
 
         #region IDisposable
@@ -133,7 +214,16 @@ namespace SharpOrm.Connection
 
             disposed = true;
 
-            if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null || this.Transaction != null)
+            if (this.Transaction != null)
+            {
+                if (!this.isMyTransaction)
+                    return;
+
+                this.Commit();
+                try { this.Transaction.Dispose(); } catch (ObjectDisposedException) { }
+            }
+
+            if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
                 return;
 
             if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);

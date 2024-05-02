@@ -2,6 +2,7 @@
 using SharpOrm;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
+using System;
 using UnityTest.Utils;
 
 namespace UnityTest.ConnectionTest
@@ -10,6 +11,7 @@ namespace UnityTest.ConnectionTest
     public class MysqlTransactionTest : MysqlTableTest
     {
         [TestMethod]
+        [Obsolete]
         public void Select()
         {
             ConnectionCreator.Default = this.Creator;

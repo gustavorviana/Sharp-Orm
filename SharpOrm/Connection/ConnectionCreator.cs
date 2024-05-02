@@ -37,10 +37,11 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction.
         /// </summary>
+        [Obsolete("It will be removed in version 3.0.")]
         public static void ExecuteTransaction(TransactionCall call)
         {
             DbConnection connection = Default.GetConnection();
-            connection.Open();
+            connection.OpenIfNeeded();
             var transaction = connection.BeginTransaction();
 
             try
@@ -64,6 +65,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction and returns a value.
         /// </summary>
+        [Obsolete("It will be removed in version 3.0.")]
         public static T ExecuteTransaction<T>(TransactionCall<T> func)
         {
             T value = default;

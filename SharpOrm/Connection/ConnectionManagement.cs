@@ -1,4 +1,4 @@
-﻿namespace SharpOrm
+﻿namespace SharpOrm.Connection
 {
     /// <summary>
     /// Types of connection management.
