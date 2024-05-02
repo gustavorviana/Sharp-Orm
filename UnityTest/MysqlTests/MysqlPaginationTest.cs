@@ -29,7 +29,7 @@ namespace UnityTest.MysqlTests
         {
             InsertRows(4);
 
-            var q = new Query<TestTable>(Connection);
+            var q = new Query<TestTable>(Creator);
             q.Insert(NewRow(6, "User 1").Cells);
             q.OrderBy(NAME);
             q.Distinct = true;

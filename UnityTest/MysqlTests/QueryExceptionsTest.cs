@@ -20,13 +20,15 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void OnQueryNullTable()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new Query(Connection, null));
+            ConnectionCreator.Default = this.Creator;
+            Assert.ThrowsException<ArgumentNullException>(() => new Query(Creator.GetConnection(), null));
         }
 
         [TestMethod]
         public void OnQueryNullConfig()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new Query(Connection, null, "SomeTable"));
+            ConnectionCreator.Default = this.Creator;
+            Assert.ThrowsException<ArgumentNullException>(() => new Query(Creator.GetConnection(), null, "SomeTable"));
         }
 
         [TestMethod]

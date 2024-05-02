@@ -13,6 +13,7 @@ namespace UnityTest.ConnectionTest
         [TestProperty("clearDb", "")]
         public void Select()
         {
+            ConnectionCreator.Default = this.Creator;
             try
             {
                 ConnectionCreator.ExecuteTransaction((transaction) =>

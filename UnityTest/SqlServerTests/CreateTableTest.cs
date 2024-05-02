@@ -15,14 +15,14 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void CreateByColumnTest()
         {
-            DbTable.Create(GetSchema()).Dispose();
+            DbTable.Create(GetSchema(), GetConnectionManager()).Dispose();
         }
 
         [TestMethod]
         public void CreateEmptyByAnother()
         {
             var manager = GetConnectionManager();
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), NewConfig, manager);
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
 
             CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
@@ -35,7 +35,7 @@ namespace UnityTest.SqlServerTests
             var manager = GetConnectionManager();
             var expectedRows = InsertAddressValue();
 
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), NewConfig, manager);
+            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
             var rows = table.GetQuery().ReadRows();
 
@@ -56,7 +56,7 @@ namespace UnityTest.SqlServerTests
         private Row InsertAddressValue()
         {
             var cells = new[] { new Cell("id", 1), new Cell("name", "My name"), new Cell("street", "My street") };
-            using var q = new Query("Address");
+            using var q = new Query("Address", Creator);
             q.Delete();
             q.Insert(cells);
 
@@ -67,14 +67,14 @@ namespace UnityTest.SqlServerTests
         public void CheckExists()
         {
             var schema = GetSchema();
-            using var table = DbTable.Create(schema, NewConfig);
-            Assert.IsTrue(DbTable.Exists(table.Manager, schema, NewConfig));
+            using var table = DbTable.Create(schema, GetConnectionManager());
+            Assert.IsTrue(DbTable.Exists(schema, table.Manager));
         }
 
         [TestMethod]
         public void InsertData()
         {
-            using var table = DbTable.Create(GetSchema(), NewConfig);
+            using var table = DbTable.Create(GetSchema(), GetConnectionManager());
             var q = table.GetQuery();
             q.Insert(new Cell("name", "Richard"));
             q.Insert(new Cell("name", "Manuel"));

@@ -86,7 +86,7 @@ namespace UnityTest.MysqlTests
             );
         }
 
-        private static new Row NewRow(int id, string name)
+        private static Row NewRow(int id, string name)
         {
             return new Row(new Cell(ID, id), new Cell(NAME, name));
         }

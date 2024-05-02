@@ -1,8 +1,5 @@
-﻿using SharpOrm.Builder;
-using SharpOrm.Connection;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 
 namespace UnityTest.Utils
@@ -30,12 +27,6 @@ namespace UnityTest.Utils
             cached[filePath] = connString;
 
             return connString;
-        }
-
-        public static void Boot<T>(Func<QueryConfig> config, string connectionString) where T : DbConnection, new()
-        {
-            if (ConnectionCreator.Default is not SingleConnectionCreator<T>)
-                ConnectionCreator.Default = new SingleConnectionCreator<T>(config(), connectionString);
         }
     }
 }

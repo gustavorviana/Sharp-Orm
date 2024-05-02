@@ -13,7 +13,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void OrderBy()
         {
-            var q = new Query("table");
+            var q = new Query("table", Creator);
             q.OrderBy(SharpOrm.OrderBy.None, "Col1");
             Assert.AreEqual(0, q.Info.Orders.Length);
 
@@ -27,7 +27,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void Clone()
         {
-            var original = new Query("table alias")
+            var original = new Query("table alias", Creator)
             {
                 Limit = 1,
                 Offset = 3,
@@ -49,7 +49,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void DefaultTimeoutTest()
         {
-            var query = new Query("table");
+            var query = new Query("table", Creator);
 
             using var cmd = query.manager.GetCommand();
             Assert.AreEqual(30, cmd.CommandTimeout);
@@ -58,7 +58,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void QueryCustomTimeoutTest()
         {
-            var query = new Query("table")
+            var query = new Query("table", Creator)
             {
                 CommandTimeout = 120
             };

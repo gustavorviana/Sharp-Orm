@@ -356,7 +356,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWithLimit()
         {
-            using var query = new Query(Connection, TABLE) { Limit = 10 };
+            using var query = new Query(TABLE, Creator) { Limit = 10 };
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Select();
@@ -366,7 +366,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereIn()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             int[] list = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             query.Where("id", "IN", list);
             var g = new MysqlGrammar(query);
@@ -387,15 +387,15 @@ namespace UnityTest.MysqlTests
             TestAssert.AreEqualsParameters(sqlExpression, 0);
         }
 
-        private static Query CreateQueryForWhere()
+        private Query CreateQueryForWhere()
         {
-            return (Query)new Query(Connection, "TestIds").Select("Id").Where("Type", "=", "Unity");
+            return (Query)new Query("TestIds", Creator).Select("Id").Where("Type", "=", "Unity");
         }
 
         [TestMethod]
         public void SelectWithOffsetLimit()
         {
-            using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10 };
+            using var query = new Query(TABLE, Creator) { Offset = 10, Limit = 10 };
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Select();
@@ -405,7 +405,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWithDistinct()
         {
-            using var query = new Query(Connection, TABLE) { Distinct = true };
+            using var query = new Query(TABLE, Creator) { Distinct = true };
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Select();
@@ -415,7 +415,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWithOffsetLimitDistinct()
         {
-            using var query = new Query(Connection, TABLE) { Offset = 10, Limit = 10, Distinct = true };
+            using var query = new Query(TABLE, Creator) { Offset = 10, Limit = 10, Distinct = true };
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Select();
@@ -425,7 +425,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectBasicWhere()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("column", "=", "value");
             var g = new MysqlGrammar(query);
 
@@ -437,7 +437,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectLimitWhere()
         {
-            using var query = new Query(Connection, TABLE) { Limit = 10 };
+            using var query = new Query(TABLE, Creator) { Limit = 10 };
             query.Where("column", "=", "value");
             var g = new MysqlGrammar(query);
 
@@ -449,7 +449,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereCallbackQuery()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where(e => e.Where("column", "=", "value"));
             var g = new MysqlGrammar(query);
 
@@ -461,7 +461,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectMultipleWhere()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("column1", "=", "value1");
             query.Where(e => e.Where("column2", "=", "value2"));
             var g = new MysqlGrammar(query);
@@ -474,7 +474,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereOr()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("column", "=", "teste")
                 .OrWhere("column", "=", "value");
             var g = new MysqlGrammar(query);
@@ -487,7 +487,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereColumnsEquals()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("column1", "=", new Column("column2"))
                 .Where(new Column("column2"), "=", new Column("column3"));
 
@@ -499,7 +499,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereSqlExpression()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where(new SqlExpression("column1 = 1"));
 
             var g = new MysqlGrammar(query);
@@ -510,7 +510,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereStartsWith()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.WhereStartsWith("Name", "Rod").OrWhereStartsWith("Name", "Mar");
 
             var g = new MysqlGrammar(query);
@@ -527,7 +527,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereContains()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.WhereContains("Title", "10%").OrWhereContains("Title", "pixel");
 
             var g = new MysqlGrammar(query);
@@ -544,7 +544,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereEndsWith()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.WhereEndsWith("Title", "30%").OrWhereEndsWith("Title", "80%");
 
             var g = new MysqlGrammar(query);
@@ -562,7 +562,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereRawColumn()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where((Column)"UPPER(column1)", "=", "ABC");
 
             var g = new MysqlGrammar(query);
@@ -574,7 +574,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereRawValue()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("column1", "=", (SqlExpression)"UPPER(column2)");
 
             var g = new MysqlGrammar(query);
@@ -585,7 +585,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereCallback()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where(q => q.Where("C1", 1).Where("C2", 2)).OrWhere(q => q.Where("C3", 3).Where("C4", 5));
 
             var g = new MysqlGrammar(query);
@@ -596,7 +596,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectWhereSubCallback()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where(q => q.Where("C1", 1).Where("C2", 2).Where(q => q.Where("C3", 3).Where("C4", 5)));
 
             var g = new MysqlGrammar(query);
@@ -607,7 +607,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectInnerJoin()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Join("TAB2", "TAB2.id", "=", $"{TABLE}.idTab2");
             var g = new MysqlGrammar(query);
 
@@ -618,7 +618,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectLeftJoin()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Join("TAB2 tab2", "tab2.id", "=", $"{TABLE}.idTab2", "LEFT");
             var g = new MysqlGrammar(query);
 
@@ -629,7 +629,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectJoinWithWhere()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Join("TAB2", q => q.WhereColumn("TAB2.id", "=", $"{TABLE}.idTab2").OrWhereColumn("TAB2.id", "=", $"{TABLE}.idTab3"), "LEFT");
             var g = new MysqlGrammar(query);
 
@@ -640,7 +640,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectGroupByColumnName()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.GroupBy("Col1", "Col2");
             var g = new MysqlGrammar(query);
 
@@ -651,7 +651,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectHavingColumn()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.GroupBy("Col1", "Col2").Having(q => q.Where("Col1", true));
             var g = new MysqlGrammar(query);
 
@@ -662,7 +662,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void SelectGroupByColumnObj()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.GroupBy(new Column("Col1"), new Column(new SqlExpression("LOWER(Col2)")));
             var g = new MysqlGrammar(query);
 
@@ -769,7 +769,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountSelect()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Count();
@@ -779,7 +779,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountJoinSelect()
         {
-            using var query = new Query(Connection, TABLE).Join("TestTable2 t2", "t2.Id", "TestTable.Id2").Select("TestTable.*");
+            using var query = new Query(TABLE, Creator).Join("TestTable2 t2", "t2.Id", "TestTable.Id2").Select("TestTable.*");
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Count();
@@ -789,7 +789,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountDistinctSelect()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Distinct = true;
             var g = new MysqlGrammar(query);
 
@@ -800,7 +800,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountWhereSelect()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Where("Column", null);
             var g = new MysqlGrammar(query);
 
@@ -811,7 +811,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountDistinctSelect2()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Select("Column").Distinct = true;
             var g = new MysqlGrammar(query);
 
@@ -822,7 +822,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountDistinctSelect3()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Select("nick", "name").Distinct = true;
             var g = new MysqlGrammar(query);
 
@@ -833,7 +833,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CountSelectJoin()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query
                 .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
                 .Where("t2.Column", "Value");
@@ -865,7 +865,7 @@ namespace UnityTest.MysqlTests
             var today = DateTime.Today;
 
             var config = new MysqlQueryConfig(false) { LoadForeign = true, EscapeStrings = true };
-            using var query = new Query(Connection, config, TABLE);
+            using var query = new Query(TABLE, GetConnectionManager(config));
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
             var g = config.NewGrammar(query);

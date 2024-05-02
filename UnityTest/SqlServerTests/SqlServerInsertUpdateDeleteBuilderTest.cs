@@ -202,7 +202,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void InsertByBasicSelect()
         {
-            using var selectQuery = new Query(Connection, "User");
+            using var selectQuery = new Query("User", this.Creator);
             selectQuery
                 .Select(new Column("Id"), (Column)"1")
                 .Where("id", 1);
@@ -217,7 +217,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectGroupByColumnName()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, this.Creator);
             query.GroupBy("Col1", "Col2");
             var g = new SqlServerGrammar(query);
 
@@ -227,7 +227,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectHavingColumn()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, this.Creator);
             query.GroupBy("Col1", "Col2").Having(q => q.Where("Col1", true));
             var g = new SqlServerGrammar(query);
 

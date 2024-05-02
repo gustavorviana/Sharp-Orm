@@ -12,6 +12,7 @@ namespace UnityTest.ConnectionTest
         [TestMethod]
         public void Select()
         {
+            ConnectionCreator.Default = this.Creator;
             try
             {
                 ConnectionCreator.ExecuteTransaction((transaction) =>
@@ -30,14 +31,6 @@ namespace UnityTest.ConnectionTest
 
                 Assert.AreEqual(0, qSelect.Count());
             }
-        }
-
-        [TestCleanup]
-        [TestInitialize]
-        public void CleanupTest()
-        {
-            using var query = NewQuery();
-            query.Delete();
         }
     }
 }

@@ -24,7 +24,7 @@ namespace SharpOrm
         #region Obsolete
 
         [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 3.0.")]
-        public Query(ConnectionCreator creator, string alias = "") : base(creator, new DbName(TableName, alias))
+        public Query(ConnectionCreator creator, string alias) : base(creator, new DbName(TableName, alias))
         {
             TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
@@ -84,6 +84,15 @@ namespace SharpOrm
         }
 
         public Query(QueryConfig config) : this(new DbName(TableName, null), config)
+        {
+        }
+
+
+        public Query(ConnectionCreator creator) : this(new DbName(TableName, null), creator)
+        {
+        }
+
+        public Query(ConnectionManager manager) : this(new DbName(TableName, null), manager)
         {
         }
 

@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Connection;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using UnityTest.Utils;
@@ -22,19 +21,16 @@ namespace UnityTest.MysqlTests
         public static void OnMysqlTableTestInit(TestContext context)
 #pragma warning restore IDE0060 // Remover o parâmetro não utilizado
         {
-            using var con = Connection.OpenIfNeeded();
-            using var cmd = con.CreateCommand();
-            cmd.CommandText = GetCreateTableSql();
-            cmd.ExecuteNonQuery();
+
+            using var creator = GetCreator();
+            ExecuteScript(GetCreateTableSql(), creator);
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            using var con = Connection;
-            using var cmd = con.OpenIfNeeded().CreateCommand();
-            cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
-            cmd.ExecuteNonQuery();
+            using var creator = GetCreator();
+            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", creator);
         }
 
         private static string GetCreateTableSql()
@@ -51,7 +47,7 @@ namespace UnityTest.MysqlTests
         {
             Clear();
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Insert(new Cell(BINARY, bytes));
 
             var row = query.FirstRow();
@@ -64,7 +60,7 @@ namespace UnityTest.MysqlTests
         {
             Clear();
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
 
             var row = query.FirstRow();
@@ -77,7 +73,7 @@ namespace UnityTest.MysqlTests
         {
             Clear();
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            using var query = new Query<TestBytes>(Connection, TABLE);
+            using var query = new Query<TestBytes>(TABLE, Creator);
             query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
 
             var obj = query.FirstOrDefault();
@@ -90,7 +86,7 @@ namespace UnityTest.MysqlTests
         {
             Clear();
             var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            using var query = new Query<TestStream>(Connection, TABLE);
+            using var query = new Query<TestStream>(TABLE, Creator);
             query.Insert(new Cell(BINARY, new MemoryStream(bytes)));
 
             var obj = query.FirstOrDefault();
@@ -98,9 +94,9 @@ namespace UnityTest.MysqlTests
             CollectionAssert.AreEqual(bytes, (obj.File as MemoryStream).ToArray());
         }
 
-        static void Clear()
+        void Clear()
         {
-            using var query = new Query(Connection, TABLE);
+            using var query = new Query(TABLE, Creator);
             query.Delete();
         }
 

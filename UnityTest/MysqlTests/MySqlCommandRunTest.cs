@@ -58,8 +58,8 @@ namespace UnityTest.MysqlTests
             const int Addr = 1;
             const string Name = "User 1";
             const string Email = "my@email.com";
-            using var addrQuery = new Query<Address>();
-            using var query = new Query<Customer>(config);
+            using var addrQuery = new Query<Address>(Creator);
+            using var query = new Query<Customer>(GetConnectionManager(config));
 
             query.Delete();
             addrQuery.Delete();
@@ -85,7 +85,7 @@ namespace UnityTest.MysqlTests
             const uint Id = 1;
             const string Name = "User 1";
             const string Email = "my@email.com";
-            using var query = new Query<Customer>();
+            using var query = new Query<Customer>(Creator);
 
             query.Delete();
 
@@ -127,7 +127,7 @@ namespace UnityTest.MysqlTests
         {
             const int Id = 1;
             const string Name = "User 1";
-            using var query = new Query<TestTable>();
+            using var query = new Query<TestTable>(Creator);
 
             query.Insert(new TestTable
             {
@@ -144,7 +144,7 @@ namespace UnityTest.MysqlTests
         public void SelectGroupBy()
         {
             const string Name = "User 1";
-            using var query = new Query<TestTable>();
+            using var query = new Query<TestTable>(Creator);
             query.Delete();
 
             query.BulkInsert(
@@ -162,7 +162,7 @@ namespace UnityTest.MysqlTests
         public void SelectGroupByHaving()
         {
             const string Name = "User 1";
-            using var query = new Query<TestTable>();
+            using var query = new Query<TestTable>(Creator);
             query.Delete();
 
             query.BulkInsert(
@@ -196,7 +196,7 @@ namespace UnityTest.MysqlTests
         public void UpdateObject()
         {
             const int Id = 1;
-            using var query = new Query<TestTable>();
+            using var query = new Query<TestTable>(Creator);
             query.Insert(new TestTable
             {
                 Id = Id,
@@ -272,8 +272,8 @@ namespace UnityTest.MysqlTests
         public void DeleteWhereJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
+            using var qOrder = new Query<Order>(Creator);
+            using var qCustomer = new Query<Customer>(Creator);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -292,8 +292,8 @@ namespace UnityTest.MysqlTests
         public void UpdateJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
+            using var qOrder = new Query<Order>(Creator);
+            using var qCustomer = new Query<Customer>(Creator);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -315,7 +315,7 @@ namespace UnityTest.MysqlTests
         public void SelectWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(Creator);
             query.AddForeign(f => f.Customer).AddForeign(f => f.Customer.Address);
             var order = query.FirstOrDefault();
 
@@ -330,7 +330,7 @@ namespace UnityTest.MysqlTests
         public void FindWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(Creator);
             var order = query.AddForeign(o => o.Customer.Address).Find(1);
 
             Assert.IsNotNull(order.Customer);
@@ -366,7 +366,7 @@ namespace UnityTest.MysqlTests
         public void PaginateWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(Creator);
             var orders = ((Query<Order>)query.Where("customer_id", 2)).AddForeign(o => o.Customer.Address).Paginate(2, 1);
 
             Assert.IsNotNull(orders[0].Customer);
@@ -380,7 +380,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void DateUtcConversion()
         {
-            using var query1 = new Query<TestTable>(Connection, new MysqlQueryConfig
+            using var query1 = new Query<TestTable>(Creator.GetConnection(), new MysqlQueryConfig
             {
                 Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc }
             });
@@ -390,16 +390,16 @@ namespace UnityTest.MysqlTests
             DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
             TestAssert.AreEqualsDate(date, dbDate, "Universal time insert fail");
 
-            using var query2 = new Query<TestTable>(Connection);
+            using var query2 = new Query<TestTable>(Creator);
             dbDate = query2.Select("record_created").ExecuteScalar<DateTime>();
             TestAssert.AreEqualsDate(date.ToUniversalTime(), dbDate, "Universal time read file");
         }
 
-        public static void ConfigureInitialCustomerAndOrder()
+        public void ConfigureInitialCustomerAndOrder()
         {
-            using var qOrder = new Query<Order>(Connection);
-            using var qAddress = new Query<Address>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
+            using var qOrder = new Query<Order>(Creator);
+            using var qAddress = new Query<Address>(Creator);
+            using var qCustomer = new Query<Customer>(Creator);
             qOrder.Delete();
             qCustomer.Delete();
             qAddress.Delete();
@@ -467,7 +467,7 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void TryLoadNullInt()
         {
-            using var qOrder = new Query<Order>(Connection);
+            using var qOrder = new Query<Order>(Creator);
             qOrder.Where("Id", 0);
             Assert.AreEqual(0, qOrder.ExecuteScalar<int>());
             Assert.IsNull(qOrder.ExecuteScalar<int?>());

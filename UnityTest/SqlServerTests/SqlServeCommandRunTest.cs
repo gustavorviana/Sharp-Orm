@@ -1,9 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Connection;
 using System;
-using System.Data.SqlClient;
 using UnityTest.Models;
 using UnityTest.Utils;
 
@@ -12,9 +10,6 @@ namespace UnityTest.SqlServerTests
     [TestClass]
     public class SqlServeCommandRunTest : SqlServerTest
     {
-        protected static readonly SqlServerQueryConfig newConfig = new(false) { UseOldPagination = false };
-        protected static readonly ConnectionCreator Creator = new SingleConnectionCreator<SqlConnection>(newConfig, ConnectionStr.SqlServer);
-
         [TestMethod]
         public void SelectDistinct()
         {
@@ -22,6 +17,7 @@ namespace UnityTest.SqlServerTests
             const string Name = "User 1";
 
             using var q = new Query<TestTable>(Creator);
+            q.Delete();
             q.Insert(NewRow(Id, Name).Cells);
             q.Distinct = true;
 
@@ -74,7 +70,7 @@ namespace UnityTest.SqlServerTests
         {
             InsertRows(30);
 
-            using var q = new Query<TestTable>(Creator, "p");
+            using var q = new Query<TestTable>("p", Creator);
             q.Select("p.*");
             q.OrderBy("Id");
             var r = q.Paginate(5, 1);
@@ -89,7 +85,7 @@ namespace UnityTest.SqlServerTests
         public void DeleteWhereJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(Connection);
+            using var qOrder = new Query<Order>(this.Creator);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -108,7 +104,7 @@ namespace UnityTest.SqlServerTests
         public void SelectJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(Connection);
+            using var qOrder = new Query<Order>(this.Creator);
 
             qOrder.Join<Customer>("c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
             qOrder.Where("c.name", "Ronaldo");
@@ -119,7 +115,7 @@ namespace UnityTest.SqlServerTests
         public void SelectGroupBy()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(this.Creator);
             query.BulkInsert(
                 new Order
                 {
@@ -147,7 +143,7 @@ namespace UnityTest.SqlServerTests
         public void SelectGroupByHaving()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(this.Creator);
             query.BulkInsert(
                 new Order
                 {
@@ -176,7 +172,7 @@ namespace UnityTest.SqlServerTests
         public void UpdateJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(Connection);
+            using var qOrder = new Query<Order>(this.Creator);
 
             qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
@@ -215,7 +211,7 @@ namespace UnityTest.SqlServerTests
         public void SelectWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
-            using var query = new Query<Order>(Connection);
+            using var query = new Query<Order>(this.Creator);
             var order = query.AddForeign(o => o.Customer).FirstOrDefault();
 
             Assert.IsNotNull(order.Customer);
@@ -244,7 +240,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void DeleteWithNoLock()
         {
-            using var q = new Query<TestTable>(Creator, "t");
+            using var q = new Query<TestTable>("t", this.Creator);
             q.EnableNoLock();
             q.Delete();
         }
@@ -252,17 +248,17 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void UpdateNoLock()
         {
-            using var q = new Query<TestTable>(Creator, "t");
+            using var q = new Query<TestTable>("t", this.Creator);
             q.EnableNoLock();
             q.Where("Id", 0);
             q.Update(new Cell("Name", "test"));
         }
 
-        private static void ConfigureInitialCustomerAndOrder()
+        private void ConfigureInitialCustomerAndOrder()
         {
-            using var qOrder = new Query<Order>(Connection);
-            using var qAddress = new Query<Address>(Connection);
-            using var qCustomer = new Query<Customer>(Connection);
+            using var qOrder = new Query<Order>(this.Creator);
+            using var qAddress = new Query<Address>(this.Creator);
+            using var qCustomer = new Query<Customer>(this.Creator);
             qOrder.Delete();
             qCustomer.Delete();
             qAddress.Delete();

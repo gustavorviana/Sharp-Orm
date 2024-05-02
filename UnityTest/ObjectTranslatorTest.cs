@@ -258,7 +258,7 @@ namespace UnityTest
             const string Name = "My Dynamic name";
 
             Connection.QueryReaders.Add("SELECT * FROM `Dynamic`", () => GetReader(i => new[] { new Cell("Id", Id), new Cell("Name", Name), new Cell("Null", DBNull.Value) }, 1));
-            using var query = new Query(Connection, Config, "Dynamic");
+            using var query = new Query("Dynamic", GetManager());
             var value = query.GetEnumerable<dynamic>().First();
 
             Assert.AreEqual(value.Id, Id);
@@ -272,7 +272,7 @@ namespace UnityTest
             Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(i => MakeOrderCells(1), 3));
             Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
-            using var query = new Query<Order>(Connection, Config);
+            using var query = new Query<Order>(GetManager());
             query.AddForeign(o => o.ArrayItems).AddForeign(o => o.ListItems).AddForeign(o => o.IListItems);
             var obj = query.FirstOrDefault();
 
@@ -287,7 +287,7 @@ namespace UnityTest
         {
             Connection.QueryReaders.Add("SELECT * FROM `RootAdvancedObject` LIMIT 1", GetAdvancedObjectReader);
 
-            using var query = new Query<RootAdvancedObject>(Connection, Config);
+            using var query = new Query<RootAdvancedObject>(GetManager());
             var obj = query.FirstOrDefault();
 
             Assert.IsNotNull(obj);
@@ -312,7 +312,7 @@ namespace UnityTest
         {
             Connection.QueryReaders.Add("SELECT * FROM `Recursive` LIMIT 1", GetAdvancedObjectReader);
 
-            using var query = new Query<RecursiveClass>(Connection, Config);
+            using var query = new Query<RecursiveClass>(GetManager());
             Assert.IsNotNull(query.FirstOrDefault());
         }
 

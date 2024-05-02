@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Connection;
 using System;
 using System.IO;
 using UnityTest.Models;
@@ -26,17 +25,8 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void OnMysqlTableTestInit(TestContext context)
         {
-            var con = Connection.OpenIfNeeded();
-            try
-            {
-                using var cmd = con.CreateCommand();
-                cmd.CommandText = File.ReadAllText("./Scripts/Mysql.sql");
-                cmd.ExecuteNonQuery();
-            }
-            finally
-            {
-                ConnectionCreator.Default.SafeDisposeConnection(con);
-            }
+            using var creator = GetCreator();
+            ExecuteScript(File.ReadAllText("./Scripts/Mysql.sql"), creator);
         }
         #endregion
 
@@ -45,7 +35,7 @@ namespace UnityTest.Utils
             return new Row(new Cell(ID, id), new Cell(NAME, name), new Cell(NUMBER, 0M), new Cell(GUIDID, Guid.NewGuid().ToString()), new Cell(STATUS, Status.Unknow));
         }
 
-        protected static void InsertRows(int count)
+        protected void InsertRows(int count)
         {
             Row[] rows = new Row[count];
 
@@ -56,7 +46,7 @@ namespace UnityTest.Utils
             q.BulkInsert(rows);
         }
 
-        protected static Query NewQuery()
+        protected Query NewQuery()
         {
             return NewQuery(TABLE);
         }

@@ -9,18 +9,22 @@ namespace UnityTest.Utils
 {
     public class MockTest : BaseTest
     {
-        protected static readonly MultipleConnectionCreator<MockConnection> Creator = new(new MysqlQueryConfig(false), "");
         protected static readonly MysqlQueryConfig Config = new(false);
         protected static readonly MockConnection Connection = new();
 
         protected static Query Query(string table)
         {
-            return new Query(table, Creator);
+            return new Query(table, GetManager());
         }
 
         protected static Query<T> Query<T>(string alias) where T : class, new()
         {
-            return new Query<T>(alias, Creator);
+            return new Query<T>(alias, GetManager());
+        }
+
+        protected static ConnectionManager GetManager()
+        {
+            return new ConnectionManager(Config, Connection);
         }
 
         [TestInitialize]
@@ -50,6 +54,12 @@ namespace UnityTest.Utils
             };
 
             return conn;
+        }
+
+
+        protected static ConnectionManager GetConnectionManager(QueryConfig config = null)
+        {
+            return new ConnectionManager(config ?? Config, Connection);
         }
     }
 }

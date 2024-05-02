@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Connection;
 using System;
 using UnityTest.Models;
 using UnityTest.Utils;
@@ -48,7 +47,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectOffset()
         {
-            using var query = NewQuery(TABLE, "", false);
+            using var query = NewQuery(TABLE, "", OldConfig);
             query.OrderBy("Id").Offset = 1;
             var g = NewConfig.NewGrammar(query);
 
@@ -59,7 +58,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectOffsetWhere()
         {
-            using var query = NewQuery(TABLE, "", false);
+            using var query = NewQuery(TABLE, "", OldConfig);
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
             var g = NewConfig.NewGrammar(query);
@@ -131,7 +130,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectAndPaginate()
         {
-            using var query = NewQuery(TABLE, "table", false);
+            using var query = NewQuery(TABLE, "table", OldConfig);
             query.OrderByDesc("Id").Select("Id", "Name");
             query.Offset = 1;
             query.Limit = 10;
@@ -144,7 +143,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectWhereAndPaginate()
         {
-            using var query = NewQuery(TABLE, "", false);
+            using var query = NewQuery(TABLE, "", OldConfig);
             query.OrderByDesc("Id").Select("Id", "Name");
             query.Offset = 1;
             query.Limit = 10;
@@ -158,7 +157,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectGroupByPaginate()
         {
-            using var query = NewQuery("Customer", "", false);
+            using var query = NewQuery("Customer", "", OldConfig);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]");
             query.Offset = 1;
             query.Limit = 10;
@@ -171,7 +170,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectWhereGroupByPaginate()
         {
-            using var query = NewQuery("Customer", "", false);
+            using var query = NewQuery("Customer", "", OldConfig);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]").Where("Id", "!=", 10);
             query.Offset = 1;
             query.Limit = 10;
@@ -206,7 +205,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void SelectGroupByPaginateInnerJoin()
         {
-            using var query = NewQuery("Customer", "", false);
+            using var query = NewQuery("Customer", "", OldConfig);
             query.OrderBy("State").GroupBy("State").Select((Column)"State", (Column)"COUNT([State]) as [Count]").Where("Id", "!=", 10);
             query.Join("User", "User.Id", "=", "Customer.UserId");
             query.Offset = 1;
@@ -266,7 +265,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void CountNewSelectJoin()
         {
-            using var query = new Query(TABLE, GetConnectionManager(true));
+            using var query = new Query(TABLE, GetConnectionManager());
             query
                 .Join("Table2 t2", "t2.IdTable", "=", "TestTable.Id")
                 .Where("t2.Column", "Value");
@@ -280,7 +279,7 @@ namespace UnityTest.SqlServerTests
         [TestMethod]
         public void DeleteWithNoLock()
         {
-            using var q = new Query(new DbName(TABLE, "T"), new ConnectionManager(new SqlServerQueryConfig(false), Connection));
+            using var q = new Query(new DbName(TABLE, "T"), this.Creator);
             q.EnableNoLock();
             var g = NewConfig.NewGrammar(q);
 
@@ -291,7 +290,7 @@ namespace UnityTest.SqlServerTests
         public void SelectWithEscapeStrings()
         {
             var today = DateTime.Today;
-            using var query = new Query(TABLE, new ConnectionManager(EscapeStringsConfig, Connection));
+            using var query = new Query(TABLE, this.GetConnectionManager(EscapeStringsConfig));
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
             var g = EscapeStringsConfig.NewGrammar(query);
