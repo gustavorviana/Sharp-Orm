@@ -18,6 +18,7 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        [Obsolete]
         public void OnQueryNullTable()
         {
             ConnectionCreator.Default = this.Creator;
@@ -25,6 +26,7 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        [Obsolete]
         public void OnQueryNullConfig()
         {
             ConnectionCreator.Default = this.Creator;

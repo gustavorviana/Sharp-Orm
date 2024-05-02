@@ -18,10 +18,11 @@ namespace UnityTest.ConnectionTest
             {
                 ConnectionCreator.ExecuteTransaction((transaction) =>
                 {
-                    using var q = new Query(transaction, TABLE);
+                    var manager = new ConnectionManager(Config, transaction);
+                    using var q = new Query(TABLE, manager);
                     q.Insert(NewRow(1, "User 1").Cells);
 
-                    using var qSelect = new Query(transaction, TABLE);
+                    using var qSelect = new Query(TABLE, manager);
 
                     Assert.AreEqual(1, qSelect.Count());
                     throw new DatabaseException();

@@ -2,6 +2,7 @@
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Connection;
 using System;
 using UnityTest.Models;
 using UnityTest.Utils;
@@ -380,10 +381,10 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void DateUtcConversion()
         {
-            using var query1 = new Query<TestTable>(Creator.GetConnection(), new MysqlQueryConfig
+            using var query1 = new Query<TestTable>(new ConnectionManager(new MysqlQueryConfig
             {
                 Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc }
-            });
+            }, Creator.GetConnection()));
 
             DateTime date = DateTime.Now.RemoveMiliseconds();
             query1.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
@@ -474,8 +475,7 @@ namespace UnityTest.MysqlTests
         }
 
         [TestCleanup]
-        [TestInitialize]
-        public void CleanupTest()
+        public void ClearDbTest()
         {
             using var query = NewQuery();
             query.Delete();

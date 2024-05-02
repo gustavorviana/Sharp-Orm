@@ -74,7 +74,7 @@ namespace UnityTest.MysqlTests
 
         [TestCleanup]
         [TestInitialize]
-        public void CleanupTest()
+        public void ClearDb()
         {
             using var query = NewQuery();
             query.Delete();
