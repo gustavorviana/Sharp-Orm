@@ -4,7 +4,7 @@ using SharpOrm.Builder;
 using System;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.MysqlTests
 {
     [TestClass]
     public class QueryConstructorTest : BaseTest

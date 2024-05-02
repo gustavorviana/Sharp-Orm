@@ -5,7 +5,7 @@ using System;
 using UnityTest.Models;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.SqlServerTests
 {
     [TestClass]
     public class SqlServerInsertUpdateDeleteBuilderTest : SqlServerTest

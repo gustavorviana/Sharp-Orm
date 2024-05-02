@@ -7,7 +7,7 @@ using System.Data;
 using System.Linq;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.MysqlTests
 {
     [TestClass]
     public class MysqlSelectBuilderTest : MysqlTableTest

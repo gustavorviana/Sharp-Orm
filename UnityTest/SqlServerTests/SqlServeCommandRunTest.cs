@@ -7,7 +7,7 @@ using System.Data.SqlClient;
 using UnityTest.Models;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.SqlServerTests
 {
     [TestClass]
     public class SqlServeCommandRunTest : SqlServerTest

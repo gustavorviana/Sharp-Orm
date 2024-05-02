@@ -5,7 +5,7 @@ using SharpOrm.Errors;
 using System;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.MysqlTests
 {
     [TestClass]
     public class QueryExceptionsTest : MysqlTableTest

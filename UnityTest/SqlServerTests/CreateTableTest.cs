@@ -7,7 +7,7 @@ using System.Data.Common;
 using System.Linq;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.SqlServerTests
 {
     [TestClass]
     public class CreateTableTest : SqlServerTest

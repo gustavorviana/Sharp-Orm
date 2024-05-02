@@ -5,7 +5,7 @@ using System;
 using UnityTest.Models;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.MysqlTests
 {
     [TestClass]
     public class MysqlInsertUpdateDeleteBuilderTest : MysqlTableTest

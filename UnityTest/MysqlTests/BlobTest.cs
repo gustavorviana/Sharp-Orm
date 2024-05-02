@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using UnityTest.Utils;
 
-namespace UnityTest
+namespace UnityTest.MysqlTests
 {
     [TestClass]
     public class BlobTest : MysqlConnectionTest
