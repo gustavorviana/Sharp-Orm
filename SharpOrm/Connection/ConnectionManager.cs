@@ -11,7 +11,7 @@ namespace SharpOrm.Connection
     {
         #region Fields/Properties
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
-        private readonly bool isMyTransaction = false;
+        internal readonly bool isMyTransaction = false;
         private readonly ConnectionCreator creator;
         private bool finishedTransaction = false;
         private bool disposed;
@@ -60,8 +60,15 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Creates an instance using the default manager settings.
         /// </summary>
-        public ConnectionManager() : this(ConnectionCreator.Default)
+        public ConnectionManager(bool openTransaction = false) : this(ConnectionCreator.Default)
         {
+            if (!openTransaction)
+                return;
+
+            this._management = ConnectionManagement.CloseOnDispose;
+            this.isMyTransaction = openTransaction;
+
+            this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
         }
 
         /// <summary>
@@ -91,6 +98,7 @@ namespace SharpOrm.Connection
             this.isMyTransaction = true;
 
             this.CommandTimeout = creator.Config.CommandTimeout;
+            this.Connection = transaction.Connection;
             this.Transaction = transaction;
             this.Config = creator.Config;
             this.creator = creator;

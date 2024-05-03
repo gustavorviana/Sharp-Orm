@@ -65,7 +65,6 @@ namespace UnityTest.SqlServerTests
         }
 
         [TestMethod]
-        [TestProperty("clearDb", "")]
         public void Paginate()
         {
             InsertRows(30);
@@ -192,7 +191,6 @@ namespace UnityTest.SqlServerTests
         }
 
         [TestMethod]
-        [TestProperty("clearDb", "")]
         public void PaginatePage2()
         {
             InsertRows(10);

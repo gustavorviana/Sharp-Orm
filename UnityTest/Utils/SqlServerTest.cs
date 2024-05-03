@@ -25,7 +25,6 @@ namespace UnityTest.Utils
         protected const string GUIDID = "custom_id";
         protected const string STATUS = "custom_status";
 
-
         public SqlServerTest() : base(NewConfig, ConnectionStr.SqlServer)
         {
         }

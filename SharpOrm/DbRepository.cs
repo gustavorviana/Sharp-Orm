@@ -243,12 +243,12 @@ namespace SharpOrm
             return new QueryConstructor(new QueryInfo(this.Creator.Config, new DbName(table, alias)));
         }
 
-        protected ConnectionManager GetConnectionManager()
+        protected virtual ConnectionManager GetConnectionManager()
         {
             if (this._transaction != null)
-                return new ConnectionManager(this.Creator.Config, this._transaction);
+                return new ConnectionManager(this.Creator.Config, this._transaction) { CommandTimeout = this.CommandTimeout };
 
-            return new ConnectionManager(this.Creator);
+            return new ConnectionManager(this.Creator) { CommandTimeout = this.CommandTimeout };
         }
 
         /// <summary>

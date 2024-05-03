@@ -39,5 +39,11 @@ namespace UnityTest.Utils
         {
             ConnectionCreator.Default = null;
         }
+
+        protected void ClearTable(string table)
+        {
+            using var query = new Query(table);
+            query.Delete();
+        }
     }
 }
