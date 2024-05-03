@@ -14,16 +14,12 @@ namespace SharpOrm
     public abstract class DbRepository : IDisposable
     {
         #region Fields/Properties
-        private readonly List<DbConnection> _connections = new List<DbConnection>();
-        private readonly List<DbCommand> _commands = new List<DbCommand>();
-        private readonly object _connLock = new object();
-        private readonly object _cmdLock = new object();
-        private bool _parentTransact = false;
+        private bool _externalTransaction = false;
         private bool _disposed;
         public bool Disposed => this._disposed;
 
-        private DbTransaction _transaction;
-        private DbConnection _transactionConn;
+        private ConnectionManager _transaction;
+        protected ConnectionManager Transaction => this._transaction;
 
         private int? commandTimeout = null;
         protected int CommandTimeout
@@ -39,7 +35,7 @@ namespace SharpOrm
         /// <summary>
         /// Indicates whether the repository has a parent transaction.
         /// </summary>
-        protected bool HasParentTransaction => this._parentTransact;
+        protected bool HasParentTransaction => this._externalTransaction;
 
         /// <summary>
         /// Indicates whether the repository has an active transaction.
@@ -72,10 +68,19 @@ namespace SharpOrm
         /// <param name="transaction">The DbTransaction to set.</param>
         public void SetTransaction(DbTransaction transaction)
         {
+            this.SetTransaction(transaction is null ? null : new ConnectionManager(this.Creator.Config, transaction));
+        }
+
+        /// <summary>
+        /// Set a transaction from a <see cref="ConnectionManager"/> class.
+        /// </summary>
+        /// <param name="manager"></param>
+        public void SetTransaction(ConnectionManager manager)
+        {
             this.ThrowIfDisposed();
 
-            this._transaction = transaction;
-            this._parentTransact = transaction != null;
+            this._transaction = manager;
+            this._externalTransaction = manager != null;
         }
 
         /// <summary>
@@ -91,11 +96,7 @@ namespace SharpOrm
             if (this.HasTransaction)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            if (this._transactionConn == null)
-                this._transactionConn = this.Creator.GetConnection();
-
-            this._transactionConn.OpenIfNeeded();
-            this._transaction = this._transactionConn.BeginTransaction();
+            this._transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
         }
 
         /// <summary>
@@ -133,15 +134,18 @@ namespace SharpOrm
         /// </summary>
         protected virtual void ClearTransaction()
         {
-            if (this.HasTransaction && !this.HasParentTransaction)
-                this._transaction.Dispose();
-
-            this._transaction = null;
-            if (this._transactionConn == null)
+            if (!this.HasTransaction)
                 return;
 
-            this.Creator.SafeDisposeConnection(this._transactionConn);
-            this._transactionConn = null;
+            if (!this.HasParentTransaction)
+            {
+                var conn = this._transaction.Connection;
+                this._transaction.Dispose();
+
+                this.Creator.SafeDisposeConnection(conn);
+            }
+
+            this._transaction = null;
         }
 
         /// <summary>
@@ -205,7 +209,10 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            return new Query(name, GetConnectionManager()) { Token = this.Token };
+            if (this.Transaction != null)
+                return new Query(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
+
+            return new Query(name, Creator) { Token = this.Token };
         }
 
         /// <summary>
@@ -229,7 +236,10 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            return new Query<T>(name, GetConnectionManager()) { Token = this.Token };
+            if (this.Transaction != null)
+                return new Query<T>(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
+
+            return new Query<T>(name, Creator) { Token = this.Token, CommandTimeout = this.CommandTimeout };
         }
 
         /// <summary>
@@ -240,13 +250,17 @@ namespace SharpOrm
         /// <returns>A QueryConstructor for building custom queries.</returns>
         protected virtual QueryConstructor Constructor(string table = "", string alias = "")
         {
-            return new QueryConstructor(new QueryInfo(this.Creator.Config, new DbName(table, alias)));
+            return new QueryConstructor(this.Creator.Config, new DbName(table, alias));
         }
 
+        /// <summary>
+        /// Returns a <see cref="ConnectionManager"/> representing the connection of the current class.
+        /// </summary>
+        /// <returns></returns>
         protected virtual ConnectionManager GetConnectionManager()
         {
             if (this._transaction != null)
-                return new ConnectionManager(this.Creator.Config, this._transaction) { CommandTimeout = this.CommandTimeout };
+                return this.Transaction;
 
             return new ConnectionManager(this.Creator) { CommandTimeout = this.CommandTimeout };
         }
@@ -289,7 +303,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// executes a SQL statement against a connection object.
+        /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="query">The SQL query string.</param>
         /// <returns></returns>
@@ -297,6 +311,27 @@ namespace SharpOrm
         {
             using (var cmd = this.CreateCommand(query))
                 return cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        protected T ExecuteScalar<T>(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteScalar<T>(this.Creator.Config.Translation);
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        protected IEnumerable<T> ExecuteArrayScalar<T>(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteArrayScalar<T>(this.Creator.Config.Translation);
         }
 
         /// <summary>
@@ -322,11 +357,8 @@ namespace SharpOrm
             if (open) cmd.Connection?.OpenIfNeeded();
 
             cmd.CommandTimeout = this.CommandTimeout;
-            cmd.Transaction = this._transaction;
+            cmd.Transaction = this._transaction?.Transaction;
             cmd.Disposed += OnCommandDisposed;
-
-            lock (this._cmdLock)
-                this._commands.Add(cmd);
 
             return cmd;
         }
@@ -335,16 +367,11 @@ namespace SharpOrm
 
         private void OnCommandDisposed(object sender, EventArgs e)
         {
-            lock (_cmdLock)
-            {
-                if (!(sender is DbCommand cmd))
-                    return;
+            if (!(sender is DbCommand cmd))
+                return;
 
-                if (cmd.Transaction is null)
-                    try { cmd.Connection.Dispose(); } catch { }
-
-                this._commands.Remove(cmd);
-            }
+            if (cmd.Transaction is null)
+                try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
         }
 
         /// <summary>
@@ -366,20 +393,7 @@ namespace SharpOrm
             if (!ignoreTransaction && this.HasTransaction)
                 return this._transaction.Connection;
 
-            var conn = this.Creator.GetConnection();
-
-            lock (_connLock)
-                this._connections.Add(conn);
-
-            conn.Disposed += OnConnectionDisposed;
-            return conn;
-        }
-
-        private void OnConnectionDisposed(object sender, EventArgs e)
-        {
-            lock (_connLock)
-                if (sender is DbConnection con)
-                    this._connections.Remove(con);
+            return this.Creator.GetConnection();
         }
 
         #region IDisposable
@@ -398,26 +412,14 @@ namespace SharpOrm
             if (this._disposed)
                 return;
 
+            this._disposed = true;
             if (!disposing)
-            {
-                this._transaction = null;
-                this._transactionConn = null;
-
-                this._commands.Clear();
-                this._connections.Clear();
                 return;
-            }
+
+            this._transaction = null;
 
             if (!this.HasParentTransaction && this.HasTransaction)
                 this.CommitTransaction();
-
-            foreach (var cmd in this._commands.ToArray())
-                try { cmd.Dispose(); } catch { }
-
-            foreach (var conn in this._connections.ToArray())
-                try { conn.Dispose(); } catch { }
-
-            this._disposed = true;
         }
 
         /// <summary>

@@ -10,10 +10,11 @@ namespace SharpOrm.Connection
     public class ConnectionManager : IDisposable
     {
         #region Fields/Properties
-        private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
+        private ConnectionManagement management = ConnectionManagement.CloseOnDispose;
         internal readonly bool isMyTransaction = false;
         private readonly ConnectionCreator creator;
         private bool finishedTransaction = false;
+        internal bool autoCommit = true;
         private bool disposed;
 
         /// <summary>
@@ -21,13 +22,13 @@ namespace SharpOrm.Connection
         /// </summary>
         public ConnectionManagement Management
         {
-            get => this._management;
+            get => this.management;
             set
             {
                 if (this.Transaction != null)
                     throw new InvalidOperationException("It's not possible to alter the connection management when a transaction is being used.");
 
-                this._management = value;
+                this.management = value;
             }
         }
 
@@ -60,15 +61,8 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Creates an instance using the default manager settings.
         /// </summary>
-        public ConnectionManager(bool openTransaction = false) : this(ConnectionCreator.Default)
+        public ConnectionManager(bool openTransaction = false) : this(ConnectionCreator.Default, openTransaction)
         {
-            if (!openTransaction)
-                return;
-
-            this._management = ConnectionManagement.CloseOnDispose;
-            this.isMyTransaction = openTransaction;
-
-            this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
         }
 
         /// <summary>
@@ -84,17 +78,24 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="creator"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConnectionManager(ConnectionCreator creator)
+        public ConnectionManager(ConnectionCreator creator, bool openTransaction = false)
         {
             this.creator = creator ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator);
             this.CommandTimeout = creator.Config.CommandTimeout;
             this.Connection = this.creator.GetConnection();
             this.Config = creator.Config;
+
+            if (!openTransaction)
+                return;
+
+            this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
+            this.management = ConnectionManagement.CloseOnDispose;
+            this.isMyTransaction = true;
         }
 
         private ConnectionManager(ConnectionCreator creator, DbTransaction transaction)
         {
-            this._management = ConnectionManagement.CloseOnDispose;
+            this.management = ConnectionManagement.CloseOnDispose;
             this.isMyTransaction = true;
 
             this.CommandTimeout = creator.Config.CommandTimeout;
@@ -113,7 +114,7 @@ namespace SharpOrm.Connection
         public ConnectionManager(QueryConfig config, DbTransaction transaction) : this(config, transaction?.Connection)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
-            this._management = ConnectionManagement.LeaveOpen;
+            this.management = ConnectionManagement.LeaveOpen;
         }
 
         /// <summary>
@@ -140,20 +141,19 @@ namespace SharpOrm.Connection
 
         public ConnectionManager Clone()
         {
+            if (this.disposed)
+                throw new ObjectDisposedException(this.GetType().FullName);
+
             if (this.creator != null && this.Transaction != null)
-                return new ConnectionManager(this.creator, this.Transaction)
-                { _management = this._management };
+                return new ConnectionManager(this.creator, this.Transaction).CopyOptionsFrom(this, false);
 
             if (this.creator != null)
-                return new ConnectionManager(this.creator)
-                { CommandTimeout = this.CommandTimeout, _management = this._management };
+                return new ConnectionManager(this.creator).CopyOptionsFrom(this);
 
             if (this.Transaction != null)
-                return new ConnectionManager(this.Config, this.Transaction)
-                { CommandTimeout = this.CommandTimeout, _management = this._management };
+                return new ConnectionManager(this.Config, this.Transaction).CopyOptionsFrom(this);
 
-            return new ConnectionManager(this.Config, this.Connection)
-            { CommandTimeout = this.CommandTimeout, _management = this._management };
+            return new ConnectionManager(this.Config, this.Connection).CopyOptionsFrom(this);
         }
 
         /// <summary>
@@ -166,11 +166,19 @@ namespace SharpOrm.Connection
                 throw new InvalidOperationException("There is already an open transaction.");
 
             if (this.creator != null)
-                return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction())
-                { _management = this._management };
+                return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction()).CopyOptionsFrom(this, false);
 
-            return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction())
-            { CommandTimeout = this.CommandTimeout, _management = this._management };
+            return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction()).CopyOptionsFrom(this);
+        }
+
+        private ConnectionManager CopyOptionsFrom(ConnectionManager manager, bool copyManagement = true)
+        {
+            if (copyManagement)
+                this.management = manager.management;
+
+            this.CommandTimeout = manager.CommandTimeout;
+            this.autoCommit = manager.autoCommit;
+            return this;
         }
 
         #region Transaction
@@ -178,7 +186,7 @@ namespace SharpOrm.Connection
         /// If there is a transaction, commit the database transaction.
         /// </summary>
         /// <returns></returns>
-        private bool Commit()
+        internal bool Commit()
         {
             if (this.finishedTransaction || this.Transaction is null)
                 return false;
@@ -266,7 +274,9 @@ namespace SharpOrm.Connection
                 if (!this.isMyTransaction)
                     return;
 
-                try { this.Commit(); } catch { }
+                if (this.autoCommit)
+                    try { this.Commit(); } catch { }
+
                 try { this.Transaction.Dispose(); } catch { }
             }
 

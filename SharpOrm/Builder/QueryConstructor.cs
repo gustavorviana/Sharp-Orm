@@ -34,6 +34,11 @@ namespace SharpOrm.Builder
 
         }
 
+        public QueryConstructor(QueryConfig config, DbName table) : this(new ReadonlyQueryInfo(config, table))
+        {
+
+        }
+
         public QueryConstructor(QueryInfo info) : this(info.ToReadOnly())
         {
         }

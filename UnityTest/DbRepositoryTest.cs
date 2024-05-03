@@ -46,14 +46,14 @@ namespace UnityTest
             using var repo = new TestRepository(creator);
             repo.RunTransaction(() =>
             {
-                var transaction = _transactionField.GetValue(repo);
+                var transaction = GetTransaction(repo);
                 Assert.IsNotNull(transaction);
 
-                repo.RunTransaction(() => Assert.AreEqual(transaction, _transactionField.GetValue(repo)));
-                Assert.IsNotNull(_transactionField.GetValue(repo));
+                repo.RunTransaction(() => Assert.AreEqual(transaction, GetTransaction(repo)));
+                Assert.IsNotNull(GetTransaction(repo));
             });
 
-            Assert.IsNull(_transactionField.GetValue(repo));
+            Assert.IsNull(GetTransaction(repo));
         }
 
         [TestMethod]
@@ -66,18 +66,23 @@ namespace UnityTest
                 using var repo = new TestRepository(creator);
                 repo.SetTransaction(transaction);
 
-                Assert.AreEqual(transaction, _transactionField.GetValue(repo));
-                repo.RunTransaction(() => Assert.AreEqual(transaction, _transactionField.GetValue(repo)));
+                Assert.AreEqual(transaction, GetTransaction(repo));
+                repo.RunTransaction(() => Assert.AreEqual(transaction, GetTransaction(repo)));
 
-                Assert.AreEqual(transaction, _transactionField.GetValue(repo));
+                Assert.AreEqual(transaction, GetTransaction(repo));
 
                 repo.SetTransaction((DbTransaction)null);
-                Assert.IsNull(_transactionField.GetValue(repo));
+                Assert.IsNull(GetTransaction(repo));
             }
             finally
             {
                 creator.SafeDisposeConnection(conn);
             }
+        }
+
+        private static DbTransaction GetTransaction(TestRepository repo)
+        {
+            return ((ConnectionManager)_transactionField.GetValue(repo))?.Transaction;
         }
 
         [TestMethod]
