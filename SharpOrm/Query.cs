@@ -13,8 +13,15 @@ using System.Threading;
 
 namespace SharpOrm
 {
+    /// <summary>
+    /// Class responsible for interacting with the data of a database table.
+    /// </summary>
+    /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
     public class Query<T> : Query where T : new()
     {
+        /// <summary>
+        /// Table name in the database.
+        /// </summary>
         public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo { get; }
         private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
@@ -79,56 +86,80 @@ namespace SharpOrm
         }
         #endregion
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
+        /// </summary>
         public Query() : this(TableName, ConnectionCreator.Default)
         {
         }
 
-        public Query(QueryConfig config) : this(new DbName(TableName, null), config)
-        {
-        }
-
-
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="creator">Connection manager to be used.</param>
         public Query(ConnectionCreator creator) : this(new DbName(TableName, null), creator)
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="manager">Connection manager to be used.</param>
         public Query(ConnectionManager manager) : this(new DbName(TableName, null), manager)
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
+        /// </summary>
+        /// <param name="alias">Alias for the table.</param>
         public Query(string alias) : this(new DbName(TableName, alias))
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="alias">Alias for the table.</param>
+        /// <param name="creator">Connection manager to be used.</param>
         public Query(string alias, ConnectionCreator creator) : this(new DbName(TableName, alias), creator)
         {
 
         }
 
-        public Query(string alias, QueryConfig config) : this(new DbName(TableName, alias), config)
-        {
-
-        }
-
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="alias">Alias for the table.</param>
+        /// <param name="manager">Connection manager to be used.</param>
         public Query(string alias, ConnectionManager manager) : this(new DbName(TableName, alias), manager)
         {
         }
 
-        public Query(DbName name) : this(name, ConnectionCreator.Default)
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        public Query(DbName table) : this(table, ConnectionCreator.Default)
         {
         }
 
-        public Query(DbName name, ConnectionCreator creator) : this(name, new ConnectionManager(creator))
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="creator">Connection manager to be used.</param>
+        public Query(DbName table, ConnectionCreator creator) : this(table, new ConnectionManager(creator))
         {
 
         }
 
-        public Query(DbName name, QueryConfig config) : this(name, new ConnectionManager(config))
-        {
-
-        }
-
-        public Query(DbName name, ConnectionManager manager) : base(name, manager)
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="manager">Connection manager to be used.</param>
+        public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
             TableInfo = new TableInfo(typeof(T), manager.Config.Translation);
             this.ApplyValidations();
@@ -191,7 +222,7 @@ namespace SharpOrm
 
             try
             {
-                FkLoaders fkLoaders = new FkLoaders(this.manager, this._fkToLoad, this.Token);
+                FkLoaders fkLoaders = new FkLoaders(this.Manager, this._fkToLoad, this.Token);
 
                 enumerable.fkQueue = fkLoaders;
                 var list = enumerable.ToList();
@@ -201,7 +232,7 @@ namespace SharpOrm
             }
             finally
             {
-                this.manager?.CloseByEndOperation();
+                this.Manager?.CloseByEndOperation();
             }
         }
 
@@ -366,7 +397,7 @@ namespace SharpOrm
 
         public override Query Clone(bool withWhere)
         {
-            Query<T> query = new Query<T>(this.Info.TableName, this.manager);
+            Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -387,32 +418,61 @@ namespace SharpOrm
         }
     }
 
+    /// <summary>
+    /// Class responsible for interacting with the data of a database table.
+    /// </summary>
     public class Query : QueryBase, ICloneable, IGrammarOptions
     {
         #region Properties
-        public bool Distinct { get; set; }
-        public int? Limit { get; set; }
-        public int? Offset { get; set; }
         internal string[] deleteJoins = null;
+
+        /// <summary>
+        /// Indicate whether the database should return only distinct items.
+        /// </summary>
+        public bool Distinct { get; set; }
+        /// <summary>
+        /// Maximum number of items that the database can interact with in the execution.
+        /// </summary>
+        public int? Limit { get; set; }
+        /// <summary>
+        /// Number of items to be initially ignored by the database.
+        /// </summary>
+        /// <remarks>Example: If <see cref="Offset"/> is 3, the database will ignore the first 3 items in the execution.</remarks>
+        public int? Offset { get; set; }
         /// <summary>
         /// Indicates whether the ID of the inserted row should be returned. (defaults true)
         /// </summary>
         public bool ReturnsInsetionId { get; set; } = true;
 
+        /// <summary>
+        /// Options for Grammar to create an SQL script.
+        /// </summary>
         public object GrammarOptions { get; set; }
+        /// <summary>
+        /// Settings used to build the SQL command.
+        /// </summary>
         public QueryConfig Config => this.Info.Config;
-        protected internal readonly ConnectionManager manager;
-        public DbConnection Connection => this.manager.Connection;
-        public DbTransaction Transaction => this.manager.Transaction;
+        /// <summary>
+        /// Connection manager of the query.
+        /// </summary>
+        public ConnectionManager Manager { get; }
+        [Obsolete("This function is deprecated, use Manager.Connection. It will be removed in version 3.0.")]
+        public DbConnection Connection => this.Manager.Connection;
+        [Obsolete("This function is deprecated, use Manager.Transaction. It will be removed in version 3.0.")]
+        public DbTransaction Transaction => this.Manager.Transaction;
 
+        /// <summary>
+        /// Cancellation token for the commands to be executed in this query.
+        /// </summary>
         public CancellationToken Token { get; set; }
+        private int? _commandTimeout;
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
         public int CommandTimeout
         {
-            get => this.manager.CommandTimeout;
-            set => this.manager.CommandTimeout = value;
+            get => this._commandTimeout ?? this.Manager.CommandTimeout;
+            set => this._commandTimeout = value;
         }
         private OpenReader lastOpenReader = null;
         #endregion
@@ -471,7 +531,7 @@ namespace SharpOrm
             if (connection == null)
                 return;
 
-            this.manager = new ConnectionManager(config, connection) { Management = management };
+            this.Manager = new ConnectionManager(config, connection) { Management = management };
             this.CommandTimeout = config.CommandTimeout;
         }
 
@@ -487,35 +547,59 @@ namespace SharpOrm
         #endregion
 
         /// <summary>
-        /// Creates a new instance of SharpOrm.Query using the default values ​​defined in ConnectionCreator.Default.
+        /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
-        /// <param table="table">Name of the table to be used.</param>
+        /// <param name="table">Name of the table to be used.</param>
         public Query(string table) : this(table, new ConnectionManager())
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="creator">Connection manager to be used.</param>
         public Query(string table, ConnectionCreator creator) : this(new DbName(table), creator)
         {
 
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="manager">Connection manager to be used.</param>
         public Query(string table, ConnectionManager manager) : this(new DbName(table), manager)
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
         public Query(DbName table) : this(table, new ConnectionManager())
         {
 
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="creator">Connection manager to be used.</param>
         public Query(DbName table, ConnectionCreator creator) : this(table, new ConnectionManager(creator))
         {
 
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="Query"/>.
+        /// </summary>
+        /// <param name="table">Name of the table to be used.</param>
+        /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : base(manager.Config, table)
         {
-            this.manager = manager;
+            this.Manager = manager;
         }
 
         #endregion
@@ -557,26 +641,65 @@ namespace SharpOrm
 
         #region Join
 
+        /// <summary>
+        /// Perform a INNER JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="column1">The name of the column from the current table to be used in the tables.</param>
+        /// <param name="column2">The name of the column from the specified table to be used in the tables.</param>
+        /// <returns></returns>
         public Query Join(string table, string column1, string column2)
         {
             return this.Join(table, q => q.WhereColumn(column1, column2));
         }
 
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="column1">The name of the column from the current table to be used in the tables.</param>
+        /// <param name="operation">SQL operation to be used for comparing the columns.</param>
+        /// <param name="column2">The name of the column from the specified table to be used in the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
             return this.Join(table, q => q.WhereColumn(column1, operation, column2), type);
         }
 
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="grammarOptions">Options of the grammar for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
         public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
             return this.Join(new DbName(table), callback, type, grammarOptions);
         }
 
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER")
         {
             return this.Join(table, callback, type, this.GrammarOptions);
         }
 
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="grammarOptions">Options of the grammar for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
             JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
@@ -589,11 +712,21 @@ namespace SharpOrm
 
         #region GroupBy
 
+        /// <summary>
+        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// </summary>
+        /// <param name="columnNames">The column names by which the results should be grouped.</param>
+        /// <returns></returns>
         public Query GroupBy(params string[] columnNames)
         {
             return this.GroupBy(columnNames.Select(name => new Column(name)).ToArray());
         }
 
+        /// <summary>
+        /// Group the results of the query by the specified criteria.
+        /// </summary>
+        /// <param name="columns">The columns by which the results should be grouped.</param>
+        /// <returns></returns>
         public Query GroupBy(params Column[] columns)
         {
             this.Info.GroupsBy = columns;
@@ -605,6 +738,11 @@ namespace SharpOrm
 
         #region Having
 
+        /// <summary>
+        /// Add a HAVING clause to the query based on a callback.
+        /// </summary>
+        /// <param name="callback">The callback that defines the conditions of the HAVING clause.</param>
+        /// <returns></returns>
         public Query Having(QueryCallback callback)
         {
             var qBase = new QueryBase(this.Config, this.Info.TableName);
@@ -676,6 +814,7 @@ namespace SharpOrm
 
         #region DML SQL commands
 
+        [Obsolete("This constructor is deprecated. It will be removed in version 3.0.", true)]
         public int Update(Dictionary<string, object> cells)
         {
             if (!cells.Any())
@@ -705,7 +844,7 @@ namespace SharpOrm
         public int Update(IEnumerable<Cell> cells)
         {
             this.CheckIsSafeOperation();
-            return this.manager.ExecuteAndGetAffected(this.GetGrammar().Update(cells), this.Token);
+            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().Update(cells), this.Token);
         }
 
         /// <summary>
@@ -728,7 +867,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            object result = this.manager.ExecuteScalar(this.GetGrammar().Insert(cells), this.Token);
+            object result = this.Manager.ExecuteScalar(this.GetGrammar().Insert(cells), this.Token);
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -739,7 +878,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
-            object result = this.manager.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
+            object result = this.Manager.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -749,7 +888,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            return this.manager.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
+            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
         }
 
         /// <summary>
@@ -767,7 +906,7 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            return this.manager.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows), this.Token);
+            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows), this.Token);
         }
 
         /// <summary>
@@ -777,7 +916,7 @@ namespace SharpOrm
         public int Delete()
         {
             this.CheckIsSafeOperation();
-            return this.manager.ExecuteAndGetAffected(this.GetGrammar().Delete(), this.Token);
+            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().Delete(), this.Token);
         }
 
         /// <summary>
@@ -786,7 +925,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            return Convert.ToInt64(this.manager.ExecuteScalar(this.GetGrammar().Count(), this.Token));
+            return Convert.ToInt64(this.Manager.ExecuteScalar(this.GetGrammar().Count(), this.Token));
         }
 
         /// <summary>
@@ -806,7 +945,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
-            return Convert.ToInt64(this.manager.ExecuteScalar(this.GetGrammar().Count(column), this.Token));
+            return Convert.ToInt64(this.Manager.ExecuteScalar(this.GetGrammar().Count(column), this.Token));
         }
 
         /// <summary>
@@ -842,35 +981,35 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
 
-            return new DbCommandEnumerable<T>(this.Config.Translation, this.manager.GetCommand(grammar.Select()), this.Token, this.manager.Management);
+            return new DbCommandEnumerable<T>(this.Config.Translation, this.Manager.GetCommand(grammar.Select()), this.Token, this.Manager.Management);
         }
 
         /// <summary>
         /// Executes the query and returns the first column of all rows in the result. All other keys are ignored.
         /// </summary>
-        /// <typeparam table="T">Type to which the returned value should be converted.</typeparam>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
             this.Token.ThrowIfCancellationRequested();
             try
             {
-                using (DbCommand cmd = this.manager.GetCommand(this.GetGrammar().Select()))
+                using (DbCommand cmd = this.Manager.GetCommand(this.GetGrammar().Select()))
                     return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
             }
             finally
             {
-                this.manager?.CloseByEndOperation();
+                this.Manager?.CloseByEndOperation();
             }
         }
 
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
-        /// <typeparam table="T">Type to which the returned value should be converted.</typeparam>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return this.Config.Translation.FromSql<T>(this.manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
+            return this.Config.Translation.FromSql<T>(this.Manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
         }
 
         /// <summary>
@@ -879,7 +1018,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            return this.Config.Translation.FromSql(this.manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
+            return this.Config.Translation.FromSql(this.Manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
         }
 
         /// <summary>
@@ -891,15 +1030,21 @@ namespace SharpOrm
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.manager.GetCommand(this.GetGrammar().Select(), this.Token))).reader;
+            return (this.lastOpenReader = new OpenReader(this.Manager.GetCommand(this.GetGrammar().Select(), this.Token))).reader;
         }
 
-        public Query JoinToDelete(params string[] join)
+        /// <summary>
+        /// Indicate that the rows from the joined tables that matched the criteria should also be removed when executing <see cref="Delete"/>.
+        /// </summary>
+        /// <param name="tables">Names of the tables (or aliases if used) whose rows should be removed.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public Query JoinToDelete(params string[] tables)
         {
-            if (join == null || join.Length == 0)
-                throw new ArgumentNullException(nameof(join));
+            if (tables == null || tables.Length == 0)
+                throw new ArgumentNullException(nameof(tables));
 
-            this.deleteJoins = join.Select(this.Config.ApplyNomenclature).ToArray();
+            this.deleteJoins = tables.Select(this.Config.ApplyNomenclature).ToArray();
             return this;
         }
 
@@ -923,7 +1068,7 @@ namespace SharpOrm
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {
-            Query query = new Query(this.Info.TableName, this.manager);
+            Query query = new Query(this.Info.TableName, this.Manager);
 
             if (withWhere)
                 query.Info.LoadFrom(this.Info);
@@ -958,7 +1103,7 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            this.manager?.Dispose();
+            this.Manager?.Dispose();
             this.lastOpenReader = null;
         }
 
@@ -967,6 +1112,10 @@ namespace SharpOrm
             return GetGrammar().SelectSqlOnly();
         }
 
+        /// <summary>
+        /// Create a <see cref="SqlExpression"/> that represents a select in SQL.
+        /// </summary>
+        /// <returns></returns>
         public SqlExpression ToSqlExpression()
         {
             return GetGrammar().GetSelectExpression();

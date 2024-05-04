@@ -74,7 +74,7 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Creates an instance using a manager builder.
+        /// Creates an instance using a <see cref="ConnectionCreator"/>.
         /// </summary>
         /// <param name="creator"></param>
         /// <exception cref="ArgumentNullException"></exception>

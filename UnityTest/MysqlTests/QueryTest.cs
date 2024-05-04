@@ -51,7 +51,7 @@ namespace UnityTest.MysqlTests
         {
             var query = new Query("table", Creator);
 
-            using var cmd = query.manager.GetCommand();
+            using var cmd = query.Manager.GetCommand();
             Assert.AreEqual(30, cmd.CommandTimeout);
         }
 
@@ -63,7 +63,7 @@ namespace UnityTest.MysqlTests
                 CommandTimeout = 120
             };
 
-            using var cmd = query.manager.GetCommand();
+            using var cmd = query.Manager.GetCommand();
             Assert.AreEqual(120, cmd.CommandTimeout);
         }
 
@@ -73,7 +73,7 @@ namespace UnityTest.MysqlTests
             using var creator = new MultipleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(false) { CommandTimeout = 120 }, ConnectionStr.Mysql);
             var query = new Query("table", creator);
 
-            using var cmd = query.manager.GetCommand();
+            using var cmd = query.Manager.GetCommand();
             Assert.AreEqual(120, cmd.CommandTimeout);
         }
     }
