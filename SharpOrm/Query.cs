@@ -546,6 +546,16 @@ namespace SharpOrm
         }
         #endregion
 
+        public static Query ReadOnly(string table, QueryConfig config = null)
+        {
+            return ReadOnly(new DbName(table), config);
+        }
+
+        public static Query ReadOnly(DbName table, QueryConfig config = null)
+        {
+            return new Query(table, config ?? ConnectionCreator.Default?.Config);
+        }
+
         /// <summary>
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
@@ -600,6 +610,11 @@ namespace SharpOrm
         public Query(DbName table, ConnectionManager manager) : base(manager.Config, table)
         {
             this.Manager = manager;
+        }
+
+        private Query(DbName table, QueryConfig config) : base(config, table)
+        {
+
         }
 
         #endregion
@@ -814,7 +829,7 @@ namespace SharpOrm
 
         #region DML SQL commands
 
-        [Obsolete("This constructor is deprecated. It will be removed in version 3.0.", true)]
+        [Obsolete("This function is deprecated. It will be removed in version 3.0.", true)]
         public int Update(Dictionary<string, object> cells)
         {
             if (!cells.Any())
@@ -830,6 +845,7 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
+            this.ValidateReadonly();
             if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
@@ -843,6 +859,7 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
+            this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
         }
@@ -867,6 +884,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
+            this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
@@ -878,6 +896,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
+            this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
@@ -888,6 +907,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
+            this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
         }
 
@@ -906,6 +926,7 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
+            this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
         }
 
@@ -915,6 +936,7 @@ namespace SharpOrm
         /// <returns></returns>
         public int Delete()
         {
+            this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
         }
@@ -925,6 +947,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
+            this.ValidateReadonly();
             return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count()));
         }
 
@@ -945,6 +968,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
+            this.ValidateReadonly();
             return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count(column)));
         }
 
@@ -978,6 +1002,7 @@ namespace SharpOrm
 
         public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
         {
+            this.ValidateReadonly();
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
 
@@ -990,6 +1015,7 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
+            this.ValidateReadonly();
             this.Token.ThrowIfCancellationRequested();
             try
             {
@@ -1009,6 +1035,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
+            this.ValidateReadonly();
             return this.Config.Translation.FromSql<T>(this.ExecuteScalar(this.GetGrammar().Select()));
         }
 
@@ -1018,6 +1045,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
+            this.ValidateReadonly();
             return this.Config.Translation.FromSql(this.ExecuteScalar(this.GetGrammar().Select()));
         }
 
@@ -1027,6 +1055,7 @@ namespace SharpOrm
         /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
+            this.ValidateReadonly();
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
@@ -1046,6 +1075,12 @@ namespace SharpOrm
 
             this.deleteJoins = tables.Select(this.Config.ApplyNomenclature).ToArray();
             return this;
+        }
+
+        private void ValidateReadonly()
+        {
+            if (this.Manager is null)
+                throw new InvalidOperationException("This query is read-only.");
         }
 
         #endregion

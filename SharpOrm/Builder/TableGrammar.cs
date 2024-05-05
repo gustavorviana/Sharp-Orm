@@ -12,7 +12,8 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Database name in the database's standard format.
         /// </summary>
-        public abstract DbName Name { get; }
+        public virtual DbName Name => this.queryInfo.TableName;
+        protected QueryInfo BasedTable => this.Schema.BasedQuery.Info;
 
         public TableGrammar(QueryConfig config, TableSchema schema)
         {
@@ -21,6 +22,20 @@ namespace SharpOrm.Builder
         }
 
         public abstract SqlExpression Create();
+
+        protected void WriteColumns(QueryConstructor query, Column[] columns)
+        {
+            if (columns.Length == 0)
+            {
+                query.Add("*");
+                return;
+            }
+
+            query.AddExpression(columns[0]);
+
+            for (int i = 1; i < columns.Length; i++)
+                query.Add(",").AddExpression(columns[i]);
+        }
 
         public abstract SqlExpression Drop();
 

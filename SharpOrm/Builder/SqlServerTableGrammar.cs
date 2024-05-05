@@ -24,7 +24,7 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Create()
         {
-            if (this.Schema.Based != null)
+            if (this.Schema.BasedQuery != null)
                 return this.CreateBased();
 
             return new SqlExpression($"CREATE TABLE {this.Name} ({string.Join(",", this.Schema.Columns.Select(GetColumnDefinition))})");
@@ -107,28 +107,17 @@ namespace SharpOrm.Builder
             QueryConstructor query = this.GetConstructor();
             query.Add("SELECT ");
 
-            this.WriteColumns(query, this.Schema.Based.Columns);
+            if (this.Schema.BasedQuery.Limit is int limit && limit >= 0 && this.Schema.BasedQuery.Offset is null)
+                query.Add($"TOP({limit}) ");
 
-            query.AddFormat(" INTO [{0}] FROM [{1}]", this.Name, this.Schema.Based.Name);
+            this.WriteColumns(query, this.BasedTable.Select);
 
-            if (!this.Schema.Based.CopyData)
-                query.Add(" WHERE 1=2;");
+            query.AddFormat(" INTO [{0}]", this.Name);
+
+            var qGrammar = new SqlServerGrammar(this.Schema.BasedQuery);
+            query.Add(qGrammar.GetSelectFrom());
 
             return query.ToExpression();
-        }
-
-        private void WriteColumns(QueryConstructor query, Column[] columns)
-        {
-            if (columns.Length == 0)
-            {
-                query.Add("*");
-                return;
-            }
-
-            query.AddExpression(columns[0]);
-
-            for (int i = 0; i < columns.Length; i++)
-                query.Add(",").AddExpression(columns[i]);
         }
 
         public override SqlExpression Drop()

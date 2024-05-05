@@ -7,8 +7,8 @@ namespace SharpOrm.Builder
     public class SqlServerGrammar : MysqlGrammar
     {
         protected SqlServerQueryConfig Config => this.Info.Config as SqlServerQueryConfig;
-        protected bool HasOffset => this.Query.Offset is int offset && offset > 0;
-        protected bool HasLimit => this.Query.Limit is int limit && limit > 0;
+        protected bool HasOffset => this.Query.Offset is int offset && offset >= 0;
+        protected bool HasLimit => this.Query.Limit is int limit && limit >= 0;
 
         public SqlServerGrammar(Query query) : base(query)
         {
@@ -127,17 +127,44 @@ namespace SharpOrm.Builder
             else
                 this.WriteSelectColumns();
 
+            this.WriteSelectFrom(configureWhereParams);
+
+            if (isCount)
+                return;
+
+            this.ApplyOrderBy();
+            this.WritePagination();
+        }
+
+        internal SqlExpression GetSelectFrom()
+        {
+            this.Constructor.Clear();
+            WriteSelectFrom(true);
+            this.ApplyOrderBy();
+            this.WritePagination();
+
+            try
+            {
+                return this.Constructor.ToExpression();
+            }
+            finally
+            {
+                this.Constructor.Clear();
+            }
+        }
+
+        private void WriteSelectFrom(bool configureWhereParams)
+        {
             this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
             this.WriteOptions();
             this.ApplyJoins();
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
+        }
 
-            if (isCount)
-                return;
-
-            this.ApplyOrderBy();
+        private void WritePagination()
+        {
             if (!HasOffset)
                 return;
 
@@ -156,7 +183,7 @@ namespace SharpOrm.Builder
 
         private void AddLimit()
         {
-            if (this.Query.Limit is int limit && limit > 0)
+            if (this.Query.Limit is int limit && limit >= 0)
                 this.Constructor.Add(" TOP(").Add(limit).Add(')');
         }
 

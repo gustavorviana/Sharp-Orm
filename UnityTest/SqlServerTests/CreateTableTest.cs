@@ -22,7 +22,8 @@ namespace UnityTest.SqlServerTests
         public void CreateEmptyByAnother()
         {
             var manager = GetConnectionManager();
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address"), manager);
+            InsertAddressValue();
+            using var table = DbTable.Create("MyTestTable", true, new Column[] { Column.All }, "Address", manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
 
             CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
@@ -35,7 +36,10 @@ namespace UnityTest.SqlServerTests
             var manager = GetConnectionManager();
             var expectedRows = InsertAddressValue();
 
-            using var table = DbTable.CreateTemp(new TableSchema("MyTestTable", "Address", true), manager);
+            using var q = new Query("Address", manager);
+            q.OrderBy("Id");
+            q.Offset = 1;
+            using var table = DbTable.Create("MyTestTable", true, q);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
             var rows = table.GetQuery().ReadRows();
 
@@ -47,7 +51,7 @@ namespace UnityTest.SqlServerTests
         private static string[] GetTableColumns(DbName name, ConnectionManager manager)
         {
             using var q = new Query(name, manager);
-            q.Where(new SqlExpression("1=2"));
+            q.Limit = 0;
 
             using var reader = q.ExecuteReader();
             return reader.GetColumnSchema().Select(x => x.ColumnName).ToArray();
@@ -58,6 +62,8 @@ namespace UnityTest.SqlServerTests
             var cells = new[] { new Cell("id", 1), new Cell("name", "My name"), new Cell("street", "My street") };
             using var q = new Query("Address", Creator);
             q.Delete();
+            q.Insert(cells);
+            cells[0] = new Cell("id", 2);
             q.Insert(cells);
 
             return new Row(cells);

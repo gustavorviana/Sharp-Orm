@@ -12,60 +12,53 @@ namespace SharpOrm.Builder
         #region Fields/Properties
         private TableGrammar grammar;
         private bool disposed;
+        public static bool RandomNameForTempTable { get; set; }
 
         /// <summary>
         /// Table connection manager.
         /// </summary>
         public ConnectionManager Manager { get; }
+
         /// <summary>
         /// Table name.
         /// </summary>
         public DbName Name => grammar.Name;
+        private bool dropped = false;
         #endregion
 
-
         /// <summary>
-        /// Creates a temporary table based on a schema.
-        /// </summary>
-        /// <param name="schema">Schema to be used for creating the table.</param>
-        /// <returns></returns>
-        public static DbTable CreateTemp(TableSchema schema, ConnectionCreator creator)
-        {
-            return Create(schema, new ConnectionManager(creator));
-        }
-
-        /// <summary>
-        /// Creates a temporary table based on a schema.
-        /// </summary>
-        /// <param name="schema">Schema to be used for creating the table.</param>
-        /// <param name="manager">Managed connection used to create the table.</param>
-        /// <returns></returns>
-        public static DbTable CreateTemp(TableSchema schema, ConnectionManager manager = null)
-        {
-            schema.Temporary = true;
-            return Create(schema, manager);
-        }
-
-        /// <summary>
-        /// Creates a temporary table based on the provided columns.
+        /// Creates a table based on the provided columns.
         /// </summary>
         /// <param name="columns">Columns that the table should contain.</param>
         /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
-        public static DbTable CreateTemp(string name, TableColumnCollection columns, ConnectionCreator creator)
+        public static DbTable Create(string name, bool temporary, TableColumnCollection columns, ConnectionCreator creator)
         {
-            return Create(new TableSchema(name, columns), new ConnectionManager(creator));
+            return Create(new TableSchema(name, columns) { Temporary = temporary }, new ConnectionManager(creator));
+        }
+
+        public static DbTable Create(string name, bool temporary, Query queryBase, ConnectionManager manager = null)
+        {
+            return Create(new TableSchema(name, queryBase) { Temporary = temporary }, manager ?? queryBase.Manager);
+        }
+
+        public static DbTable Create(string name, bool temporary, Column[] columns, string basedTable, ConnectionManager manager = null)
+        {
+            var query = Query.ReadOnly(basedTable, manager?.Config).Select(columns);
+            query.Limit = 0;
+
+            return Create(new TableSchema(name, query) { Temporary = temporary }, manager);
         }
 
         /// <summary>
-        /// Creates a temporary table based on the provided columns.
+        /// Creates a table based on the provided columns.
         /// </summary>
         /// <param name="columns">Columns that the table should contain.</param>
         /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
-        public static DbTable CreateTemp(string name, TableColumnCollection columns, ConnectionManager manager = null)
+        public static DbTable Create(string name, bool temporary, TableColumnCollection columns, ConnectionManager manager = null)
         {
-            return Create(new TableSchema(name, columns), manager);
+            return Create(new TableSchema(name, columns) { Temporary = temporary }, manager);
         }
 
         /// <summary>
@@ -89,7 +82,11 @@ namespace SharpOrm.Builder
             if (manager is null)
                 manager = new ConnectionManager();
 
-            var grammar = manager.Config.NewTableGrammar(schema.Clone());
+            var clone = schema.Clone();
+            if (RandomNameForTempTable)
+                clone.Name += Guid.NewGuid().ToString("N");
+
+            var grammar = manager.Config.NewTableGrammar(clone);
             using (var cmd = manager.GetCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
@@ -179,6 +176,8 @@ namespace SharpOrm.Builder
             {
                 using (var cmd = Manager.GetCommand().SetExpression(grammar.Drop()))
                     cmd.ExecuteNonQuery();
+
+                this.dropped = true;
             }
             finally
             {
@@ -220,7 +219,7 @@ namespace SharpOrm.Builder
 
             try
             {
-                if (grammar.Schema.Temporary)
+                if (grammar.Schema.Temporary && !this.dropped)
                     DropTable();
             }
             catch { }
