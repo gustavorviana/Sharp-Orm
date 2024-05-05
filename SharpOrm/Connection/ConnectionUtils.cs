@@ -22,61 +22,18 @@ namespace SharpOrm.Connection
             }
         }
 
-        internal static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
+        public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
         {
-            token.ThrowIfCancellationRequested();
-            try
+            CancellationTokenRegistration registry = default;
+            token.Register(() =>
             {
-                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
-                {
-                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
-                    return cmd.ExecuteScalar();
-                }
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
-        }
+                try { command.Cancel(); } catch { }
+                registry.Dispose();
+            });
 
-        internal static int ExecuteAndGetAffected(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            try
-            {
-                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
-                {
-                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
-                    using (var reader = cmd.ExecuteReader())
-                        return reader.RecordsAffected;
-                }
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
-        }
+            command.Disposed += (sender, e) => registry.Dispose();
 
-        internal static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            try
-            {
-                using (var cmd = manager.GetCommand(expression).SetCancellationToken(token))
-                {
-                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
-                    return cmd.ExecuteNonQuery();
-                }
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
-        }
-
-        public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression, CancellationToken token)
-        {
-            return manager.GetCommand(expression).SetCancellationToken(token);
+            return command;
         }
 
         public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
@@ -86,10 +43,15 @@ namespace SharpOrm.Connection
 
         public static DbCommand GetCommand(this ConnectionManager manager)
         {
+            return GetCommand(manager, manager.CommandTimeout);
+        }
+
+        public static DbCommand GetCommand(this ConnectionManager manager, int commandTimeout)
+        {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();
 
-            if (manager.CommandTimeout != 0)
-                cmd.CommandTimeout = manager.CommandTimeout;
+            if (commandTimeout != 0)
+                cmd.CommandTimeout = commandTimeout;
 
             cmd.Transaction = manager.Transaction;
             return cmd;

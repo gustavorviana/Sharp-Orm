@@ -77,6 +77,7 @@ namespace SharpOrm.Builder
         public static DbCommand SetExpression(this DbCommand command, SqlExpression expression)
         {
             command.CommandText = DecodeExpressionString(expression);
+            command.Parameters.Clear();
 
             for (int i = 0; i < expression.Parameters.Length; i++)
                 command.AddParam(GetParamName(i + 1), expression.Parameters[i]);
@@ -92,18 +93,6 @@ namespace SharpOrm.Builder
         internal static string GetParamName(int index)
         {
             return $"@p{index}";
-        }
-
-        internal static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
-        {
-            var registry = token.Register(() =>
-            {
-                try { command.Cancel(); } catch { }
-            });
-
-            command.Disposed += (sender, e) => registry.Dispose();
-
-            return command;
         }
 
         /// <summary>

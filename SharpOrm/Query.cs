@@ -844,7 +844,7 @@ namespace SharpOrm
         public int Update(IEnumerable<Cell> cells)
         {
             this.CheckIsSafeOperation();
-            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().Update(cells), this.Token);
+            return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
         }
 
         /// <summary>
@@ -867,7 +867,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            object result = this.Manager.ExecuteScalar(this.GetGrammar().Insert(cells), this.Token);
+            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -878,7 +878,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
-            object result = this.Manager.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames), this.Token);
+            object result = this.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -888,7 +888,7 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames), this.Token);
+            return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
         }
 
         /// <summary>
@@ -906,7 +906,7 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows), this.Token);
+            return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
         }
 
         /// <summary>
@@ -916,7 +916,7 @@ namespace SharpOrm
         public int Delete()
         {
             this.CheckIsSafeOperation();
-            return this.Manager.ExecuteAndGetAffected(this.GetGrammar().Delete(), this.Token);
+            return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
         }
 
         /// <summary>
@@ -925,7 +925,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            return Convert.ToInt64(this.Manager.ExecuteScalar(this.GetGrammar().Count(), this.Token));
+            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count()));
         }
 
         /// <summary>
@@ -945,7 +945,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
-            return Convert.ToInt64(this.Manager.ExecuteScalar(this.GetGrammar().Count(column), this.Token));
+            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count(column)));
         }
 
         /// <summary>
@@ -981,7 +981,7 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
 
-            return new DbCommandEnumerable<T>(this.Config.Translation, this.Manager.GetCommand(grammar.Select()), this.Token, this.Manager.Management);
+            return new DbCommandEnumerable<T>(this.Config.Translation, this.GetCommand(grammar.Select()), this.Token, this.Manager.Management);
         }
 
         /// <summary>
@@ -993,7 +993,7 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             try
             {
-                using (DbCommand cmd = this.Manager.GetCommand(this.GetGrammar().Select()))
+                using (DbCommand cmd = this.GetCommand(this.GetGrammar().Select()))
                     return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
             }
             finally
@@ -1009,7 +1009,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            return this.Config.Translation.FromSql<T>(this.Manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
+            return this.Config.Translation.FromSql<T>(this.ExecuteScalar(this.GetGrammar().Select()));
         }
 
         /// <summary>
@@ -1018,7 +1018,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            return this.Config.Translation.FromSql(this.Manager.ExecuteScalar(this.GetGrammar().Select(), this.Token));
+            return this.Config.Translation.FromSql(this.ExecuteScalar(this.GetGrammar().Select()));
         }
 
         /// <summary>
@@ -1030,7 +1030,7 @@ namespace SharpOrm
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.Manager.GetCommand(this.GetGrammar().Select(), this.Token))).reader;
+            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()))).reader;
         }
 
         /// <summary>
@@ -1095,6 +1095,50 @@ namespace SharpOrm
         }
 
         #endregion
+
+        protected internal object ExecuteScalar(SqlExpression expression)
+        {
+            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteScalar());
+        }
+
+        protected internal int ExecuteNonQuery(SqlExpression expression)
+        {
+            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteNonQuery());
+        }
+
+        protected internal int ExecuteAndGetAffected(SqlExpression expression)
+        {
+            return this.SafeExecuteCommand(expression, cmd =>
+            {
+                using (var reader = cmd.ExecuteReader())
+                    return reader.RecordsAffected;
+            });
+        }
+
+        protected T SafeExecuteCommand<T>(SqlExpression expression, Func<DbCommand, T> func)
+        {
+            this.Token.ThrowIfCancellationRequested();
+            try
+            {
+                using (var cmd = this.GetCommand(expression))
+                {
+                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
+                    return func(cmd);
+                }
+            }
+            finally
+            {
+                this.Manager.CloseByEndOperation();
+            }
+        }
+
+        protected internal DbCommand GetCommand(SqlExpression expression)
+        {
+            return this.Manager
+                .GetCommand(this.CommandTimeout)
+                .SetExpression(expression)
+                .SetCancellationToken(this.Token);
+        }
 
         protected override void Dispose(bool disposing)
         {

@@ -513,7 +513,7 @@ namespace SharpOrm
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            return query.Manager.ExecuteScalar(query.GetGrammar().Insert(cells), query.Token);
+            return query.ExecuteScalar(query.GetGrammar().Insert(cells));
         }
 
         /// <summary>

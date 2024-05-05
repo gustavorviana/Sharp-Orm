@@ -14,7 +14,6 @@ namespace SharpOrm.Builder
     {
         #region Properties
         private readonly MemberInfo column;
-        private readonly TranslationRegistry registry;
 
         /// <summary>
         /// Gets the name of the column.
@@ -56,9 +55,10 @@ namespace SharpOrm.Builder
         /// </summary>
         public string ForeignKey { get; }
 
-        public string LocalKey { get; }
-
-        public bool IsMany { get; }
+        /// <summary>
+        /// Information about the list of values that will be retrieved from another table.
+        /// </summary>
+        public HasManyAttribute HasManyInfo { get; }
 
         /// <summary>
         /// Gets a value indicating whether the column name is auto-generated.
@@ -101,19 +101,23 @@ namespace SharpOrm.Builder
         private ColumnInfo(Type type, TranslationRegistry registry, ISqlTranslation translation, MemberInfo member)
         {
             this.Type = type;
-            this.registry = registry;
             this.column = member;
             this.IsNative = TranslationUtils.IsNative(type, false);
             this.Translation = translation ?? registry.GetFor(this.Type);
             this.Required = this.GetAttribute<RequiredAttribute>() != null;
 
-            HasManyAttribute hasManyAttr = this.GetAttribute<HasManyAttribute>();
-            this.IsMany = hasManyAttr != null;
-            this.ForeignKey = hasManyAttr?.ForeignKey;
-            this.LocalKey = hasManyAttr?.LocalKey;
+            this.HasManyInfo = this.GetAttribute<HasManyAttribute>();
+            this.ForeignKey = this.HasManyInfo?.ForeignKey;
 
-            this.ForeignKey = this.ForeignKey ?? this.GetAttribute<ForeignKeyAttribute>()?.Name;
-            this.IsForeignKey = this.IsMany || !string.IsNullOrEmpty(this.ForeignKey);
+            if (this.HasManyInfo == null)
+            {
+                this.ForeignKey = this.GetAttribute<ForeignKeyAttribute>()?.Name;
+                this.IsForeignKey = !string.IsNullOrEmpty(this.ForeignKey);
+            }
+            else
+            {
+                this.IsForeignKey = true;
+            }
 
             ColumnAttribute colAttr = this.GetAttribute<ColumnAttribute>();
 
@@ -204,7 +208,6 @@ namespace SharpOrm.Builder
         {
             return !(other is null) &&
                    EqualityComparer<MemberInfo>.Default.Equals(column, other.column) &&
-                   EqualityComparer<TranslationRegistry>.Default.Equals(registry, other.registry) &&
                    Name == other.Name &&
                    Key == other.Key &&
                    Order == other.Order &&
@@ -220,7 +223,6 @@ namespace SharpOrm.Builder
         {
             int hashCode = -1825907665;
             hashCode = hashCode * -1521134295 + EqualityComparer<MemberInfo>.Default.GetHashCode(column);
-            hashCode = hashCode * -1521134295 + EqualityComparer<TranslationRegistry>.Default.GetHashCode(registry);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + Key.GetHashCode();
             hashCode = hashCode * -1521134295 + Order.GetHashCode();
