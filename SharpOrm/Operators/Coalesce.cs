@@ -27,10 +27,10 @@ namespace SharpOrm.Operators
         public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
             QueryConstructor constructor = new QueryConstructor(info);
-            constructor.Add("COALESCE(").Add(this.columns[0]);
+            constructor.Add("COALESCE(").AddExpression(this.columns[0], false);
 
             for (int i = 1; i < this.columns.Length; i++)
-                constructor.Add(',').AddExpression(this.columns[0], false);
+                constructor.Add(',').AddExpression(this.columns[i], false);
 
             constructor.Add(")");
 

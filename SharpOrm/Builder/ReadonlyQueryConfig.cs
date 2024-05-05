@@ -6,7 +6,7 @@ namespace SharpOrm.Builder
     {
         public override string ApplyNomenclature(string name)
         {
-            throw new NotImplementedException();
+            return name;
         }
 
         public override string EscapeString(string value)
