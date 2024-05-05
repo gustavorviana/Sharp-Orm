@@ -115,6 +115,8 @@ namespace SharpOrm.Builder
         /// <param name="owner">The owner object.</param>
         /// <param name="readPk">True to read the primary key column, false otherwise.</param>
         /// <param name="readFk">If true and there is no column named Foreign Key Attribute.Name then use the primary key defined in the primary key object, otherwise do nothing with the primary key.</param>
+        /// <param name="properties">Name of the properties that should or should not be returned.</param>
+        /// <param name="needContains">If true, only the columns with names in <paramref name="properties"/> will be returned; if false, only the properties not in the list will be returned.</param>
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true)
         {

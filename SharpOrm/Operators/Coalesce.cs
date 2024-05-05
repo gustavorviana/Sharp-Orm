@@ -1,27 +1,36 @@
 ﻿using SharpOrm.Builder;
 using System;
+using System.Linq;
 
 namespace SharpOrm.Operators
 {
     public class Coalesce : Column
     {
-        private readonly SqlExpression[] values;
+        private readonly Column[] columns;
 
         public Coalesce(params SqlExpression[] expression)
         {
             if (expression.Length == 0)
                 throw new ArgumentNullException(nameof(expression));
 
-            this.values = expression;
+            this.columns = expression.Select(x => new Column(x)).ToArray();
+        }
+
+        public Coalesce(params Column[] columns)
+        {
+            if (columns.Length == 0)
+                throw new ArgumentNullException(nameof(expression));
+
+            this.columns = columns;
         }
 
         public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
             QueryConstructor constructor = new QueryConstructor(info);
-            constructor.Add("COALESCE(").Add(this.values[0]);
+            constructor.Add("COALESCE(").Add(this.columns[0]);
 
-            for (int i = 1; i < this.values.Length; i++)
-                constructor.Add(',').Add(this.values[0]);
+            for (int i = 1; i < this.columns.Length; i++)
+                constructor.Add(',').AddExpression(this.columns[0], false);
 
             constructor.Add(")");
 

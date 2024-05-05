@@ -15,6 +15,7 @@ namespace SharpOrm
         }
 
         public static FreezedDate Now => new FreezedDate(DateTime.Now);
+        public static FreezedDate Today => new FreezedDate(DateTime.Today);
         public static FreezedDate UtcNow => new FreezedDate(DateTime.UtcNow);
     }
 }

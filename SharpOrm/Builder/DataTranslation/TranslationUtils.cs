@@ -87,7 +87,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public static T FromSql<T>(this TranslationRegistry registry, object value)
         {
-            if (value is null)
+            if (value is null || value is DBNull)
                 return default(T);
 
             return (T)registry.FromSql(value, typeof(T));

@@ -377,7 +377,6 @@ namespace SharpOrm
 
         #endregion
 
-
         private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
         {
             qBase.WriteWhereType(whereType);
@@ -471,49 +470,19 @@ namespace SharpOrm
             return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false), columns, true));
         }
 
-        /// <summary>
-        /// Inserts one row into the table.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns>Id of row (long).</returns>
-        public static long InsertL<T>(this Query<T> query, T obj) where T : new()
-        {
-            return query.InsertL(query.TableInfo.GetRow(obj, true, query.Config.LoadForeign).Cells);
-        }
-
-        /// <summary>
-        /// Inserts a new row into the table using the provided dictionary of cell values.
-        /// </summary>
-        /// <param name="query">The Query object representing the database query.</param>
-        /// <param name="cells">A dictionary containing column names and their corresponding values for the new row.</param>
-        /// <returns>Id of row.</returns>
-        public static long InsertL(this Query query, Dictionary<string, object> cells)
-        {
-            return query.InsertL(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
-        }
-
         public static T Insert<T>(this Query query, params Cell[] cells)
         {
-            return query.Config.Translation.FromSql<T>(InsertObj(query, cells));
+            return Insert<T>(query, (IEnumerable<Cell>)cells);
         }
 
-        /// <summary>
-        /// Inserts one row into the table.
-        /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row (long).</returns>
-        public static long InsertL(this Query query, params Cell[] cells)
+        public static R Insert<T, R>(this Query<T> query, T obj) where T : new()
         {
-            object result = InsertObj(query, cells);
-            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt64(result) : 0;
+            return Insert<R>(query, query.GetCellsOf(obj, true));
         }
 
-        private static object InsertObj(this Query query, params Cell[] cells)
+        public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
-            if (cells.Length == 0)
-                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
-
-            return query.ExecuteScalar(query.GetGrammar().Insert(cells));
+            return query.Config.Translation.FromSql<T>(query.ExecuteScalar(query.GetGrammar().Insert(cells)));
         }
 
         /// <summary>

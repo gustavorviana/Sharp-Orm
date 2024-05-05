@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SharpOrm
 {
@@ -161,7 +162,18 @@ namespace SharpOrm
 
         public static explicit operator byte[](Cell cell)
         {
+            if (cell.Value is MemoryStream ms)
+                return ms.ToArray();
+
             return cell.Value as byte[];
+        }
+
+        public static explicit operator MemoryStream(Cell cell)
+        {
+            if (cell.Value is byte[] buffer)
+                return new MemoryStream(buffer);
+
+            return cell.Value as MemoryStream;
         }
 
         public static explicit operator int?(Cell cell)
