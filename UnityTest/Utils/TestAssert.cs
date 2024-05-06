@@ -31,6 +31,12 @@ namespace UnityTest.Utils
             }
         }
 
+        public static void AreEqual(SqlExpression expected, SqlExpression actual)
+        {
+            Assert.AreEqual(expected.ToString(), actual.ToString(), "The SQL expressions do not match.");
+            CollectionAssert.AreEqual(expected.Parameters, actual.Parameters, "The arguments of the expression do not match.");
+        }
+
         public static void AreDecoded(string expected, SqlExpression actual)
         {
             Assert.AreEqual(expected, DataReaderExtension.DecodeExpressionString(actual));

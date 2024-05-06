@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace SharpOrm.Builder
 {
@@ -22,8 +23,19 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="alias">The alias.</param>
-        public DbName(string name, string alias)
+        /// <param name="validateChars">If true, throw an error if the name contains invalid or unsafe characters.</param>
+        /// <remarks>Valid characters for name: A-Z, 0-9, '#', '_', and '.'. Valid characters for alias: A-Z, 0-9, '#', '_', ' ', and '.'</remarks>
+        public DbName(string name, string alias, bool validateChars = true)
         {
+            if (validateChars)
+            {
+                if (!IsValid(name, '.', '_', '#'))
+                    throw new InvalidOperationException("The name contains one or more invalid characters.");
+
+                if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
+                    throw new InvalidOperationException("The alias contains one or more invalid characters.");
+            }
+
             this.Name = name;
             this.Alias = alias;
         }
@@ -92,6 +104,11 @@ namespace SharpOrm.Builder
         public override string ToString()
         {
             return string.IsNullOrEmpty(this.Alias) ? this.Name : this.Alias;
+        }
+
+        private static bool IsValid(string content, params char[] allowed)
+        {
+            return content.All(c => char.IsLetterOrDigit(c) || allowed.Contains(c));
         }
     }
 }
