@@ -183,7 +183,7 @@ namespace SharpOrm.Builder
 
         private void AddLimit()
         {
-            if (this.Query.Limit > 0)
+            if (this.Query.Limit >= 0)
                 this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
         }
 

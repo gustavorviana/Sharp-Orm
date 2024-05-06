@@ -158,7 +158,7 @@ namespace SharpOrm.Builder
 
             try
             {
-                using (var cmd = manager.GetCommand().SetExpression(manager.Config.NewTableGrammar(schema).Count()))
+                using (var cmd = manager.GetCommand().SetExpression(manager.Config.NewTableGrammar(schema).Exists()))
                     return cmd.ExecuteScalar<int>() > 0;
             }
             finally

@@ -12,12 +12,13 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Database name in the database's standard format.
         /// </summary>
-        public virtual DbName Name => this.queryInfo.TableName;
+        public virtual DbName Name { get; }
         protected QueryInfo BasedTable => this.Schema.BasedQuery.Info;
 
         public TableGrammar(QueryConfig config, TableSchema schema)
         {
             this.Schema = schema;
+            this.Name = new DbName(schema.Name);
             this.queryInfo = new ReadonlyQueryInfo(config, this.Name);
         }
 
@@ -39,7 +40,7 @@ namespace SharpOrm.Builder
 
         public abstract SqlExpression Drop();
 
-        public abstract SqlExpression Count();
+        public abstract SqlExpression Exists();
 
         protected ColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {

@@ -75,7 +75,7 @@ namespace SharpOrm.Builder
 
         public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
-            throw new NotSupportedException();
+            return new MysqlTableGrammar(this, schema);
         }
 
         public abstract string EscapeString(string value);

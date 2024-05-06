@@ -10,6 +10,7 @@ namespace UnityTest.Utils
         {
 
         }
+
         protected static ConnectionCreator GetCreator()
         {
             return new SingleConnectionCreator<MySqlConnection>(new MysqlQueryConfig(), ConnectionStr.Mysql);

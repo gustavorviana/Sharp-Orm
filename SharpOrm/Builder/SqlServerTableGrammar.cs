@@ -27,7 +27,14 @@ namespace SharpOrm.Builder
             if (this.Schema.BasedQuery != null)
                 return this.CreateBased();
 
-            return new SqlExpression($"CREATE TABLE {this.Name} ({string.Join(",", this.Schema.Columns.Select(GetColumnDefinition))})");
+            var query = this.GetConstructor()
+                .AddFormat("CREATE TABLE {0} (", this.Name.Name)
+                .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
+
+            WriteUnique(query);
+            WritePk(query);
+
+            return query.Add(')').ToExpression();
         }
 
         private string GetColumnDefinition(DataColumn column)
@@ -45,10 +52,33 @@ namespace SharpOrm.Builder
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetSqlDataType(column);
-            string identity = column.Unique ? $"IDENTITY({seed},{step})" : "";
+            string identity = column.Unique ? $" IDENTITY({seed},{step})" : "";
             string nullable = column.AllowDBNull ? "NULL" : "NOT NULL";
 
-            return $"{columnName} {dataType} {identity} {nullable}";
+            return $"{columnName} {dataType}{identity} {nullable}";
+        }
+
+        private void WriteUnique(QueryConstructor query)
+        {
+            var uniques = this.Schema.Columns.Where(x => x.Unique).ToArray();
+            if (uniques.Length == 0)
+                return;
+
+            query.Add(',').AddJoin(",", uniques.Select(GetUniqueDefinition));
+        }
+
+        private string GetUniqueDefinition(DataColumn column)
+        {
+            return $"UNIQUE KEY `{column.ColumnName}_UNIQUE` (`{column.ColumnName}`)";
+        }
+
+        private void WritePk(QueryConstructor query)
+        {
+            var uniques = this.Schema.Columns.Where(x => x.Unique).ToArray();
+            if (uniques.Length == 0)
+                return;
+
+            query.AddFormat(",CONSTRAINT PK_{0} PRIMARY KEY (", this.Name).AddJoin(",", uniques.Select(x => x.ColumnName)).Add(')');
         }
 
         private string GetSqlDataType(DataColumn column)
@@ -125,7 +155,7 @@ namespace SharpOrm.Builder
             return new SqlExpression("DROP TABLE " + this.Name);
         }
 
-        public override SqlExpression Count()
+        public override SqlExpression Exists()
         {
             if (this.Schema.Temporary)
                 return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", this.Name.Name);

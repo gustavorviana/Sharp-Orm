@@ -8,7 +8,6 @@ namespace SharpOrm.Builder
     {
         protected SqlServerQueryConfig Config => this.Info.Config as SqlServerQueryConfig;
         protected bool HasOffset => this.Query.Offset is int offset && offset >= 0;
-        protected bool HasLimit => this.Query.Limit is int limit && limit >= 0;
 
         public SqlServerGrammar(Query query) : base(query)
         {
@@ -171,7 +170,7 @@ namespace SharpOrm.Builder
             this.ValidateOffsetOrderBy();
             this.Constructor.Add(" OFFSET ").Add(this.Query.Offset).Add(" ROWS");
 
-            if (HasLimit)
+            if (this.Query.Limit >= 0)
                 this.Constructor.Add(" FETCH NEXT ").Add(this.Query.Limit).Add(" ROWS ONLY");
         }
 

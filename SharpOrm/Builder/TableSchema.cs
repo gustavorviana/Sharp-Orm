@@ -18,7 +18,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Indicate whether the table should be temporary.
         /// </summary>
-        public bool Temporary { get; set; } = true;
+        public bool Temporary { get; set; }
 
         /// <summary>
         /// Table whose structure should be copied to the new table.
@@ -56,9 +56,9 @@ namespace SharpOrm.Builder
         public TableSchema Clone()
         {
             if (this.BasedQuery != null)
-                return new TableSchema(this.Name, this.BasedQuery);
+                return new TableSchema(this.Name, this.BasedQuery) { Temporary = this.Temporary, SchemaName = this.SchemaName };
 
-            return new TableSchema(this.Name, this.Columns);
+            return new TableSchema(this.Name, this.Columns) { Temporary = this.Temporary, SchemaName = this.SchemaName };
         }
     }
 }
