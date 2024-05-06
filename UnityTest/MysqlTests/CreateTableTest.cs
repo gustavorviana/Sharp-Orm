@@ -86,7 +86,7 @@ namespace UnityTest.MysqlTests
         private static TableSchema GetSchema()
         {
             var schema = new TableSchema("MyTestTable") { Temporary = true };
-            schema.Columns.AddPk("Id");
+            schema.Columns.AddPk("Id").AutoIncrement = true;
             schema.Columns.Add<string>("Name");
 
             return schema;

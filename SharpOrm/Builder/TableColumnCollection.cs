@@ -78,6 +78,7 @@ namespace SharpOrm.Builder
         public DataColumn AddPk(string columnName, Type type)
         {
             var column = this.Add(columnName, type);
+            column.AllowDBNull = false;
             this.primaryKeys.Add(column);
             return column;
         }

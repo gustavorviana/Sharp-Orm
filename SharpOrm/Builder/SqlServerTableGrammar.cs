@@ -28,7 +28,7 @@ namespace SharpOrm.Builder
                 return this.CreateBased();
 
             var query = this.GetConstructor()
-                .AddFormat("CREATE TABLE {0} (", this.Name.Name)
+                .AddFormat("CREATE TABLE [{0}] (", this.Name.Name)
                 .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
 
             WriteUnique(query);
@@ -52,7 +52,7 @@ namespace SharpOrm.Builder
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetSqlDataType(column);
-            string identity = column.Unique ? $" IDENTITY({seed},{step})" : "";
+            string identity = column.AutoIncrement ? $" IDENTITY({seed},{step})" : "";
             string nullable = column.AllowDBNull ? "NULL" : "NOT NULL";
 
             return $"{columnName} {dataType}{identity} {nullable}";
@@ -64,21 +64,15 @@ namespace SharpOrm.Builder
             if (uniques.Length == 0)
                 return;
 
-            query.Add(',').AddJoin(",", uniques.Select(GetUniqueDefinition));
-        }
-
-        private string GetUniqueDefinition(DataColumn column)
-        {
-            return $"UNIQUE KEY `{column.ColumnName}_UNIQUE` (`{column.ColumnName}`)";
+            query.AddFormat(",CONSTRAINT [{0}_UNIQUE] UNIQUE (", this.Schema.Name).AddJoin(",", uniques.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
         }
 
         private void WritePk(QueryConstructor query)
         {
-            var uniques = this.Schema.Columns.Where(x => x.Unique).ToArray();
-            if (uniques.Length == 0)
+            if (this.Schema.Columns.PrimaryKeys.Length == 0)
                 return;
 
-            query.AddFormat(",CONSTRAINT PK_{0} PRIMARY KEY (", this.Name).AddJoin(",", uniques.Select(x => x.ColumnName)).Add(')');
+            query.AddFormat(",CONSTRAINT [PK_{0}] PRIMARY KEY (", this.Name).AddJoin(",", this.Schema.Columns.PrimaryKeys.Select(x => x.ColumnName)).Add(')');
         }
 
         private string GetSqlDataType(DataColumn column)

@@ -10,7 +10,7 @@ using UnityTest.Utils;
 namespace UnityTest.SqlServerTests
 {
     [TestClass]
-    public class CreateTableTest : SqlServerTest
+    public class SqlServerCreateTableTest : SqlServerTest
     {
         [TestMethod]
         public void CreateByColumnTest()
@@ -84,14 +84,36 @@ namespace UnityTest.SqlServerTests
             var q = table.GetQuery();
             q.Insert(new Cell("name", "Richard"));
             q.Insert(new Cell("name", "Manuel"));
-
             Assert.AreEqual(2, q.Count());
+        }
+
+        [TestMethod]
+        public void CreateTable()
+        {
+            var cols = new TableColumnCollection();
+            cols.AddPk("Id");
+            cols.Add<string>("Name");
+            cols.Add<int>("Status").Unique = true;
+
+            var schema = new TableSchema("MyTestTable", cols) { Temporary = true };
+            using var table = DbTable.Create(schema, GetConnectionManager());
+        }
+
+        [TestMethod]
+        public void CreateTableMultiplePk()
+        {
+            var cols = new TableColumnCollection();
+            cols.AddPk("Id").AutoIncrement = true;
+            cols.AddPk("Id2");
+
+            var schema = new TableSchema("MyTestTable", cols) { Temporary = true };
+            using var table = DbTable.Create(schema, GetConnectionManager());
         }
 
         private static TableSchema GetSchema()
         {
             var schema = new TableSchema("MyTestTable") { Temporary = true };
-            schema.Columns.AddPk("Id");
+            schema.Columns.AddPk("Id").AutoIncrement = true;
             schema.Columns.Add<string>("Name");
 
             return schema;
