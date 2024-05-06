@@ -58,23 +58,6 @@ namespace SharpOrm.Builder
             return $"{columnName} {dataType}{identity} {nullable}";
         }
 
-        private void WriteUnique(QueryConstructor query)
-        {
-            var uniques = this.Schema.Columns.Where(x => x.Unique).ToArray();
-            if (uniques.Length == 0)
-                return;
-
-            query.AddFormat(",CONSTRAINT [{0}_UNIQUE] UNIQUE (", this.Schema.Name).AddJoin(",", uniques.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
-        }
-
-        private void WritePk(QueryConstructor query)
-        {
-            if (this.Schema.Columns.PrimaryKeys.Length == 0)
-                return;
-
-            query.AddFormat(",CONSTRAINT [PK_{0}] PRIMARY KEY (", this.Name).AddJoin(",", this.Schema.Columns.PrimaryKeys.Select(x => x.ColumnName)).Add(')');
-        }
-
         private string GetSqlDataType(DataColumn column)
         {
             if (this.GetCustomColumnTypeMap(column) is ColumnTypeMap map)

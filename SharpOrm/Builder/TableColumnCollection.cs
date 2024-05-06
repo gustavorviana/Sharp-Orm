@@ -30,7 +30,7 @@ namespace SharpOrm.Builder
         public TableColumnCollection SetPk(string name)
         {
             return this.SetPk(this.IndexOf(name));
-        } 
+        }
 
         public TableColumnCollection SetPk(int index)
         {

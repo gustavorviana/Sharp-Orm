@@ -145,11 +145,10 @@ namespace SharpOrm.Builder
 
         private void WritePagination()
         {
-            this.ValidateOffset();
-            if (this.Query.Limit == null)
+            if (this.Query.Limit is null && this.Query.Offset is null)
                 return;
 
-            this.Constructor.Add(" LIMIT ").Add(this.Query.Limit);
+            this.Constructor.Add(" LIMIT ").Add(this.Query.Limit ?? int.MaxValue);
 
             if (this.Query.Offset != null)
                 this.Constructor.Add(" OFFSET ").Add(this.Query.Offset);
@@ -226,12 +225,6 @@ namespace SharpOrm.Builder
                 '?',
                 (count) => this.Constructor.AddParameter(info.Where.Parameters[count - 1])
             );
-        }
-
-        private void ValidateOffset()
-        {
-            if (this.Query.Offset != null && this.Query.Limit == null)
-                throw new InvalidOperationException($"You cannot use {nameof(Query)}.{nameof(Query.Offset)} without {nameof(Query)}.{nameof(Query.Limit)}.");
         }
 
         protected void ThrowOffsetNotSupported()

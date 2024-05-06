@@ -50,6 +50,30 @@ namespace SharpOrm.Builder
                 .FirstOrDefault(x => x.CanWork(column.DataType));
         }
 
+        protected void WritePk(QueryConstructor query)
+        {
+            var pks = this.GetPrimaryKeys();
+            if (pks.Length != 0)
+                query.AddFormat(",CONSTRAINT {0} PRIMARY KEY (", this.Config.ApplyNomenclature("PK_" + this.Name)).AddJoin(",", pks.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
+        }
+
+        protected DataColumn[] GetPrimaryKeys()
+        {
+            return this.Schema.Columns.PrimaryKeys;
+        }
+
+        protected void WriteUnique(QueryConstructor query)
+        {
+            var uniques = this.GetUniqueKeys();
+            if (uniques.Length != 0)
+                query.AddFormat(",CONSTRAINT {0} UNIQUE (", this.Config.ApplyNomenclature("UC_" + this.Name)).AddJoin(",", uniques.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
+        }
+
+        protected DataColumn[] GetUniqueKeys()
+        {
+            return this.Schema.Columns.Where(x => x.Unique).ToArray();
+        }
+
         protected QueryConstructor GetConstructor()
         {
             return new QueryConstructor(queryInfo);

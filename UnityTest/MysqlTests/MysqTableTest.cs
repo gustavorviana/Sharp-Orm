@@ -7,10 +7,10 @@ using System.Data.Common;
 using System.Linq;
 using UnityTest.Utils;
 
-namespace UnityTest.SqlServerTests
+namespace UnityTest.MysqlTests
 {
     [TestClass]
-    public class SqlServerCreateTableTest : SqlServerTest
+    public class MysqTableTest : MysqlTableTest
     {
         [TestMethod]
         public void CreateByColumnTest()

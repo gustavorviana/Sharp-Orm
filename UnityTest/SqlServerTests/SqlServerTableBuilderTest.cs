@@ -81,7 +81,7 @@ namespace UnityTest.SqlServerTests
             cols.Add<int>("Status2").Unique = true;
 
             var grammar = this.GetGrammar(new TableSchema("MyTable", cols));
-            var expected = new SqlExpression("CREATE TABLE [MyTable] ([Id] INT IDENTITY(1,1) NOT NULL,[Name] VARCHAR(MAX) NULL,[Status] INT NULL,[Status2] INT NULL,CONSTRAINT [MyTable_UNIQUE] UNIQUE ([Status],[Status2]),CONSTRAINT [PK_MyTable] PRIMARY KEY (Id))");
+            var expected = new SqlExpression("CREATE TABLE [MyTable] ([Id] INT IDENTITY(1,1) NOT NULL,[Name] VARCHAR(MAX) NULL,[Status] INT NULL,[Status2] INT NULL,CONSTRAINT [UC_MyTable] UNIQUE ([Status],[Status2]),CONSTRAINT [PK_MyTable] PRIMARY KEY ([Id]))");
 
             TestAssert.AreEqual(expected, grammar.Create());
         }
@@ -94,7 +94,7 @@ namespace UnityTest.SqlServerTests
             cols.AddPk("Id2");
 
             var grammar = this.GetGrammar(new TableSchema("MyTable", cols));
-            var expected = new SqlExpression("CREATE TABLE [MyTable] ([Id] INT IDENTITY(1,1) NOT NULL,[Id2] INT NOT NULL,CONSTRAINT [PK_MyTable] PRIMARY KEY (Id,Id2))");
+            var expected = new SqlExpression("CREATE TABLE [MyTable] ([Id] INT IDENTITY(1,1) NOT NULL,[Id2] INT NOT NULL,CONSTRAINT [PK_MyTable] PRIMARY KEY ([Id],[Id2]))");
 
             TestAssert.AreEqual(expected, grammar.Create());
         }

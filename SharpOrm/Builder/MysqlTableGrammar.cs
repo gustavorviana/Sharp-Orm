@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -30,23 +28,6 @@ namespace SharpOrm.Builder
             WritePk(query);
 
             return query.Add(')').ToExpression();
-        }
-
-        private void WriteUnique(QueryConstructor query)
-        {
-            if (this.Schema.Columns.PrimaryKeys.Length == 0)
-                return;
-
-            query.AddFormat(",CONSTRAINT UC_{0} UNIQUE (", this.Name).AddJoin(",", this.Schema.Columns.PrimaryKeys.Select(x => x.ColumnName)).Add(')');
-        }
-
-        private void WritePk(QueryConstructor query)
-        {
-            var uniques = this.Schema.Columns.Where(x => x.Unique).ToArray();
-            if (uniques.Length == 0)
-                return;
-
-            query.AddFormat(",CONSTRAINT PK_{0} PRIMARY KEY (", this.Name).AddJoin(",", uniques.Select(x => x.ColumnName)).Add(')');
         }
 
         private SqlExpression CreateBased()
