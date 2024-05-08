@@ -543,6 +543,18 @@ namespace SharpOrm
                 query.Upsert(row, toCheckColumns);
         }
 
+        public static int BulkDelete(this Query query, Row[] values, int insertLot = 1000)
+        {
+            using (var bulk = new BulkOperation(query.Manager, query.Info.TableName.Name, values))
+                return bulk.Delete();
+        }
+
+        public static int BulkUpdate(this Query query, Row[] values, string[] comparationColumns, int insertLot = 1000)
+        {
+            using (var bulk = new BulkOperation(query.Manager, query.Info.TableName.Name, values))
+                return bulk.Update(comparationColumns);
+        }
+
         /// <summary>
         /// Inserts or updates a row using the provided query, row data, and columns to check for upserting.
         /// </summary>

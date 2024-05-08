@@ -86,6 +86,9 @@ namespace SharpOrm.Builder
             if (RandomNameForTempTable)
                 clone.Name += Guid.NewGuid().ToString("N");
 
+            if (manager.Transaction is null && manager.Management == ConnectionManagement.CloseOnEndOperation)
+                manager.Management = ConnectionManagement.CloseOnDispose;
+
             var grammar = manager.Config.NewTableGrammar(clone);
             using (var cmd = manager.GetCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
