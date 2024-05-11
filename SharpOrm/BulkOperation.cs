@@ -14,20 +14,23 @@ namespace SharpOrm
         private readonly string targetTable;
         private QueryConfig Config => this.table.Manager.Config;
         private readonly string[] tempColumns;
+        private const string TargetAlias = "target";
 
         public BulkOperation(ConnectionManager manager, string targetTable, Row[] tempValues, int lotInsert = 100)
         {
             this.targetTable = targetTable;
             this.tempColumns = tempValues[0].ColumnNames;
-            table = DbTable.Create(this.GetSchema(), manager);
+            table = DbTable.Create(this.GetSchema(manager), manager);
             this.InsertTempValues(tempValues, lotInsert);
         }
 
-        private TableSchema GetSchema()
+        private TableSchema GetSchema(ConnectionManager manager)
         {
-            var query = Query.ReadOnly(targetTable);
+            var query = Query.ReadOnly(targetTable, manager.Config);
             if (tempColumns.Length > 0)
                 query.Select(tempColumns);
+
+            query.Where(new SqlExpression("0=1"));
 
             return new TableSchema($"temp_{targetTable}", query) { Temporary = true };
         }
@@ -46,13 +49,26 @@ namespace SharpOrm
 
         public int Update(string[] comparationColumns)
         {
-            using (var q = new Query(this.targetTable + " target", this.table.Manager))
+            using (var q = new Query($"{this.targetTable} {TargetAlias}", this.table.Manager))
             {
                 ApplyJoin(q, comparationColumns);
                 string tempName = table.Name.TryGetAlias(Config);
 
-                return q.Update(comparationColumns.Select(col => new Cell($"target.{col}", (SqlExpression)$"{tempName}.{col}")));
+                return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell(tempName, col)));
             }
+        }
+
+        private string[] GetToUpdateCells(string[] comparationColumns)
+        {
+            return this.tempColumns.Where(x => !comparationColumns.Contains(x)).ToArray();
+        }
+
+        private Cell GetUpdateCell(string tempName, string col)
+        {
+            return new Cell(
+                this.Config.ApplyNomenclature($"target.{col}"), 
+                (SqlExpression)this.Config.ApplyNomenclature($"{tempName}.{col}")
+            );
         }
 
         private Query ApplyJoin(Query query, string[] columns)
@@ -61,7 +77,7 @@ namespace SharpOrm
             {
                 string tempName = table.Name.TryGetAlias(Config);
                 foreach (var col in columns)
-                    q.Where($"{tempName}.{col}", $"{targetTable}.{col}");
+                    q.WhereColumn($"{tempName}.{col}", $"{TargetAlias}.{col}");
             }, "INNER");
         }
 

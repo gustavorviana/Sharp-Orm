@@ -135,7 +135,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Signals whether the table exists.
+        /// Checks if table exists.
         /// </summary>
         /// <param name="schema"></param>
         /// <returns></returns>
@@ -146,7 +146,31 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Signals whether the table exists.
+        /// Checks if table exists.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="creator"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool Exists(string name, bool isTemp = false, ConnectionCreator creator = null)
+        {
+            return Exists(new TableSchema(name) { Temporary = isTemp }, new ConnectionManager(creator ?? ConnectionCreator.Default));
+        }
+
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="manager"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool Exists(string name, bool isTemp = false, ConnectionManager manager = null)
+        {
+            return Exists(new TableSchema(name) { Temporary = isTemp }, manager);
+        }
+
+        /// <summary>
+        /// Checks if table exists.
         /// </summary>
         /// <param name="schema"></param>
         /// <param name="manager"></param>

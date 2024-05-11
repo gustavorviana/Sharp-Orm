@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -61,14 +62,14 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                this.Constructor.Add("UPDATE ").Add(this.GetTableName(false));
+                this.Constructor.Add("UPDATE ").Add(this.Info.Joins.Any() ? ApplyNomenclature(this.Info.TableName.ToString()) : this.GetTableName(false));
                 this.AddLimit();
                 this.Constructor.Add(" SET ");
                 this.Constructor.AddJoin(WriteUpdateCell, ", ", en);
             }
 
             if (this.Info.Joins.Any() || this.Query.IsNoLock())
-                this.Constructor.Add(" FROM ").Add(this.GetTableName(false));
+                this.Constructor.Add(" FROM ").Add(this.GetTableName(true));
 
             if (this.Query.IsNoLock())
                 this.Constructor.Add(" WITH (NOLOCK)");

@@ -35,9 +35,7 @@ namespace UnityTest.Utils
         public static void InitConnection(TestContext context)
         {
             using var creator = GetCreator();
-            using var q = new Query("sysobjects", creator);
-            q.Where("NAME", TABLE).Where("xtype", "U");
-            if (q.Count() > 0)
+            if (DbTable.Exists(TABLE, creator: creator))
                 return;
 
             ExecuteScript(File.ReadAllText("./Scripts/SqlServer.sql"), creator);

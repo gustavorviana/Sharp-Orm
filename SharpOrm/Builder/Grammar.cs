@@ -263,6 +263,11 @@ namespace SharpOrm.Builder
             return this.GetTableName(this.Query, withAlias);
         }
 
+        protected string ApplyNomenclature(string name)
+        {
+            return this.Info.Config.ApplyNomenclature(name);
+        }
+
         protected string GetTableName(QueryBase query, bool withAlias)
         {
             return query.Info.TableName.GetName(withAlias, query.Info.Config);
