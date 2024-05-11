@@ -9,12 +9,15 @@ namespace SharpOrm
 {
     internal class BulkOperation : IDisposable
     {
+        #region Fields/Properties
+        private const string TargetAlias = "target";
+
         private bool disposed;
         private readonly DbTable table;
         private readonly string targetTable;
         private QueryConfig Config => this.table.Manager.Config;
         private readonly string[] tempColumns;
-        private const string TargetAlias = "target";
+        #endregion
 
         public BulkOperation(ConnectionManager manager, string targetTable, Row[] tempValues, int lotInsert = 100)
         {
@@ -43,19 +46,32 @@ namespace SharpOrm
 
         public int Delete()
         {
-            using (var q = new Query(this.targetTable, this.table.Manager))
-                return ApplyJoin(q, this.tempColumns).Delete();
+            using (var q = this.GetQuery(this.tempColumns))
+                return q.Delete();
         }
 
         public int Update(string[] comparationColumns)
         {
-            using (var q = new Query($"{this.targetTable} {TargetAlias}", this.table.Manager))
+            using (var q = this.GetQuery(comparationColumns))
             {
-                ApplyJoin(q, comparationColumns);
                 string tempName = table.Name.TryGetAlias(Config);
-
                 return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell(tempName, col)));
             }
+        }
+
+        private Query GetQuery(string[] comparationColumns)
+        {
+            return ApplyJoin(new Query($"{this.targetTable} {TargetAlias}", this.table.Manager), comparationColumns);
+        }
+
+        private Query ApplyJoin(Query query, string[] columns)
+        {
+            return query.Join(table.Name, q =>
+            {
+                string tempName = table.Name.TryGetAlias(Config);
+                foreach (var col in columns)
+                    q.WhereColumn($"{tempName}.{col}", $"{TargetAlias}.{col}");
+            }, "INNER");
         }
 
         private string[] GetToUpdateCells(string[] comparationColumns)
@@ -69,16 +85,6 @@ namespace SharpOrm
                 this.Config.ApplyNomenclature($"target.{col}"), 
                 (SqlExpression)this.Config.ApplyNomenclature($"{tempName}.{col}")
             );
-        }
-
-        private Query ApplyJoin(Query query, string[] columns)
-        {
-            return query.Join(table.Name, q =>
-            {
-                string tempName = table.Name.TryGetAlias(Config);
-                foreach (var col in columns)
-                    q.WhereColumn($"{tempName}.{col}", $"{TargetAlias}.{col}");
-            }, "INNER");
         }
 
         #region IDisposable
