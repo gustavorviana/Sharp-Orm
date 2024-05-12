@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,20 @@ namespace SharpOrm
         protected SqlExpression()
         {
 
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
+        public SqlExpression(StringBuilder value, params object[] parameters)
+        {
+            if (value.Count('?') != parameters.Length)
+                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
+
+            this.value = value.ToString();
+            this.Parameters = parameters;
         }
 
         /// <summary>

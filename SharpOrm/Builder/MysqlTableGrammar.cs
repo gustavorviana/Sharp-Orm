@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -12,7 +13,17 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Exists()
         {
-            return new SqlExpression("CALL sys.table_exists(DATABASE(), ?, @`table_type`); SELECT @`table_type` = ?;", this.Name.Name, this.Schema.Temporary ? "TEMPORARY" : "BASE TABLE");
+            return new SqlExpression(new StringBuilder()
+                .Append("CALL sys.table_exists(DATABASE(),")
+                .Append('"')
+                .Append(this.Name.Name)
+                .Append('"')
+                .Append(",@`table_type`);SELECT @`table_type`=")
+                .Append('"')
+                .Append(this.Schema.Temporary ? "TEMPORARY" : "BASE TABLE")
+                .Append('"')
+                .Append(';')
+            );
         }
 
         public override SqlExpression Create()
@@ -45,7 +56,7 @@ namespace SharpOrm.Builder
             if (this.Schema.Temporary)
                 query.Add("TEMPORARY ");
 
-            query.AddFormat("TABLE {0} ", this.Name);
+            query.AddFormat("TABLE {0} ", this.ApplyNomenclature(this.Name.Name));
 
             return query;
         }
@@ -58,7 +69,7 @@ namespace SharpOrm.Builder
             if (this.Schema.Temporary)
                 query.Add("TEMPORARY ");
 
-            query.Add("TABLE ").Add(this.Name.Name);
+            query.Add("TABLE ").Add(this.ApplyNomenclature(this.Name.Name));
 
             return query.ToExpression();
         }
@@ -70,10 +81,10 @@ namespace SharpOrm.Builder
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetMySqlDataType(column);
-            string autoIncrement = column.AutoIncrement ? "AUTO_INCREMENT" : "";
+            string autoIncrement = column.AutoIncrement ? " AUTO_INCREMENT" : "";
             string nullable = column.AllowDBNull ? "DEFAULT NULL" : "NOT NULL";
 
-            return $"{columnName} {dataType} {nullable} {autoIncrement}";
+            return $"{columnName} {dataType} {nullable}{autoIncrement}";
         }
 
         //Ref: https://medium.com/dbconvert/mysql-and-sql-servers-data-types-mapping-4cedc95de638

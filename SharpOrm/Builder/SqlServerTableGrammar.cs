@@ -114,7 +114,7 @@ namespace SharpOrm.Builder
             QueryConstructor query = this.GetConstructor();
             query.Add("SELECT ");
 
-            if (this.Schema.BasedQuery.Limit is int limit && limit >= 0 && this.Schema.BasedQuery.Offset is null)
+            if (this.Schema.BasedQuery.Limit is int limit && this.Schema.BasedQuery.Offset is null)
                 query.Add($"TOP({limit}) ");
 
             this.WriteColumns(query, this.BasedTable.Select);

@@ -10,7 +10,7 @@ namespace UnityTest.MysqlTests
     public class MysqlBulkOperationTest : MysqlTableTest
     {
         [TestMethod]
-        public void TestUpdate()
+        public void UpdateTest()
         {
             var _guid = Guid.NewGuid();
             using var manager = GetConnectionManager();
@@ -36,7 +36,7 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
-        public void TestDelete()
+        public void DeleteTest()
         {
             using var manager = GetConnectionManager();
             InsertRows(5);

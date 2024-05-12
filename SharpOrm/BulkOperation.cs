@@ -33,7 +33,7 @@ namespace SharpOrm
             if (tempColumns.Length > 0)
                 query.Select(tempColumns);
 
-            query.Where(new SqlExpression("0=1"));
+            query.Limit = 0;
 
             return new TableSchema($"temp_{targetTable}", query) { Temporary = true };
         }

@@ -78,5 +78,10 @@ namespace SharpOrm.Builder
         {
             return new QueryConstructor(queryInfo);
         }
+
+        protected string ApplyNomenclature(string name)
+        {
+            return this.queryInfo.Config.ApplyNomenclature(name);
+        }
     }
 }

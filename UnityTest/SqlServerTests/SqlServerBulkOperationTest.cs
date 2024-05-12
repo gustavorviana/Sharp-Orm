@@ -10,7 +10,7 @@ namespace UnityTest.SqlServerTests
     public class SqlServerBulkOperationTest : SqlServerTest
     {
         [TestMethod]
-        public void TestUpdate()
+        public void UpdateTest()
         {
             var _guid = Guid.NewGuid();
             using var manager = GetConnectionManager();
@@ -36,7 +36,7 @@ namespace UnityTest.SqlServerTests
         }
 
         [TestMethod]
-        public void TestDelete()
+        public void DeleteTest()
         {
             using var manager = GetConnectionManager();
             InsertRows(5);
