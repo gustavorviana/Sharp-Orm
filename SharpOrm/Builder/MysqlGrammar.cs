@@ -169,6 +169,9 @@ namespace SharpOrm.Builder
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
                 this.Constructor.Add("UPDATE ").Add(this.GetTableName(false));
+                if (this.Info.Joins.Count > 0 && !string.IsNullOrEmpty(this.Info.TableName.Alias))
+                    this.Constructor.Add(' ').Add(this.ApplyNomenclature(this.Info.TableName.Alias));
+
                 this.ApplyJoins();
 
                 this.Constructor.Add(" SET ");

@@ -4,10 +4,10 @@ using System;
 using UnityTest.Models;
 using UnityTest.Utils;
 
-namespace UnityTest.SqlServerTests
+namespace UnityTest.MysqlTests
 {
     [TestClass]
-    public class SqlServerBulkOperationTest : SqlServerTest
+    public class MysqlBulkOperationTest : MysqlTableTest
     {
         [TestMethod]
         public void TestUpdate()
@@ -42,6 +42,7 @@ namespace UnityTest.SqlServerTests
             InsertRows(5);
 
             using var q = new Query<TestTable>(manager);
+            var items = q.Get();
             int deleteCount = QueryExtension.BulkDelete(q, new Row[] { MakeDeleteRow(1), MakeDeleteRow(2), MakeDeleteRow(3) });
 
             Assert.AreEqual(3, deleteCount);
@@ -62,6 +63,11 @@ namespace UnityTest.SqlServerTests
             using var manager = GetConnectionManager();
             using var q = new Query<TestTable>(manager);
             q.Delete();
+        }
+
+        protected override Row NewRow(int? id, string name, int number = 0)
+        {
+            return base.NewRow(id, name, id ?? number);
         }
     }
 }

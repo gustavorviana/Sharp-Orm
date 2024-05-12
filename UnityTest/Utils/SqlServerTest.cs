@@ -34,6 +34,8 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void InitConnection(TestContext context)
         {
+            Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
+
             using var creator = GetCreator();
             if (DbTable.Exists(TABLE, creator: creator))
                 return;

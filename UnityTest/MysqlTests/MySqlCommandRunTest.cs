@@ -227,6 +227,7 @@ namespace UnityTest.MysqlTests
         public void Delete()
         {
             using var query = NewQuery();
+            query.Delete();
             query.BulkInsert(NewRow(1, "A"), NewRow(2, "B"));
 
             Assert.AreEqual(2, query.Count());

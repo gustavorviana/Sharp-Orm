@@ -4,9 +4,9 @@ using SharpOrm.Connection;
 
 namespace UnityTest.Utils
 {
-    public abstract class MysqlConnectionTest : DbTest<MySqlConnection>
+    public abstract class MysqlTest : DbTest<MySqlConnection>
     {
-        public MysqlConnectionTest() : base(new MysqlQueryConfig(false) { LoadForeign = true }, ConnectionStr.Mysql)
+        public MysqlTest() : base(new MysqlQueryConfig(false) { LoadForeign = true }, ConnectionStr.Mysql)
         {
 
         }

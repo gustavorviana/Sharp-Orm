@@ -113,6 +113,19 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void UpdateWhereJoin()
+        {
+            using var q = NewQuery(TABLE, "t1");
+            q.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
+            q.Where("t2.Id", 1);
+            var g = new MysqlGrammar(q);
+
+            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
+            var sqlExpression = g.Update(row.Cells);
+            TestAssert.AreDecoded("UPDATE `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` SET `name` = @p1, `alias` = @p2, `value` = NULL, `status` = 1 WHERE `t2`.`Id` = 1", sqlExpression);
+        }
+
+        [TestMethod]
         public void UpdateCaseValue()
         {
             using var q = NewQuery();

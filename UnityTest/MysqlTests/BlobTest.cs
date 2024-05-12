@@ -7,7 +7,7 @@ using UnityTest.Utils;
 namespace UnityTest.MysqlTests
 {
     [TestClass]
-    public class BlobTest : MysqlConnectionTest
+    public class BlobTest : MysqlTest
     {
         #region Consts
         private const string TABLE = "Files";
