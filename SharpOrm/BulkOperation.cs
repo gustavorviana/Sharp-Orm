@@ -1,9 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Connection;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm
 {
@@ -82,7 +80,7 @@ namespace SharpOrm
         private Cell GetUpdateCell(string tempName, string col)
         {
             return new Cell(
-                this.Config.ApplyNomenclature($"target.{col}"), 
+                this.Config.ApplyNomenclature($"target.{col}"),
                 (SqlExpression)this.Config.ApplyNomenclature($"{tempName}.{col}")
             );
         }
