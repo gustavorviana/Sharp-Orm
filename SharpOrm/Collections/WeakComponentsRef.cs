@@ -87,18 +87,6 @@ namespace SharpOrm.Collections
 
         #region IDisposable
 
-        private void SafeDispose(IDisposable disposable)
-        {
-            try
-            {
-                disposable.Dispose();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"{typeof(T).FullName}.Dispose failed: " + ex.Message);
-            }
-        }
-
         ~WeakComponentsRef()
         {
             Dispose(disposing: false);
@@ -119,11 +107,24 @@ namespace SharpOrm.Collections
 
             if (disposing)
                 for (int i = this.Count - 1; i >= 0; i--)
-                    this.SafeDispose(this[i]);
+                    if (this.refs[i].IsAlive)
+                        this.SafeDispose(this[i]);
 
             this.refs.Clear();
 
             disposed = true;
+        }
+
+        private void SafeDispose(IDisposable disposable)
+        {
+            try
+            {
+                disposable?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{typeof(T).FullName}.Dispose failed: " + ex.Message);
+            }
         }
 
         #endregion

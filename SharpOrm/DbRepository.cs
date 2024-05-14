@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
@@ -17,6 +18,8 @@ namespace SharpOrm
         private bool _externalTransaction = false;
         private bool _disposed;
         public bool Disposed => this._disposed;
+
+        private readonly WeakComponentsRef<DbConnection> _connections = new WeakComponentsRef<DbConnection>();
 
         private ConnectionManager _transaction;
         protected ConnectionManager Transaction => this._transaction;
@@ -370,6 +373,8 @@ namespace SharpOrm
             if (!(sender is DbCommand cmd))
                 return;
 
+            cmd.Disposed += this.OnCommandDisposed;
+
             if (cmd.Transaction is null)
                 try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
         }
@@ -393,7 +398,9 @@ namespace SharpOrm
             if (!ignoreTransaction && this.HasTransaction)
                 return this._transaction.Connection;
 
-            return this.Creator.GetConnection();
+            var connection = this.Creator.GetConnection();
+            _connections.Add(connection);
+            return connection;
         }
 
         #region IDisposable
@@ -416,6 +423,7 @@ namespace SharpOrm
             if (!disposing)
                 return;
 
+            this._connections.Dispose();
             this._transaction = null;
 
             if (!this.HasParentTransaction && this.HasTransaction)
