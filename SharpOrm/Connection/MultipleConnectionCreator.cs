@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -24,7 +25,7 @@ namespace SharpOrm.Connection
     public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
         private readonly object _lock = new object();
-        private readonly List<DbConnection> connections = new List<DbConnection>();
+        private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
         private readonly string _connectionString;
 
         /// <summary>
@@ -53,24 +54,9 @@ namespace SharpOrm.Connection
                 this.ThrowIfDisposed();
                 var connection = new T { ConnectionString = this._connectionString };
 
-                connection.Disposed += OnConnectionDisposed;
                 this.connections.Add(connection);
                 return connection;
             }
-        }
-
-        /// <summary>
-        /// Event handler for connection disposal.
-        /// </summary>
-        private void OnConnectionDisposed(object sender, EventArgs e)
-        {
-            if (!(sender is DbConnection con))
-                return;
-
-            con.Disposed -= OnConnectionDisposed;
-
-            lock (this._lock)
-                this.connections.Remove(con);
         }
 
         /// <summary>
@@ -95,18 +81,8 @@ namespace SharpOrm.Connection
             base.Dispose(disposing);
 
             if (disposing)
-            {
                 lock (this._lock)
-                {
-                    foreach (var con in this.connections)
-                    {
-                        con.Disposed -= OnConnectionDisposed;
-                        try { con.Dispose(); } catch { }
-                    }
-                }
-            }
-
-            this.connections.Clear();
+                    this.connections.Dispose();
         }
     }
 }
