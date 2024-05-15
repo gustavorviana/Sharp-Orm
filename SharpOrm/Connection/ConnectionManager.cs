@@ -272,6 +272,8 @@ namespace SharpOrm.Connection
 
         public void Dispose()
         {
+            if(this.disposed) return;
+
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }

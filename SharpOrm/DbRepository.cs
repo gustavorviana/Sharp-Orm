@@ -328,6 +328,12 @@ namespace SharpOrm
             return this.CreateCommand(query.ToString(), query.Parameters);
         }
 
+        /// <summary>
+        /// Creates a DbCommand from a query string.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="args">SQL query args.</param>
+        /// <returns>A DbCommand created from the query string.</returns>
         protected internal DbCommand CreateCommand(string query, params object[] args)
         {
             return this.CreateCommand().SetQuery(query, args);
@@ -393,6 +399,11 @@ namespace SharpOrm
             return this.GetManager(!ignoreTransaction).Connection;
         }
 
+        /// <summary>
+        /// Retrieve a new connection manager (if not for reuse, only one per instance).
+        /// </summary>
+        /// <param name="useActiveTransaction">Indicate whether the active transaction should be retrieved if it exists.</param>
+        /// <returns></returns>
         protected virtual ConnectionManager GetManager(bool useActiveTransaction = true)
         {
             this.ThrowIfDisposed();
@@ -401,17 +412,30 @@ namespace SharpOrm
                 return this.Transaction;
 
             lock (this._lock)
-            {
-                if (this.useSingleConnection && this._connections.Count > 0)
-                    return this._connections[0];
+                return GetExistingManager() ?? this.GetManagerNew();
+        }
 
-                var connection = new ConnectionManager(this.Creator.Config, this.Creator.GetConnection())
-                {
-                    CommandTimeout = this.CommandTimeout
-                };
-                _connections.Add(connection);
-                return connection;
+        private ConnectionManager GetExistingManager()
+        {
+            if (this.useSingleConnection && this._connections.Count > 0)
+            {
+                if (this._connections[0] is ConnectionManager conn)
+                    return conn;
+
+                this._connections.RemoveNotAlive();
             }
+
+            return null;
+        }
+
+        private ConnectionManager GetManagerNew()
+        {
+            var connection = new ConnectionManager(this.Creator.Config, this.Creator.GetConnection())
+            {
+                CommandTimeout = this.CommandTimeout
+            };
+            _connections.Add(connection);
+            return connection;
         }
 
         #region IDisposable
