@@ -49,7 +49,7 @@ QueryConfig config = new MysqlQueryConfig();
 //For Microsoft Sql Server
 QueryConfig config = new SqlServerQueryConfig();
 
-using(Query query = new Query(connection, config, "Users"))
+using(Query query = new Query("Users", new ConnectionManager(config, connection)))
 {
     query.Where("active", "=", 1);
     Row[] users = query.ReadRows();
