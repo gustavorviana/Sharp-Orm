@@ -15,14 +15,15 @@ namespace SharpOrm
     public abstract class DbRepository : IDisposable
     {
         #region Fields/Properties
-        private bool _externalTransaction = false;
+        private readonly object _lock = new object();
+        private readonly bool useSingleConnection;
+        private bool isExtTransact = false;
         private bool _disposed;
         public bool Disposed => this._disposed;
 
-        private readonly WeakComponentsRef<DbConnection> _connections = new WeakComponentsRef<DbConnection>();
+        internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
-        private ConnectionManager _transaction;
-        protected ConnectionManager Transaction => this._transaction;
+        protected ConnectionManager Transaction { get; private set; }
 
         private int? commandTimeout = null;
         protected int CommandTimeout
@@ -35,21 +36,28 @@ namespace SharpOrm
         /// Gets the default connection creator for the repository.
         /// </summary>
         protected virtual ConnectionCreator Creator => ConnectionCreator.Default;
+
         /// <summary>
         /// Indicates whether the repository has a parent transaction.
         /// </summary>
-        protected bool HasParentTransaction => this._externalTransaction;
-
-        /// <summary>
-        /// Indicates whether the repository has an active transaction.
-        /// </summary>
-        protected bool HasTransaction => this._transaction != null;
+        protected bool HasParentTransaction => this.isExtTransact;
 
         /// <summary>
         /// Gets or sets the cancellation token for the repository.
         /// </summary>
         public CancellationToken Token { get; set; }
         #endregion
+
+        [Obsolete("This function is deprecated. It will be removed in version 3.0.")]
+        protected DbRepository() : this(false)
+        {
+
+        }
+
+        public DbRepository(bool useSingleConnection)
+        {
+            this.useSingleConnection = useSingleConnection;
+        }
 
         #region Transactions
 
@@ -62,7 +70,7 @@ namespace SharpOrm
             if (service == null)
                 throw new ArgumentNullException(nameof(service));
 
-            this.SetTransaction(service._transaction);
+            this.SetTransaction(service.Transaction);
         }
 
         /// <summary>
@@ -82,8 +90,8 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            this._transaction = manager;
-            this._externalTransaction = manager != null;
+            this.Transaction = manager;
+            this.isExtTransact = manager != null;
         }
 
         /// <summary>
@@ -96,10 +104,10 @@ namespace SharpOrm
             if (this.HasParentTransaction)
                 return;
 
-            if (this.HasTransaction)
+            if (this.Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            this._transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
+            this.Transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
         }
 
         /// <summary>
@@ -110,10 +118,10 @@ namespace SharpOrm
             if (this.HasParentTransaction)
                 return;
 
-            if (!this.HasTransaction)
+            if (this.Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this._transaction.Commit();
+            this.Transaction.Commit();
             this.ClearTransaction();
         }
 
@@ -125,10 +133,10 @@ namespace SharpOrm
             if (this.HasParentTransaction)
                 return;
 
-            if (!this.HasTransaction)
+            if (this.Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this._transaction.Rollback();
+            this.Transaction.Rollback();
             this.ClearTransaction();
         }
 
@@ -137,18 +145,18 @@ namespace SharpOrm
         /// </summary>
         protected virtual void ClearTransaction()
         {
-            if (!this.HasTransaction)
+            if (this.Transaction is null)
                 return;
 
             if (!this.HasParentTransaction)
             {
-                var conn = this._transaction.Connection;
-                this._transaction.Dispose();
+                var conn = this.Transaction.Connection;
+                this.Transaction.Dispose();
 
                 this.Creator.SafeDisposeConnection(conn);
             }
 
-            this._transaction = null;
+            this.Transaction = null;
         }
 
         /// <summary>
@@ -157,7 +165,7 @@ namespace SharpOrm
         /// <param name="callback">The callback action to execute within the transaction.</param>
         public void RunTransaction(Action callback)
         {
-            if (this.HasTransaction)
+            if (this.Transaction != null)
             {
                 callback();
                 return;
@@ -257,18 +265,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Returns a <see cref="ConnectionManager"/> representing the connection of the current class.
-        /// </summary>
-        /// <returns></returns>
-        protected virtual ConnectionManager GetConnectionManager()
-        {
-            if (this._transaction != null)
-                return this.Transaction;
-
-            return new ConnectionManager(this.Creator) { CommandTimeout = this.CommandTimeout };
-        }
-
-        /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="query">The QueryConstructor used to create the command.</param>
@@ -280,16 +276,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Creates a DbCommand from a QueryConstructor.
-        /// </summary>
-        /// <param name="query">The QueryConstructor used to create the command.</param>
-        /// <returns>A DbCommand created from the QueryConstructor.</returns>
-        protected DbCommand CreateCommand(QueryConstructor query)
-        {
-            return this.CreateCommand(query.ToString(), query.Parameters);
-        }
-
-        /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="query">The SQL query string.</param>
@@ -298,11 +284,6 @@ namespace SharpOrm
         {
             using (var cmd = this.CreateCommand(query, args))
                 return cmd.ExecuteNonQuery();
-        }
-
-        protected internal DbCommand CreateCommand(string query, params object[] args)
-        {
-            return this.CreateCommand().SetQuery(query, args);
         }
 
         /// <summary>
@@ -338,6 +319,21 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Creates a DbCommand from a QueryConstructor.
+        /// </summary>
+        /// <param name="query">The QueryConstructor used to create the command.</param>
+        /// <returns>A DbCommand created from the QueryConstructor.</returns>
+        protected DbCommand CreateCommand(QueryConstructor query)
+        {
+            return this.CreateCommand(query.ToString(), query.Parameters);
+        }
+
+        protected internal DbCommand CreateCommand(string query, params object[] args)
+        {
+            return this.CreateCommand().SetQuery(query, args);
+        }
+
+        /// <summary>
         /// Creates a DbCommand from a query string.
         /// </summary>
         /// <param name="query">The SQL query string.</param>
@@ -356,11 +352,11 @@ namespace SharpOrm
         /// <returns>A DbCommand created from the query string.</returns>
         protected virtual DbCommand CreateCommand(bool open = true)
         {
-            var cmd = this.GetConnection().CreateCommand();
+            var cmd = this.GetManager().CreateCommand();
             if (open) cmd.Connection?.OpenIfNeeded();
+            cmd.SetCancellationToken(this.Token);
 
             cmd.CommandTimeout = this.CommandTimeout;
-            cmd.Transaction = this._transaction?.Transaction;
             cmd.Disposed += OnCommandDisposed;
 
             return cmd;
@@ -391,16 +387,31 @@ namespace SharpOrm
         ///     A DbConnection object, either a newly created connection or the one from the active transaction,
         ///     based on the value of the 'ignoreTransaction' parameter.
         /// </returns>
+        [Obsolete("This function is deprecated. It will be removed in version 3.0.")]
         protected virtual DbConnection GetConnection(bool ignoreTransaction = false)
+        {
+            return this.GetManager(!ignoreTransaction).Connection;
+        }
+
+        protected virtual ConnectionManager GetManager(bool useActiveTransaction = true)
         {
             this.ThrowIfDisposed();
 
-            if (!ignoreTransaction && this.HasTransaction)
-                return this._transaction.Connection;
+            if (useActiveTransaction && this.Transaction != null)
+                return this.Transaction;
 
-            var connection = this.Creator.GetConnection();
-            _connections.Add(connection);
-            return connection;
+            lock (this._lock)
+            {
+                if (this.useSingleConnection && this._connections.Count > 0)
+                    return this._connections[0];
+
+                var connection = new ConnectionManager(this.Creator.Config, this.Creator.GetConnection())
+                {
+                    CommandTimeout = this.CommandTimeout
+                };
+                _connections.Add(connection);
+                return connection;
+            }
         }
 
         #region IDisposable
@@ -424,9 +435,9 @@ namespace SharpOrm
                 return;
 
             this._connections.Dispose();
-            this._transaction = null;
+            this.Transaction = null;
 
-            if (!this.HasParentTransaction && this.HasTransaction)
+            if (!this.HasParentTransaction && this.Transaction != null)
                 this.CommitTransaction();
         }
 

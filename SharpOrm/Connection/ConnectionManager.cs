@@ -7,7 +7,7 @@ namespace SharpOrm.Connection
     /// <summary>
     /// Manages the database manager.
     /// </summary>
-    public class ConnectionManager : IDisposable
+    public class ConnectionManager : IDisposableWithEvent
     {
         #region Fields/Properties
         private ConnectionManagement management = ConnectionManagement.CloseOnDispose;
@@ -16,6 +16,8 @@ namespace SharpOrm.Connection
         private bool finishedTransaction = false;
         internal bool autoCommit = true;
         private bool disposed;
+
+        public event EventHandler Disposed;
 
         /// <summary>
         /// Type of connection management.
@@ -63,14 +65,6 @@ namespace SharpOrm.Connection
         /// </summary>
         public ConnectionManager(bool openTransaction = false) : this(ConnectionCreator.Default, openTransaction)
         {
-        }
-
-        /// <summary>
-        /// Creates an instance using the default manager settings.
-        /// </summary>
-        public ConnectionManager(QueryConfig config) : this(ConnectionCreator.Default)
-        {
-            this.Config = config;
         }
 
         /// <summary>
@@ -125,8 +119,19 @@ namespace SharpOrm.Connection
         public ConnectionManager(QueryConfig config, DbConnection connection)
         {
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            this.Connection.Disposed += DisposeByConnection;
             this.CommandTimeout = config.CommandTimeout;
             this.Config = config;
+        }
+
+        private void DisposeByConnection(object sender, EventArgs e)
+        {
+            if (this.disposed) return;
+            this.Connection.Disposed -= DisposeByConnection;
+            GC.SuppressFinalize(this);
+            this.disposed = true;
+
+            this.Disposed?.Invoke(this, EventArgs.Empty);
         }
         #endregion
 
@@ -173,9 +178,7 @@ namespace SharpOrm.Connection
 
         private ConnectionManager CopyOptionsFrom(ConnectionManager manager, bool copyManagement = true)
         {
-            if (copyManagement)
-                this.management = manager.management;
-
+            if (copyManagement) this.management = manager.management;
             this.CommandTimeout = manager.CommandTimeout;
             this.autoCommit = manager.autoCommit;
             return this;
@@ -262,31 +265,6 @@ namespace SharpOrm.Connection
         #endregion
 
         #region IDisposable
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-                return;
-
-            disposed = true;
-
-            if (this.Transaction != null)
-            {
-                if (!this.isMyTransaction)
-                    return;
-
-                if (this.autoCommit)
-                    try { this.Commit(); } catch { }
-
-                try { this.Transaction.Dispose(); } catch { }
-            }
-
-            if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
-                return;
-
-            if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);
-            else this.Connection.Close();
-        }
-
         ~ConnectionManager()
         {
             Dispose(disposing: false);
@@ -296,6 +274,43 @@ namespace SharpOrm.Connection
         {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            try
+            {
+                this.DisposeTransaction();
+                this.DisposeConnection();
+            }
+            finally
+            {
+                disposed = true;
+                this.Disposed?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        private void DisposeTransaction()
+        {
+            if (this.Transaction == null || !this.isMyTransaction)
+                return;
+
+            if (this.autoCommit)
+                try { this.Commit(); } catch { }
+
+            try { this.Transaction.Dispose(); } catch { }
+        }
+
+        private void DisposeConnection()
+        {
+            if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
+                return;
+
+            if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);
+            else if (this.Connection.State == System.Data.ConnectionState.Open) this.Connection.Close();
         }
         #endregion
     }

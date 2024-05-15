@@ -1,10 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System.Data.Common;
-using System.Reflection;
 using UnityTest.Models;
 using UnityTest.Utils.Mock;
 
@@ -13,7 +11,6 @@ namespace UnityTest
     [TestClass]
     public class DbRepositoryTest
     {
-        private static readonly FieldInfo _transactionField = typeof(DbRepository).GetField("_transaction", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly ConnectionCreator creator = new MultipleConnectionCreator<MockConnection>(new MysqlQueryConfig(), "");
 
         [TestMethod]
@@ -46,14 +43,14 @@ namespace UnityTest
             using var repo = new TestRepository(creator);
             repo.RunTransaction(() =>
             {
-                var transaction = GetTransaction(repo);
+                var transaction = repo.GetTransaction();
                 Assert.IsNotNull(transaction);
 
-                repo.RunTransaction(() => Assert.AreEqual(transaction, GetTransaction(repo)));
-                Assert.IsNotNull(GetTransaction(repo));
+                repo.RunTransaction(() => Assert.AreEqual(transaction, repo.GetTransaction()));
+                Assert.IsNotNull(repo.GetTransaction());
             });
 
-            Assert.IsNull(GetTransaction(repo));
+            Assert.IsNull(repo.GetTransaction());
         }
 
         [TestMethod]
@@ -66,23 +63,18 @@ namespace UnityTest
                 using var repo = new TestRepository(creator);
                 repo.SetTransaction(transaction);
 
-                Assert.AreEqual(transaction, GetTransaction(repo));
-                repo.RunTransaction(() => Assert.AreEqual(transaction, GetTransaction(repo)));
+                Assert.AreEqual(transaction, repo.GetTransaction());
+                repo.RunTransaction(() => Assert.AreEqual(transaction, repo.GetTransaction()));
 
-                Assert.AreEqual(transaction, GetTransaction(repo));
+                Assert.AreEqual(transaction, repo.GetTransaction());
 
                 repo.SetTransaction((DbTransaction)null);
-                Assert.IsNull(GetTransaction(repo));
+                Assert.IsNull(repo.GetTransaction());
             }
             finally
             {
                 creator.SafeDisposeConnection(conn);
             }
-        }
-
-        private static DbTransaction GetTransaction(TestRepository repo)
-        {
-            return ((ConnectionManager)_transactionField.GetValue(repo))?.Transaction;
         }
 
         [TestMethod]
@@ -105,15 +97,26 @@ namespace UnityTest
             using var repo = new TestRepository(creator);
             var query = repo.GetQuery();
 
-            Assert.IsNull(query.Transaction);
+            Assert.IsNull(query.Manager.Transaction);
 
             repo.BeginTransaction();
             query = repo.GetQuery();
-            Assert.IsNotNull(query.Transaction);
+            Assert.IsNotNull(query.Manager.Transaction);
 
             repo.CommitTransaction();
             query = repo.GetQuery();
-            Assert.IsNull(query.Transaction);
+            Assert.IsNull(query.Manager.Transaction);
+        }
+
+        [TestMethod]
+        public void ConnectionDisposeCleanTest()
+        {
+            using var repo = new TestRepository(creator);
+
+            for (int i = 0; i < 5; i++)
+                repo.GetConnection().Dispose();
+
+            Assert.AreEqual(0, repo._connections.Count);
         }
     }
 }

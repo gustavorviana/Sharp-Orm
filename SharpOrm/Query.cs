@@ -1170,7 +1170,7 @@ namespace SharpOrm
         protected internal DbCommand GetCommand(SqlExpression expression)
         {
             return this.Manager
-                .GetCommand(this.CommandTimeout)
+                .CreateCommand(this.CommandTimeout)
                 .SetExpression(expression)
                 .SetCancellationToken(this.Token);
         }

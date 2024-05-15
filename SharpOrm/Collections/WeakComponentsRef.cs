@@ -10,7 +10,7 @@ namespace SharpOrm.Collections
 {
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
-    internal class WeakComponentsRef<T> : IReadOnlyCollection<T>, IDisposable where T : Component
+    internal class WeakComponentsRef<T> : IReadOnlyCollection<T>, IDisposable where T : class, IDisposable
     {
         private readonly List<WeakReference> refs = new List<WeakReference>();
         private bool disposed;
@@ -27,7 +27,7 @@ namespace SharpOrm.Collections
                 if (this.Count <= 10)
                     this.RemoveNotAlive();
 
-                item.Disposed += OnItemDisposed;
+                AddDisposedEvent(item);
                 refs.Add(new WeakReference(item));
             }
         }
@@ -37,7 +37,7 @@ namespace SharpOrm.Collections
             if (!(sender is T obj))
                 return;
 
-            obj.Disposed -= OnItemDisposed;
+            RemoveDisposedEvent(obj);
             this.Remove(obj);
         }
 
@@ -85,6 +85,18 @@ namespace SharpOrm.Collections
             return reference.IsAlive ? reference.Target as T : null;
         }
 
+        private void AddDisposedEvent(T obj)
+        {
+            if (obj is Component c) c.Disposed += this.OnItemDisposed;
+            else if (obj is IDisposableWithEvent e) e.Disposed += this.OnItemDisposed;
+        }
+
+        private void RemoveDisposedEvent(T obj)
+        {
+            if (obj is Component c) c.Disposed -= this.OnItemDisposed;
+            else if (obj is IDisposableWithEvent e) e.Disposed -= this.OnItemDisposed;
+        }
+
         #region IDisposable
 
         ~WeakComponentsRef()
@@ -130,7 +142,7 @@ namespace SharpOrm.Collections
         #endregion
     }
 
-    internal sealed class WeakRef_DebugView<T> where T : Component
+    internal sealed class WeakRef_DebugView<T> where T : class, IDisposable
     {
         private readonly WeakComponentsRef<T> collection;
 

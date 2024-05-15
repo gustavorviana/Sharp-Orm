@@ -38,15 +38,15 @@ namespace SharpOrm.Connection
 
         public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
         {
-            return manager.GetCommand().SetExpression(expression);
+            return manager.CreateCommand().SetExpression(expression);
         }
 
-        public static DbCommand GetCommand(this ConnectionManager manager)
+        public static DbCommand CreateCommand(this ConnectionManager manager)
         {
-            return GetCommand(manager, manager.CommandTimeout);
+            return CreateCommand(manager, manager.CommandTimeout);
         }
 
-        public static DbCommand GetCommand(this ConnectionManager manager, int commandTimeout)
+        public static DbCommand CreateCommand(this ConnectionManager manager, int commandTimeout)
         {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();
 

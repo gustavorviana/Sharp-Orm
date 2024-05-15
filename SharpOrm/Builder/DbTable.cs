@@ -90,7 +90,7 @@ namespace SharpOrm.Builder
                 manager.Management = ConnectionManagement.CloseOnDispose;
 
             var grammar = manager.Config.NewTableGrammar(clone);
-            using (var cmd = manager.GetCommand().SetExpression(grammar.Create()))
+            using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
             return new DbTable(grammar, manager);
@@ -185,7 +185,7 @@ namespace SharpOrm.Builder
 
             try
             {
-                using (var cmd = manager.GetCommand().SetExpression(manager.Config.NewTableGrammar(schema).Exists()))
+                using (var cmd = manager.CreateCommand().SetExpression(manager.Config.NewTableGrammar(schema).Exists()))
                     return cmd.ExecuteScalar<int>() > 0;
             }
             finally
@@ -201,7 +201,7 @@ namespace SharpOrm.Builder
         {
             try
             {
-                using (var cmd = Manager.GetCommand().SetExpression(grammar.Drop()))
+                using (var cmd = Manager.CreateCommand().SetExpression(grammar.Drop()))
                     cmd.ExecuteNonQuery();
 
                 this.dropped = true;
