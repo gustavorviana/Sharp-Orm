@@ -16,6 +16,11 @@ namespace SharpOrm.Operators
             this.columns = expression.Select(x => new Column(x)).ToArray();
         }
 
+        public Coalesce(params string[] columns) : this(columns.Select(x => new Column(x, "")).ToArray())
+        {
+
+        }
+
         public Coalesce(params Column[] columns)
         {
             if (columns.Length == 0)
