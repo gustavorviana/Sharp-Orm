@@ -48,7 +48,7 @@ namespace SharpOrm
         public CancellationToken Token { get; set; }
         #endregion
 
-        [Obsolete("This function is deprecated. It will be removed in version 3.0.")]
+        [Obsolete("This function is deprecated. It will be removed in version 2.1.")]
         protected DbRepository() : this(false)
         {
 
@@ -393,7 +393,7 @@ namespace SharpOrm
         ///     A DbConnection object, either a newly created connection or the one from the active transaction,
         ///     based on the value of the 'ignoreTransaction' parameter.
         /// </returns>
-        [Obsolete("This function is deprecated. It will be removed in version 3.0.")]
+        [Obsolete("This function is deprecated. It will be removed in version 2.1.")]
         protected virtual DbConnection GetConnection(bool ignoreTransaction = false)
         {
             return this.GetManager(!ignoreTransaction).Connection;

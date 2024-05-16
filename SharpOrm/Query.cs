@@ -30,55 +30,55 @@ namespace SharpOrm
 
         #region Obsolete
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 2.1.")]
         public Query(ConnectionCreator creator, string alias) : base(creator, new DbName(TableName, alias))
         {
             TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 2.1.")]
         public Query(ConnectionCreator creator, DbName table) : base(creator, table)
         {
             TableInfo = new TableInfo(typeof(T));
             this.ApplyValidations();
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, string alias = "") : this(transaction, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, QueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, QueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, QueryConfig config, DbName name) : base(connection, config, name)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(transaction, config, name)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
             this.ApplyValidations();
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(connection, config, table, management)
         {
             TableInfo = new TableInfo(typeof(T), config.Translation);
@@ -456,9 +456,9 @@ namespace SharpOrm
         /// Connection manager of the query.
         /// </summary>
         public ConnectionManager Manager { get; }
-        [Obsolete("This function is deprecated, use Manager.Connection. It will be removed in version 3.0.")]
+        [Obsolete("This function is deprecated, use Manager.Connection. It will be removed in version 2.1.")]
         public DbConnection Connection => this.Manager.Connection;
-        [Obsolete("This function is deprecated, use Manager.Transaction. It will be removed in version 3.0.")]
+        [Obsolete("This function is deprecated, use Manager.Transaction. It will be removed in version 2.1.")]
         public DbTransaction Transaction => this.Manager.Transaction;
 
         /// <summary>
@@ -480,52 +480,52 @@ namespace SharpOrm
         #region Query
 
         #region Obsoletes
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 2.1.")]
         public Query(ConnectionCreator creator, string table) : this(new DbName(table), new ConnectionManager(creator))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 2.1.")]
         public Query(ConnectionCreator creator, DbName table) : this(table, new ConnectionManager(creator))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
         public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
         public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new DbName(table))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, ConnectionCreator.Default.Config, table, management)
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, DbName table) : this(transaction, ConnectionCreator.Default.Config, table)
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, QueryConfig config, string table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, config, new DbName(table), management)
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(config, table)
         {
             if (connection == null)
@@ -535,12 +535,12 @@ namespace SharpOrm
             this.CommandTimeout = config.CommandTimeout;
         }
 
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, QueryConfig config, string table) : this(transaction, config, new DbName(table))
         {
         }
 
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 3.0.")]
+        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
         public Query(DbTransaction transaction, QueryConfig config, DbName name) : this(name, new ConnectionManager(config, transaction))
         {
         }
@@ -829,7 +829,7 @@ namespace SharpOrm
 
         #region DML SQL commands
 
-        [Obsolete("This function is deprecated. It will be removed in version 3.0.", true)]
+        [Obsolete("This function is deprecated. It will be removed in version 2.1.", true)]
         public int Update(Dictionary<string, object> cells)
         {
             if (!cells.Any())
