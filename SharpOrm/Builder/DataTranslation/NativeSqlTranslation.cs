@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SharpOrm.Builder.DataTranslation
 {
@@ -11,7 +12,16 @@ namespace SharpOrm.Builder.DataTranslation
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
         /// </summary>
-        /// <value>Default value in C#: "D"</value>
+        /// <value>Default value in C#: "D".</value>
+        /// <remarks>
+        /// <list type="table">
+        /// <item>N: 00000000000000000000000000000000</item>
+        /// <item>D: 00000000-0000-0000-0000-000000000000</item>
+        /// <item>B: {00000000-0000-0000-0000-000000000000}</item>
+        /// <item>P: (00000000-0000-0000-0000-000000000000)</item>
+        /// <item>X: {0x00000000,0x0000,0x0000,{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}}</item>
+        /// </list>
+        /// </remarks>
         public string GuidFormat { get; set; } = "D";
 
         /// <summary>
