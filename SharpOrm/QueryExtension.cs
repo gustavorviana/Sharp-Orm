@@ -32,7 +32,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase WhereContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase WhereStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase WhereEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase WhereNotContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase WhereNotStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "NOT LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase WhereNotEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase OrWhereContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase OrWhereStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase OrWhereEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase OrWhereNotContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -258,7 +258,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase OrWhereNotStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "NOT LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -269,7 +269,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase OrWhereNotEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "NOT LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>

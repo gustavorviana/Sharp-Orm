@@ -2,11 +2,11 @@
 {
     public class Max : Column
     {
-        public Max(string column) : base(new SqlExpression($"MAX({column})"))
+        public Max(string column) : base(SqlExpression.Make("MAX(", column, ")"))
         {
         }
 
-        public Max(string column, string alias) : base(new SqlExpression($"MAX({column}) {alias}"))
+        public Max(string column, string alias) : base(SqlExpression.Make("MAX(", column, ") ", alias))
         {
         }
     }

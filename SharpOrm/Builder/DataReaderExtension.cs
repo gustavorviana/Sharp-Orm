@@ -92,7 +92,7 @@ namespace SharpOrm.Builder
 
         internal static string GetParamName(int index)
         {
-            return $"@p{index}";
+            return string.Concat("@p", index);
         }
 
         /// <summary>

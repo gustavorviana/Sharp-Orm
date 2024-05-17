@@ -12,7 +12,7 @@ namespace SharpOrm.Builder
             get
             {
                 if (this.Schema.Temporary)
-                    return new DbName($"#{this.Schema.Name}", "");
+                    return new DbName(string.Concat("#", this.Schema.Name), "");
 
                 return new DbName(this.Schema.Name, "");
             }
@@ -52,10 +52,10 @@ namespace SharpOrm.Builder
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetSqlDataType(column);
-            string identity = column.AutoIncrement ? $" IDENTITY({seed},{step})" : "";
+            string identity = column.AutoIncrement ? string.Concat(" IDENTITY(", seed, ",", step, ")") : "";
             string nullable = column.AllowDBNull ? "NULL" : "NOT NULL";
 
-            return $"{columnName} {dataType}{identity} {nullable}";
+            return string.Concat(columnName, " ", dataType, identity, " ", nullable);
         }
 
         private string GetSqlDataType(DataColumn column)
@@ -89,7 +89,7 @@ namespace SharpOrm.Builder
                 return "BIT";
 
             if (dataType == typeof(string))
-                return string.Format("VARCHAR({0})", column.MaxLength < 1 ? (object)"MAX" : (object)column.MaxLength);
+                return string.Concat("VARCHAR(", column.MaxLength < 1 ? (object)"MAX" : (object)column.MaxLength, ")");
 
             if (dataType == typeof(char))
                 return "NCHAR(1)";
@@ -115,11 +115,11 @@ namespace SharpOrm.Builder
             query.Add("SELECT ");
 
             if (this.Schema.BasedQuery.Limit is int limit && this.Schema.BasedQuery.Offset is null)
-                query.Add($"TOP({limit}) ");
+                query.Add($"TOP(").Add(limit).Add(") ");
 
             this.WriteColumns(query, this.BasedTable.Select);
 
-            query.AddFormat(" INTO [{0}]", this.Name);
+            query.AddFormat(" INTO [").Add(this.Name).Add("]");
 
             var qGrammar = new SqlServerGrammar(this.Schema.BasedQuery);
             query.Add(qGrammar.GetSelectFrom());
@@ -129,7 +129,7 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Drop()
         {
-            return new SqlExpression("DROP TABLE " + this.Name);
+            return new SqlExpression(string.Concat("DROP TABLE ", this.Name));
         }
 
         public override SqlExpression Exists()

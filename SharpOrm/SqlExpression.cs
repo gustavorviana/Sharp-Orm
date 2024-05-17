@@ -91,6 +91,11 @@ namespace SharpOrm
             return -1584136870 + EqualityComparer<string>.Default.GetHashCode(value);
         }
 
+        internal static SqlExpression Make(params string[] sql)
+        {
+            return new SqlExpression(string.Concat(sql));
+        }
+
         public static explicit operator SqlExpression(StringBuilder builder)
         {
             return new SqlExpression(builder.ToString());

@@ -82,7 +82,7 @@ namespace SharpOrm
             this.nodes.Add(new CaseNode
             {
                 Column = new Column(column),
-                Expression = new SqlExpression($"{operation} ?", value),
+                Expression = new SqlExpression(string.Concat(operation, " ?"), value),
                 Then = then,
             });
             return this;

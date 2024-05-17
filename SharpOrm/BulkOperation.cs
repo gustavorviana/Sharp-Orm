@@ -33,7 +33,7 @@ namespace SharpOrm
 
             query.Limit = 0;
 
-            return new TableSchema($"temp_{targetTable}", query) { Temporary = true };
+            return new TableSchema(string.Concat("temp_", targetTable), query) { Temporary = true };
         }
 
         private void InsertTempValues(Row[] tempValues, int lotInsert)
@@ -59,7 +59,7 @@ namespace SharpOrm
 
         private Query GetQuery(string[] comparationColumns)
         {
-            return ApplyJoin(new Query($"{this.targetTable} {TargetAlias}", this.table.Manager), comparationColumns);
+            return ApplyJoin(new Query(string.Concat(this.targetTable, " ", TargetAlias), this.table.Manager), comparationColumns);
         }
 
         private Query ApplyJoin(Query query, string[] columns)
@@ -68,7 +68,7 @@ namespace SharpOrm
             {
                 string tempName = table.Name.TryGetAlias(Config);
                 foreach (var col in columns)
-                    q.WhereColumn($"{tempName}.{col}", $"{TargetAlias}.{col}");
+                    q.WhereColumn(string.Concat(tempName, ".", col), string.Concat(TargetAlias, ".", col));
             }, "INNER");
         }
 
@@ -80,8 +80,8 @@ namespace SharpOrm
         private Cell GetUpdateCell(string tempName, string col)
         {
             return new Cell(
-                this.Config.ApplyNomenclature($"target.{col}"),
-                (SqlExpression)this.Config.ApplyNomenclature($"{tempName}.{col}")
+                this.Config.ApplyNomenclature(string.Concat("target.", col)),
+                (SqlExpression)this.Config.ApplyNomenclature(string.Concat(tempName, ".", col))
             );
         }
 

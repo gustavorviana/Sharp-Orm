@@ -69,7 +69,7 @@ namespace SharpOrm
             if (!TranslationUtils.IsNumeric(value.GetType()))
                 throw new ArgumentException("Only numeric types are allowed.");
 
-            return new Cell(column, (SqlExpression)$"{column}+{value}");
+            return new Cell(column, SqlExpression.Make(column, "+", value.ToString()));
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace SharpOrm
             if (!TranslationUtils.IsNumeric(value.GetType()))
                 throw new ArgumentException("Only numeric types are allowed.");
 
-            return new Cell(column, (SqlExpression)$"{column}-{value}");
+            return new Cell(column, SqlExpression.Make(column, "-", value.ToString()));
         }
 
         #endregion

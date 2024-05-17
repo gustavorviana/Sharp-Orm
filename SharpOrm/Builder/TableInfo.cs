@@ -186,7 +186,7 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(table.Schema))
                 return table.Name;
 
-            return $"{table.Schema}.{table.Name}";
+            return string.Concat(table.Schema, ".", table.Name);
         }
 
         private static Type GetValidType(Type type)

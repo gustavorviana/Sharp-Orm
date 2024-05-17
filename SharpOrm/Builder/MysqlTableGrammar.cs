@@ -84,7 +84,7 @@ namespace SharpOrm.Builder
             string autoIncrement = column.AutoIncrement ? " AUTO_INCREMENT" : "";
             string nullable = column.AllowDBNull ? "DEFAULT NULL" : "NOT NULL";
 
-            return $"{columnName} {dataType} {nullable}{autoIncrement}";
+            return string.Concat(columnName, " ", dataType, " ", nullable, autoIncrement);
         }
 
         //Ref: https://medium.com/dbconvert/mysql-and-sql-servers-data-types-mapping-4cedc95de638
@@ -134,7 +134,7 @@ namespace SharpOrm.Builder
                 return "BLOB";
 
             if (dataType == typeof(Guid))
-                return $"VARCHAR({this.GetGuidSize()})";
+                return string.Concat("VARCHAR(", this.GetGuidSize(), ")");
 
             throw new ArgumentException($"Unsupported data type: {dataType.Name}");
         }
@@ -148,7 +148,7 @@ namespace SharpOrm.Builder
                 return "TINYTEXT";
 
             if (maxSize <= 16383)
-                return $"VARCHAR({maxSize})";
+                return string.Concat("VARCHAR(", maxSize, ")");
 
             if (maxSize <= 65635)
                 return "TEXT";
