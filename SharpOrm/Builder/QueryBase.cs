@@ -71,7 +71,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// AddRaws a clusule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clausule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -82,7 +82,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// AddRaws a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clausule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -237,7 +237,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// AddRaws a clusule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// AddRaws a clausule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -248,7 +248,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// AddRaws a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clausule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
