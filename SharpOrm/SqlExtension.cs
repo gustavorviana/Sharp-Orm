@@ -40,12 +40,12 @@ namespace SharpOrm
             string[] splitNames = value.Split('.');
             for (int i = 0; i < splitNames.Length; i++)
                 if (splitNames[i] != "*")
-                    splitNames[i] = string.Format("{0}{1}{2}", prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
+                    splitNames[i] = string.Concat(prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
 
             return string.Join(".", splitNames);
         }
 
-        internal static IEnumerable<Cell> GetCellsByName(IEnumerable<Cell> cells, IEnumerable<string> columns, bool not = false)
+        internal static IEnumerable<Cell> GetCellsByName(IEnumerable<Cell> cells, string[] columns, bool not = false)
         {
             if (not)
                 return cells.Where(c => !columns.ContainsIgnoreCase(c.Name));
@@ -55,10 +55,8 @@ namespace SharpOrm
 
         internal static bool ContainsIgnoreCase(this IEnumerable<string> values, string toCompare)
         {
-            toCompare = toCompare.ToLower();
-
             foreach (var value in values)
-                if (value.ToLower() == toCompare)
+                if (value.Equals(toCompare, StringComparison.CurrentCultureIgnoreCase))
                     return true;
 
             return false;

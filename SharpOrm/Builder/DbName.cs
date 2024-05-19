@@ -29,15 +29,24 @@ namespace SharpOrm.Builder
         {
             if (validateChars)
             {
-                if (!IsValid(name, '.', '_', '#'))
-                    throw new InvalidOperationException("The name contains one or more invalid characters.");
-
-                if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
-                    throw new InvalidOperationException("The alias contains one or more invalid characters.");
+                ValidateName(name);
+                ValidateAlias(alias);
             }
 
             this.Name = name;
             this.Alias = alias;
+        }
+
+        public static void ValidateName(string name)
+        {
+            if (!IsValid(name, '.', '_', '#'))
+                throw new InvalidOperationException("The name contains one or more invalid characters.");
+        }
+
+        public static void ValidateAlias(string alias)
+        {
+            if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
+                throw new InvalidOperationException("The alias contains one or more invalid characters.");
         }
 
         public static DbName Of<T>(string alias)
@@ -87,7 +96,7 @@ namespace SharpOrm.Builder
             if (!withAlias || string.IsNullOrEmpty(this.Alias))
                 return config.ApplyNomenclature(this.Name);
 
-            return string.Format("{0} {1}", config.ApplyNomenclature(this.Name), config.ApplyNomenclature(this.Alias));
+            return string.Concat(config.ApplyNomenclature(this.Name), " ", config.ApplyNomenclature(this.Alias));
         }
 
         private static string GetAlias(string[] split)

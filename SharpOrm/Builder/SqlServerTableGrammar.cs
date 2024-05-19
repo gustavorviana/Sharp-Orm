@@ -119,7 +119,7 @@ namespace SharpOrm.Builder
 
             this.WriteColumns(query, this.BasedTable.Select);
 
-            query.AddFormat(" INTO [").Add(this.Name).Add("]");
+            query.Add(" INTO [").Add(this.Name).Add("]");
 
             var qGrammar = new SqlServerGrammar(this.Schema.BasedQuery);
             query.Add(qGrammar.GetSelectFrom());

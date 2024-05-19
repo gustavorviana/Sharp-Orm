@@ -29,22 +29,35 @@ namespace SharpOrm.Builder
         /// </summary>
         public ReadOnlyCollection<object> Parameters { get; }
 
+        /// <summary>
+        /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryBase"/>.
+        /// </summary>
+        /// <param name="query"></param>
         public QueryBuilder(QueryBase query) : this(query.Info)
         {
 
         }
 
+        /// <summary>
+        /// Create an instance of <see cref="QueryBuilder"/> using a <see cref="QueryConfig"/> and a <see cref="DbName"/>.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="table"></param>
         public QueryBuilder(QueryConfig config, DbName table) : this(new ReadonlyQueryInfo(config, table))
         {
 
         }
 
+        /// <summary>
+        /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryInfo"/>.
+        /// </summary>
+        /// <param name="info"></param>
         public QueryBuilder(QueryInfo info) : this(info.ToReadOnly())
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="QueryBuilder"/> class.
+        /// Create an instance of <see cref="QueryBuilder"/> using <see cref="IReadonlyQueryInfo"/>.
         /// </summary>
         /// <param name="info">The query information.</param>
         public QueryBuilder(IReadonlyQueryInfo info)
@@ -161,18 +174,22 @@ namespace SharpOrm.Builder
             if (ToQueryValue(val) is string sql)
                 return this.Add(sql);
 
-            if (this.info.Config.EscapeStrings && val is string strVal)
+            if (this.info?.Config?.EscapeStrings == true && val is string strVal)
                 return this.Add(this.info.Config.EscapeString(strVal));
 
             if (!(val is byte[]) && val is ICollection)
                 throw new NotSupportedException();
+
+            if (val is System.IO.MemoryStream ms)
+                return this.InternalAddParam(ms.ToArray());
 
             return this.InternalAddParam(val);
         }
 
         protected virtual QueryBuilder InternalAddParam(object value)
         {
-            return this.Add("?").AddParameters(value);
+            this.parameters.Add(value);
+            return this.Add("?");
         }
 
         /// <summary>
