@@ -24,7 +24,7 @@ namespace SharpOrm.Builder
 
         public abstract SqlExpression Create();
 
-        protected void WriteColumns(QueryConstructor query, Column[] columns)
+        protected void WriteColumns(QueryBuilder query, Column[] columns)
         {
             if (columns.Length == 0)
             {
@@ -50,7 +50,7 @@ namespace SharpOrm.Builder
                 .FirstOrDefault(x => x.CanWork(column.DataType));
         }
 
-        protected void WritePk(QueryConstructor query)
+        protected void WritePk(QueryBuilder query)
         {
             var pks = this.GetPrimaryKeys();
             if (pks.Length != 0)
@@ -62,7 +62,7 @@ namespace SharpOrm.Builder
             return this.Schema.Columns.PrimaryKeys;
         }
 
-        protected void WriteUnique(QueryConstructor query)
+        protected void WriteUnique(QueryBuilder query)
         {
             var uniques = this.GetUniqueKeys();
             if (uniques.Length != 0)
@@ -74,9 +74,9 @@ namespace SharpOrm.Builder
             return this.Schema.Columns.Where(x => x.Unique).ToArray();
         }
 
-        protected QueryConstructor GetConstructor()
+        protected QueryBuilder GetBuilder()
         {
-            return new QueryConstructor(queryInfo);
+            return new QueryBuilder(queryInfo);
         }
 
         protected string ApplyNomenclature(string name)

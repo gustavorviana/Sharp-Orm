@@ -254,22 +254,22 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Creates a QueryConstructor for constructing custom queries.
+        /// Creates a QueryBuilder for constructing custom queries.
         /// </summary>
         /// <param name="table">The name of the database table (optional).</param>
         /// <param name="alias">An alias for the table (optional).</param>
-        /// <returns>A QueryConstructor for building custom queries.</returns>
-        protected virtual QueryConstructor Constructor(string table = "", string alias = "")
+        /// <returns>A QueryBuilder for building custom queries.</returns>
+        protected virtual QueryBuilder Constructor(string table = "", string alias = "")
         {
-            return new QueryConstructor(this.Creator.Config, new DbName(table, alias));
+            return new QueryBuilder(this.Creator.Config, new DbName(table, alias));
         }
 
         /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
-        /// <param name="query">The QueryConstructor used to create the command.</param>
+        /// <param name="query">The QueryBuilder used to create the command.</param>
         /// <returns></returns>
-        protected int ExecuteNonQuery(QueryConstructor query)
+        protected int ExecuteNonQuery(QueryBuilder query)
         {
             using (var cmd = this.CreateCommand(query))
                 return cmd.ExecuteNonQuery();
@@ -319,11 +319,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Creates a DbCommand from a QueryConstructor.
+        /// Creates a DbCommand from a QueryBuilder.
         /// </summary>
-        /// <param name="query">The QueryConstructor used to create the command.</param>
-        /// <returns>A DbCommand created from the QueryConstructor.</returns>
-        protected DbCommand CreateCommand(QueryConstructor query)
+        /// <param name="query">The QueryBuilder used to create the command.</param>
+        /// <returns>A DbCommand created from the QueryBuilder.</returns>
+        protected DbCommand CreateCommand(QueryBuilder query)
         {
             return this.CreateCommand(query.ToString(), query.Parameters);
         }

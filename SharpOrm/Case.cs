@@ -113,7 +113,7 @@ namespace SharpOrm
             if (this.nodes.Count == 0)
                 throw new InvalidOperationException(Messages.CannotUseEmptyCase);
 
-            var query = new QueryConstructor(info);
+            var query = new QueryBuilder(info);
             this.WriteCase(query, info);
 
             foreach (var node in this.nodes)
@@ -130,7 +130,7 @@ namespace SharpOrm
             return query.ToExpression(info);
         }
 
-        private QueryConstructor WriteCase(QueryConstructor query, IReadonlyQueryInfo info)
+        private QueryBuilder WriteCase(QueryBuilder query, IReadonlyQueryInfo info)
         {
             query.Add("CASE");
 
@@ -150,7 +150,7 @@ namespace SharpOrm
 
             public object Then;
 
-            public QueryConstructor WriteTo(QueryConstructor query, IReadonlyQueryInfo info)
+            public QueryBuilder WriteTo(QueryBuilder query, IReadonlyQueryInfo info)
             {
                 query.Add("WHEN ");
 

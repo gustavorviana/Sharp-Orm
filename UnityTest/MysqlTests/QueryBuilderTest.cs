@@ -7,7 +7,7 @@ using UnityTest.Utils;
 namespace UnityTest.MysqlTests
 {
     [TestClass]
-    public class QueryConstructorTest : BaseTest
+    public class QueryBuilderTest : BaseTest
     {
         private static readonly QueryInfo info = new(new MysqlQueryConfig(), new("Example"));
 
@@ -53,16 +53,16 @@ namespace UnityTest.MysqlTests
             AssertQuery(GetQuery().Add(new SqlExpression("Col IN (?,?,?,?,?,?,?)", 1, "2", true, false, 1.1, now, time)), "Col IN (1,?,1,0,1.1,?,?)", "2", now, time);
         }
 
-        private static void AssertQuery(QueryConstructor actual, string expectedSql, params object[] expectedArgs)
+        private static void AssertQuery(QueryBuilder actual, string expectedSql, params object[] expectedArgs)
         {
             var exp = actual.ToExpression(null);
             Assert.AreEqual(expectedSql, exp.ToString());
             CollectionAssert.AreEqual(exp.Parameters, expectedArgs);
         }
 
-        private static QueryConstructor GetQuery()
+        private static QueryBuilder GetQuery()
         {
-            return new QueryConstructor(info);
+            return new QueryBuilder(info);
         }
     }
 }

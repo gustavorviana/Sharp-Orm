@@ -7,8 +7,8 @@ namespace SharpOrm.Builder
     {
         private IReadonlyQueryInfo _queryInfo;
 
-        public QueryConstructor Where { get; }
-        public QueryConstructor Having { get; }
+        public QueryBuilder Where { get; }
+        public QueryBuilder Having { get; }
 
         public Column[] GroupsBy { get; set; } = new Column[0];
         public List<JoinQuery> Joins { get; } = new List<JoinQuery>();
@@ -30,8 +30,8 @@ namespace SharpOrm.Builder
             this._queryInfo = new ReadonlyQueryInfo(config, table);
             this.TableName = table;
 
-            this.Where = new QueryConstructor(this.ToReadOnly());
-            this.Having = new QueryConstructor(this.ToReadOnly());
+            this.Where = new QueryBuilder(this.ToReadOnly());
+            this.Having = new QueryBuilder(this.ToReadOnly());
         }
 
         internal void LoadFrom(QueryInfo info)

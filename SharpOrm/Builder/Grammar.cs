@@ -12,14 +12,14 @@ namespace SharpOrm.Builder
         #region Fields\Properties
         public static Action<string> QueryLogger { get; set; }
 
-        protected QueryConstructor Constructor { get; }
+        protected QueryBuilder builder { get; }
         protected Query Query { get; }
         public QueryInfo Info => this.Query.Info;
         #endregion
 
         protected Grammar(Query query)
         {
-            this.Constructor = new QueryConstructor(query);
+            this.builder = new QueryBuilder(query);
             this.Query = query;
         }
 
@@ -74,16 +74,16 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public string SelectSqlOnly()
         {
-            this.Constructor.Clear();
+            this.builder.Clear();
             this.ConfigureSelect(false);
-            return this.Constructor.ToString();
+            return this.builder.ToString();
         }
 
         public SqlExpression GetSelectExpression()
         {
-            this.Constructor.Clear();
+            this.builder.Clear();
             this.ConfigureSelect(false);
-            return this.Constructor.ToExpression();
+            return this.builder.ToExpression();
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace SharpOrm.Builder
             if (!this.CanApplyDeleteJoins())
                 return;
 
-            this.Constructor
+            this.builder
                 .Add(' ')
                 .Add(this.TryGetTableAlias(this.Query));
 
@@ -189,7 +189,7 @@ namespace SharpOrm.Builder
                 return;
 
             foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
-                this.Constructor.Add(", ").Add(this.TryGetTableAlias(join));
+                this.builder.Add(", ").Add(this.TryGetTableAlias(join));
         }
 
         protected virtual bool CanApplyDeleteJoins()
@@ -219,13 +219,13 @@ namespace SharpOrm.Builder
                 return;
 
             if (!writeOrderByFlag)
-                this.Constructor.Add(" ORDER BY ");
+                this.builder.Add(" ORDER BY ");
 
             WriteOrderBy(en.Current);
 
             while (en.MoveNext())
             {
-                this.Constructor.Add(", ");
+                this.builder.Add(", ");
                 this.WriteOrderBy(en.Current);
             }
         }
@@ -236,19 +236,19 @@ namespace SharpOrm.Builder
                 return;
 
             this.WriteColumn(order.Column);
-            this.Constructor.Add(' ');
-            this.Constructor.Add(order.Order);
+            this.builder.Add(' ');
+            this.builder.Add(order.Order);
         }
 
         protected void WriteColumn(Column column)
         {
-            this.Constructor.Add(column.ToExpression(this.Info.ToReadOnly()));
+            this.builder.Add(column.ToExpression(this.Info.ToReadOnly()));
         }
 
         protected void WriteUpdateCell(Cell cell)
         {
-            this.Constructor.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
-            this.Constructor.AddParameter(cell.Value);
+            this.builder.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
+            this.builder.AddParameter(cell.Value);
         }
 
         #endregion
@@ -275,10 +275,10 @@ namespace SharpOrm.Builder
 
         private SqlExpression BuildExpression(Action builderAction)
         {
-            this.Constructor.Clear();
+            this.builder.Clear();
             builderAction();
 
-            return this.Constructor.ToExpression();
+            return this.builder.ToExpression();
         }
 
         protected virtual void WriteSelectColumns()
@@ -288,7 +288,7 @@ namespace SharpOrm.Builder
 
         protected void WriteSelect(Column column)
         {
-            this.Constructor.AddExpression(column, true);
+            this.builder.AddExpression(column, true);
         }
 
         protected void AppendCells(IEnumerable<Cell> values)
@@ -306,10 +306,10 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     return;
 
-                this.Constructor.AddParameter(call(en.Current));
+                this.builder.AddParameter(call(en.Current));
 
                 while (en.MoveNext())
-                    this.Constructor.Add(", ").AddParameter(call(en.Current));
+                    this.builder.Add(", ").AddParameter(call(en.Current));
             }
         }
 
@@ -318,17 +318,17 @@ namespace SharpOrm.Builder
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.Constructor.Add(" GROUP BY ");
+            this.builder.Add(" GROUP BY ");
             AddParams(this.Info.GroupsBy);
             if (this.Info.Having.Empty)
                 return;
 
-            this.Constructor
+            this.builder
                 .Add(" HAVING ")
                 .AddAndReplace(
                     Info.Having.ToString(),
                     '?',
-                    (count) => this.Constructor.AddParameter(Info.Having.Parameters[count - 1])
+                    (count) => this.builder.AddParameter(Info.Having.Parameters[count - 1])
                 );
         }
 

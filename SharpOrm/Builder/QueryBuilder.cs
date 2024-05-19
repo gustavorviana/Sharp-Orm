@@ -12,7 +12,7 @@ namespace SharpOrm.Builder
     /// <summary>
     /// A class for building SQL queries with parameters.
     /// </summary>
-    public class QueryConstructor : IDisposable, ISqlExpressible
+    public class QueryBuilder : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         internal readonly StringBuilder query = new StringBuilder();
@@ -29,50 +29,50 @@ namespace SharpOrm.Builder
         /// </summary>
         public ReadOnlyCollection<object> Parameters { get; }
 
-        public QueryConstructor(QueryBase query) : this(query.Info)
+        public QueryBuilder(QueryBase query) : this(query.Info)
         {
 
         }
 
-        public QueryConstructor(QueryConfig config, DbName table) : this(new ReadonlyQueryInfo(config, table))
+        public QueryBuilder(QueryConfig config, DbName table) : this(new ReadonlyQueryInfo(config, table))
         {
 
         }
 
-        public QueryConstructor(QueryInfo info) : this(info.ToReadOnly())
+        public QueryBuilder(QueryInfo info) : this(info.ToReadOnly())
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="QueryConstructor"/> class.
+        /// Initializes a new instance of the <see cref="QueryBuilder"/> class.
         /// </summary>
         /// <param name="info">The query information.</param>
-        public QueryConstructor(IReadonlyQueryInfo info)
+        public QueryBuilder(IReadonlyQueryInfo info)
         {
             this.info = info;
             this.Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
         /// <summary>
-        /// Adds a <see cref="QueryConstructor"/> to this instance.
+        /// Adds a <see cref="QueryBuilder"/> to this instance.
         /// </summary>
-        /// <param name="constructor">The <see cref="QueryConstructor"/> to add.</param>
-        public QueryConstructor Add(QueryConstructor constructor)
+        /// <param name="builder">The <see cref="QueryBuilder"/> to add.</param>
+        public QueryBuilder Add(QueryBuilder builder)
         {
-            if (constructor == null)
-                throw new ArgumentNullException(nameof(constructor));
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
 
-            if (this.Equals(constructor))
+            if (this.Equals(builder))
                 throw new InvalidOperationException("The same instance cannot be passed as a parameter.");
 
-            return this.Add(constructor.query.ToString()).AddParameters(constructor.Parameters);
+            return this.Add(builder.query.ToString()).AddParameters(builder.Parameters);
         }
 
         /// <summary>
         /// Adds an <see cref="SqlExpression"/> to the query.
         /// </summary>
         /// <param name="expression">The <see cref="SqlExpression"/> to add.</param>
-        public QueryConstructor Add(SqlExpression expression)
+        public QueryBuilder Add(SqlExpression expression)
         {
             return this.Add(expression, false);
         }
@@ -82,7 +82,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">The <see cref="SqlExpression"/> to add
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
-        public QueryConstructor Add(SqlExpression expression, bool allowAlias)
+        public QueryBuilder Add(SqlExpression expression, bool allowAlias)
         {
             return this.Add(expression.ToString(), allowAlias, expression.Parameters);
         }
@@ -92,7 +92,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The SQL query to be added.</param>
         /// <param name="parameters">The parameters to be replaced in the query.</param>
-        public QueryConstructor Add(string query, params object[] parameters)
+        public QueryBuilder Add(string query, params object[] parameters)
         {
             return this.Add(query, false, parameters);
         }
@@ -104,7 +104,7 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
-        public QueryConstructor Add(string query, bool allowAlias, params object[] parameters)
+        public QueryBuilder Add(string query, bool allowAlias, params object[] parameters)
         {
             if (query.Count(c => c == '?') != parameters.Length)
                 throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
@@ -125,7 +125,7 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
-        public QueryConstructor AddAndReplace(string query, char toReplace, Func<int, string> func)
+        public QueryBuilder AddAndReplace(string query, char toReplace, Func<int, string> func)
         {
             this.query.AppendReplaced(query, toReplace, func);
             return this;
@@ -138,7 +138,7 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
-        public QueryConstructor AddAndReplace(string query, char toReplace, Action<int> call)
+        public QueryBuilder AddAndReplace(string query, char toReplace, Action<int> call)
         {
             this.query.AppendAndReplace(query, toReplace, call);
             return this;
@@ -149,7 +149,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="val">The value of the parameter to be added.</param>
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        public QueryConstructor AddParameter(object val, bool allowAlias = true)
+        public QueryBuilder AddParameter(object val, bool allowAlias = true)
         {
             if (val is SqlExpression exp)
                 return this.Add(exp, allowAlias);
@@ -170,7 +170,7 @@ namespace SharpOrm.Builder
             return this.InternalAddParam(val);
         }
 
-        protected virtual QueryConstructor InternalAddParam(object value)
+        protected virtual QueryBuilder InternalAddParam(object value)
         {
             return this.Add("?").AddParameters(value);
         }
@@ -179,7 +179,7 @@ namespace SharpOrm.Builder
         /// Adds a SQL query or raw value to the instance.
         /// </summary>
         /// <param name="rawQuery">The SQL query or raw value to be added.</param>
-        public QueryConstructor Add(object rawQuery)
+        public QueryBuilder Add(object rawQuery)
         {
             if (ToQueryValue(rawQuery) is string strQuery)
                 return this.Add(strQuery);
@@ -192,7 +192,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">The values to add.</param>
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
-        public QueryConstructor AddExpression(ISqlExpressible expression, bool allowAlias = true)
+        public QueryBuilder AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {
             return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
         }
@@ -220,8 +220,8 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="format">A composite format string.</param>
         /// <param name="args">An array of objects to be formatted and inserted into the string.</param>
-        /// <returns>The current instance of QueryConstructor with the formatted text added.</returns>
-        public QueryConstructor AddFormat(string format, params object[] args)
+        /// <returns>The current instance of QueryBuilder with the formatted text added.</returns>
+        public QueryBuilder AddFormat(string format, params object[] args)
         {
             this.query.AppendFormat(format, args);
             return this;
@@ -231,8 +231,8 @@ namespace SharpOrm.Builder
         /// Adds a character or raw text to the query.
         /// </summary>
         /// <param name="raw">The character or raw text to be added to the query.</param>
-        /// <returns>The current instance of QueryConstructor with the character or raw text added.</returns>
-        public QueryConstructor Add(char raw = ' ')
+        /// <returns>The current instance of QueryBuilder with the character or raw text added.</returns>
+        public QueryBuilder Add(char raw = ' ')
         {
             this.query.Append(raw);
             return this;
@@ -242,7 +242,7 @@ namespace SharpOrm.Builder
         /// Adds raw text to the query.
         /// </summary>
         /// <param name="raw">The raw text to be added to the query.</param>
-        public QueryConstructor Add(string raw)
+        public QueryBuilder Add(string raw)
         {
             this.query.Append(raw);
             return this;
@@ -252,7 +252,7 @@ namespace SharpOrm.Builder
         /// Adds multiple raw strings to the query, joining them with a space separator.
         /// </summary>
         /// <param name="raws">An array of raw strings to be added to the query.</param>
-        public QueryConstructor AddRaws(params string[] raws)
+        public QueryBuilder AddRaws(params string[] raws)
         {
             this.query.Capacity += raws.Sum(txt => txt.Length) + raws.Length;
             return this.AddJoin(" ", raws);
@@ -264,7 +264,7 @@ namespace SharpOrm.Builder
         /// <typeparam name="T">The type of values to be joined.</typeparam>
         /// <param name="separator">The separator used to join the values.</param>
         /// <param name="values">An enumerable collection of values to be joined and added to the query.</param>
-        public QueryConstructor AddJoin<T>(string separator, IEnumerable<T> values)
+        public QueryBuilder AddJoin<T>(string separator, IEnumerable<T> values)
         {
             BuilderExt.AppendJoin(this.query, separator, values);
             return this;
@@ -274,7 +274,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Adds multiple values to the query, joining them with a specified separator.
         /// </summary>
-        public QueryConstructor AddJoin<T>(Action<T> callback, string separator, IEnumerator<T> en)
+        public QueryBuilder AddJoin<T>(Action<T> callback, string separator, IEnumerator<T> en)
         {
             this.query.AppendJoin(callback, separator, en);
             return this;
@@ -284,7 +284,7 @@ namespace SharpOrm.Builder
         /// Adds parameters to the query.
         /// </summary>
         /// <param name="parameters">The parameters to add.</param>
-        public QueryConstructor AddParameters(params object[] parameters)
+        public QueryBuilder AddParameters(params object[] parameters)
         {
             return AddParameters((IEnumerable<object>)parameters);
         }
@@ -293,7 +293,7 @@ namespace SharpOrm.Builder
         /// Adds parameters to the query.
         /// </summary>
         /// <param name="parameters">The parameters to add.</param>
-        public QueryConstructor AddParameters(IEnumerable<object> parameters)
+        public QueryBuilder AddParameters(IEnumerable<object> parameters)
         {
             if (parameters == null)
                 throw new ArgumentNullException(nameof(parameters));
@@ -308,7 +308,7 @@ namespace SharpOrm.Builder
         /// <param name="enumerable">The enumerable collection to be converted and added as a SQL value list.</param>
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         /// <exception cref="InvalidOperationException">Thrown when the enumerable collection is empty.</exception>
-        public QueryConstructor WriteEnumerableAsValue(IEnumerable enumerable, bool allowAlias)
+        public QueryBuilder WriteEnumerableAsValue(IEnumerable enumerable, bool allowAlias)
         {
             var @enum = enumerable.GetEnumerator();
             if (!@enum.MoveNext())
@@ -326,7 +326,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Adds a line break to the query.
         /// </summary>
-        public QueryConstructor NewLine()
+        public QueryBuilder NewLine()
         {
             this.query.AppendLine();
             return this;
@@ -335,7 +335,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Clears the query.
         /// </summary>
-        public virtual QueryConstructor Clear()
+        public virtual QueryBuilder Clear()
         {
             this.query.Clear();
             this.parameters.Clear();
@@ -370,7 +370,7 @@ namespace SharpOrm.Builder
         }
 
         #region IDisposable
-        ~QueryConstructor()
+        ~QueryBuilder()
         {
             ((IDisposable)this).Dispose();
         }

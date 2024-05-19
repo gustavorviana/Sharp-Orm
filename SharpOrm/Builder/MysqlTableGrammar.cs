@@ -43,14 +43,14 @@ namespace SharpOrm.Builder
 
         private SqlExpression CreateBased()
         {
-            QueryConstructor query = this.GetCreateTableQuery();
+            QueryBuilder query = this.GetCreateTableQuery();
             query.Add(new MysqlGrammar(this.Schema.BasedQuery).Select());
             return query.ToExpression();
         }
 
-        private QueryConstructor GetCreateTableQuery()
+        private QueryBuilder GetCreateTableQuery()
         {
-            QueryConstructor query = this.GetConstructor();
+            QueryBuilder query = this.GetBuilder();
             query.Add("CREATE ");
 
             if (this.Schema.Temporary)
@@ -63,7 +63,7 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Drop()
         {
-            var query = this.GetConstructor();
+            var query = this.GetBuilder();
             query.Add("DROP ");
 
             if (this.Schema.Temporary)

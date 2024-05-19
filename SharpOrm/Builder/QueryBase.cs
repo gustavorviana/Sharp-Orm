@@ -417,7 +417,7 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        private QueryConstructor WriteBetweenArgument(object arg)
+        private QueryBuilder WriteBetweenArgument(object arg)
         {
             if (arg == null)
                 throw new ArgumentNullException(nameof(arg));
@@ -475,7 +475,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="column"></param>
         /// <returns></returns>
-        protected QueryConstructor ParseColumn(object column)
+        protected QueryBuilder ParseColumn(object column)
         {
             if (column is string strColumn)
                 return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
@@ -494,7 +494,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected QueryConstructor WriteValue(object value)
+        protected QueryBuilder WriteValue(object value)
         {
             if (value is ICollection collection)
                 return this.Info.Where.WriteEnumerableAsValue(collection, true);
@@ -505,12 +505,12 @@ namespace SharpOrm.Builder
             return this.Info.Where.AddParameter(value);
         }
 
-        private QueryConstructor WriteQuery(Query query)
+        private QueryBuilder WriteQuery(Query query)
         {
             return this.Info.Where.Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
         }
 
-        internal QueryConstructor WriteWhereType(string type)
+        internal QueryBuilder WriteWhereType(string type)
         {
             if (!this.Info.Where.Empty)
                 this.Info.Where.Add(' ').Add(type).Add(' ');

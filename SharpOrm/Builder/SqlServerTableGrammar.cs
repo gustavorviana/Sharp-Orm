@@ -27,7 +27,7 @@ namespace SharpOrm.Builder
             if (this.Schema.BasedQuery != null)
                 return this.CreateBased();
 
-            var query = this.GetConstructor()
+            var query = this.GetBuilder()
                 .AddFormat("CREATE TABLE [{0}] (", this.Name.Name)
                 .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
 
@@ -111,7 +111,7 @@ namespace SharpOrm.Builder
 
         private SqlExpression CreateBased()
         {
-            QueryConstructor query = this.GetConstructor();
+            QueryBuilder query = this.GetBuilder();
             query.Add("SELECT ");
 
             if (this.Schema.BasedQuery.Limit is int limit && this.Schema.BasedQuery.Offset is null)
@@ -137,7 +137,7 @@ namespace SharpOrm.Builder
             if (this.Schema.Temporary)
                 return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", this.Name.Name);
 
-            var query = this.GetConstructor();
+            var query = this.GetBuilder();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");
 
             if (!string.IsNullOrEmpty(this.Schema.SchemaName))
