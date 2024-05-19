@@ -118,10 +118,11 @@ namespace SharpOrm.Connection
         /// <exception cref="ArgumentNullException"></exception>
         public ConnectionManager(QueryConfig config, DbConnection connection)
         {
+            this.Config = config ?? throw new ArgumentNullException(nameof(config));
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+
             this.Connection.Disposed += DisposeByConnection;
             this.CommandTimeout = config.CommandTimeout;
-            this.Config = config;
         }
 
         private void DisposeByConnection(object sender, EventArgs e)
@@ -141,6 +142,15 @@ namespace SharpOrm.Connection
         public void CloseByEndOperation()
         {
             if (this.Management == ConnectionManagement.CloseOnEndOperation && this.CanClose)
+                this.Connection.Close();
+        }
+
+        /// <summary>
+        /// Attempt to close the connection using the reason "The child is releasing its resources.".
+        /// </summary>
+        public void CloseByDisposeChild()
+        {
+            if (this.Management == ConnectionManagement.CloseOnDispose && this.CanClose)
                 this.Connection.Close();
         }
 

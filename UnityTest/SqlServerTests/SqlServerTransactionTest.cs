@@ -11,16 +11,14 @@ namespace UnityTest.SqlServerTests
     public class SqlServerTransactionTest : SqlServerTest
     {
         [TestMethod]
-        [Obsolete]
         public void Select()
         {
             ConnectionCreator.Default = this.Creator;
             this.ClearTable(TABLE);
             try
             {
-                ConnectionCreator.ExecuteTransaction((transaction) =>
+                ConnectionManager.ExecuteTransaction((manager) =>
                 {
-                    var manager = new ConnectionManager(Config, transaction);
                     using var q = new Query(TABLE, manager);
                     q.Insert(NewRow(1, "User 1").Cells);
 

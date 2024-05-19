@@ -28,64 +28,6 @@ namespace SharpOrm
 
         #region Query
 
-        #region Obsolete
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 2.1.")]
-        public Query(ConnectionCreator creator, string alias) : base(creator, new DbName(TableName, alias))
-        {
-            TableInfo = new TableInfo(typeof(T));
-            this.ApplyValidations();
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 2.1.")]
-        public Query(ConnectionCreator creator, DbName table) : base(creator, table)
-        {
-            TableInfo = new TableInfo(typeof(T));
-            this.ApplyValidations();
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, string alias = "") : this(connection, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, string alias = "") : this(transaction, ConnectionCreator.Default?.Config, new DbName(TableName, alias))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, QueryConfig config, string alias = "") : this(connection, config, new DbName(TableName, alias))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, QueryConfig config, string alias = "") : this(transaction, config, new DbName(TableName, alias))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, QueryConfig config, DbName name) : base(connection, config, name)
-        {
-            TableInfo = new TableInfo(typeof(T), config.Translation);
-            this.ApplyValidations();
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, QueryConfig config, DbName name) : base(transaction, config, name)
-        {
-            TableInfo = new TableInfo(typeof(T), config.Translation);
-            this.ApplyValidations();
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, QueryConfig, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(connection, config, table, management)
-        {
-            TableInfo = new TableInfo(typeof(T), config.Translation);
-            this.ApplyValidations();
-        }
-        #endregion
-
         /// <summary>
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
@@ -456,10 +398,6 @@ namespace SharpOrm
         /// Connection manager of the query.
         /// </summary>
         public ConnectionManager Manager { get; }
-        [Obsolete("This function is deprecated, use Manager.Connection. It will be removed in version 2.1.")]
-        public DbConnection Connection => this.Manager.Connection;
-        [Obsolete("This function is deprecated, use Manager.Transaction. It will be removed in version 2.1.")]
-        public DbTransaction Transaction => this.Manager.Transaction;
 
         /// <summary>
         /// Cancellation token for the commands to be executed in this query.
@@ -478,73 +416,6 @@ namespace SharpOrm
         #endregion
 
         #region Query
-
-        #region Obsoletes
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionCreator). It will be removed in version 2.1.")]
-        public Query(ConnectionCreator creator, string table) : this(new DbName(table), new ConnectionManager(creator))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionCreator). It will be removed in version 2.1.")]
-        public Query(ConnectionCreator creator, DbName table) : this(table, new ConnectionManager(creator))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(QueryConfig config, string table) : this(ConnectionCreator.Default?.GetConnection(), config, new DbName(table))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(QueryConfig config, DbName table) : this(ConnectionCreator.Default?.GetConnection(), config, table)
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, string table) : this(connection, ConnectionCreator.Default.Config, new DbName(table))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, string table) : this(transaction, ConnectionCreator.Default.Config, new DbName(table))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, ConnectionCreator.Default.Config, table, management)
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, DbName table) : this(transaction, ConnectionCreator.Default.Config, table)
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, QueryConfig config, string table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : this(connection, config, new DbName(table), management)
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbConnection connection, QueryConfig config, DbName table, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation) : base(config, table)
-        {
-            if (connection == null)
-                return;
-
-            this.Manager = new ConnectionManager(config, connection) { Management = management };
-            this.CommandTimeout = config.CommandTimeout;
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(string, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, QueryConfig config, string table) : this(transaction, config, new DbName(table))
-        {
-        }
-
-        [Obsolete("This constructor is deprecated, use Query(DbName, ConnectionManager). It will be removed in version 2.1.")]
-        public Query(DbTransaction transaction, QueryConfig config, DbName name) : this(name, new ConnectionManager(config, transaction))
-        {
-        }
-        #endregion
 
         public static Query ReadOnly(string table, QueryConfig config = null)
         {
@@ -828,15 +699,6 @@ namespace SharpOrm
         #endregion
 
         #region DML SQL commands
-
-        [Obsolete("This function is deprecated. It will be removed in version 2.1.", true)]
-        public int Update(Dictionary<string, object> cells)
-        {
-            if (!cells.Any())
-                throw new InvalidOperationException(Messages.NoColumnsInserted);
-
-            return this.Update(cells.Select(x => new Cell(x.Key, x.Value)));
-        }
 
         /// <summary>
         /// Update rows on table.
@@ -1182,7 +1044,7 @@ namespace SharpOrm
             if (disposing && this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            this.Manager?.Dispose();
+            this.Manager?.CloseByDisposeChild();
             this.lastOpenReader = null;
         }
 

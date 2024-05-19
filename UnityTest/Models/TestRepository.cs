@@ -19,9 +19,7 @@ namespace UnityTest.Models
 
         public DbConnection GetConnection()
         {
-#pragma warning disable CS0618 // O tipo ou membro é obsoleto
-            return base.GetConnection();
-#pragma warning restore CS0618 // O tipo ou membro é obsoleto
+            return this.GetManager()?.Connection;
         }
 
         public Query GetQuery()

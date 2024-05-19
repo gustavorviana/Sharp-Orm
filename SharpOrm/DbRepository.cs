@@ -48,12 +48,6 @@ namespace SharpOrm
         public CancellationToken Token { get; set; }
         #endregion
 
-        [Obsolete("This function is deprecated. It will be removed in version 2.1.")]
-        protected DbRepository() : this(false)
-        {
-
-        }
-
         public DbRepository(bool useSingleConnection)
         {
             this.useSingleConnection = useSingleConnection;
@@ -379,24 +373,6 @@ namespace SharpOrm
 
             if (cmd.Transaction is null)
                 try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
-        }
-
-        /// <summary>
-        /// Retrieves a database connection, optionally creating a new one if required.
-        /// </summary>
-        /// <param name="ignoreTransaction">
-        ///     A flag indicating whether to force the creation of a new connection.
-        ///     If set to true, a new connection will be created even if there is an active transaction.
-        ///     If set to false, the connection from the active transaction, if present, will be returned.
-        /// </param>
-        /// <returns>
-        ///     A DbConnection object, either a newly created connection or the one from the active transaction,
-        ///     based on the value of the 'ignoreTransaction' parameter.
-        /// </returns>
-        [Obsolete("This function is deprecated. It will be removed in version 2.1.")]
-        protected virtual DbConnection GetConnection(bool ignoreTransaction = false)
-        {
-            return this.GetManager(!ignoreTransaction).Connection;
         }
 
         /// <summary>

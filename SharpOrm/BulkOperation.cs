@@ -2,6 +2,7 @@
 using SharpOrm.Connection;
 using System;
 using System.Linq;
+using System.Threading;
 
 namespace SharpOrm
 {
@@ -15,13 +16,15 @@ namespace SharpOrm
         private readonly string targetTable;
         private QueryConfig Config => this.table.Manager.Config;
         private readonly string[] tempColumns;
+        private readonly CancellationToken token;
         #endregion
 
-        public BulkOperation(ConnectionManager manager, string targetTable, Row[] tempValues, int lotInsert = 100)
+        public BulkOperation(Query target, Row[] tempValues, int lotInsert = 100)
         {
-            this.targetTable = targetTable;
+            this.token = target.Token;
             this.tempColumns = tempValues[0].ColumnNames;
-            table = DbTable.Create(this.GetSchema(manager), manager);
+            this.targetTable = target.Info.TableName.Name;
+            table = DbTable.Create(this.GetSchema(target.Manager), target.Manager);
             this.InsertTempValues(tempValues, lotInsert);
         }
 
@@ -39,7 +42,10 @@ namespace SharpOrm
         private void InsertTempValues(Row[] tempValues, int lotInsert)
         {
             using (var q = this.table.GetQuery())
+            {
+                q.Token = token;
                 q.InsertLot(tempValues, lotInsert);
+            }
         }
 
         public int Delete()
@@ -59,7 +65,7 @@ namespace SharpOrm
 
         private Query GetQuery(string[] comparationColumns)
         {
-            return ApplyJoin(new Query(string.Concat(this.targetTable, " ", TargetAlias), this.table.Manager), comparationColumns);
+            return ApplyJoin(new Query(string.Concat(this.targetTable, " ", TargetAlias), this.table.Manager) { Token = token }, comparationColumns);
         }
 
         private Query ApplyJoin(Query query, string[] columns)

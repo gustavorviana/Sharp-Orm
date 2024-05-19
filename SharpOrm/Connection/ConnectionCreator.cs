@@ -32,48 +32,6 @@ namespace SharpOrm.Connection
         /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
 
-        #region Transaction
-
-        /// <summary>
-        /// Executes a database transaction.
-        /// </summary>
-        [Obsolete("This function is deprecated, use SharpOrm.Connection.ExecuteTransaction(SharpOrm.Connection.TransactionCall). It will be removed in version 2.1.")]
-        public static void ExecuteTransaction(SharpOrm.TransactionCall call)
-        {
-            DbConnection connection = Default.GetConnection();
-            connection.OpenIfNeeded();
-            var transaction = connection.BeginTransaction();
-
-            try
-            {
-                call(transaction);
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-            finally
-            {
-                transaction.Dispose();
-                connection.Close();
-                Default.SafeDisposeConnection(connection);
-            }
-        }
-
-        /// <summary>
-        /// Executes a database transaction and returns a value.
-        /// </summary>
-        [Obsolete("This function is deprecated, use SharpOrm.Connection.ExecuteTransaction<T>(SharpOrm.Connection.TransactionCall<T>). It will be removed in version 2.1.")]
-        public static T ExecuteTransaction<T>(SharpOrm.TransactionCall<T> func)
-        {
-            T value = default;
-            ExecuteTransaction((transaction) => value = func(transaction));
-            return value;
-        }
-        #endregion
-
         #region IDisposable
 
         /// <summary>
