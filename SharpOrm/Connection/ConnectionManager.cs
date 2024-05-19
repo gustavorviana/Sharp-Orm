@@ -79,6 +79,8 @@ namespace SharpOrm.Connection
             this.Connection = this.creator.GetConnection();
             this.Config = creator.Config;
 
+            this.Connection.Disposed += DisposeByConnection;
+
             if (!openTransaction)
                 return;
 
@@ -118,8 +120,8 @@ namespace SharpOrm.Connection
         /// <exception cref="ArgumentNullException"></exception>
         public ConnectionManager(QueryConfig config, DbConnection connection)
         {
-            this.Config = config ?? throw new ArgumentNullException(nameof(config));
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            this.Config = config ?? throw new ArgumentNullException(nameof(config));
 
             this.Connection.Disposed += DisposeByConnection;
             this.CommandTimeout = config.CommandTimeout;
@@ -241,7 +243,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction.
         /// </summary>
-        public static void ExecuteTransaction(TransactionCall call)
+        public static void ExecuteTransaction(TransactionAction call)
         {
             if (!(ConnectionCreator.Default is ConnectionCreator creator))
                 throw new InvalidOperationException($"It's not possible to start a transaction without setting a value for {nameof(ConnectionCreator)}.{nameof(ConnectionCreator.Default)}.");
@@ -266,7 +268,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Executes a database transaction and returns a value.
         /// </summary>
-        public static T ExecuteTransaction<T>(TransactionCall<T> func)
+        public static T ExecuteTransaction<T>(TransactionAction<T> func)
         {
             T value = default;
             ExecuteTransaction((transaction) => value = func(transaction));
@@ -282,7 +284,7 @@ namespace SharpOrm.Connection
 
         public void Dispose()
         {
-            if(this.disposed) return;
+            if (this.disposed) return;
 
             Dispose(disposing: true);
             GC.SuppressFinalize(this);

@@ -36,16 +36,16 @@ namespace SharpOrm.Builder
 
         internal void LoadFrom(QueryInfo info)
         {
+            this.Joins.Clear();
             this.Where.Clear();
             this.Having.Clear();
-            this.Joins.Clear();
 
             this.Where.Add(info.Where);
             this.Having.Add(info.Having);
             this.Joins.AddRange(info.Joins);
+            this.Select = (Column[])info.Select.Clone();
             this.GroupsBy = (Column[])info.GroupsBy.Clone();
             this.Orders = (ColumnOrder[])info.Orders.Clone();
-            this.Select = (Column[])info.Select.Clone();
         }
 
         public IReadonlyQueryInfo ToReadOnly()

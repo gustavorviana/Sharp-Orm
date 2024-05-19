@@ -18,9 +18,9 @@ namespace SharpOrm.Connection
         public static ConnectionCreator Default { get; set; }
 
         /// <summary>
-        /// Configuration for queries.
+        /// Gets the query configuration for the query build.
         /// </summary>
-        public abstract QueryConfig Config { get; }
+        public virtual QueryConfig Config { get; protected set; }
 
         /// <summary>
         /// Gets a database connection.

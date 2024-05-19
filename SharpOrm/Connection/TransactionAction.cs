@@ -1,5 +1,5 @@
 ﻿namespace SharpOrm.Connection
 {
-    public delegate void TransactionCall(ConnectionManager manager);
-    public delegate T TransactionCall<T>(ConnectionManager manager);
+    public delegate void TransactionAction(ConnectionManager manager);
+    public delegate T TransactionAction<T>(ConnectionManager manager);
 }

@@ -2,7 +2,6 @@
 using SharpOrm;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
-using System;
 using UnityTest.Utils;
 
 namespace UnityTest.SqlServerTests

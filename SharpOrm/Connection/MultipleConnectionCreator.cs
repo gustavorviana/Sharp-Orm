@@ -1,7 +1,5 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Collections;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -9,7 +7,7 @@ using System.Data.SqlClient;
 namespace SharpOrm.Connection
 {
     /// <summary>
-    /// Provides a multiple connection creator implementation using SqlConnection.
+    /// Provides a multiple connection creator implementation using <see cref="SqlConnection"/>.
     /// </summary>
     public class MultipleConnectionCreator : MultipleConnectionCreator<SqlConnection>
     {
@@ -21,20 +19,15 @@ namespace SharpOrm.Connection
     /// <summary>
     /// Generic class for multiple connection creation.
     /// </summary>
-    /// <typeparam name="T">The type of the DbConnection used for creating connections.</typeparam>
+    /// <typeparam name="T">The type of the <see cref="DbConnection"/> used for creating connections.</typeparam>
     public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
-        private readonly object _lock = new object();
         private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
+        private readonly object _lock = new object();
         private readonly string _connectionString;
 
         /// <summary>
-        /// Gets the query configuration for the connection creator.
-        /// </summary>
-        public override QueryConfig Config { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the MultipleConnectionCreator class.
+        /// Initializes a new instance of the <see cref="MultipleConnectionCreator"/> class.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="connectionString">The connection string for the database.</param>
@@ -49,9 +42,9 @@ namespace SharpOrm.Connection
         /// </summary>
         public override DbConnection GetConnection()
         {
+            this.ThrowIfDisposed();
             lock (this._lock)
             {
-                this.ThrowIfDisposed();
                 var connection = new T { ConnectionString = this._connectionString };
 
                 this.connections.Add(connection);
@@ -74,15 +67,14 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Releases the resources used by the MultipleConnectionCreator object.
+        /// Releases the resources used by the <see cref="MultipleConnectionCreator"/> object.
         /// </summary>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
 
             if (disposing)
-                lock (this._lock)
-                    this.connections.Dispose();
+                this.connections.Dispose();
         }
     }
 }

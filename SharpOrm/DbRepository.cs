@@ -406,7 +406,7 @@ namespace SharpOrm
 
         private ConnectionManager GetManagerNew()
         {
-            var connection = new ConnectionManager(this.Creator.Config, this.Creator.GetConnection())
+            var connection = new ConnectionManager(this.Creator)
             {
                 CommandTimeout = this.CommandTimeout
             };
@@ -434,11 +434,11 @@ namespace SharpOrm
             if (!disposing)
                 return;
 
-            this._connections.Dispose();
-            this.Transaction = null;
-
             if (!this.HasParentTransaction && this.Transaction != null)
                 this.CommitTransaction();
+
+            this._connections.Dispose();
+            this.Transaction = null;
         }
 
         /// <summary>

@@ -165,8 +165,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         private int GetGuidSize()
         {
-            string format = this.Config.Translation.GuidFormat;
-            switch (format)
+            switch (this.Config.Translation.GuidFormat)
             {
                 case "N": return 32;
                 case "D": return 36;
