@@ -120,7 +120,7 @@ namespace SharpOrm.Connection
         /// Creates an instance using a transaction.
         /// </summary>
         /// <param name="transaction"></param>
-        /// <remarks>In this case, <see cref="this.Management"/> won't be considered for managing the logic; the original manager will remain open until it's manually closed.</remarks>
+        /// <remarks>In this case, <see cref="this.Management"/> won'type be considered for managing the logic; the original manager will remain open until it's manually closed.</remarks>
         /// <exception cref="ArgumentNullException"></exception>
         public ConnectionManager(QueryConfig config, DbTransaction transaction) : this(config, transaction?.Connection)
         {
@@ -213,7 +213,13 @@ namespace SharpOrm.Connection
 
         private static bool NeedLeaveOpen(ConnectionCreator connCreator)
         {
-            return connCreator is SingleConnectionCreator creator && creator.LeaveOpen;
+            if (connCreator == null) return false;
+
+            var type = connCreator.GetType();
+            if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(SingleConnectionCreator<>))
+                return false;
+
+            return (bool)type.GetProperty(nameof(SingleConnectionCreator.LeaveOpen)).GetValue(connCreator);
         }
 
         #region Transaction
