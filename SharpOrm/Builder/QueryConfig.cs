@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.DataTranslation;
+using System;
 
 namespace SharpOrm.Builder
 {
@@ -74,7 +75,7 @@ namespace SharpOrm.Builder
 
         public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
-            return new MysqlTableGrammar(this, schema);
+            throw new NotSupportedException($"{this.GetType().FullName} does not support creating/editing/removing tables.");
         }
 
         public abstract string EscapeString(string value);

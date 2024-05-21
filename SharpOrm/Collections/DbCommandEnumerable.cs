@@ -61,9 +61,16 @@ namespace SharpOrm.Collections
         {
             instance.Disposed += (sender, e) =>
             {
-                this.command.Dispose();
-                if (this.command.CanCloseConnection(this.management))
-                    this.command.Connection.Close();
+                try
+                {
+                    if (this.command.CanCloseConnection(this.management))
+                        this.command.Connection.Close();
+
+                }
+                catch 
+                { }
+
+                try { this.command.Dispose(); } catch { }
             };
 
             return instance;

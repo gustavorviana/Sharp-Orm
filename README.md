@@ -1,4 +1,4 @@
-Sharp Orm is a **BETA** library that simplifies the creation of database query. Tested with Mysql and Microsoft Sql Server, but also has sqlite compatibility.
+Sharp Orm is a library that simplifies the creation of database query. Tested with Mysql, Microsoft Sql Server and SQLite.
 
 There are two ways to work with the library, defining a global configuration or passing the configuration in each query.
 
@@ -16,9 +16,9 @@ To use a global configuration you need to create a new instance of ConnectionCre
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 
-//For Mysql
-ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(new MysqlQueryConfig(false), connectionString);
 //For Sqlite
+ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(new SqliteQueryConfig(false), connectionString);
+//For Mysql
 ConnectionCreator.Default = new SingleConnectionCreator<MySql.Data.MySqlClient.MySqlConnection>(new MysqlQueryConfig(false), connectionString);
 //For Microsoft Sql Server
 ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), connectionString);

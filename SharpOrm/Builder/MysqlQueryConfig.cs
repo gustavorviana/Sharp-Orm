@@ -43,5 +43,10 @@ namespace SharpOrm.Builder
         {
             return unsafeChars.Contains(c);
         }
+
+        public override TableGrammar NewTableGrammar(TableSchema schema)
+        {
+            return new MysqlTableGrammar(this, schema);
+        }
     }
 }

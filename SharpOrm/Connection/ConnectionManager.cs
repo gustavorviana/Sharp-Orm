@@ -55,7 +55,20 @@ namespace SharpOrm.Connection
         /// </summary>
         public bool CanClose
         {
-            get => this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
+            get
+            {
+                try
+                {
+                    if (NeedLeaveOpen(creator) || this.management == ConnectionManagement.LeaveOpen)
+                        return false;
+
+                    return this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
         }
         #endregion
 
@@ -81,11 +94,13 @@ namespace SharpOrm.Connection
 
             this.Connection.Disposed += DisposeByConnection;
 
+            if (NeedLeaveOpen(creator))
+                this.management = ConnectionManagement.LeaveOpen;
+
             if (!openTransaction)
                 return;
 
             this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
-            this.management = ConnectionManagement.CloseOnDispose;
             this.isMyTransaction = true;
         }
 
@@ -194,6 +209,11 @@ namespace SharpOrm.Connection
             this.CommandTimeout = manager.CommandTimeout;
             this.autoCommit = manager.autoCommit;
             return this;
+        }
+
+        private static bool NeedLeaveOpen(ConnectionCreator connCreator)
+        {
+            return connCreator is SingleConnectionCreator creator && creator.LeaveOpen;
         }
 
         #region Transaction
@@ -323,8 +343,13 @@ namespace SharpOrm.Connection
             if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
                 return;
 
-            if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);
-            else if (this.Connection.State == System.Data.ConnectionState.Open) this.Connection.Close();
+            try
+            {
+                if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);
+                else if (this.Connection.State == System.Data.ConnectionState.Open) this.Connection.Close();
+            }
+            catch
+            { }
         }
         #endregion
     }
