@@ -147,14 +147,14 @@ namespace SharpOrm.Builder
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
         {
-            object obj = column.Get(owner);
+            object obj = column.GetRaw(owner);
             if (!readForeignKey || !column.Type.IsClass || !column.IsForeignKey || TranslationUtils.IsNull(obj))
                 return obj;
 
             if (obj is null)
                 return null;
 
-            return new TableInfo(column.Type, this.registry).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return new TableInfo(column.Type, this.registry).Columns.FirstOrDefault(c => c.Key).GetRaw(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)

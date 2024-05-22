@@ -73,6 +73,38 @@ namespace SharpOrm.Builder.DataTranslation
             return IsNumberWithoutDecimal(type) || IsNumberWithDecimal(type);
         }
 
+        public static bool IsNumericString(string value)
+        {
+            if (string.IsNullOrEmpty(value) || CheckDot(value[0]) || CheckDot(value[value.Length - 1]))
+                return false;
+
+            bool hasDot = false;
+
+            foreach (var c in value)
+            {
+                bool digit = char.IsDigit(c);
+                bool isDot = c == '.' || c == ',';
+                if (!digit && !isDot)
+                    return false;
+
+                if (digit)
+                    continue;
+
+                if (hasDot)
+                    return false;
+
+                if (isDot)
+                    hasDot = true;
+            }
+
+            return true;
+        }
+
+        private static bool CheckDot(char c)
+        {
+            return c == '.' || c == ',';
+        }
+
         public static bool IsNumberWithDecimal(Type type)
         {
             return type == typeof(decimal) || type == typeof(float) || type == typeof(double);

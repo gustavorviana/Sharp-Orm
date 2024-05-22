@@ -106,7 +106,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (binaryTranslator.CanWork(type))
                 return binaryTranslator.ToSqlValue(value, type);
 
-            if (dateTranslation.CanWork(type))
+            if (dateTranslation.CanWork(type) || value is string strVal && strVal.Length > 0)
                 return dateTranslation.ToSqlValue(value, type);
 
             return value?.ToString();

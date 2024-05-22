@@ -378,6 +378,24 @@ namespace UnityTest.Sqlite
             TestAssert.AreEqualsDate(date.ToUniversalTime(), dbDate, "Universal time read file");
         }
 
+        [TestMethod]
+        public void DateOfsetUtcConversion()
+        {
+            using var query1 = new Query("TestTable", new ConnectionManager(new SqliteQueryConfig
+            {
+                Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc }
+            }, Creator.GetConnection()));
+
+            var date = DateTimeOffset.Now;
+            query1.Insert(new Cell("Id", 1), new Cell("Name", ""), new Cell("record_created", date), new Cell("number", 0), new Cell("custom_status", 0));
+            DateTime dbDate = query1.Select("record_created").ExecuteScalar<DateTime>();
+            TestAssert.AreEqualsDate(date.DateTime, dbDate, "Universal time insert fail");
+
+            using var query2 = new Query<TestTable>(Creator);
+            dbDate = query2.Select("record_created").ExecuteScalar<DateTime>();
+            TestAssert.AreEqualsDate(date.DateTime.ToUniversalTime(), dbDate, "Universal time read file");
+        }
+
         public void ConfigureInitialCustomerAndOrder()
         {
             using var qOrder = new Query<Order>(Creator);

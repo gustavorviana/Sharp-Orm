@@ -4,11 +4,14 @@ namespace SharpOrm.Builder.DataTranslation
 {
     internal class NumericTranslation : ISqlTranslation
     {
-        public bool CanWork(Type type) => TranslationUtils.IsNumeric(type);
+        public bool CanWork(Type type) => TranslationUtils.IsNumeric(type) || type == typeof(string);
 
         public object FromSqlValue(object value, Type expectedType)
         {
             if (value.GetType() == expectedType)
+                return value;
+
+            if (value is string strVal && !TranslationUtils.IsNumericString(strVal))
                 return value;
 
             if (expectedType == typeof(int))

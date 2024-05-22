@@ -19,6 +19,8 @@ namespace SharpOrm.Builder
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
+        internal Func<object, object> paramInterceptor;
+
         /// <summary>
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
@@ -171,6 +173,9 @@ namespace SharpOrm.Builder
                 return this.AddExpression(iExp, allowAlias);
 
             val = (this.info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
+            if (paramInterceptor != null)
+                val = paramInterceptor(val);
+
             if (ToQueryValue(val) is string sql)
                 return this.Add(sql);
 

@@ -358,6 +358,21 @@ namespace UnityTest
             Assert.AreEqual("OrderId", column);
         }
 
+        [TestMethod]
+        public void CheckIsNumericString()
+        {
+            Assert.IsTrue(TranslationUtils.IsNumericString("1"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("123"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("1.1"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("1,2"));
+            Assert.IsFalse(TranslationUtils.IsNumericString(",255"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("255,"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("."));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1m"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1.1.1"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1,1,1"));
+        }
+
         [Table("Recursive")]
         private class RecursiveClass
         {

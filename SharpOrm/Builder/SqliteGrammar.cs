@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -8,6 +7,21 @@ namespace SharpOrm.Builder
     {
         public SqliteGrammar(Query query) : base(query)
         {
+            this.builder.paramInterceptor += (original) =>
+            {
+                if (original is DateTime date)
+                    return date.ToString("s");
+
+                if (original is DateTimeOffset offset)
+                    return ToDateTime(offset).ToString("s");
+
+                return original;
+            };
+        }
+
+        private DateTime ToDateTime(DateTimeOffset offset)
+        {
+            return this.Info.Config.Translation.ConvertDate(offset.UtcDateTime, true);
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)

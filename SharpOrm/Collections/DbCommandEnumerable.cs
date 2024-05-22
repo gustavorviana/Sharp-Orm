@@ -67,7 +67,7 @@ namespace SharpOrm.Collections
                         this.command.Connection.Close();
 
                 }
-                catch 
+                catch
                 { }
 
                 try { this.command.Dispose(); } catch { }
