@@ -222,6 +222,18 @@ namespace SharpOrm.Connection
             return (bool)type.GetProperty(nameof(SingleConnectionCreator.LeaveOpen)).GetValue(connCreator);
         }
 
+        /// <summary>
+        /// Check if it is possible to connect to the database.
+        /// </summary>
+        public void CheckConnection()
+        {
+            if (this.Connection.State == System.Data.ConnectionState.Open)
+                return;
+
+            this.Connection.Open();
+            try { this.Connection.Close(); } catch { }
+        }
+
         #region Transaction
         /// <summary>
         /// If there is a transaction, commit the database transaction.

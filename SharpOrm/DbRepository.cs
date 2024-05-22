@@ -5,6 +5,7 @@ using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 
 namespace SharpOrm
@@ -16,7 +17,7 @@ namespace SharpOrm
     {
         #region Fields/Properties
         private readonly object _lock = new object();
-        private readonly bool useSingleConnection;
+        private readonly bool forceSingleConnection;
         private bool isExtTransact = false;
         private bool _disposed;
         public bool Disposed => this._disposed;
@@ -48,9 +49,9 @@ namespace SharpOrm
         public CancellationToken Token { get; set; }
         #endregion
 
-        public DbRepository(bool useSingleConnection)
+        public DbRepository(bool forceSingleConnection = false)
         {
-            this.useSingleConnection = useSingleConnection;
+            this.forceSingleConnection = forceSingleConnection;
         }
 
         #region Transactions
@@ -388,23 +389,23 @@ namespace SharpOrm
                 return this.Transaction;
 
             lock (this._lock)
-                return GetExistingManager() ?? this.GetManagerNew();
+                return GetExistingManager() ?? this.GetNewManager();
         }
 
         private ConnectionManager GetExistingManager()
         {
-            if (this.useSingleConnection && this._connections.Count > 0)
+            if (this.forceSingleConnection && this._connections.Count > 0)
             {
-                if (this._connections[0] is ConnectionManager conn)
-                    return conn;
-
                 this._connections.RemoveNotAlive();
+
+                if (this._connections.FirstOrDefault() is ConnectionManager conn)
+                    return conn;
             }
 
             return null;
         }
 
-        private ConnectionManager GetManagerNew()
+        private ConnectionManager GetNewManager()
         {
             var connection = new ConnectionManager(this.Creator)
             {

@@ -373,6 +373,15 @@ namespace UnityTest
             Assert.IsFalse(TranslationUtils.IsNumericString("1,1,1"));
         }
 
+        [TestMethod]
+        public void TestGetTranslationTest()
+        {
+            TableInfo table = new(typeof(CustomClassInfo), new TranslationRegistry());
+            var owner = new CustomClassInfo();
+            var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
+            Assert.AreEqual(2, cell.Value);
+        }
+
         [Table("Recursive")]
         private class RecursiveClass
         {
@@ -451,6 +460,27 @@ namespace UnityTest
             public int OrderId { get; set; }
 
             public int Value { get; set; }
+        }
+
+        private class CustomClassInfo
+        {
+            [SqlConverter(typeof(TestGetTranslator))]
+            public int MyValue { get; set; }
+        }
+
+        public class TestGetTranslator : ISqlTranslation
+        {
+            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
+
+            public object FromSqlValue(object value, Type expectedType)
+            {
+                return 1;
+            }
+
+            public object ToSqlValue(object value, Type type)
+            {
+                return 2;
+            }
         }
     }
 }
