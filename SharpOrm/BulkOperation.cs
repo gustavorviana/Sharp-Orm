@@ -21,6 +21,9 @@ namespace SharpOrm
 
         public BulkOperation(Query target, Row[] tempValues, int lotInsert = 100)
         {
+            if (!target.Info.Config.CanUpdateJoin)
+                throw new NotSupportedException($"{target.Info.Config.GetType()} does not support this operation.");
+
             this.token = target.Token;
             this.tempColumns = tempValues[0].ColumnNames;
             this.targetTable = target.Info.TableName.Name;

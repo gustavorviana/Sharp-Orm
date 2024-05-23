@@ -43,9 +43,9 @@ namespace SharpOrm.Builder
 
         private SqlExpression CreateBased()
         {
-            QueryBuilder query = this.GetCreateTableQuery();
-            query.Add(new MysqlGrammar(this.Schema.BasedQuery).Select());
-            return query.ToExpression();
+            return this.GetCreateTableQuery()
+                .Add(new MysqlGrammar(this.Schema.BasedQuery).Select())
+                .ToExpression();
         }
 
         private QueryBuilder GetCreateTableQuery()
@@ -157,22 +157,6 @@ namespace SharpOrm.Builder
                 return "MEDIUMTEXT";
 
             return "LONGTEXT";
-        }
-
-        /// <summary>
-        /// Ref: https://learn.microsoft.com/pt-br/dotnet/api/system.guid.tostring?view=net-8.0
-        /// </summary>
-        /// <returns></returns>
-        private int GetGuidSize()
-        {
-            switch (this.Config.Translation.GuidFormat)
-            {
-                case "N": return 32;
-                case "D": return 36;
-                case "B":
-                case "P": return 38;
-                default: return 68;
-            }
         }
     }
 }

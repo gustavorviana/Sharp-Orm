@@ -18,8 +18,13 @@ namespace SharpOrm.Builder
         public TableGrammar(QueryConfig config, TableSchema schema)
         {
             this.Schema = schema;
-            this.Name = new DbName(schema.Name);
+            this.Name = this.LoadName();
             this.queryInfo = new ReadonlyQueryInfo(config, this.Name);
+        }
+
+        protected virtual DbName LoadName()
+        {
+            return new DbName(Schema.Name);
         }
 
         public abstract SqlExpression Create();
@@ -50,7 +55,7 @@ namespace SharpOrm.Builder
                 .FirstOrDefault(x => x.CanWork(column.DataType));
         }
 
-        protected void WritePk(QueryBuilder query)
+        protected virtual void WritePk(QueryBuilder query)
         {
             var pks = this.GetPrimaryKeys();
             if (pks.Length != 0)
@@ -82,6 +87,23 @@ namespace SharpOrm.Builder
         protected string ApplyNomenclature(string name)
         {
             return this.queryInfo.Config.ApplyNomenclature(name);
+        }
+
+
+        /// <summary>
+        /// Ref: https://learn.microsoft.com/pt-br/dotnet/api/system.guid.tostring?view=net-8.0
+        /// </summary>
+        /// <returns></returns>
+        protected int GetGuidSize()
+        {
+            switch (this.Config.Translation.GuidFormat)
+            {
+                case "N": return 32;
+                case "D": return 36;
+                case "B":
+                case "P": return 38;
+                default: return 68;
+            }
         }
     }
 }

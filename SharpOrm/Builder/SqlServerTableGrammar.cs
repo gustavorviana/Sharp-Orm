@@ -7,19 +7,16 @@ namespace SharpOrm.Builder
 {
     internal class SqlServerTableGrammar : TableGrammar
     {
-        public override DbName Name
-        {
-            get
-            {
-                if (this.Schema.Temporary)
-                    return new DbName(string.Concat("#", this.Schema.Name), "");
-
-                return new DbName(this.Schema.Name, "");
-            }
-        }
-
         public SqlServerTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
+        }
+
+        protected override DbName LoadName()
+        {
+            if (this.Schema.Temporary)
+                return new DbName(string.Concat("#", this.Schema.Name), "");
+
+            return new DbName(this.Schema.Name, "");
         }
 
         public override SqlExpression Create()

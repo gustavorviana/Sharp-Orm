@@ -9,6 +9,11 @@ namespace SharpOrm.Builder
     public abstract class QueryConfig
     {
         /// <summary>
+        /// Indicate whether the DBMS supports performing an update or delete with the SQL join clause.
+        /// </summary>
+        public virtual bool CanUpdateJoin { get; } = true;
+
+        /// <summary>
         /// Instance that will be responsible for managing translations.
         /// </summary>
         public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;

@@ -4,6 +4,8 @@ namespace SharpOrm.Builder
 {
     public class SqliteQueryConfig : MysqlQueryConfig
     {
+        public override bool CanUpdateJoin { get; } = false;
+
         public SqliteQueryConfig()
         {
 
@@ -25,7 +27,7 @@ namespace SharpOrm.Builder
 
         public override TableGrammar NewTableGrammar(TableSchema schema)
         {
-            throw new NotSupportedException($"{this.GetType().FullName} does not support creating/editing/removing tables.");
+            return new SqliteTableGrammar(this, schema);
         }
     }
 }

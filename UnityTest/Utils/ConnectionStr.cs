@@ -8,8 +8,8 @@ namespace UnityTest.Utils
     {
         private static readonly Dictionary<string, string> cached = new();
 
-        public static string Mysql => GetFromFile("Connection.txt", "Persist Security Info=False;server=localhost;database=SharpOrm;uid=root;pwd=root");
-        public static string SqlServer => GetFromFile("SqlServerConnection.txt", @"Data Source=localhost\SQLEXPRESS;Initial Catalog=SharpOrm;Integrated Security=True;");
+        public static string Mysql => GetFromFile("../MysqlConnection.txt", "Persist Security Info=False;server=localhost;database=SharpOrm;uid=root;pwd=root");
+        public static string SqlServer => GetFromFile("../SqlServerConnection.txt", @"Data Source=localhost;Initial Catalog=SharpOrm;Integrated Security=True;");
 
         public static string GetFromFile(string filePath, string connectionString)
         {

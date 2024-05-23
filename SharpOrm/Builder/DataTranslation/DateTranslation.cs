@@ -67,22 +67,6 @@ namespace SharpOrm.Builder.DataTranslation
         #endregion
 
         #region FromDb
-        private object DateToDb(DateTime date, Type type)
-        {
-            if (type == typeof(DateTimeOffset))
-                return new DateTimeOffset(date, CodeTimeZone.BaseUtcOffset);
-
-            return ToExpectedType(ConvertDate(CodeTimeZone, DbTimeZone, date), type);
-        }
-
-        private object DateOffsetToDb(DateTimeOffset dtOffset, Type type)
-        {
-            if (type == typeof(DateTimeOffset))
-                return dtOffset;
-
-            return ToExpectedType(TimeZoneInfo.ConvertTimeFromUtc(dtOffset.UtcDateTime, DbTimeZone), type);
-        }
-
         private object ToExpectedType(DateTime date, Type type)
         {
             if (type == typeof(DateTime))
@@ -99,6 +83,9 @@ namespace SharpOrm.Builder.DataTranslation
 
         private object ParseTimespanFromDb(object obj)
         {
+            if (obj is string strTime && TimeSpan.TryParse(strTime, out var time))
+                return time;
+
             obj = ParseDateTimeFromDb(obj);
 
             if (obj is DateTime date)
@@ -127,6 +114,24 @@ namespace SharpOrm.Builder.DataTranslation
                 return ConvertDate(DbTimeZone, CodeTimeZone, date);
 
             return null;
+        }
+        #endregion
+
+        #region ToDb
+        private object DateToDb(DateTime date, Type type)
+        {
+            if (type == typeof(DateTimeOffset))
+                return new DateTimeOffset(date, CodeTimeZone.BaseUtcOffset);
+
+            return ToExpectedType(ConvertDate(CodeTimeZone, DbTimeZone, date), type);
+        }
+
+        private object DateOffsetToDb(DateTimeOffset dtOffset, Type type)
+        {
+            if (type == typeof(DateTimeOffset))
+                return dtOffset;
+
+            return ToExpectedType(TimeZoneInfo.ConvertTimeFromUtc(dtOffset.UtcDateTime, DbTimeZone), type);
         }
         #endregion
 
