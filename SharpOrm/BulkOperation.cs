@@ -19,7 +19,7 @@ namespace SharpOrm
         private readonly CancellationToken token;
         #endregion
 
-        public BulkOperation(Query target, Row[] tempValues, int lotInsert = 100)
+        public BulkOperation(Query target, Row[] tempValues, int? lotInsert)
         {
             if (!target.Info.Config.CanUpdateJoin)
                 throw new NotSupportedException($"{target.Info.Config.GetType()} does not support this operation.");
@@ -27,8 +27,19 @@ namespace SharpOrm
             this.token = target.Token;
             this.tempColumns = tempValues[0].ColumnNames;
             this.targetTable = target.Info.TableName.Name;
-            table = DbTable.Create(this.GetSchema(target.Manager), target.Manager);
+            var manager = GetValidManager(target.Manager, lotInsert == null || lotInsert == 0);
+            table = DbTable.Create(this.GetSchema(manager), manager);
             this.InsertTempValues(tempValues, lotInsert);
+        }
+
+        private static ConnectionManager GetValidManager(ConnectionManager manager, bool escapeString)
+        {
+            if (!escapeString)
+                return manager;
+
+            manager = manager.WithConfig(manager.Config.Clone());
+            manager.Config.EscapeStrings = true;
+            return manager;
         }
 
         private TableSchema GetSchema(ConnectionManager manager)
@@ -42,12 +53,13 @@ namespace SharpOrm
             return new TableSchema(string.Concat("temp_", targetTable), query) { Temporary = true };
         }
 
-        private void InsertTempValues(Row[] tempValues, int lotInsert)
+        private void InsertTempValues(Row[] tempValues, int? lotInsert)
         {
             using (var q = this.table.GetQuery())
             {
                 q.Token = token;
-                q.InsertLot(tempValues, lotInsert);
+                if (lotInsert is int lot) q.InsertLot(tempValues, lot);
+                else q.BulkInsert(tempValues);
             }
         }
 
@@ -113,7 +125,7 @@ namespace SharpOrm
 
         public void Dispose()
         {
-            if (!this.disposed)
+            if (this.disposed)
                 return;
 
             Dispose(disposing: true);

@@ -45,7 +45,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Configuration used for the connection.
         /// </summary>
-        public QueryConfig Config { get; }
+        public QueryConfig Config { get; private set; }
         /// <summary>
         /// Maximum time the command should wait before throwing a timeout.
         /// </summary>
@@ -232,6 +232,16 @@ namespace SharpOrm.Connection
 
             this.Connection.Open();
             try { this.Connection.Close(); } catch { }
+        }
+
+        public ConnectionManager WithConfig(QueryConfig config)
+        {
+            var clone = this.Clone();
+            clone.Config = config;
+
+            this.Disposed += (sender, e) => this.Dispose();
+
+            return clone;
         }
 
         #region Transaction

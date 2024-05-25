@@ -543,15 +543,15 @@ namespace SharpOrm
                 query.Upsert(row, toCheckColumns);
         }
 
-        public static int BulkDelete(this Query query, Row[] values, int insertLot = 1000)
+        public static int BulkDelete(this Query query, Row[] values, int? insertLot = 0)
         {
-            using (var bulk = new BulkOperation(query, values))
+            using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Delete();
         }
 
-        public static int BulkUpdate(this Query query, Row[] values, string[] comparationColumns, int insertLot = 1000)
+        public static int BulkUpdate(this Query query, Row[] values, string[] comparationColumns, int? insertLot = 0)
         {
-            using (var bulk = new BulkOperation(query, values))
+            using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Update(comparationColumns);
         }
 

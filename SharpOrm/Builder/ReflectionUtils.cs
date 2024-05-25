@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
         public static void CopyPropTo<T>(T source, T target, PropertyInfo srcProp)
         {
             if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
-                targetProp.SetValue(targetProp, srcProp.GetValue(source));
+                targetProp.SetValue(target, srcProp.GetValue(source));
         }
     }
 }
