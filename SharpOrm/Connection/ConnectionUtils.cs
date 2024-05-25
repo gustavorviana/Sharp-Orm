@@ -24,6 +24,7 @@ namespace SharpOrm.Connection
 
         public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
             CancellationTokenRegistration registry = default;
             registry = token.Register(() =>
             {

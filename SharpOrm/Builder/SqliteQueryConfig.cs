@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class SqliteQueryConfig : MysqlQueryConfig
+    public class SqliteQueryConfig : QueryConfig
     {
         public override bool CanUpdateJoin { get; } = false;
 
@@ -28,6 +29,15 @@ namespace SharpOrm.Builder
         public override TableGrammar NewTableGrammar(TableSchema schema)
         {
             return new SqliteTableGrammar(this, schema);
+        }
+
+        public override string EscapeString(string value) => MysqlQueryConfig.Escape(value);
+
+        public override QueryConfig Clone()
+        {
+            var clone = new SqliteQueryConfig(this.OnlySafeModifications);
+            this.CopyTo(clone);
+            return clone;
         }
     }
 }

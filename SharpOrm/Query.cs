@@ -1014,14 +1014,10 @@ namespace SharpOrm
 
         protected T SafeExecuteCommand<T>(SqlExpression expression, Func<DbCommand, T> func)
         {
-            this.Token.ThrowIfCancellationRequested();
             try
             {
                 using (var cmd = this.GetCommand(expression))
-                {
-                    Grammar.QueryLogger?.Invoke(cmd.CommandText);
                     return func(cmd);
-                }
             }
             finally
             {
@@ -1031,6 +1027,7 @@ namespace SharpOrm
 
         protected internal DbCommand GetCommand(SqlExpression expression)
         {
+            Grammar.QueryLogger?.Invoke(expression.ToString());
             return this.Manager
                 .CreateCommand(this.CommandTimeout)
                 .SetExpression(expression)

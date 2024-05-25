@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Reflection;
 
 namespace SharpOrm.Builder
 {
@@ -45,6 +46,12 @@ namespace SharpOrm.Builder
                 return types[0];
 
             return type;
+        }
+
+        public static void CopyPropTo<T>(T source, T target, PropertyInfo srcProp)
+        {
+            if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
+                targetProp.SetValue(targetProp, srcProp.GetValue(source));
         }
     }
 }

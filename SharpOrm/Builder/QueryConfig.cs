@@ -1,12 +1,13 @@
 ﻿using SharpOrm.Builder.DataTranslation;
 using System;
+using System.Reflection;
 
 namespace SharpOrm.Builder
 {
     /// <summary>
     /// Class responsible for loading query management information, its configurations, and translations.
     /// </summary>
-    public abstract class QueryConfig
+    public abstract class QueryConfig : ICloneable
     {
         /// <summary>
         /// Indicate whether the DBMS supports performing an update or delete with the SQL join clause.
@@ -84,5 +85,18 @@ namespace SharpOrm.Builder
         }
 
         public abstract string EscapeString(string value);
+
+        object ICloneable.Clone() => this.Clone();
+
+        public abstract QueryConfig Clone();
+
+        protected void CopyTo(QueryConfig target)
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            foreach (var prop in this.GetType().GetProperties(flags))
+                if (prop.CanRead && prop.CanWrite)
+                    ReflectionUtils.CopyPropTo(this, target, prop);
+        }
     }
 }

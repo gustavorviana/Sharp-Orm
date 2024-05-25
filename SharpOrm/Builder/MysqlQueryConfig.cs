@@ -26,7 +26,9 @@ namespace SharpOrm.Builder
             return name.SanitizeSqlName('`', '`');
         }
 
-        public override string EscapeString(string value)
+        public override string EscapeString(string value) => Escape(value);
+
+        public static string Escape(string value)
         {
             StringBuilder build = new StringBuilder(value.Length + 2);
             build.Append('"');
@@ -47,6 +49,13 @@ namespace SharpOrm.Builder
         public override TableGrammar NewTableGrammar(TableSchema schema)
         {
             return new MysqlTableGrammar(this, schema);
+        }
+
+        public override QueryConfig Clone()
+        {
+            var clone = new MysqlQueryConfig(this.OnlySafeModifications);
+            this.CopyTo(clone);
+            return clone;
         }
     }
 }
