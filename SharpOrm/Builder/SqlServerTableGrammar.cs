@@ -13,10 +13,22 @@ namespace SharpOrm.Builder
 
         protected override DbName LoadName()
         {
-            if (this.Schema.Temporary)
-                return new DbName(string.Concat("#", this.Schema.Name), "");
+            if (this.Schema.Name.StartsWith("#"))
+                throw new InvalidOperationException("The table name cannot start with '#'.");
 
-            return new DbName(this.Schema.Name, "");
+            if (this.Schema.Name.EndsWith("_"))
+                throw new NotSupportedException("The table name cannot end with '_'.");
+
+            if (!this.Schema.Temporary)
+                return new DbName(this.Schema.Name, "");
+
+            if (Schema.Name.Contains("."))
+                throw new NotSupportedException("A temporary table cannot contain '.' in its name.");
+
+            if (Schema.Name.Length > 115)
+                throw new InvalidOperationException("The table name must contain up to 115 characters.");
+
+            return new DbName(string.Concat("#", this.Schema.Name), "");
         }
 
         public override SqlExpression Create()
@@ -132,7 +144,7 @@ namespace SharpOrm.Builder
         public override SqlExpression Exists()
         {
             if (this.Schema.Temporary)
-                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", this.Name.Name);
+                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", this.Name.Name);
 
             var query = this.GetBuilder();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");

@@ -21,7 +21,7 @@ namespace UnityTest.SqlServerTests
         public void ExistsTempTableTest()
         {
             var grammar = this.GetGrammar(new TableSchema("MyTable") { Temporary = true });
-            var expected = new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE charindex('_', name) > 0 AND left(name, charindex('_', name) -1) = ? AND xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL", grammar.Name.Name);
+            var expected = new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", grammar.Name.Name);
             var current = grammar.Exists();
 
             TestAssert.AreEqual(expected, current);

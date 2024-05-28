@@ -26,7 +26,7 @@ namespace UnityTest.MysqlTests
             using var table = DbTable.Create("MyTestTable", true, new Column[] { Column.All }, "Address", manager);
             var expectedCols = GetTableColumns(new DbName("Address"), manager);
 
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, manager));
             Assert.AreEqual(0, table.GetQuery().Count());
         }
 
@@ -44,7 +44,7 @@ namespace UnityTest.MysqlTests
             var rows = table.GetQuery().ReadRows();
 
             Assert.AreEqual(1, rows.Length);
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.Name, manager));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, manager));
             CollectionAssert.AreEqual(expectedRows.Cells, rows[0].Cells);
         }
 
@@ -74,7 +74,8 @@ namespace UnityTest.MysqlTests
         {
             var schema = GetSchema();
             using var table = DbTable.Create(schema, GetConnectionManager());
-            Assert.IsTrue(DbTable.Exists(schema.Name, schema.Temporary, table.Manager));
+            Assert.IsTrue(DbTable.Exists(table.DbName.Name, schema.Temporary, table.Manager), "DbTable.Exists(string, bool, ConnectionManager)");
+            Assert.IsTrue(table.Exists(), "DbTable.Exists()");
         }
 
         [TestMethod]

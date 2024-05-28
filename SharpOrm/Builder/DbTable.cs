@@ -23,7 +23,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Table name.
         /// </summary>
-        public DbName Name => grammar.Name;
+        public DbName DbName => grammar.Name;
         private bool dropped = false;
         #endregion
 
@@ -59,24 +59,33 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public static DbTable Create(TableSchema schema, ConnectionManager manager = null)
         {
-            bool IsLocalManager = manager == null;
+            bool isLocalManager = manager == null;
             if (manager is null)
                 manager = new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
 
             ValidateConnectionManager(schema, manager);
 
             var clone = schema.Clone();
-            if (RandomNameForTempTable)
-                clone.Name = string.Concat(Guid.NewGuid().ToString("N"), "_", clone.Name);
-
-            if (manager.Transaction is null && manager.Management == ConnectionManagement.CloseOnEndOperation)
-                manager.Management = ConnectionManagement.CloseOnDispose;
+            FixName(clone);
 
             var grammar = manager.Config.NewTableGrammar(clone);
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
-            return new DbTable(grammar, manager) { isLocalManager = IsLocalManager};
+            return new DbTable(grammar, manager) { isLocalManager = isLocalManager };
+        }
+
+        private static void FixName(TableSchema schema)
+        {
+            if (string.IsNullOrEmpty(schema.Name) && (!schema.Temporary || !RandomNameForTempTable))
+                throw new ArgumentNullException(nameof(schema.Name));
+
+            if (!schema.Temporary)
+                return;
+
+            var id = Guid.NewGuid().ToString("N");
+            if (string.IsNullOrEmpty(schema.Name)) schema.Name = id;
+            else schema.Name = string.Concat(Guid.NewGuid().ToString("N"), "_", schema.Name);
         }
 
         /// <summary>
@@ -174,7 +183,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query GetQuery()
         {
-            return new Query(Name, Manager);
+            return new Query(DbName, Manager);
         }
 
         /// <summary>
@@ -184,13 +193,13 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query GetQuery<T>() where T : new()
         {
-            return new Query<T>(Name, Manager);
+            return new Query<T>(DbName, Manager);
         }
 
         private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
         {
             if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
-                manager.Management = ConnectionManagement.LeaveOpen;
+                throw new InvalidOperationException($"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\".");
         }
 
         #region IDisposable

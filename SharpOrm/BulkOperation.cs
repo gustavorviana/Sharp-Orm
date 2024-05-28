@@ -79,7 +79,7 @@ namespace SharpOrm
         {
             using (var q = this.GetQuery(comparationColumns))
             {
-                string tempName = table.Name.TryGetAlias(Config);
+                string tempName = table.DbName.TryGetAlias(Config);
                 return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell(tempName, col)));
             }
         }
@@ -91,9 +91,9 @@ namespace SharpOrm
 
         private Query ApplyJoin(Query query, string[] columns)
         {
-            return query.Join(table.Name, q =>
+            return query.Join(table.DbName, q =>
             {
-                string tempName = table.Name.TryGetAlias(Config);
+                string tempName = table.DbName.TryGetAlias(Config);
                 foreach (var col in columns)
                     q.WhereColumn(string.Concat(tempName, ".", col), string.Concat(TargetAlias, ".", col));
             }, "INNER");
