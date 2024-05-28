@@ -16,9 +16,9 @@ namespace UnityTest.Utils
             this.Creator = new SingleConnectionCreator<Conn>(config, connStr);
         }
 
-        protected static void ExecuteScript(string sql, ConnectionCreator creator)
+        protected static void ExecuteScript(string sql, DbConnection connection)
         {
-            using var conn = creator.GetConnection().OpenIfNeeded();
+            using var conn = connection.OpenIfNeeded();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
             cmd.ExecuteNonQuery();
@@ -31,7 +31,7 @@ namespace UnityTest.Utils
 
         protected ConnectionManager GetConnectionManager(QueryConfig config = null)
         {
-            return new ConnectionManager(config ?? this.Config, this.Creator.GetConnection());
+            return new ConnectionManager(config ?? this.Config, this.Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose }; ;
         }
 
         [TestCleanup]

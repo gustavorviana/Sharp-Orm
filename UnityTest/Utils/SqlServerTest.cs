@@ -36,23 +36,23 @@ namespace UnityTest.Utils
         {
             Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
 
-            using var creator = GetCreator();
-            if (DbTable.Exists(TABLE, creator: creator))
+            using var manager = GetManager();
+            if (DbTable.Exists(TABLE, false, manager))
                 return;
 
-            ExecuteScript(File.ReadAllText("./Scripts/SqlServer.sql"), creator);
+            ExecuteScript(File.ReadAllText("./Scripts/SqlServer.sql"), manager.Connection);
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            using var creator = GetCreator();
-            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", creator);
+            using var manager = GetManager();
+            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", manager.Connection);
         }
 
-        private static ConnectionCreator GetCreator()
+        private static ConnectionManager GetManager()
         {
-            return new SingleConnectionCreator(NewConfig, ConnectionStr.SqlServer);
+            return new ConnectionManager(new SingleConnectionCreator(NewConfig, ConnectionStr.SqlServer));
         }
         #endregion
 

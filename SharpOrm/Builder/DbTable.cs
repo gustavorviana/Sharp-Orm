@@ -10,7 +10,7 @@ namespace SharpOrm.Builder
     public class DbTable : IDisposable
     {
         #region Fields/Properties
-        private TableGrammar grammar;
+        private readonly TableGrammar grammar;
         private bool disposed;
         public static bool RandomNameForTempTable { get; set; }
 
@@ -18,6 +18,7 @@ namespace SharpOrm.Builder
         /// Table connection manager.
         /// </summary>
         public ConnectionManager Manager { get; }
+        private bool isLocalManager = false;
 
         /// <summary>
         /// Table name.
@@ -25,17 +26,6 @@ namespace SharpOrm.Builder
         public DbName Name => grammar.Name;
         private bool dropped = false;
         #endregion
-
-        /// <summary>
-        /// Creates a table based on the provided columns.
-        /// </summary>
-        /// <param name="columns">Columns that the table should contain.</param>
-        /// <param name="manager">Managed connection used to create the table.</param>
-        /// <returns></returns>
-        public static DbTable Create(string name, bool temporary, TableColumnCollection columns, ConnectionCreator creator)
-        {
-            return Create(new TableSchema(name, columns) { Temporary = temporary }, new ConnectionManager(creator));
-        }
 
         public static DbTable Create(string name, bool temporary, Query queryBase, ConnectionManager manager = null)
         {
@@ -65,26 +55,19 @@ namespace SharpOrm.Builder
         /// Creates a table based on a schema.
         /// </summary>
         /// <param name="schema">Schema to be used for creating the table.</param>
-        /// <returns></returns>
-        public static DbTable Create(TableSchema schema, ConnectionCreator creator)
-        {
-            return Create(schema, new ConnectionManager(creator));
-        }
-
-        /// <summary>
-        /// Creates a table based on a schema.
-        /// </summary>
-        /// <param name="schema">Schema to be used for creating the table.</param>
         /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
         public static DbTable Create(TableSchema schema, ConnectionManager manager = null)
         {
+            bool IsLocalManager = manager == null;
             if (manager is null)
-                manager = new ConnectionManager();
+                manager = new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
+
+            ValidateConnectionManager(schema, manager);
 
             var clone = schema.Clone();
             if (RandomNameForTempTable)
-                clone.Name += Guid.NewGuid().ToString("N");
+                clone.Name = string.Concat(Guid.NewGuid().ToString("N"), "_", clone.Name);
 
             if (manager.Transaction is null && manager.Management == ConnectionManagement.CloseOnEndOperation)
                 manager.Management = ConnectionManagement.CloseOnDispose;
@@ -93,43 +76,27 @@ namespace SharpOrm.Builder
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
-            return new DbTable(grammar, manager);
+            return new DbTable(grammar, manager) { isLocalManager = IsLocalManager};
         }
 
         /// <summary>
-        /// Opens an existing table.
+        /// Opens an existing non temporary table;
         /// </summary>
-        /// <param name="schema">Schema (Only name and if it's temporary) of the table.</param>
-        /// <returns></returns>
+        /// <param name="name"></param>
+        /// <param name="manager"></param>
         /// <exception cref="DatabaseException"></exception>
-        public static DbTable Open(TableSchema schema, ConnectionCreator creator)
+        public DbTable(string name, ConnectionManager manager = null)
         {
-            return Open(schema, new ConnectionManager(creator));
-        }
+            this.Manager = manager ?? new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
+            this.grammar = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = false });
+            this.isLocalManager = manager == null;
 
-        /// <summary>
-        /// Opens an existing table.
-        /// </summary>
-        /// <param name="schema">Schema (Only name and if it's temporary) of the table.</param>
-        /// <param name="manager">Managed connection used to open the table.</param>
-        /// <returns></returns>
-        /// <exception cref="DatabaseException"></exception>
-        public static DbTable Open(TableSchema schema, ConnectionManager manager)
-        {
-            if (manager is null)
-                manager = new ConnectionManager();
-
-            var grammar = manager.Config.NewTableGrammar(schema.Clone());
-            if (!Exists(schema, manager))
+            if (!this.Exists())
                 throw new DatabaseException($"The table '{grammar.Name}' was not found.");
-
-            return new DbTable(grammar, manager);
         }
 
         private DbTable(TableGrammar grammar, ConnectionManager manager)
         {
-            ConfigureManager(manager, grammar.Schema);
-            manager.CloseByEndOperation();
             this.Manager = manager;
             this.grammar = grammar;
         }
@@ -137,24 +104,11 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Checks if table exists.
         /// </summary>
-        /// <param name="schema"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static bool Exists(TableSchema schema, ConnectionCreator creator)
+        public bool Exists()
         {
-            return Exists(schema, new ConnectionManager(creator));
-        }
-
-        /// <summary>
-        /// Checks if table exists.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="creator"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static bool Exists(string name, bool isTemp = false, ConnectionCreator creator = null)
-        {
-            return Exists(new TableSchema(name) { Temporary = isTemp }, new ConnectionManager(creator ?? ConnectionCreator.Default));
+            return Exists(this.grammar, this.Manager);
         }
 
         /// <summary>
@@ -166,7 +120,13 @@ namespace SharpOrm.Builder
         /// <exception cref="ArgumentNullException"></exception>
         public static bool Exists(string name, bool isTemp = false, ConnectionManager manager = null)
         {
-            return Exists(new TableSchema(name) { Temporary = isTemp }, manager);
+            if (manager is null)
+                throw new ArgumentNullException(nameof(manager));
+
+            return Exists(
+                manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }),
+                manager
+            );
         }
 
         /// <summary>
@@ -176,16 +136,11 @@ namespace SharpOrm.Builder
         /// <param name="manager"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static bool Exists(TableSchema schema, ConnectionManager manager)
+        private static bool Exists(TableGrammar grammar, ConnectionManager manager)
         {
-            if (manager is null)
-                throw new ArgumentNullException(nameof(manager));
-
-            ConfigureManager(manager, schema);
-
             try
             {
-                using (var cmd = manager.CreateCommand().SetExpression(manager.Config.NewTableGrammar(schema).Exists()))
+                using (var cmd = manager.CreateCommand().SetExpression(grammar.Exists()))
                     return cmd.ExecuteScalar<int>() > 0;
             }
             finally
@@ -197,7 +152,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Deletes the table from the database.
         /// </summary>
-        public void DropTable()
+        public void Drop()
         {
             try
             {
@@ -232,24 +187,27 @@ namespace SharpOrm.Builder
             return new Query<T>(Name, Manager);
         }
 
-        private static void ConfigureManager(ConnectionManager manager, TableSchema schema)
+        private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
         {
-            if (manager.Transaction is null && schema.Temporary)
+            if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
                 manager.Management = ConnectionManagement.LeaveOpen;
         }
 
         #region IDisposable
         protected virtual void Dispose(bool disposing)
         {
-            if (disposed)
+            if (this.disposed)
                 return;
 
             try
             {
                 if (grammar.Schema.Temporary && !this.dropped)
-                    DropTable();
+                    Drop();
             }
             catch { }
+
+            if (disposing && this.isLocalManager)
+                this.Manager.Dispose();
 
             disposed = true;
         }

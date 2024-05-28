@@ -63,7 +63,7 @@ namespace SharpOrm.Collections
             {
                 try
                 {
-                    if (this.command.CanCloseConnection(this.management))
+                    if (this.management != ConnectionManagement.LeaveOpen && this.management != ConnectionManagement.CloseOnManagerDispose && this.command.CanCloseConnection(this.management))
                         this.command.Connection.Close();
 
                 }

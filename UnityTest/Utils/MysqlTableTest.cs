@@ -28,7 +28,7 @@ namespace UnityTest.Utils
         {
             Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
             using var creator = GetCreator();
-            ExecuteScript(File.ReadAllText("./Scripts/Mysql.sql"), creator);
+            ExecuteScript(File.ReadAllText("./Scripts/Mysql.sql"), creator.GetConnection());
         }
         #endregion
 

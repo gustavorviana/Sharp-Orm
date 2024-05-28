@@ -28,7 +28,7 @@ namespace UnityTest.Sqlite
         {
             Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
             using var creator = GetCreator();
-            ExecuteScript(File.ReadAllText("./Scripts/Sqlite.sql"), creator);
+            ExecuteScript(File.ReadAllText("./Scripts/Sqlite.sql"), creator.GetConnection());
         }
         #endregion
 

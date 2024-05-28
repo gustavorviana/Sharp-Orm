@@ -34,6 +34,12 @@ namespace SharpOrm
 
         private static ConnectionManager GetValidManager(ConnectionManager manager, bool escapeString)
         {
+            if (manager.Management != ConnectionManagement.CloseOnManagerDispose)
+            {
+                manager = manager.Clone();
+                manager.Management = ConnectionManagement.CloseOnManagerDispose;
+            }
+
             if (!escapeString)
                 return manager;
 
@@ -113,7 +119,10 @@ namespace SharpOrm
                 return;
 
             if (disposing)
+            {
+                this.table.Manager.Dispose();
                 table.Dispose();
+            }
 
             disposed = true;
         }

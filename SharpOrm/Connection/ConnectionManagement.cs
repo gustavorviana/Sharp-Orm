@@ -14,6 +14,10 @@
         /// </summary>
         CloseOnDispose,
         /// <summary>
+        /// The connection should be closed when <see cref="ConnectionManager"/> beginning resource release.
+        /// </summary>
+        CloseOnManagerDispose,
+        /// <summary>
         /// The connection should remain open (it is the developer's responsibility to manually close it).
         /// </summary>
         LeaveOpen

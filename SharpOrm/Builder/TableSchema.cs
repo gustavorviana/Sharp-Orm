@@ -8,10 +8,6 @@ namespace SharpOrm.Builder
     public class TableSchema
     {
         /// <summary>
-        /// Schema name in the database.
-        /// </summary>
-        public string SchemaName { get; set; }
-        /// <summary>
         /// Table name.
         /// </summary>
         public string Name { get; internal set; }
@@ -56,9 +52,9 @@ namespace SharpOrm.Builder
         public TableSchema Clone()
         {
             if (this.BasedQuery != null)
-                return new TableSchema(this.Name, this.BasedQuery) { Temporary = this.Temporary, SchemaName = this.SchemaName };
+                return new TableSchema(this.Name, this.BasedQuery) { Temporary = this.Temporary };
 
-            return new TableSchema(this.Name, this.Columns) { Temporary = this.Temporary, SchemaName = this.SchemaName };
+            return new TableSchema(this.Name, this.Columns) { Temporary = this.Temporary };
         }
     }
 }

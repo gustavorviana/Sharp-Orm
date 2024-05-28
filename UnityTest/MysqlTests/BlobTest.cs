@@ -23,14 +23,14 @@ namespace UnityTest.MysqlTests
         {
 
             using var creator = GetCreator();
-            ExecuteScript(GetCreateTableSql(), creator);
+            ExecuteScript(GetCreateTableSql(), creator.GetConnection());
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
             using var creator = GetCreator();
-            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", creator);
+            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", creator.GetConnection());
         }
 
         private static string GetCreateTableSql()

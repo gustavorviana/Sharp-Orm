@@ -74,7 +74,7 @@ namespace UnityTest.SqlServerTests
         {
             var schema = GetSchema();
             using var table = DbTable.Create(schema, GetConnectionManager());
-            Assert.IsTrue(DbTable.Exists(schema, table.Manager));
+            Assert.IsTrue(DbTable.Exists(schema.Name, schema.Temporary, table.Manager));
         }
 
         [TestMethod]

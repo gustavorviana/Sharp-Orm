@@ -137,12 +137,21 @@ namespace SharpOrm.Builder
             var query = this.GetBuilder();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");
 
-            if (!string.IsNullOrEmpty(this.Schema.SchemaName))
-                query.Add(" TABLE_SCHEMA = ? AND", this.Schema.SchemaName);
+            var name = GetSplittedName();
+            if (!string.IsNullOrEmpty(name[0]))
+                query.Add(" TABLE_SCHEMA = ? AND", name[0]);
 
-            query.Add(" TABLE_NAME = ?;", this.Schema.Name);
+            query.Add(" TABLE_NAME = ?;", name[1]);
 
             return query.ToExpression();
+        }
+
+        private string[] GetSplittedName()
+        {
+            if (!this.Schema.Name.Contains("."))
+                return new string[] { null, this.Schema.Name };
+
+            return this.Schema.Name.Split('.');
         }
     }
 }
