@@ -37,6 +37,43 @@ namespace SharpOrm.Connection
             return command;
         }
 
+        /// <summary>
+        /// executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression)
+        {
+            try
+            {
+                using (var cmd = manager.CreateCommand().SetExpression(expression))
+                    return cmd.ExecuteNonQuery();
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression)
+        {
+            try
+            {
+                using (var cmd = manager.CreateCommand().SetExpression(expression))
+                    return cmd.ExecuteScalar<T>();
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
         public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
         {
             return manager.CreateCommand().SetExpression(expression);

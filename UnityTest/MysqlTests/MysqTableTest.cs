@@ -5,6 +5,7 @@ using SharpOrm.Connection;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest.MysqlTests
@@ -15,37 +16,48 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void CreateByColumnTest()
         {
-            DbTable.Create(GetSchema(), GetConnectionManager()).Dispose();
+            DbTable.Create(GetSchema(), Manager).Dispose();
         }
 
         [TestMethod]
         public void CreateEmptyByAnother()
         {
-            var manager = GetConnectionManager();
             InsertAddressValue();
-            using var table = DbTable.Create("MyTestTable", true, new Column[] { Column.All }, "Address", manager);
-            var expectedCols = GetTableColumns(new DbName("Address"), manager);
+            using var table = DbTable.Create("MyTestTable", true, new Column[] { Column.All }, "Address", Manager);
+            var expectedCols = GetTableColumns(new DbName("Address"), Manager);
 
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, manager));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, Manager));
             Assert.AreEqual(0, table.GetQuery().Count());
         }
 
         [TestMethod]
         public void CreateByAnother()
         {
-            var manager = GetConnectionManager();
             var expectedRows = InsertAddressValue();
 
-            using var q = new Query("Address", manager);
+            using var q = new Query("Address", Manager);
             q.OrderBy("Id");
             q.Offset = 1;
             using var table = DbTable.Create("MyTestTable", true, q);
-            var expectedCols = GetTableColumns(new DbName("Address"), manager);
+            var expectedCols = GetTableColumns(new DbName("Address"), Manager);
             var rows = table.GetQuery().ReadRows();
 
             Assert.AreEqual(1, rows.Length);
-            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, manager));
+            CollectionAssert.AreEqual(expectedCols, GetTableColumns(table.DbName, Manager));
             CollectionAssert.AreEqual(expectedRows.Cells, rows[0].Cells);
+        }
+
+        [TestMethod]
+        public void CreateByClass()
+        {
+            using var table = DbTable.Create<Address>(true, manager: Manager);
+            using var query = table.GetQuery();
+            query.Limit = 0;
+
+            var tableColumns = query.ReadTable().Columns.OfType<DataColumn>().Select(x => x.ColumnName).ToArray();
+            var classColumns = new TableInfo(typeof(Address)).Columns.Select(x => x.Name).ToArray();
+
+            CollectionAssert.AreEqual(tableColumns, classColumns);
         }
 
         private static string[] GetTableColumns(DbName name, ConnectionManager manager)

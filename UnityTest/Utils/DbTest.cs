@@ -10,6 +10,11 @@ namespace UnityTest.Utils
     {
         protected SingleConnectionCreator<Conn> Creator { get; }
         protected QueryConfig Config => Creator.Config;
+        private ConnectionManager manager;
+        protected ConnectionManager Manager
+        {
+            get => manager ??= new ConnectionManager(this.Config, this.Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
+        }
 
         public DbTest(QueryConfig config, string connStr)
         {
@@ -31,18 +36,23 @@ namespace UnityTest.Utils
 
         protected ConnectionManager GetConnectionManager(QueryConfig config = null)
         {
-            return new ConnectionManager(config ?? this.Config, this.Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose }; ;
+            return new ConnectionManager(config ?? this.Config, this.Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
         }
 
         [TestCleanup]
-        public void CleanupTest()
+        public void ClearConnections()
         {
             ConnectionCreator.Default = null;
+
+            if (manager != null)
+                this.manager.Dispose();
+
+            this.manager = null;
         }
 
         protected void ClearTable(string table)
         {
-            using var query = new Query(table);
+            using var query = new Query(table, this.Manager);
             query.Delete();
         }
     }

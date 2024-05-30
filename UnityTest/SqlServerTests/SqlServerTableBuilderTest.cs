@@ -31,7 +31,7 @@ namespace UnityTest.SqlServerTests
         public void DropTableTest()
         {
             var grammar = this.GetGrammar(new TableSchema("MyTable"));
-            var expected = new SqlExpression("DROP TABLE MyTable");
+            var expected = new SqlExpression("DROP TABLE [MyTable]");
             var current = grammar.Drop();
 
             TestAssert.AreEqual(expected, current);
@@ -41,7 +41,7 @@ namespace UnityTest.SqlServerTests
         public void DropTempTableTest()
         {
             var grammar = this.GetGrammar(new TableSchema("MyTable") { Temporary = true });
-            var expected = new SqlExpression("DROP TABLE #MyTable");
+            var expected = new SqlExpression("DROP TABLE [#MyTable]");
             var current = grammar.Drop();
 
             TestAssert.AreEqual(expected, current);

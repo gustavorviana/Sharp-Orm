@@ -43,9 +43,17 @@ namespace SharpOrm.Builder
                 query.Add(",").AddExpression(columns[i]);
         }
 
-        public abstract SqlExpression Drop();
+        public virtual SqlExpression Drop()
+        {
+            return new SqlExpression(string.Concat("DROP TABLE ", this.Config.ApplyNomenclature(this.Name.Name)));
+        }
 
         public abstract SqlExpression Exists();
+
+        public virtual SqlExpression Truncate()
+        {
+            return new SqlExpression(string.Concat("TRUNCATE TABLE ", this.ApplyNomenclature(this.Name.Name)));
+        }
 
         protected ColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {

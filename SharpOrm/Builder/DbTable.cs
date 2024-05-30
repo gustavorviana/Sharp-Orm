@@ -1,4 +1,5 @@
-﻿using SharpOrm.Connection;
+﻿using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
 
@@ -70,6 +71,15 @@ namespace SharpOrm.Builder
             return Create(new TableSchema(name, columns) { Temporary = temporary }, manager);
         }
 
+        public static DbTable Create<T>(bool temporary, TranslationRegistry registry = null, ConnectionManager manager = null) where T : new()
+        {
+            var table = new TableInfo(typeof(T), registry ?? TranslationRegistry.Default);
+            var cols = new TableColumnCollection();
+            cols.AddColumns(table.Columns);
+
+            return Create(new TableSchema(table.Name, cols) { Temporary = temporary }, manager);
+        }
+
         /// <summary>
         /// Creates a table based on a schema.
         /// </summary>
@@ -132,35 +142,6 @@ namespace SharpOrm.Builder
         #endregion
 
         /// <summary>
-        /// Checks if table exists.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public bool Exists()
-        {
-            return Exists(this.grammar, this.Manager);
-        }
-
-        /// <summary>
-        /// Deletes the table from the database.
-        /// </summary>
-        public void Drop()
-        {
-            try
-            {
-                using (var cmd = Manager.CreateCommand().SetExpression(grammar.Drop()))
-                    cmd.ExecuteNonQuery();
-
-                this.dropped = true;
-            }
-            finally
-            {
-                if (Manager.CanClose)
-                    Manager.Connection.Close();
-            }
-        }
-
-        /// <summary>
         /// Retrieves a query object for the table.
         /// </summary>
         /// <returns></returns>
@@ -177,6 +158,30 @@ namespace SharpOrm.Builder
         public Query GetQuery<T>() where T : new()
         {
             return new Query<T>(DbName, Manager);
+        }
+
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public bool Exists()
+        {
+            return Exists(this.grammar, this.Manager);
+        }
+
+        /// <summary>
+        /// Deletes the table from the database.
+        /// </summary>
+        public void Drop()
+        {
+            Manager.ExecuteNonQuery(grammar.Drop());
+            this.dropped = true;
+        }
+
+        public void Truncate()
+        {
+            Manager.ExecuteNonQuery(grammar.Truncate());
         }
 
         public override string ToString()
@@ -215,15 +220,7 @@ namespace SharpOrm.Builder
         /// <exception cref="ArgumentNullException"></exception>
         private static bool Exists(TableGrammar grammar, ConnectionManager manager)
         {
-            try
-            {
-                using (var cmd = manager.CreateCommand().SetExpression(grammar.Exists()))
-                    return cmd.ExecuteScalar<int>() > 0;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
+            return manager.ExecuteScalar<int>(grammar.Exists()) > 0;
         }
 
         private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)

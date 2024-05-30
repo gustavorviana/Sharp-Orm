@@ -5,6 +5,7 @@ using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -918,6 +919,8 @@ namespace SharpOrm
         public DbDataReader ExecuteReader()
         {
             this.ValidateReadonly();
+            this.Token.ThrowIfCancellationRequested();
+
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 

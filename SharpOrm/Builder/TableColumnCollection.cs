@@ -16,6 +16,11 @@ namespace SharpOrm.Builder
 
         public DataColumn[] PrimaryKeys => this.primaryKeys.ToArray();
 
+        public TableColumnCollection()
+        {
+            this.columns = new List<DataColumn>();
+        }
+
         public TableColumnCollection(params DataColumn[] columns)
         {
             this.columns = new List<DataColumn>(columns);
@@ -55,10 +60,18 @@ namespace SharpOrm.Builder
         {
             this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, true).Select(MapColumn));
         }
-
+        
         public void AddColumns<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
             this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, false).Select(MapColumn));
+        }
+
+        public void AddColumns(ColumnInfo[] columns)
+        {
+            this.AddRange(columns.Select(MapColumn));
+
+            foreach (var pkCol in columns.Where(x => x.Key))
+                this.SetPk(pkCol.Name);
         }
 
         public void AddColumns<T>(TranslationRegistry registry)
@@ -99,7 +112,7 @@ namespace SharpOrm.Builder
         {
             return new DataColumn(item.Name, item.Type)
             {
-                AllowDBNull = !item.Required
+                AllowDBNull = !item.Required && !item.Key
             };
         }
 

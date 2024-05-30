@@ -136,11 +136,6 @@ namespace SharpOrm.Builder
             return query.ToExpression();
         }
 
-        public override SqlExpression Drop()
-        {
-            return new SqlExpression(string.Concat("DROP TABLE ", this.Name));
-        }
-
         public override SqlExpression Exists()
         {
             if (this.Schema.Temporary)
