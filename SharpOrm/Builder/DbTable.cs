@@ -27,11 +27,30 @@ namespace SharpOrm.Builder
         private bool dropped = false;
         #endregion
 
+        #region Creator and Constructors
+
+        /// <summary>
+        /// Create a new table based on a query.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="temporary">Indicate whether the table should be temporary or not.</param>
+        /// <param name="queryBase">Query used to create the temporary table.</param>
+        /// <param name="manager">Connection manager.</param>
+        /// <returns></returns>
         public static DbTable Create(string name, bool temporary, Query queryBase, ConnectionManager manager = null)
         {
             return Create(new TableSchema(name, queryBase) { Temporary = temporary }, manager ?? queryBase.Manager);
         }
 
+        /// <summary>
+        /// Create a new table based on an existing table.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="temporary">Indicate whether the table should be temporary or not.</param>
+        /// <param name="columns">Columns of the table to be used as the base.</param>
+        /// <param name="basedTable">Name of the table to be used in the creation.</param>
+        /// <param name="manager">Connection manager.</param>
+        /// <returns></returns>
         public static DbTable Create(string name, bool temporary, Column[] columns, string basedTable, ConnectionManager manager = null)
         {
             var query = Query.ReadOnly(basedTable, manager?.Config).Select(columns);
@@ -96,7 +115,7 @@ namespace SharpOrm.Builder
         /// <exception cref="DatabaseException"></exception>
         public DbTable(string name, ConnectionManager manager = null)
         {
-            this.Manager = manager ?? new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
+            this.Manager = manager ?? new ConnectionManager() { Management = ConnectionManagement.CloseOnDispose };
             this.grammar = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = false });
             this.isLocalManager = manager == null;
 
@@ -110,6 +129,8 @@ namespace SharpOrm.Builder
             this.grammar = grammar;
         }
 
+        #endregion
+
         /// <summary>
         /// Checks if table exists.
         /// </summary>
@@ -118,44 +139,6 @@ namespace SharpOrm.Builder
         public bool Exists()
         {
             return Exists(this.grammar, this.Manager);
-        }
-
-        /// <summary>
-        /// Checks if table exists.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="manager"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static bool Exists(string name, bool isTemp = false, ConnectionManager manager = null)
-        {
-            if (manager is null)
-                throw new ArgumentNullException(nameof(manager));
-
-            return Exists(
-                manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }),
-                manager
-            );
-        }
-
-        /// <summary>
-        /// Checks if table exists.
-        /// </summary>
-        /// <param name="schema"></param>
-        /// <param name="manager"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        private static bool Exists(TableGrammar grammar, ConnectionManager manager)
-        {
-            try
-            {
-                using (var cmd = manager.CreateCommand().SetExpression(grammar.Exists()))
-                    return cmd.ExecuteScalar<int>() > 0;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
         }
 
         /// <summary>
@@ -196,17 +179,67 @@ namespace SharpOrm.Builder
             return new Query<T>(DbName, Manager);
         }
 
+        public override string ToString()
+        {
+            if (this.grammar.Schema.Temporary)
+                return $"Temporary Table {this.DbName}";
+
+            return $"Table {this.DbName}";
+        }
+
+        #region static's
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="manager"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static bool Exists(string name, bool isTemp = false, ConnectionManager manager = null)
+        {
+            if (manager is null)
+                throw new ArgumentNullException(nameof(manager));
+
+            return Exists(
+                manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }),
+                manager
+            );
+        }
+
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
+        /// <param name="schema"></param>
+        /// <param name="manager"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        private static bool Exists(TableGrammar grammar, ConnectionManager manager)
+        {
+            try
+            {
+                using (var cmd = manager.CreateCommand().SetExpression(grammar.Exists()))
+                    return cmd.ExecuteScalar<int>() > 0;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
         private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
         {
             if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
                 throw new InvalidOperationException($"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\".");
         }
+        #endregion
 
         #region IDisposable
         protected virtual void Dispose(bool disposing)
         {
             if (this.disposed)
                 return;
+
+            disposed = true;
 
             try
             {
@@ -217,8 +250,6 @@ namespace SharpOrm.Builder
 
             if (disposing && this.isLocalManager)
                 this.Manager.Dispose();
-
-            disposed = true;
         }
 
         ~DbTable()
