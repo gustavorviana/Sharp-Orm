@@ -49,7 +49,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectValidPk()
         {
-            var obj = new Customer { AddressId = 1, Address = new Address { Id = 2 } };
+            var obj = new Customer { AddressId = 1, Address = new Address(2) };
             var cells = new TableInfo(typeof(Customer)).GetObjCells(obj, false, true).Where(c => c.Name == "address_id").ToArray();
             Assert.AreEqual(1, cells.Length);
             Assert.AreEqual(1, cells[0].Value);

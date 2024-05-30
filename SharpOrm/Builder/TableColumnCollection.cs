@@ -60,7 +60,7 @@ namespace SharpOrm.Builder
         {
             this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, true).Select(MapColumn));
         }
-        
+
         public void AddColumns<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
             this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, false).Select(MapColumn));

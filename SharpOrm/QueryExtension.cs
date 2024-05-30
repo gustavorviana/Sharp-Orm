@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Xml.Linq;
 
 namespace SharpOrm
 {
@@ -443,7 +444,7 @@ namespace SharpOrm
         /// <param name="calls">Calls to retrieve the names of the properties.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
@@ -461,7 +462,7 @@ namespace SharpOrm
         /// <param name="columns">Columns that should not be updated.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
@@ -474,7 +475,7 @@ namespace SharpOrm
             return Insert<T>(query, (IEnumerable<Cell>)cells);
         }
 
-        public static R Insert<T, R>(this Query<T> query, T obj) where T : new()
+        public static R Insert<T, R>(this Query<T> query, T obj)
         {
             return Insert<R>(query, query.GetCellsOf(obj, true));
         }
@@ -506,7 +507,7 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
-        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns) where T : new()
+        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns)
         {
             foreach (var item in items)
                 query.Upsert(item, toCheckColumns);
@@ -522,7 +523,7 @@ namespace SharpOrm
         /// <remarks>
         /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
         /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
+        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns)
         {
             if (toCheckColumns.Length < 1)
                 throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
@@ -686,9 +687,8 @@ namespace SharpOrm
         /// <returns>The index of the column, or -1 if the column is not found.</returns>
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
-            name = name.ToLower();
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).ToLower() == name)
+                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;

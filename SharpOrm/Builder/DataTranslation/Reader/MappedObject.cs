@@ -12,6 +12,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         private readonly List<MappedColumn> columns = new List<MappedColumn>();
         private readonly TranslationRegistry registry;
         private readonly object _lock = new object();
+        private ObjectActivator objectActivator;
         private readonly IFkQueue enqueueable;
         private ColumnInfo parentColumn;
         private MappedObject parent;
@@ -49,6 +50,8 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
         private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
+            objectActivator = new ObjectActivator(this.Type, reader, registry);
+
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
@@ -87,7 +90,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
                 if (this.Type == typeof(Row))
                     return reader.ReadRow(this.registry);
 
-                this.NewObject();
+                this.NewObject(reader);
 
                 for (int i = 0; i < reader.FieldCount; i++)
                     this.SetValue(i, reader[i]);
@@ -96,12 +99,12 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             }
         }
 
-        private object NewObject()
+        private object NewObject(DbDataReader reader)
         {
-            this.instance = Activator.CreateInstance(this.Type);
+            this.instance = objectActivator.CreateInstance(reader);
 
             foreach (var children in this.childrens)
-                children.parentColumn.SetRaw(children.parent.instance, children.NewObject());
+                children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
 
             return this.instance;
         }

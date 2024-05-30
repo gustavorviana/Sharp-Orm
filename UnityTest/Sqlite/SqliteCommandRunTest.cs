@@ -65,7 +65,7 @@ namespace UnityTest.Sqlite
             query.Delete();
             addrQuery.Delete();
 
-            addrQuery.Insert(new Address { Id = 1, Name = "Addr", Street = "str" });
+            addrQuery.Insert(new Address (1) { Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
 
             Assert.ThrowsException<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));
@@ -406,15 +406,13 @@ namespace UnityTest.Sqlite
             qAddress.Delete();
 
             qAddress.BulkInsert(
-                new Address
+                new Address(1)
                 {
-                    Id = 1,
                     Name = "Test 1",
                     Street = "Street 1"
                 },
-                new Address
+                new Address(2)
                 {
-                    Id = 2,
                     Name = "Test 2",
                     Street = "Street 2"
                 }

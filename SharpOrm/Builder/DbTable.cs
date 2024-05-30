@@ -71,7 +71,7 @@ namespace SharpOrm.Builder
             return Create(new TableSchema(name, columns) { Temporary = temporary }, manager);
         }
 
-        public static DbTable Create<T>(bool temporary, TranslationRegistry registry = null, ConnectionManager manager = null) where T : new()
+        public static DbTable Create<T>(bool temporary, TranslationRegistry registry = null, ConnectionManager manager = null)
         {
             var table = new TableInfo(typeof(T), registry ?? TranslationRegistry.Default);
             var cols = new TableColumnCollection();
@@ -155,7 +155,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public Query GetQuery<T>() where T : new()
+        public Query GetQuery<T>()
         {
             return new Query<T>(DbName, Manager);
         }

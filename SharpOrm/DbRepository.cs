@@ -227,7 +227,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="alias">An alias for the type in the query.</param>
         /// <returns>A Query object for the specified type with an alias.</returns>
-        protected Query<T> Query<T>(string alias = "") where T : new()
+        protected Query<T> Query<T>(string alias = "")
         {
             return this.Query<T>(DbName.Of<T>(alias));
         }
@@ -238,7 +238,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="name">The DbName representing the type.</param>
         /// <returns>A Query object for the specified type with a DbName.</returns>
-        protected virtual Query<T> Query<T>(DbName name) where T : new()
+        protected virtual Query<T> Query<T>(DbName name)
         {
             this.ThrowIfDisposed();
 

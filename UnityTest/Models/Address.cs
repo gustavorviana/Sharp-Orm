@@ -1,8 +1,7 @@
 ﻿namespace UnityTest.Models
 {
-    public class Address
+    public record Address(int Id)
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Street { get; set; }
     }

@@ -262,15 +262,13 @@ namespace UnityTest.SqlServerTests
             qAddress.Delete();
 
             qAddress.BulkInsert(
-                new Address
+                new Address(1)
                 {
-                    Id = 1,
                     Name = "Test 1",
                     Street = "Street 1"
                 },
-                new Address
+                new Address(2)
                 {
-                    Id = 2,
                     Name = "Test 2",
                     Street = "Street 2"
                 }

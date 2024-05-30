@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.DataTranslation.Reader;
 using System;
 using System.Data.Common;
@@ -85,7 +86,7 @@ namespace UnityTest
 
         private static T CreateInstance<T>(DbDataReader reader)
         {
-            var activator = new ObjectActivator(typeof(T), reader);
+            var activator = new ObjectActivator(typeof(T), reader, TranslationRegistry.Default);
             return (T)activator.CreateInstance(reader);
         }
 

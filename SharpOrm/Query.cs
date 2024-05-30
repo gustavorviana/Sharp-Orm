@@ -5,7 +5,6 @@ using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -18,7 +17,7 @@ namespace SharpOrm
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
     /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
-    public class Query<T> : Query where T : new()
+    public class Query<T> : Query
     {
         /// <summary>
         /// Table name in the database.
@@ -863,7 +862,7 @@ namespace SharpOrm
             }
         }
 
-        public virtual IEnumerable<T> GetEnumerable<T>() where T : new()
+        public virtual IEnumerable<T> GetEnumerable<T>()
         {
             this.ValidateReadonly();
             this.Token.ThrowIfCancellationRequested();
