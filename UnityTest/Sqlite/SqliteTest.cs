@@ -9,7 +9,8 @@ namespace UnityTest.Sqlite
     public class SqliteTest : DbTest<SQLiteConnection>
     {
         private const string FilePath = "../TestDatabase.sqlite";
-        private const string ConnStr = "Data Source=" + FilePath + ";Version=3;";
+        public const string ConnStr = "Data Source=" + FilePath + ";Version=3;";
+
         public SqliteTest() : base(new SqliteQueryConfig(false) { LoadForeign = true }, ConnStr)
         {
             if (!File.Exists(FilePath))

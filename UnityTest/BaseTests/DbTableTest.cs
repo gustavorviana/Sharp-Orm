@@ -8,11 +8,14 @@ using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 
-namespace UnityTest.MysqlTests
+namespace UnityTest.BaseTests
 {
-    [TestClass]
-    public class MysqTableTest : MysqlTableTest
+    public abstract class DbTableTest<Conn> : DbTest<Conn> where Conn : DbConnection, new()
     {
+        public DbTableTest(QueryConfig config, string connStr) : base(config, connStr)
+        {
+        }
+
         [TestMethod]
         public void CreateByColumnTest()
         {
@@ -82,7 +85,7 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
-        public void CheckExists()
+        public virtual void CheckExists()
         {
             var schema = GetSchema();
             using var table = DbTable.Create(schema, GetConnectionManager());
@@ -123,7 +126,7 @@ namespace UnityTest.MysqlTests
             using var table = DbTable.Create(schema, GetConnectionManager());
         }
 
-        private static TableSchema GetSchema()
+        protected static TableSchema GetSchema()
         {
             var schema = new TableSchema("MyTestTable") { Temporary = true };
             schema.Columns.AddPk("Id").AutoIncrement = true;
