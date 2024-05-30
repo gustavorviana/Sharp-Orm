@@ -450,7 +450,7 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(obj));
 
             var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            return query.Update(query.GetCellsOf(obj, false, props, false));
+            return query.Update(query.GetCellsOf(obj, false, props, false, true));
         }
 
         /// <summary>
@@ -467,7 +467,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false), columns, true));
+            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false, validate: true), columns, true));
         }
 
         public static T Insert<T>(this Query query, params Cell[] cells)
@@ -477,7 +477,7 @@ namespace SharpOrm
 
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
-            return Insert<R>(query, query.GetCellsOf(obj, true));
+            return Insert<R>(query, query.GetCellsOf(obj, true, validate: true));
         }
 
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
@@ -671,9 +671,8 @@ namespace SharpOrm
 
         public static object Get(this DbDataReader reader, string key)
         {
-            key = key.ToLower();
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).ToLower() == key)
+                if (reader.GetName(i).Equals(key, StringComparison.CurrentCultureIgnoreCase))
                     return reader[i];
 
             return DBNull.Value;
@@ -688,7 +687,7 @@ namespace SharpOrm
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
+                if (reader.GetName(i).Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     return i;
 
             return -1;

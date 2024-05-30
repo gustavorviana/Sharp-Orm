@@ -163,7 +163,7 @@ namespace UnityTest.Utils.Mock
 
         public override string GetName(int i)
         {
-            return this.currentRow == null ? null : this.currentRow[i].Name;
+            return this.currentRow?[i].Name;
         }
 
         public override int GetOrdinal(string name)
@@ -171,7 +171,7 @@ namespace UnityTest.Utils.Mock
             int index = 0;
             foreach (var row in this.currentRow)
             {
-                if (row.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                if (row.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     return index;
 
                 index++;

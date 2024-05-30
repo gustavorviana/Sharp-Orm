@@ -199,9 +199,9 @@ namespace SharpOrm.Builder
 
         protected bool CanDeleteJoin(QueryInfo info)
         {
-            string name = info.TableName.TryGetAlias(this.Info.Config).ToLower();
+            string name = info.TableName.TryGetAlias(this.Info.Config);
             foreach (var jName in this.Query.deleteJoins)
-                if (jName.ToLower().Equals(name))
+                if (jName.Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     return true;
 
             return false;

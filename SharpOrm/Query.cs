@@ -240,7 +240,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(this.GetCellsOf(obj, true));
+            return this.Insert(this.GetCellsOf(obj, true, validate: true));
         }
 
         /// <summary>
@@ -249,7 +249,7 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(params T[] objs)
         {
-            return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)).ToArray());
+            return base.BulkInsert(objs.Select(ValidateAndConvert));
         }
 
         /// <summary>
@@ -258,7 +258,12 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            return base.BulkInsert(objs.Select(obj => TableInfo.GetRow(obj, true, this.Config.LoadForeign)));
+            return base.BulkInsert(objs.Select(ValidateAndConvert));
+        }
+
+        private Row ValidateAndConvert(T obj)
+        {
+            return TableInfo.GetRow(obj, true, this.Config.LoadForeign, true);
         }
 
         /// <summary>
@@ -308,16 +313,16 @@ namespace SharpOrm
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false), columns).ToArray();
+            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false, validate: true), columns).ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException(Messages.ColumnsNotFound);
 
             return base.Update(toUpdate);
         }
 
-        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true)
+        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains);
+            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
         }
 
         #region Join

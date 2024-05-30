@@ -79,18 +79,45 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Validate fields of the object.
+        /// </summary>
+        /// <param name="owner">Object to be validated.</param>
+        /// <param name="columns">Fields/Properties of the object to be validated.</param>
+        public void Validate(object owner, params string[] columns)
+        {
+            if (columns.Length == 0)
+            {
+                this.Validate(owner);
+                return;
+            }
+
+            foreach (var column in this.Columns)
+                if (columns.Any(x => x.Equals(column.Name, StringComparison.CurrentCultureIgnoreCase)))
+                    column.Validate(owner);
+        }
+
+        /// <summary>
+        /// Validate fields of the object.
+        /// </summary>
+        /// <param name="owner"></param>
+        public void Validate(object owner)
+        {
+            foreach (var item in this.Columns) item.Validate(owner);
+        }
+
+        /// <summary>
         /// Transforms the object into a Row.
         /// </summary>
         /// <param name="owner">Object that should have its columns read.</param>
         /// <param name="readPk">Indicates whether primary keys can be retrieved.</param>
         /// <param name="readFk">Indicates whether foreign keys can be retrieved.</param>
         /// <returns></returns>
-        public Row GetRow(object owner, bool readPk, bool readFk)
+        public Row GetRow(object owner, bool readPk, bool readFk, bool validate)
         {
             if (owner is Row row)
                 return row;
 
-            return new Row(this.GetObjCells(owner, readPk, readFk).ToArray());
+            return new Row(this.GetObjCells(owner, readPk, readFk, validate: validate).ToArray());
         }
 
         /// <summary>
@@ -102,8 +129,7 @@ namespace SharpOrm.Builder
         /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
-            name = name.ToLower();
-            if (!(this.Columns.FirstOrDefault(c => c.Name.ToLower() == name) is ColumnInfo col))
+            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) is ColumnInfo col))
                 throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
 
             return col.Get(owner);
@@ -118,11 +144,11 @@ namespace SharpOrm.Builder
         /// <param name="properties">Name of the properties that should or should not be returned.</param>
         /// <param name="needContains">If true, only the columns with names in <paramref name="properties"/> will be returned; if false, only the properties not in the list will be returned.</param>
         /// <returns>An enumerable of cells.</returns>
-        public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true)
+        public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
             foreach (var column in this.Columns)
             {
-                if (!(properties is null) && properties.Contains(column.PropName) != needContains)
+                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
                     continue;
 
                 if (column.IsForeignKey)
@@ -136,13 +162,16 @@ namespace SharpOrm.Builder
                 if ((column.Key && (!readPk || TranslationUtils.IsInvalidPk(value))))
                     continue;
 
+                if (validate)
+                    column.ValidateValue(value);
+
                 yield return new Cell(column.Name, value);
             }
         }
 
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.OrdinalIgnoreCase));
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)

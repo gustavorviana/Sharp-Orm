@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using System.Reflection;
 
 namespace SharpOrm.Builder
@@ -14,6 +15,7 @@ namespace SharpOrm.Builder
     {
         #region Properties
         private readonly MemberInfo column;
+        public ValidationAttribute[] Validations { get; }
 
         /// <summary>
         /// Gets the name of the column.
@@ -29,11 +31,6 @@ namespace SharpOrm.Builder
         /// Gets the order of the column.
         /// </summary>
         public int Order { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the column is required.
-        /// </summary>
-        public bool Required { get; }
 
         /// <summary>
         /// Gets the type of the declaring class.
@@ -104,7 +101,6 @@ namespace SharpOrm.Builder
             this.column = member;
             this.IsNative = TranslationUtils.IsNative(type, false);
             this.Translation = translation ?? registry.GetFor(this.Type);
-            this.Required = this.GetAttribute<RequiredAttribute>() != null;
 
             this.HasManyInfo = this.GetAttribute<HasManyAttribute>();
             this.ForeignKey = this.HasManyInfo?.ForeignKey;
@@ -125,7 +121,8 @@ namespace SharpOrm.Builder
             this.Name = colAttr?.Name ?? member.Name;
             this.Order = colAttr?.Order ?? -1;
 
-            this.Key = this.GetAttribute<KeyAttribute>() != null || this.Name.ToLower() == "id";
+            this.Key = this.GetAttribute<KeyAttribute>() != null || this.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase);
+            this.Validations = this.column.GetCustomAttributes<ValidationAttribute>().ToArray();
         }
 
         public static string GetName(MemberInfo member)
@@ -177,7 +174,7 @@ namespace SharpOrm.Builder
             if (this._validType == null)
                 this._validType = TranslationRegistry.GetValidTypeFor(this.Type);
 
-            return this.Translation.ToSqlValue(this.GetRaw(owner), this._validType);
+            return this.Translation?.ToSqlValue(this.GetRaw(owner), this._validType);
         }
 
         /// <summary>
@@ -191,6 +188,28 @@ namespace SharpOrm.Builder
                 return field.GetValue(owner);
 
             return ((PropertyInfo)this.column).GetValue(owner);
+        }
+
+        /// <summary>
+        /// Validate if the class has valid properties/fields.
+        /// </summary>
+        /// <param name="owner">Object whose property/field is to be validated.</param>
+        public void Validate(object owner)
+        {
+            this.ValidateValue(this.Get(owner));
+        }
+
+        /// <summary>
+        /// Validate the inserted value according to the attributes applied to the property/field.
+        /// </summary>
+        /// <param name="value">Value to be validated.</param>
+        public void ValidateValue(object value)
+        {
+            if (value == DBNull.Value)
+                value = null;
+
+            foreach (var item in Validations)
+                item.Validate(value, this.Name);
         }
 
         public override string ToString()
@@ -211,7 +230,6 @@ namespace SharpOrm.Builder
                    Name == other.Name &&
                    Key == other.Key &&
                    Order == other.Order &&
-                   Required == other.Required &&
                    EqualityComparer<Type>.Default.Equals(DeclaringType, other.DeclaringType) &&
                    EqualityComparer<Type>.Default.Equals(Type, other.Type) &&
                    EqualityComparer<ISqlTranslation>.Default.Equals(Translation, other.Translation) &&
@@ -226,7 +244,6 @@ namespace SharpOrm.Builder
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + Key.GetHashCode();
             hashCode = hashCode * -1521134295 + Order.GetHashCode();
-            hashCode = hashCode * -1521134295 + Required.GetHashCode();
             hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(DeclaringType);
             hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(Type);
             hashCode = hashCode * -1521134295 + EqualityComparer<ISqlTranslation>.Default.GetHashCode(Translation);

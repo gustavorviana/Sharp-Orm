@@ -3,6 +3,7 @@ using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -112,7 +113,7 @@ namespace SharpOrm.Builder
         {
             return new DataColumn(item.Name, item.Type)
             {
-                AllowDBNull = !item.Required && !item.Key
+                AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key
             };
         }
 
