@@ -176,7 +176,8 @@ namespace UnityTest.Utils.Mock
 
                 index++;
             }
-            throw new IndexOutOfRangeException("Column not found: " + name);
+
+            return -1;
         }
 
         public override string GetString(int i)

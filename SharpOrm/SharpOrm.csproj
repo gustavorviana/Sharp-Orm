@@ -48,7 +48,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" Condition="'$(TargetFramework)' != 'net45' " />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" Condition="'$(TargetFramework)' != 'net45'" />
 	</ItemGroup>
 
 	<ItemGroup>
