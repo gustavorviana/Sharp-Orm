@@ -18,6 +18,10 @@
         /// </summary>
         CloseOnManagerDispose,
         /// <summary>
+        /// The connection will be closed and its resources released (calling .Dispose() on the connection. Typically used when the connection was created without the ConnectionCreator.).
+        /// </summary>
+        DisposeOnManagerDispose,
+        /// <summary>
         /// The connection should remain open (it is the developer's responsibility to manually close it).
         /// </summary>
         LeaveOpen

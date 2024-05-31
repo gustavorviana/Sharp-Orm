@@ -373,8 +373,31 @@ namespace SharpOrm.Connection
 
             try
             {
-                if (this.creator != null) this.creator.SafeDisposeConnection(this.Connection);
-                else if (this.Connection.State == System.Data.ConnectionState.Open) this.Connection.Close();
+                if (this.CloseByCreator())
+                    return;
+
+                this.CloseConnection();
+
+                if (this.Management == ConnectionManagement.DisposeOnManagerDispose)
+                    this.Connection.Dispose();
+            }
+            catch
+            { }
+        }
+
+        private bool CloseByCreator()
+        {
+            if (this.creator == null) return false;
+            this.creator.SafeDisposeConnection(this.Connection);
+            return true;
+        }
+
+        private void CloseConnection()
+        {
+            try
+            {
+                if (this.Connection.State == System.Data.ConnectionState.Open)
+                    this.Connection.Close();
             }
             catch
             { }

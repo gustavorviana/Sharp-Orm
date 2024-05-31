@@ -23,7 +23,6 @@ namespace SharpOrm.Connection
     public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
         private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
-        private readonly object _lock = new object();
         private readonly string _connectionString;
 
         /// <summary>
@@ -43,13 +42,10 @@ namespace SharpOrm.Connection
         public override DbConnection GetConnection()
         {
             this.ThrowIfDisposed();
-            lock (this._lock)
-            {
-                var connection = new T { ConnectionString = this._connectionString };
+            var connection = new T { ConnectionString = this._connectionString };
 
-                this.connections.Add(connection);
-                return connection;
-            }
+            this.connections.Add(connection);
+            return connection;
         }
 
         /// <summary>
@@ -57,13 +53,10 @@ namespace SharpOrm.Connection
         /// </summary>
         public override void SafeDisposeConnection(DbConnection connection)
         {
-            lock (this._lock)
-            {
-                if (connection.State == ConnectionState.Open)
-                    connection.Close();
+            if (connection.State == ConnectionState.Open)
+                connection.Close();
 
-                connection.Dispose();
-            }
+            connection.Dispose();
         }
 
         /// <summary>

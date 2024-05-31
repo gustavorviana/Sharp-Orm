@@ -385,11 +385,13 @@ namespace SharpOrm
         {
             this.ThrowIfDisposed();
 
-            if (useActiveTransaction && this.Transaction != null)
-                return this.Transaction;
-
             lock (this._lock)
+            {
+                if (useActiveTransaction && this.Transaction != null)
+                    return this.Transaction;
+
                 return GetExistingManager() ?? this.GetNewManager();
+            }
         }
 
         private ConnectionManager GetExistingManager()
