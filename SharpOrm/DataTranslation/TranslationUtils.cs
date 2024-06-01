@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     internal static class TranslationUtils
     {
@@ -30,7 +30,7 @@ namespace SharpOrm.Builder.DataTranslation
             if (Nullable.GetUnderlyingType(type) is Type nType)
                 type = nType;
 
-            return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || IsNumeric(type) || (!ignoreBuffer && IsBuffer(type));
+            return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || IsNumeric(type) || !ignoreBuffer && IsBuffer(type);
         }
 
         /// <summary>
@@ -42,10 +42,10 @@ namespace SharpOrm.Builder.DataTranslation
         internal static bool IsSimilar(Type type1, Type type2)
         {
             return type1 == type2 ||
-                    (type1 == typeof(string) && type2 == typeof(Guid)) ||
-                    (type2 == typeof(string) && type1 == typeof(Guid)) ||
-                    (TranslationUtils.IsNumberWithoutDecimal(type1) == TranslationUtils.IsNumberWithoutDecimal(type2)) ||
-                    (TranslationUtils.IsNumberWithDecimal(type1) == TranslationUtils.IsNumberWithDecimal(type2));
+                    type1 == typeof(string) && type2 == typeof(Guid) ||
+                    type2 == typeof(string) && type1 == typeof(Guid) ||
+                    IsNumberWithoutDecimal(type1) == IsNumberWithoutDecimal(type2) ||
+                    IsNumberWithDecimal(type1) == IsNumberWithDecimal(type2);
         }
 
         public static bool IsBuffer(Type type)
@@ -55,7 +55,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public static bool IsInvalidPk(object value)
         {
-            return IsNull(value) || IsZero(value) || (value is Guid guid && guid == Guid.Empty);
+            return IsNull(value) || IsZero(value) || value is Guid guid && guid == Guid.Empty;
         }
 
         public static bool IsNull(object value)
@@ -113,14 +113,14 @@ namespace SharpOrm.Builder.DataTranslation
         public static bool IsNumberWithoutDecimal(Type type)
         {
             return type == typeof(int) || type == typeof(long) || type == typeof(byte) || type == typeof(sbyte)
-            || type == typeof(Int16) || type == typeof(UInt16) || type == typeof(UInt32) || type == typeof(Int64)
-            || type == typeof(UInt64);
+            || type == typeof(short) || type == typeof(ushort) || type == typeof(uint) || type == typeof(long)
+            || type == typeof(ulong);
         }
 
         public static T FromSql<T>(this TranslationRegistry registry, object value)
         {
             if (value is null || value is DBNull)
-                return default(T);
+                return default;
 
             return (T)registry.FromSql(value, typeof(T));
         }

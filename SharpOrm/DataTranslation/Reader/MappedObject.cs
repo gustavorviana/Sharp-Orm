@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using SharpOrm.Builder;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     public class MappedObject : IMappedObject
     {
@@ -43,22 +44,22 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
         {
-            this.Type = type;
+            Type = type;
             this.registry = registry;
             this.enqueueable = enqueueable;
         }
 
         private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
-            objectActivator = new ObjectActivator(this.Type, reader, registry);
+            objectActivator = new ObjectActivator(Type, reader, registry);
 
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
-            foreach (var column in TableInfo.GetColumns(this.Type, registry))
-                if (column.IsForeignKey) AddIfValidId(reader, this.fkColumns, column.ForeignKey, column);
-                else if (NeedMapAsValue(column)) AddIfValidId(reader, this.columns, GetName(column, prefix), column);
-                else this.childrens.Add(new MappedObject(column.Type, this.registry, this.enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
+            foreach (var column in TableInfo.GetColumns(Type, registry))
+                if (column.IsForeignKey) AddIfValidId(reader, fkColumns, column.ForeignKey, column);
+                else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
+                else childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
 
             return this;
         }
@@ -85,48 +86,48 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
         public object Read(DbDataReader reader)
         {
-            lock (this._lock)
+            lock (_lock)
             {
-                if (this.Type == typeof(Row))
-                    return reader.ReadRow(this.registry);
+                if (Type == typeof(Row))
+                    return reader.ReadRow(registry);
 
-                this.NewObject(reader);
+                NewObject(reader);
 
                 for (int i = 0; i < reader.FieldCount; i++)
-                    this.SetValue(i, reader[i]);
+                    SetValue(i, reader[i]);
 
-                return this.instance;
+                return instance;
             }
         }
 
         private object NewObject(DbDataReader reader)
         {
-            this.instance = objectActivator.CreateInstance(reader);
+            instance = objectActivator.CreateInstance(reader);
 
-            foreach (var children in this.childrens)
+            foreach (var children in childrens)
                 children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
 
-            return this.instance;
+            return instance;
         }
 
         private void SetValue(int index, object value)
         {
-            if (this.enqueueable != null)
-                this.EnqueueFk(index, value);
+            if (enqueueable != null)
+                EnqueueFk(index, value);
 
-            foreach (var column in this.columns)
+            foreach (var column in columns)
                 if (column.Index == index)
-                    column.Set(this.instance, value);
+                    column.Set(instance, value);
 
-            foreach (var children in this.childrens)
+            foreach (var children in childrens)
                 children.SetValue(index, value);
         }
 
         private void EnqueueFk(int index, object value)
         {
-            foreach (var column in this.fkColumns)
+            foreach (var column in fkColumns)
                 if (column.Index == index)
-                    this.enqueueable.EnqueueForeign(this.instance, value, column.Column);
+                    enqueueable.EnqueueForeign(instance, value, column.Column);
         }
 
         private class MappedColumn
@@ -136,13 +137,13 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
             public MappedColumn(ColumnInfo column, int index)
             {
-                this.Column = column;
-                this.Index = index;
+                Column = column;
+                Index = index;
             }
 
             public void Set(object owner, object value)
             {
-                this.Column.Set(owner, value);
+                Column.Set(owner, value);
             }
         }
     }

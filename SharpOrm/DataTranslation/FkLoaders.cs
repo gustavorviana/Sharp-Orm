@@ -1,6 +1,7 @@
-﻿using SharpOrm.Builder.DataTranslation.Reader;
+﻿using SharpOrm.Builder;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     internal class FkLoaders : IFkQueue
     {
@@ -23,7 +24,7 @@ namespace SharpOrm.Builder.DataTranslation
         public FkLoaders(ConnectionManager manager, LambdaColumn[] fkToLoad, CancellationToken token)
         {
             this.token = token;
-            this.Manager = manager;
+            Manager = manager;
             this.fkToLoad = fkToLoad;
         }
 
@@ -32,9 +33,9 @@ namespace SharpOrm.Builder.DataTranslation
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            if (this.fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
-                this.AddFkColumn(lCol, owner, fkValue, column);
-            else if (this.Manager.Config.LoadForeign)
+            if (fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
+                AddFkColumn(lCol, owner, fkValue, column);
+            else if (Manager.Config.LoadForeign)
                 column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(column, fkValue));
         }
 
@@ -46,7 +47,7 @@ namespace SharpOrm.Builder.DataTranslation
             while (!token.IsCancellationRequested && foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = foreignKeyToLoad.Dequeue();
-                info.SetForeignValue(this.GetValueFor(info));
+                info.SetForeignValue(GetValueFor(info));
             }
 
             token.ThrowIfCancellationRequested();
@@ -55,24 +56,24 @@ namespace SharpOrm.Builder.DataTranslation
         private object GetValueFor(ForeignInfo info)
         {
             if (info is HasManyInfo manyInfo)
-                return this.GetCollectionValueFor(manyInfo);
+                return GetCollectionValueFor(manyInfo);
 
-            using (var query = this.CreateQuery(info))
+            using (var query = CreateQuery(info))
             {
                 query.Limit = 1;
 
-                using (var @enum = this.CreateEnumerator(info, query.ExecuteReader()))
+                using (var @enum = CreateEnumerator(info, query.ExecuteReader()))
                     return @enum.MoveNext() ? @enum.Current : null;
             }
         }
 
         private object GetCollectionValueFor(HasManyInfo info)
         {
-            using (var query = this.CreateQuery(info))
+            using (var query = CreateQuery(info))
             {
                 IList collection = ReflectionUtils.CreateList(info.Type);
 
-                using (var @enum = this.CreateEnumerator(info, query.ExecuteReader()))
+                using (var @enum = CreateEnumerator(info, query.ExecuteReader()))
                     while (@enum.MoveNext())
                         collection.Add(@enum.Current);
 
@@ -85,25 +86,25 @@ namespace SharpOrm.Builder.DataTranslation
 
         private Query CreateQuery(ForeignInfo info)
         {
-            var query = this.CreateQuery(info.TableName);
+            var query = CreateQuery(info.TableName);
             query.Where(info is HasManyInfo many ? many.LocalKey : "Id", info.ForeignKey);
             return query;
         }
 
         private Query CreateQuery(string name)
         {
-            return new Query(name, this.Manager) { Token = this.token };
+            return new Query(name, Manager) { Token = token };
         }
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
-            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), this, this.Manager.Config.Translation);
+            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), this, Manager.Config.Translation);
             return new DbObjectEnumerator(reader, mapped, token, false);
         }
 
         private void AddFkColumn(LambdaColumn lCol, object owner, object fkValue, ColumnInfo column)
         {
-            var info = this.foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
+            var info = foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
             if (info == null)
             {
                 info = column.HasManyInfo != null ? new HasManyInfo(lCol, fkValue, column.HasManyInfo.LocalKey) : new ForeignInfo(lCol, fkValue);

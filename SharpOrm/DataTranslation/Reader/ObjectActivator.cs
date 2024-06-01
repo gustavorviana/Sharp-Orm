@@ -2,8 +2,10 @@
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
+using SharpOrm;
+using SharpOrm.DataTranslation;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
     /// Class responsible for creating instances of objects using reflection.
@@ -32,7 +34,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
                 || type.GetMethod("<Clone>$") != null
 #endif
                 )
-                this.objParams = this.GetFields(reader, registry) ?? throw new NotSupportedException("A compatible constructor for the received data could not be found.");
+                objParams = GetFields(reader, registry) ?? throw new NotSupportedException("A compatible constructor for the received data could not be found.");
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         /// <returns>The matched constructor, or null if none found.</returns>
         private ParamInfo[] GetFields(DbDataReader reader, TranslationRegistry registry)
         {
-            var constructors = this.type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
+            var constructors = type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
 
             foreach (var constructor in constructors)
             {
@@ -91,9 +93,9 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         {
             try
             {
-                if (this.objParams == null) return Activator.CreateInstance(this.type);
+                if (objParams == null) return Activator.CreateInstance(type);
 
-                return Activator.CreateInstance(this.type, GetValues(reader));
+                return Activator.CreateInstance(type, GetValues(reader));
             }
             catch (MissingMethodException ex)
             {
@@ -108,14 +110,14 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         /// <returns>An array of values for the constructor parameters.</returns>
         private object[] GetValues(DbDataReader reader)
         {
-            if (this.objParams == null)
+            if (objParams == null)
 #if NET45
                 return new object[0];
 #else
                 return Array.Empty<object>();
 #endif
 
-            return this.objParams.Select(x => x.GetValue(reader)).ToArray();
+            return objParams.Select(x => x.GetValue(reader)).ToArray();
         }
 
         /// <summary>
@@ -138,13 +140,13 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             public ParamInfo(int index, Type expected, ISqlTranslation translation)
             {
                 this.index = index;
-                this.expectedType = expected;
+                expectedType = expected;
                 this.translation = translation;
             }
 
             public object GetValue(DbDataReader reader)
             {
-                return this.translation.FromSqlValue(reader[index], this.expectedType);
+                return translation.FromSqlValue(reader[index], expectedType);
             }
         }
     }

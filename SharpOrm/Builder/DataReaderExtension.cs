@@ -1,6 +1,6 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using SharpOrm.Collections;
+﻿using SharpOrm.Collections;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Data;

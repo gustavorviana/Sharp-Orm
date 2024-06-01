@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Linq;
+using SharpOrm.Builder;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     internal class ObjIdFkQueue : IFkQueue
     {

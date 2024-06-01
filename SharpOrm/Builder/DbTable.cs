@@ -1,5 +1,5 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using SharpOrm.Connection;
+﻿using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System;
 

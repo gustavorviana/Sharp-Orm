@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
     public class SqlConverterAttribute : Attribute
@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.DataTranslation
         public Type Type { get; }
         public SqlConverterAttribute(Type type)
         {
-            this.Type = type ?? throw new ArgumentNullException(nameof(type));
+            Type = type ?? throw new ArgumentNullException(nameof(type));
         }
     }
 }

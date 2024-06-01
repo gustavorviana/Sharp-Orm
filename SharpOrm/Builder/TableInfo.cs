@@ -1,5 +1,5 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using SharpOrm.Builder.Expressions;
+﻿using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

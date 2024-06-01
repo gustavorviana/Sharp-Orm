@@ -1,8 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using System;
 using UnityTest.Models;
 using UnityTest.Utils;

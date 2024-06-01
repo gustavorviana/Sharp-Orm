@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     /// <summary>
     /// Class responsible for translating data between the database and code.
@@ -76,7 +76,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             Type type = value?.GetType();
 
-            if (this.GetFor(type) is ISqlTranslation conversor)
+            if (GetFor(type) is ISqlTranslation conversor)
                 return conversor.ToSqlValue(value, type);
 
             throw new NotSupportedException($"Type \"{type.FullName}\" is not supported");
@@ -95,7 +95,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             Type expectedType = value.GetType();
 
-            if (this.GetFor(expectedType) is ISqlTranslation conversor)
+            if (GetFor(expectedType) is ISqlTranslation conversor)
                 return conversor.FromSqlValue(value, expectedType);
 
             return value;
@@ -114,7 +114,7 @@ namespace SharpOrm.Builder.DataTranslation
 
             expectedType = GetValidTypeFor(expectedType);
 
-            if (this.GetFor(expectedType) is ISqlTranslation conversor)
+            if (GetFor(expectedType) is ISqlTranslation conversor)
                 return conversor.FromSqlValue(value, expectedType);
 
             return value;
@@ -129,7 +129,7 @@ namespace SharpOrm.Builder.DataTranslation
         {
             type = GetValidTypeFor(type);
 
-            if (this.Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
+            if (Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
                 return conversor;
 
             if (native.CanWork(type))
@@ -167,7 +167,7 @@ namespace SharpOrm.Builder.DataTranslation
         /// <returns></returns>
         public DateTime ConvertDate(DateTime value, bool toSql)
         {
-            return (DateTime)(toSql ? this.native.ToSqlValue(value, typeof(DateTime)) : this.native.FromSqlValue(value, typeof(DateTime)));
+            return (DateTime)(toSql ? native.ToSqlValue(value, typeof(DateTime)) : native.FromSqlValue(value, typeof(DateTime)));
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Data.Common;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     public interface IMappedObject
     {

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using SharpOrm.Builder;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     internal class ForeignInfo
     {
@@ -13,14 +14,14 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
         public ForeignInfo(LambdaColumn column, object foreignKey)
         {
-            this.TableName = TableInfo.GetNameOf(column.ValueType);
-            this.ForeignKey = foreignKey;
-            this.Type = column.ValueType;
+            TableName = TableInfo.GetNameOf(column.ValueType);
+            ForeignKey = foreignKey;
+            Type = column.ValueType;
         }
 
         public void AddFkColumn(object owner, ColumnInfo column)
         {
-            this.fkObjs.Add(owner, column);
+            fkObjs.Add(owner, column);
         }
 
         public void SetForeignValue(object value)
@@ -31,7 +32,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
 
         public bool IsFk(Type type, object foreignKey)
         {
-            return this.Type == type && this.ForeignKey.Equals(foreignKey);
+            return Type == type && ForeignKey.Equals(foreignKey);
         }
     }
 }

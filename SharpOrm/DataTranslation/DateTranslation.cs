@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     internal class DateTranslation : ISqlTranslation
     {
@@ -100,7 +100,7 @@ namespace SharpOrm.Builder.DataTranslation
                 return TimeZoneInfo.ConvertTimeFromUtc(offset.UtcDateTime, CodeTimeZone);
 
             if (obj is DateTime date)
-                return ConvertDate(this.DbTimeZone, this.CodeTimeZone, date);
+                return ConvertDate(DbTimeZone, CodeTimeZone, date);
 
             if (obj is string strDate)
                 return ParseDateStringFromDb(strDate);

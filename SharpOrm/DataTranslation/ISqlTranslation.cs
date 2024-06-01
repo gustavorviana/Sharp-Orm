@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     public interface ISqlTranslation
     {

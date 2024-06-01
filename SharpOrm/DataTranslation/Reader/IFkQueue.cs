@@ -1,4 +1,6 @@
-﻿namespace SharpOrm.Builder.DataTranslation.Reader
+﻿using SharpOrm.Builder;
+
+namespace SharpOrm.DataTranslation.Reader
 {
     public interface IFkQueue
     {

@@ -1,5 +1,5 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using SharpOrm.Builder.DataTranslation.Reader;
+﻿using SharpOrm.DataTranslation;
+using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Collections;
 using System.Collections.Generic;

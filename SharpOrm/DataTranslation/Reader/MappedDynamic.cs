@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Dynamic;
+using SharpOrm.DataTranslation;
 
-namespace SharpOrm.Builder.DataTranslation.Reader
+namespace SharpOrm.DataTranslation.Reader
 {
     public class MappedDynamic : IMappedObject
     {
@@ -12,7 +13,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
         public MappedDynamic(TranslationRegistry registry, DbDataReader reader)
         {
             for (int i = 0; i < reader.FieldCount; i++)
-                this.converters.Add(new ObjConverter(registry, reader.GetFieldType(i)));
+                converters.Add(new ObjConverter(registry, reader.GetFieldType(i)));
         }
 
         public object Read(DbDataReader reader)
@@ -20,7 +21,7 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             var dObject = (IDictionary<string, object>)new ExpandoObject();
 
             for (int i = 0; i < reader.FieldCount; i++)
-                dObject[reader.GetName(i)] = this.converters[i].Parse(reader, i);
+                dObject[reader.GetName(i)] = converters[i].Parse(reader, i);
 
             return dObject;
         }
@@ -33,15 +34,15 @@ namespace SharpOrm.Builder.DataTranslation.Reader
             public ObjConverter(TranslationRegistry registry, Type type)
             {
                 this.type = TranslationRegistry.GetValidTypeFor(type);
-                this.translation = registry.GetFor(type);
+                translation = registry.GetFor(type);
             }
 
             public object Parse(DbDataReader reader, int index)
             {
-                if (this.translation == null)
+                if (translation == null)
                     return reader[index];
 
-                return this.translation.FromSqlValue(reader[index], this.type);
+                return translation.FromSqlValue(reader[index], type);
             }
         }
     }

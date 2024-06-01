@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Builder.DataTranslation;
-using SharpOrm.Builder.DataTranslation.Reader;
+using SharpOrm.DataTranslation;
+using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Data.Common;
 using System.Drawing;

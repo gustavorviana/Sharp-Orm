@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace SharpOrm.Builder.DataTranslation
+namespace SharpOrm.DataTranslation
 {
     /// <summary>
     /// Provides translation between binary data and SQL values.
@@ -18,9 +18,9 @@ namespace SharpOrm.Builder.DataTranslation
         public virtual object FromSqlValue(object value, Type expectedType)
         {
             if (expectedType == typeof(byte[]))
-                return this.ParseBytes(value);
+                return ParseBytes(value);
 
-            return this.ParseStream(value);
+            return ParseStream(value);
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace SharpOrm.Builder.DataTranslation
 
         public virtual object ToSqlValue(object value, Type type)
         {
-            return this.ParseBytes(value);
+            return ParseBytes(value);
         }
 
         /// <summary>
