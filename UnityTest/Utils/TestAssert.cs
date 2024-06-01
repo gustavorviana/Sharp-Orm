@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Builder;
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -39,7 +38,7 @@ namespace UnityTest.Utils
 
         public static void AreDecoded(string expected, SqlExpression actual)
         {
-            Assert.AreEqual(expected, DataReaderExtension.DecodeExpressionString(actual));
+            Assert.AreEqual(expected, DbCommandExtension.DecodeExpressionString(actual));
         }
 
         public static void AreEqualsParameters(SqlExpression exp, params int[] paramIndexes)
@@ -76,7 +75,7 @@ namespace UnityTest.Utils
         public static void AreValidParam(DbCommand cmd, int index, object value)
         {
             var param = cmd.Parameters[index];
-            Assert.AreEqual(DataReaderExtension.GetParamName(index + 1), param.ParameterName);
+            Assert.AreEqual(DbCommandExtension.GetParamName(index + 1), param.ParameterName);
 
             if (value == null || value is DBNull) Assert.IsTrue(param.Value is DBNull);
             else Assert.AreEqual(value, param.Value);

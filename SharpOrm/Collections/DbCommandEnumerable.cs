@@ -12,16 +12,16 @@ namespace SharpOrm.Collections
 {
     public class DbCommandEnumerable<T> : IEnumerable<T>
     {
+        private readonly ConnectionManagement management;
         private readonly TranslationRegistry translation;
         private readonly CancellationToken token;
-        private readonly ConnectionManagement management;
         private readonly DbCommand command;
         internal IFkQueue fkQueue;
         private bool hasFirstRun;
 
-        public bool LeaveOpen { get; set; }
+        public bool DisposeCommand { get; set; }
 
-        public DbCommandEnumerable(TranslationRegistry translation, DbCommand command, CancellationToken token, ConnectionManagement management)
+        public DbCommandEnumerable(DbCommand command, TranslationRegistry translation, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
         {
             Grammar.QueryLogger?.Invoke(command.CommandText);
             this.translation = translation;
@@ -41,7 +41,7 @@ namespace SharpOrm.Collections
         {
             this.CheckRun();
             var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token, this.LeaveOpen));
+            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token));
         }
 
         private void CheckRun()
@@ -50,6 +50,7 @@ namespace SharpOrm.Collections
                 throw new InvalidOperationException("IEnumerable can be executed only once.");
 
             this.hasFirstRun = true;
+            command.Connection.OpenIfNeeded();
         }
 
         private IMappedObject CreateMappedObj(DbDataReader reader)
@@ -59,18 +60,26 @@ namespace SharpOrm.Collections
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator
         {
+            if (this.management != ConnectionManagement.CloseOnEndOperation)
+            {
+                if (this.DisposeCommand)
+                    try { this.command.Dispose(); } catch { }
+
+                return instance;
+            }
+
             instance.Disposed += (sender, e) =>
             {
                 try
                 {
-                    if (this.management != ConnectionManagement.LeaveOpen && this.management != ConnectionManagement.CloseOnManagerDispose && this.command.CanCloseConnection(this.management))
+                    if (this.command.Transaction == null && this.command.Connection.IsOpen())
                         this.command.Connection.Close();
-
                 }
                 catch
                 { }
 
-                try { this.command.Dispose(); } catch { }
+                if (this.DisposeCommand)
+                    try { this.command.Dispose(); } catch { }
             };
 
             return instance;

@@ -13,7 +13,6 @@ namespace SharpOrm.Collections
         private readonly DbDataReader reader;
         private readonly IMappedObject map;
         public CancellationToken Token { get; set; }
-        public bool LeaveOpen { get; set; }
 
         public DataReaderEnumerable(DbDataReader reader, TranslationRegistry registry, IFkQueue enqueueable = null)
         {
@@ -29,6 +28,6 @@ namespace SharpOrm.Collections
 
         public IEnumerator<T> GetEnumerator() => new DbObjectEnumerator<T>(this.reader, this.map, this.Token);
 
-        IEnumerator IEnumerable.GetEnumerator() => new DbObjectEnumerator(this.reader, this.map, this.Token, this.LeaveOpen);
+        IEnumerator IEnumerable.GetEnumerator() => new DbObjectEnumerator(this.reader, this.map, this.Token);
     }
 }

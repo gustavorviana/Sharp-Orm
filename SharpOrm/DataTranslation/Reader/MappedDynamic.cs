@@ -10,13 +10,21 @@ namespace SharpOrm.DataTranslation.Reader
     {
         private readonly List<ObjConverter> converters = new List<ObjConverter>();
 
-        public MappedDynamic(TranslationRegistry registry, DbDataReader reader)
+        public MappedDynamic(DbDataReader reader, TranslationRegistry registry = null)
         {
+            if (registry == null)
+                registry = TranslationRegistry.Default;
+
             for (int i = 0; i < reader.FieldCount; i++)
                 converters.Add(new ObjConverter(registry, reader.GetFieldType(i)));
         }
 
-        public object Read(DbDataReader reader)
+        public static dynamic Read(DbDataReader reader, TranslationRegistry registry = null)
+        {
+            return new MappedDynamic(reader, registry).Read(reader);
+        }
+
+        public dynamic Read(DbDataReader reader)
         {
             var dObject = (IDictionary<string, object>)new ExpandoObject();
 

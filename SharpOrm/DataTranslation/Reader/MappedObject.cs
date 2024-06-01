@@ -37,7 +37,7 @@ namespace SharpOrm.DataTranslation.Reader
                 enqueueable = new ObjIdFkQueue();
 
             if (ReflectionUtils.IsDynamic(type))
-                return new MappedDynamic(registry, reader);
+                return new MappedDynamic(reader, registry);
 
             return new MappedObject(type, registry, enqueueable).Map(registry, reader, prefix);
         }

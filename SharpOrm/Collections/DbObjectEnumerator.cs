@@ -9,7 +9,7 @@ namespace SharpOrm.Collections
 {
     public class DbObjectEnumerator<T> : DbObjectEnumerator, IEnumerator<T>
     {
-        public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token, bool leaveOpen = false) : base(reader, map, token, leaveOpen)
+        public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token) : base(reader, map, token)
         {
         }
 
@@ -22,10 +22,9 @@ namespace SharpOrm.Collections
         private readonly DbDataReader reader;
         private readonly IMappedObject map;
         public event EventHandler Disposed;
-        private readonly bool leaveOpen;
         private bool _disposed;
 
-        public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token, bool leaveOpen)
+        public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token)
         {
             if (reader.IsClosed)
                 throw new InvalidOperationException($"It is not possible to use a closed {nameof(DbDataReader)}.");
@@ -33,7 +32,6 @@ namespace SharpOrm.Collections
             this.reader = reader;
             this.Token = token;
             this.map = map;
-            this.leaveOpen = leaveOpen;
         }
 
         private object current;

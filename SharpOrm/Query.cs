@@ -873,7 +873,7 @@ namespace SharpOrm
             this.Token.ThrowIfCancellationRequested();
             var grammar = this.Info.Config.NewGrammar(this);
 
-            return new DbCommandEnumerable<T>(this.Config.Translation, this.GetCommand(grammar.Select()), this.Token, this.Manager.Management);
+            return new DbCommandEnumerable<T>(this.GetCommand(grammar.Select()), this.Config.Translation, this.Manager.Management, this.Token) { DisposeCommand = true };
         }
 
         /// <summary>

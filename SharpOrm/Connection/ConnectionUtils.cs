@@ -22,21 +22,6 @@ namespace SharpOrm.Connection
             }
         }
 
-        public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            CancellationTokenRegistration registry = default;
-            registry = token.Register(() =>
-            {
-                try { command.Cancel(); } catch { }
-                registry.Dispose();
-            });
-
-            command.Disposed += (sender, e) => registry.Dispose();
-
-            return command;
-        }
-
         /// <summary>
         /// executes a SQL statement against a connection object.
         /// </summary>
