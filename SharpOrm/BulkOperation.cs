@@ -34,17 +34,13 @@ namespace SharpOrm
 
         private static ConnectionManager GetValidManager(ConnectionManager manager, bool escapeString)
         {
-            if (manager.Management != ConnectionManagement.CloseOnManagerDispose)
-            {
-                manager = manager.Clone();
-                manager.Management = ConnectionManagement.CloseOnManagerDispose;
-            }
-
-            if (!escapeString)
+            if (manager.Management == ConnectionManagement.CloseOnManagerDispose && escapeString == manager.Config.EscapeStrings)
                 return manager;
 
-            manager = manager.WithConfig(manager.Config.Clone());
-            manager.Config.EscapeStrings = true;
+            manager = manager.Clone(cloneConfig: true);
+            manager.Config.EscapeStrings = escapeString;
+            manager.Management = ConnectionManagement.CloseOnManagerDispose;
+
             return manager;
         }
 

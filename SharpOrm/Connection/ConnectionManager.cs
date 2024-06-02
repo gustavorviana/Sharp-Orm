@@ -17,6 +17,9 @@ namespace SharpOrm.Connection
         internal bool autoCommit = true;
         private bool disposed;
 
+        /// <summary>
+        /// Event that occurs when the ConnectionManager instance is disposed.
+        /// </summary>
         public event EventHandler Disposed;
 
         /// <summary>
@@ -171,7 +174,26 @@ namespace SharpOrm.Connection
                 this.Connection.Close();
         }
 
-        public ConnectionManager Clone()
+        /// <summary>
+        /// Creates a clone of the current ConnectionManager instance with optional parameters to listen for disposal events and clone the configuration.
+        /// </summary>
+        /// <param name="listenDispose">A boolean indicating whether to listen for disposal events. Default is true.</param>
+        /// <param name="cloneConfig">A boolean indicating whether to clone the configuration. Default is false.</param>
+        /// <returns>A new ConnectionManager instance with the specified cloning options.</returns>
+        public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false)
+        {
+            var clone = this.InternalClone();
+
+            if (listenDispose)
+                this.Disposed += (sender, e) => this.Dispose();
+
+            if (cloneConfig)
+                clone.Config = this.Config.Clone();
+
+            return clone;
+        }
+
+        private ConnectionManager InternalClone()
         {
             if (this.disposed)
                 throw new ObjectDisposedException(this.GetType().FullName);
@@ -232,16 +254,6 @@ namespace SharpOrm.Connection
 
             this.Connection.Open();
             try { this.Connection.Close(); } catch { }
-        }
-
-        public ConnectionManager WithConfig(QueryConfig config)
-        {
-            var clone = this.Clone();
-            clone.Config = config;
-
-            this.Disposed += (sender, e) => this.Dispose();
-
-            return clone;
         }
 
         #region Transaction

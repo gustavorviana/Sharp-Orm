@@ -74,11 +74,28 @@ namespace SharpOrm
             this.cells = cells;
         }
 
+        /// <summary>
+        /// Parses an object into a <see cref="Row"/>.
+        /// </summary>
+        /// <param name="obj">The object to parse.</param>
+        /// <param name="readPk">Whether to read the primary key. Default is true.</param>
+        /// <param name="readFk">Whether to read the foreign key. Default is false.</param>
+        /// <returns>A <see cref="Row"/> representing the parsed object.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the object is null or <see cref="DBNull"/>.</exception>
         public static Row Parse(object obj, bool readPk = true, bool readFk = false)
         {
             return Parse(obj, obj.GetType(), readPk, readFk);
         }
 
+        /// <summary>
+        /// Parses an object into a <see cref="Row"/> with a specified type.
+        /// </summary>
+        /// <param name="obj">The object to parse.</param>
+        /// <param name="type">The type of the object.</param>
+        /// <param name="readPk">Whether to read the primary key. Default is true.</param>
+        /// <param name="readFk">Whether to read the foreign key. Default is false.</param>
+        /// <returns>A <see cref="Row"/> representing the parsed object.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the object is null or <see cref="DBNull"/>.</exception>
         public static Row Parse(object obj, Type type, bool readPk = true, bool readFk = false)
         {
             if (obj is null || obj is DBNull) throw new ArgumentNullException(nameof(obj));
@@ -126,6 +143,10 @@ namespace SharpOrm
             return this.cells.OrderBy(c => c.Name).ToArray();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection of cells.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the collection of cells.</returns>
         public IEnumerator<Cell> GetEnumerator() => cells.AsEnumerable().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => cells.GetEnumerator();

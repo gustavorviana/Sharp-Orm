@@ -23,6 +23,13 @@ namespace SharpOrm
             return new DbCommandEnumerable<T>(cmd, registry, management, token);
         }
 
+        /// <summary>
+        /// Sets the cancellation token for the specified database command.
+        /// </summary>
+        /// <param name="command">The database command to which the cancellation token will be assigned.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The database command with the cancellation token assigned.</returns>
+        /// <exception cref="OperationCanceledException">Thrown if the cancellation token has already been canceled.</exception>
         public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();

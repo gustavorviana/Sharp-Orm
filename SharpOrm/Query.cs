@@ -114,6 +114,12 @@ namespace SharpOrm
 
         #endregion
 
+        /// <summary>
+        /// Adds a foreign key to the query based on the specified column expression.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the query.</typeparam>
+        /// <param name="call">An expression representing the column to be added as a foreign key.</param>
+        /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var cols = new ColumnExpressionVisitor().VisitColumn(call);
@@ -422,11 +428,23 @@ namespace SharpOrm
 
         #region Query
 
+        /// <summary>
+        /// Creates a read-only query for the specified table.
+        /// </summary>
+        /// <param name="table">The name of the table.</param>
+        /// <param name="config">The configuration for the query. If null, the default configuration is used.</param>
+        /// <returns>A read-only query for the specified table.</returns>
         public static Query ReadOnly(string table, QueryConfig config = null)
         {
             return ReadOnly(new DbName(table), config);
         }
 
+        /// <summary>
+        /// Creates a read-only query for the specified table.
+        /// </summary>
+        /// <param name="table">The name of the table as a <see cref="DbName"/> object.</param>
+        /// <param name="config">The configuration for the query. If null, the default configuration is used.</param>
+        /// <returns>A read-only query for the specified table.</returns>
         public static Query ReadOnly(DbName table, QueryConfig config = null)
         {
             return new Query(table, config ?? ConnectionCreator.Default?.Config);
@@ -867,6 +885,11 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Retrieves an enumerable collection of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the enumerable collection.</typeparam>
+        /// <returns>An enumerable collection of the specified type.</returns>
         public virtual IEnumerable<T> GetEnumerable<T>()
         {
             this.ValidateReadonly();
@@ -1052,6 +1075,10 @@ namespace SharpOrm
             this.lastOpenReader = null;
         }
 
+        /// <summary>
+        /// Returns a string representation of the object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
             return GetGrammar().SelectSqlOnly();

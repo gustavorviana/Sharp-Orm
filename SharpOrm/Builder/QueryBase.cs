@@ -17,6 +17,9 @@ namespace SharpOrm.Builder
         private bool _disposed = false;
         protected internal QueryInfo Info { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the object has been disposed.
+        /// </summary>
         public bool Disposed => this._disposed;
         private static string[] AvailableOperations { get; } = {
             "=",
@@ -535,6 +538,10 @@ namespace SharpOrm.Builder
             this._disposed = true;
         }
 
+        /// <summary>
+        /// Releases all resources used by the object.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
         public void Dispose()
         {
             if (this._disposed)

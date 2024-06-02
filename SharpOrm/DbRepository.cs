@@ -24,9 +24,18 @@ namespace SharpOrm
 
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
+        /// <summary>
+        /// Gets the connection manager for the current transaction.
+        /// </summary>
         protected ConnectionManager Transaction { get; private set; }
 
         private int? commandTimeout = null;
+        /// <summary>
+        /// Gets or sets the command timeout value for database commands.
+        /// </summary>
+        /// <value>
+        /// The command timeout value in seconds. If not explicitly set, defaults to the command timeout in the configuration or 30 seconds.
+        /// </value>
         protected int CommandTimeout
         {
             get => this.commandTimeout ?? this.Creator?.Config?.CommandTimeout ?? 30;
@@ -49,6 +58,10 @@ namespace SharpOrm
         public CancellationToken Token { get; set; }
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbRepository"/> class.
+        /// </summary>
+        /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
         public DbRepository(bool forceSingleConnection = false)
         {
             this.forceSingleConnection = forceSingleConnection;

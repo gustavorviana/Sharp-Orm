@@ -15,11 +15,25 @@ namespace SharpOrm
     {
         #region Where
 
+        /// <summary>
+        /// Adds a condition to the query where the value of the first column must be equal to the value of the second column.
+        /// </summary>
+        /// <param name="query">The query to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column.</param>
+        /// <param name="column2">The name of the second column.</param>
+        /// <returns>The modified query with the added condition.</returns>
         public static QueryBase WhereColumn(this QueryBase query, string column1, string column2)
         {
             return query.WhereColumn(column1, "=", column2);
         }
 
+        /// <summary>
+        /// Adds a condition to the query where the value of the first column must not be equal to the value of the second column.
+        /// </summary>
+        /// <param name="query">The query to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column.</param>
+        /// <param name="column2">The name of the second column.</param>
+        /// <returns>The modified query with the added condition.</returns>
         public static QueryBase WhereNotColumn(this QueryBase query, string column1, string column2)
         {
             return query.WhereColumn(column1, "!=", column2);
@@ -197,11 +211,25 @@ namespace SharpOrm
 
         #region Or
 
+        /// <summary>
+        /// Adds an OR condition to the query that compares the values of two columns for equality.
+        /// </summary>
+        /// <param name="query">The query object to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column to be compared.</param>
+        /// <param name="column2">The name of the second column to be compared.</param>
+        /// <returns>The updated query object with the added condition.</returns>
         public static QueryBase OrWhereColumn(this QueryBase query, string column1, string column2)
         {
             return query.OrWhereColumn(column1, "=", column2);
         }
 
+        /// <summary>
+        /// Adds an OR condition to the query that compares the values of two columns for inequality.
+        /// </summary>
+        /// <param name="query">The query object to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column to be compared.</param>
+        /// <param name="column2">The name of the second column to be compared.</param>
+        /// <returns>The updated query object with the added condition.</returns>
         public static QueryBase OrWhereNotColumn(this QueryBase query, string column1, string column2)
         {
             return query.OrWhereColumn(column1, "!=", column2);
@@ -400,6 +428,13 @@ namespace SharpOrm
 
         #region Query
 
+        /// <summary>
+        /// Inserts a large number of rows into the database in batches of the specified page size using the given query.
+        /// </summary>
+        /// <typeparam name="T">The type of the rows to be inserted.</typeparam>
+        /// <param name="query">The query object used to execute the batch insertion.</param>
+        /// <param name="rows">The collection of rows to be inserted into the database.</param>
+        /// <param name="pageSize">The number of rows to be inserted in each batch.</param>
         public static void InsertLot<T>(this Query<T> query, IEnumerable<T> rows, int pageSize) where T : class, new()
         {
             using (var enumerator = rows.GetEnumerator())
@@ -407,6 +442,12 @@ namespace SharpOrm
                     query.BulkInsert(GetPage(enumerator, pageSize));
         }
 
+        /// <summary>
+        /// Inserts a large number of rows into the database in batches of the specified page size using the given query.
+        /// </summary>
+        /// <param name="query">The query object used to execute the batch insertion.</param>
+        /// <param name="rows">The collection of rows to be inserted into the database.</param>
+        /// <param name="pageSize">The number of rows to be inserted in each batch.</param>
         public static void InsertLot(this Query query, IEnumerable<Row> rows, int pageSize)
         {
             using (var enumerator = rows.GetEnumerator())
@@ -470,16 +511,38 @@ namespace SharpOrm
             return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false, validate: true), columns, true));
         }
 
+        /// <summary>
+        /// Inserts the specified cells into the database using the given query and returns the result as an object of type T.
+        /// </summary>
+        /// <typeparam name="T">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="cells">An array of cells to be inserted into the database.</param>
+        /// <returns>An object of type T representing the result of the insertion.</returns>
         public static T Insert<T>(this Query query, params Cell[] cells)
         {
             return Insert<T>(query, (IEnumerable<Cell>)cells);
         }
 
+        /// <summary>
+        /// Inserts the specified object into the database using the given query and returns the result as an object of type R.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to be inserted.</typeparam>
+        /// <typeparam name="R">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="obj">The object to be inserted into the database.</param>
+        /// <returns>An object of type R representing the result of the insertion.</returns>
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
             return Insert<R>(query, query.GetCellsOf(obj, true, validate: true));
         }
 
+        /// <summary>
+        /// Inserts the specified cells into the database using the given query and returns the result as an object of type T.
+        /// </summary>
+        /// <typeparam name="T">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="cells">The collection of cells to be inserted into the database.</param>
+        /// <returns>An object of type T representing the result of the insertion.</returns>
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
             return query.Config.Translation.FromSql<T>(query.ExecuteScalar(query.GetGrammar().Insert(cells)));
@@ -507,6 +570,13 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
+        /// <summary>
+        /// Performs a bulk upsert operation on a collection of items in the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to be upserted.</typeparam>
+        /// <param name="query">The query object to perform the upsert operation on.</param>
+        /// <param name="items">The collection of items to be upserted.</param>
+        /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
         public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns)
         {
             foreach (var item in items)
@@ -538,18 +608,39 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Performs a bulk upsert operation on a collection of rows in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the upsert operation on.</param>
+        /// <param name="rows">The collection of rows to be upserted.</param>
+        /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
         public static void BulkUpsert(this Query query, IEnumerable<Row> rows, string[] toCheckColumns)
         {
             foreach (var row in rows)
                 query.Upsert(row, toCheckColumns);
         }
 
+        /// <summary>
+        /// Performs a bulk delete operation on a collection of values in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the delete operation on.</param>
+        /// <param name="values">The array of values to be deleted.</param>
+        /// <param name="insertLot">An optional integer specifying the insert lot size. Default is 0.</param>
+        /// <returns>The number of rows deleted.</returns>
         public static int BulkDelete(this Query query, Row[] values, int? insertLot = 0)
         {
             using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Delete();
         }
 
+        /// <summary>
+        /// Performs a bulk update operation on a collection of values in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the update operation on.</param>
+        /// <param name="values">The array of values to be updated.</param>
+        /// <param name="comparationColumns">The columns that should be compared to perform the update.</param>
+        /// <param name="insertLot">An optional integer specifying the insert lot size. Default is 0.</param>
+        /// <returns>The number of rows updated.</returns>
         public static int BulkUpdate(this Query query, Row[] values, string[] comparationColumns, int? insertLot = 0)
         {
             using (var bulk = new BulkOperation(query, values, insertLot))
@@ -669,6 +760,12 @@ namespace SharpOrm
 
         #region DbDataReader
 
+        /// <summary>
+        /// Retrieves the value of the specified column from the data reader, ignoring the case of the column name.
+        /// </summary>
+        /// <param name="reader">The data reader to retrieve the value from.</param>
+        /// <param name="key">The name of the column to retrieve the value from.</param>
+        /// <returns>The value of the specified column, or DBNull.Value if the column is not found.</returns>
         public static object Get(this DbDataReader reader, string key)
         {
             for (int i = 0; i < reader.FieldCount; i++)
@@ -679,11 +776,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Gets the index of the column with the specified name in the DbDataReader.
+        /// Retrieves the index of the specified column from the data reader, ignoring the case of the column name.
         /// </summary>
-        /// <param name="reader">The DbDataReader to get the column index from.</param>
-        /// <param name="name">The name of the column to find the index for.</param>
-        /// <returns>The index of the column, or -1 if the column is not found.</returns>
+        /// <param name="reader">The data reader to retrieve the column index from.</param>
+        /// <param name="name">The name of the column to find the index of.</param>
+        /// <returns>The index of the specified column, or -1 if the column is not found.</returns>
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
             for (int i = 0; i < reader.FieldCount; i++)

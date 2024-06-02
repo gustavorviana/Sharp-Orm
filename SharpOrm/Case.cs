@@ -5,30 +5,53 @@ using System.Collections.Generic;
 
 namespace SharpOrm
 {
+    /// <summary>
+    /// Represents a SQL CASE statement for conditional expressions.
+    /// </summary>
     public class Case : Column
     {
         private readonly List<CaseNode> nodes = new List<CaseNode>();
         private object elseValue;
 
         #region Constructor
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Case"/> class.
+        /// </summary>
         public Case()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Case"/> class by copying the specified column.
+        /// </summary>
+        /// <param name="column">The column to copy.</param>
         public Case(Column column) : base(column)
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Case"/> class with the specified database column name.
+        /// </summary>
+        /// <param name="column">The database column name.</param>
         public Case(DbName column) : base(column)
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Case"/> class with the specified column name.
+        /// </summary>
+        /// <param name="columnName">The name of the column.</param>
         public Case(string columnName) : base(columnName)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Case"/> class with the specified column name and alias.
+        /// </summary>
+        /// <param name="columnName">The name of the column.</param>
+        /// <param name="alias">The alias for the column.</param>
         public Case(string columnName, string alias) : base(columnName, alias)
         {
         }
@@ -37,6 +60,12 @@ namespace SharpOrm
 
         #region When
 
+        /// <summary>
+        /// Adds a condition to the CASE statement that checks if the specified column is null.
+        /// </summary>
+        /// <param name="column">The column to check.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case WhenNull(string column, object then)
         {
             this.nodes.Add(new CaseNode
@@ -48,6 +77,12 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a condition to the CASE statement that checks if the specified column is not null.
+        /// </summary>
+        /// <param name="column">The column to check.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case WhenNotNull(string column, object then)
         {
             this.nodes.Add(new CaseNode
@@ -59,11 +94,25 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a condition to the CASE statement with the specified column, operation, and value.
+        /// </summary>
+        /// <param name="column">The column to check.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case When(string column, object value, object then)
         {
             return this.When(column, "=", value, then);
         }
 
+        /// <summary>
+        /// Adds a condition to the CASE statement with the specified SQL expression.
+        /// </summary>
+        /// <param name="expression">The SQL expression representing the condition.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
+        /// <exception cref="NotSupportedException">Thrown if the value is a collection.</exception>
         public Case When(SqlExpression expression, object then)
         {
             if (then is ICollection)
@@ -73,6 +122,15 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a condition to the CASE statement with the specified column, operation, value, and return value.
+        /// </summary>
+        /// <param name="column">The column to check.</param>
+        /// <param name="operation">The operation to perform.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
+        /// <exception cref="NotSupportedException">Thrown if the value is a collection.</exception>
         public Case When(string column, string operation, object value, object then)
         {
             QueryBase.CheckIsAvailableOperation(operation);
@@ -88,6 +146,12 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a condition to the CASE statement with the specified expected value and return value.
+        /// </summary>
+        /// <param name="expected">The expected value.</param>
+        /// <param name="then">The value to return if the condition is met.</param>
+        /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case When(object expected, object then)
         {
             this.nodes.Add(new CaseNode
@@ -99,6 +163,12 @@ namespace SharpOrm
         }
         #endregion
 
+        /// <summary>
+        /// Specifies the value to return if none of the conditions are met.
+        /// </summary>
+        /// <param name="value">The value to return if no conditions are met.</param>
+        /// <returns>The updated <see cref="Column"/> instance.</returns>
+        /// <exception cref="NotSupportedException">Thrown if the value is a collection.</exception>
         public Column Else(object value)
         {
             if (value is ICollection)
@@ -108,6 +178,13 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Converts the CASE statement to a SQL expression.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        /// <param name="alias">A value indicating whether to include an alias.</param>
+        /// <returns>The SQL expression representing the CASE statement.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the CASE statement has no conditions.</exception>
         public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
             if (this.nodes.Count == 0)
