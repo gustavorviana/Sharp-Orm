@@ -133,3 +133,17 @@ using(Query query = new Query("Users"))
     );
 }
 ```
+
+### Using temp tables
+```CSharp
+var columns = new TableColumnCollection();
+columns.AddPk("Id").AutoIncrement = true;
+columns.Add<string>("Name");
+//Other columns...
+
+using (var table = DbTable.Create("MyTestTable", true, columns))
+using (var query = table.GetQuery())
+{
+    //Code
+}
+```
