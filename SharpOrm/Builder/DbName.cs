@@ -96,7 +96,7 @@ namespace SharpOrm.Builder
         /// <returns>The name of the object, with or without the alias, based on the specified parameters.</returns>
         public string GetName(bool withAlias, QueryConfig config)
         {
-            if (!withAlias || string.IsNullOrEmpty(this.Alias))
+            if (!withAlias || string.IsNullOrEmpty(this.Alias) || this.Alias == this.Name)
                 return config.ApplyNomenclature(this.Name);
 
             return string.Concat(config.ApplyNomenclature(this.Name), " ", config.ApplyNomenclature(this.Alias));
