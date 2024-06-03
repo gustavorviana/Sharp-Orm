@@ -447,13 +447,18 @@ namespace SharpOrm
                 return;
 
             this._disposed = true;
-            if (!disposing)
-                return;
+            if (disposing)
+            {
+                if (!this.HasParentTransaction && this.Transaction != null)
+                    this.CommitTransaction();
 
-            if (!this.HasParentTransaction && this.Transaction != null)
-                this.CommitTransaction();
+                this._connections.Dispose();
+            }
+            else
+            {
+                this._connections.Clear();
+            }
 
-            this._connections.Dispose();
             this.Transaction = null;
         }
 

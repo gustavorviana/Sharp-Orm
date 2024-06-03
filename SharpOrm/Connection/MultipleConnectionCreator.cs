@@ -66,8 +66,8 @@ namespace SharpOrm.Connection
         {
             base.Dispose(disposing);
 
-            if (disposing)
-                this.connections.Dispose();
+            if (disposing) this.connections.Dispose();
+            else this.connections.Clear();
         }
     }
 }
