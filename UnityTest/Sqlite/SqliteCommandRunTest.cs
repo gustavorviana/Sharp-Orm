@@ -65,7 +65,7 @@ namespace UnityTest.Sqlite
             query.Delete();
             addrQuery.Delete();
 
-            addrQuery.Insert(new Address (1) { Name = "Addr", Street = "str" });
+            addrQuery.Insert(new Address(1) { Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
 
             Assert.ThrowsException<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));

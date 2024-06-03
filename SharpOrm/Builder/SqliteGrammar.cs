@@ -44,6 +44,9 @@ namespace SharpOrm.Builder
             if (this.Info.Joins.Count > 0)
                 throw new NotSupportedException("SQLite does not support DELETE with JOIN.");
 
+            if (!string.IsNullOrEmpty(this.Info.TableName.Alias))
+                throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
+
             base.ConfigureDelete();
         }
 

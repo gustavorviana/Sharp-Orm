@@ -1,10 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using UnityTest.Models;
 using UnityTest.Utils;
 
 namespace UnityTest.MysqlTests
@@ -30,7 +32,8 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void BasicSelect()
         {
-            using var query = NewQuery();
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
             var g = new MysqlGrammar(query);
 
             var sqlExpression = g.Select();

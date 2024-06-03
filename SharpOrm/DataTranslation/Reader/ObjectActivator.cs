@@ -3,7 +3,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using SharpOrm;
-using SharpOrm.DataTranslation;
 
 namespace SharpOrm.DataTranslation.Reader
 {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Dynamic;
-using SharpOrm.DataTranslation;
 
 namespace SharpOrm.DataTranslation.Reader
 {

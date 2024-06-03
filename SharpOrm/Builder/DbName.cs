@@ -39,6 +39,9 @@ namespace SharpOrm.Builder
 
         public static void ValidateName(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
             if (!IsValid(name, '.', '_', '#'))
                 throw new InvalidOperationException("The name contains one or more invalid characters.");
         }

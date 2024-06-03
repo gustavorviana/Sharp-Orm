@@ -1,7 +1,7 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using SharpOrm.Builder;
 
 namespace SharpOrm.DataTranslation.Reader
 {

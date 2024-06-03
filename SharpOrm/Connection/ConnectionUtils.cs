@@ -1,7 +1,5 @@
-﻿using SharpOrm.Builder;
-using System;
+﻿using System;
 using System.Data.Common;
-using System.Threading;
 
 namespace SharpOrm.Connection
 {

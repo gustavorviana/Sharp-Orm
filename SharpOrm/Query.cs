@@ -31,7 +31,7 @@ namespace SharpOrm
         /// <summary>
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
-        public Query() : this(TableName, ConnectionCreator.Default)
+        public Query() : this(new DbName(TableName), ConnectionCreator.Default)
         {
         }
 

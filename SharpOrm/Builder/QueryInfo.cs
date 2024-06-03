@@ -29,7 +29,7 @@ namespace SharpOrm.Builder
         /// Gets the list of join queries.
         /// </summary>
         public List<JoinQuery> Joins { get; } = new List<JoinQuery>();
-        
+
         /// <summary>
         /// Gets or sets the columns to order by.
         /// </summary>
