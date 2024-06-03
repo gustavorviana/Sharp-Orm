@@ -7,6 +7,12 @@ namespace SharpOrm.Connection
 {
     public static class ConnectionUtils
     {
+        /// <summary>
+        /// Opens the database connection if it is not already open.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The opened database connection.</returns>
+        /// <exception cref="Errors.DbConnectionException">Thrown when there is an error opening the connection.</exception>
         public static DbConnection OpenIfNeeded(this DbConnection connection)
         {
             try
@@ -59,16 +65,33 @@ namespace SharpOrm.Connection
             }
         }
 
+        /// <summary>
+        /// Gets a command with the specified SQL expression.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <param name="expression">The SQL expression to set in the command.</param>
+        /// <returns>The configured database command.</returns>
         public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
         {
             return manager.CreateCommand().SetExpression(expression);
         }
 
+        /// <summary>
+        /// Creates a new database command with the default command timeout.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <returns>The created database command.</returns>
         public static DbCommand CreateCommand(this ConnectionManager manager)
         {
             return CreateCommand(manager, manager.CommandTimeout);
         }
 
+        /// <summary>
+        /// Creates a new database command with the specified command timeout.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <param name="commandTimeout">The command timeout in seconds.</param>
+        /// <returns>The created database command.</returns>
         public static DbCommand CreateCommand(this ConnectionManager manager, int commandTimeout)
         {
             var cmd = manager.Connection.OpenIfNeeded().CreateCommand();

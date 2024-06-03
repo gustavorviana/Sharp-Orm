@@ -5,8 +5,16 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the implementation for building SQL table-related commands specific to MySQL.
+    /// </summary>
     public class MysqlTableGrammar : TableGrammar
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MysqlTableGrammar"/> class with the specified configuration and schema.
+        /// </summary>
+        /// <param name="config">The query configuration.</param>
+        /// <param name="schema">The table schema.</param>
         public MysqlTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
         }

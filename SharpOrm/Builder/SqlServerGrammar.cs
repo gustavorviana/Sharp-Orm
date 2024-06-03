@@ -4,11 +4,18 @@ using System.Linq;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the implementation for building SQL table-related commands specific to SQL Server.
+    /// </summary>
     public class SqlServerGrammar : MysqlGrammar
     {
         protected SqlServerQueryConfig Config => this.Info.Config as SqlServerQueryConfig;
         protected bool HasOffset => this.Query.Offset is int offset && offset >= 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerGrammar"/> class with the specified query.
+        /// </summary>
+        /// <param name="query">The query.</param>
         public SqlServerGrammar(Query query) : base(query)
         {
         }

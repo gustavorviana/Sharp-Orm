@@ -5,8 +5,16 @@ using System.Linq;
 
 namespace SharpOrm.Builder
 {
-    internal class SqlServerTableGrammar : TableGrammar
+    /// <summary>
+    /// Provides the implementation for building SQL table-related commands specific to SQL Server.
+    /// </summary>
+    public class SqlServerTableGrammar : TableGrammar
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerTableGrammar"/> class with the specified configuration and schema.
+        /// </summary>
+        /// <param name="config">The query configuration.</param>
+        /// <param name="schema">The table schema.</param>
         public SqlServerTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
         }

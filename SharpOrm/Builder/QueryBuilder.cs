@@ -16,6 +16,9 @@ namespace SharpOrm.Builder
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
         internal readonly StringBuilder query = new StringBuilder();
+        /// <summary>
+        /// A list of parameters for the SQL query.
+        /// </summary>
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
@@ -191,6 +194,11 @@ namespace SharpOrm.Builder
             return this.InternalAddParam(val);
         }
 
+        /// <summary>
+        /// Adds a parameter to the SQL query and returns the updated <see cref="QueryBuilder"/>.
+        /// </summary>
+        /// <param name="value">The value to be added as a parameter.</param>
+        /// <returns>The updated <see cref="QueryBuilder"/> with the parameter added.</returns>
         protected virtual QueryBuilder InternalAddParam(object value)
         {
             this.parameters.Add(value);

@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace SharpOrm.Builder
 {
-    public class LambdaColumn : Column, IEquatable<LambdaColumn>
+    internal class LambdaColumn : Column, IEquatable<LambdaColumn>
     {
         public string PropertyName { get; }
         public Type DeclaringType { get; }

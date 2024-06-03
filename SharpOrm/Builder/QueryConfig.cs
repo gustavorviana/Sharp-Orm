@@ -79,17 +79,36 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public abstract Grammar NewGrammar(Query query);
 
+        /// <summary>
+        /// Creates a new instance of <see cref="TableGrammar"/> for the specified schema.
+        /// </summary>
+        /// <param name="schema">The table schema.</param>
+        /// <returns>A new instance of <see cref="TableGrammar"/>.</returns>
+        /// <exception cref="NotSupportedException">Thrown when the derived class does not support creating/editing/removing tables.</exception>
         public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
             throw new NotSupportedException($"{this.GetType().FullName} does not support creating/editing/removing tables.");
         }
 
+        /// <summary>
+        /// Escapes a string for use in a SQL query.
+        /// </summary>
+        /// <param name="value">The string to escape.</param>
+        /// <returns>The escaped string.</returns>
         public abstract string EscapeString(string value);
 
         object ICloneable.Clone() => this.Clone();
 
+        /// <summary>
+        /// Creates a copy of the current <see cref="QueryConfig"/> instance.
+        /// </summary>
+        /// <returns>A new instance of <see cref="QueryConfig"/> that is a copy of the current instance.</returns>
         public abstract QueryConfig Clone();
 
+        /// <summary>
+        /// Copies the properties of the current <see cref="QueryConfig"/> instance to the target instance.
+        /// </summary>
+        /// <param name="target">The target instance to copy the properties to.</param>
         protected void CopyTo(QueryConfig target)
         {
             var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;

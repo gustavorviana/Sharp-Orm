@@ -138,6 +138,11 @@ namespace SharpOrm.DataTranslation
             return null;
         }
 
+        /// <summary>
+        /// Gets a valid type for the expected type, handling nullable types.
+        /// </summary>
+        /// <param name="expectedType">The expected type.</param>
+        /// <returns>The valid type.</returns>
         public static Type GetValidTypeFor(Type expectedType)
         {
             if (expectedType != null && Nullable.GetUnderlyingType(expectedType) is Type underlyingType)

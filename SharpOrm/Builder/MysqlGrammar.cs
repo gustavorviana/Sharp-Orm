@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the implementation for building SQL queries specific to MySQL using a fluent interface.
+    /// </summary>
     public class MysqlGrammar : Grammar
     {
         public MysqlGrammar(Query query) : base(query)

@@ -5,8 +5,16 @@ using System.Linq;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the implementation for building SQL table-related commands specific to SQLite.
+    /// </summary>
     public class SqliteTableGrammar : TableGrammar
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqliteTableGrammar"/> class with the specified configuration and schema.
+        /// </summary>
+        /// <param name="config">The query configuration.</param>
+        /// <param name="schema">The table schema.</param>
         public SqliteTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
         }

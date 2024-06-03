@@ -10,6 +10,10 @@ using System.Threading;
 
 namespace SharpOrm.Collections
 {
+    /// <summary>
+    /// Provides an enumerable collection for executing a database command and reading the results.
+    /// </summary>
+    /// <typeparam name="T">The type of the objects to enumerate.</typeparam>
     public class DbCommandEnumerable<T> : IEnumerable<T>
     {
         private readonly ConnectionManagement management;
@@ -19,8 +23,18 @@ namespace SharpOrm.Collections
         internal IFkQueue fkQueue;
         private bool hasFirstRun;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to dispose the command after execution.
+        /// </summary>
         public bool DisposeCommand { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbCommandEnumerable{T}"/> class.
+        /// </summary>
+        /// <param name="command">The database command to execute.</param>
+        /// <param name="translation">The translation registry.</param>
+        /// <param name="management">The connection management strategy.</param>
+        /// <param name="token">The cancellation token.</param>
         public DbCommandEnumerable(DbCommand command, TranslationRegistry translation, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
         {
             Grammar.QueryLogger?.Invoke(command.CommandText);
@@ -30,6 +44,10 @@ namespace SharpOrm.Collections
             this.token = token;
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator for the collection.</returns>
         public IEnumerator<T> GetEnumerator()
         {
             this.CheckRun();

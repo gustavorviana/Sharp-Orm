@@ -10,13 +10,29 @@ namespace SharpOrm.Builder
     public abstract class Grammar
     {
         #region Fields\Properties
+        /// <summary>
+        /// Gets or sets the action to log the query.
+        /// </summary>
         public static Action<string> QueryLogger { get; set; }
 
+        /// <summary>
+        /// Gets the query builder.
+        /// </summary>
         protected QueryBuilder builder { get; }
+        /// <summary>
+        /// Gets the query.
+        /// </summary>
         protected Query Query { get; }
+        /// <summary>
+        /// Gets the query information.
+        /// </summary>
         public QueryInfo Info => this.Query.Info;
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grammar"/> class.
+        /// </summary>
+        /// <param name="query">The query.</param>
         protected Grammar(Query query)
         {
             this.builder = new QueryBuilder(query);
@@ -79,6 +95,10 @@ namespace SharpOrm.Builder
             return this.builder.ToString();
         }
 
+        /// <summary>
+        /// Gets the SQL expression for the SELECT statement.
+        /// </summary>
+        /// <returns>The SQL expression for the SELECT statement.</returns>
         public SqlExpression GetSelectExpression()
         {
             this.builder.Clear();
@@ -93,6 +113,12 @@ namespace SharpOrm.Builder
         /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
+        /// <summary>
+        /// Builds the insert query.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <param name="columnNames">The column names.</param>
+        /// <returns>The SQL expression for the insert query.</returns>
         internal SqlExpression InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
             return this.BuildExpression(() => this.ConfigureInsertQuery(query, columnNames));
@@ -105,6 +131,12 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected abstract void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames);
 
+        /// <summary>
+        /// Builds the insert expression.
+        /// </summary>
+        /// <param name="expression">The SQL expression.</param>
+        /// <param name="columnNames">The column names.</param>
+        /// <returns>The SQL expression for the insert.</returns>
         public SqlExpression InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
         {
             return this.BuildExpression(() => this.ConfigureInsertExpression(expression, columnNames));
@@ -176,6 +208,9 @@ namespace SharpOrm.Builder
         /// </summary>
         protected abstract void ConfigureDelete();
 
+        /// <summary>
+        /// Applies the delete joins to the query.
+        /// </summary>
         protected void ApplyDeleteJoins()
         {
             if (!this.CanApplyDeleteJoins())
@@ -192,11 +227,20 @@ namespace SharpOrm.Builder
                 this.builder.Add(", ").Add(this.TryGetTableAlias(join));
         }
 
+        /// <summary>
+        /// Determines whether delete joins can be applied.
+        /// </summary>
+        /// <returns>True if delete joins can be applied; otherwise, false.</returns>
         protected virtual bool CanApplyDeleteJoins()
         {
             return this.Info.Joins.Any();
         }
 
+        /// <summary>
+        /// Determines whether the join can be deleted.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        /// <returns>True if the join can be deleted; otherwise, false.</returns>
         protected bool CanDeleteJoin(QueryInfo info)
         {
             string name = info.TableName.TryGetAlias(this.Info.Config);
@@ -207,11 +251,19 @@ namespace SharpOrm.Builder
             return false;
         }
 
+        /// <summary>
+        /// Applies the order by clause to the query.
+        /// </summary>
         protected virtual void ApplyOrderBy()
         {
             this.ApplyOrderBy(this.Info.Orders, false);
         }
 
+        /// <summary>
+        /// Applies the order by clause to the query.
+        /// </summary>
+        /// <param name="order">The order by columns.</param>
+        /// <param name="writeOrderByFlag">Indicates whether to write the ORDER BY keyword.</param>
         protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order, bool writeOrderByFlag)
         {
             var en = order.GetEnumerator();
@@ -230,6 +282,10 @@ namespace SharpOrm.Builder
             }
         }
 
+        /// <summary>
+        /// Writes the order by column.
+        /// </summary>
+        /// <param name="order">The order by column.</param>
         protected void WriteOrderBy(ColumnOrder order)
         {
             if (order.Order == OrderBy.None)
@@ -240,11 +296,19 @@ namespace SharpOrm.Builder
             this.builder.Add(order.Order);
         }
 
+        /// <summary>
+        /// Writes the column to the query.
+        /// </summary>
+        /// <param name="column">The column.</param>
         protected void WriteColumn(Column column)
         {
             this.builder.Add(column.ToExpression(this.Info.ToReadOnly()));
         }
 
+        /// <summary>
+        /// Writes the update cell to the query.
+        /// </summary>
+        /// <param name="cell">The cell.</param>
         protected void WriteUpdateCell(Cell cell)
         {
             this.builder.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
@@ -253,21 +317,42 @@ namespace SharpOrm.Builder
 
         #endregion
 
+        /// <summary>
+        /// Tries to get the table alias for the query.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns>The table alias.</returns>
         protected string TryGetTableAlias(QueryBase query)
         {
             return query.Info.TableName.TryGetAlias(query.Info.Config);
         }
 
+        /// <summary>
+        /// Gets the table name with or without the alias.
+        /// </summary>
+        /// <param name="withAlias">Whether to include the alias.</param>
+        /// <returns>The table name.</returns>
         protected string GetTableName(bool withAlias)
         {
             return this.GetTableName(this.Query, withAlias);
         }
 
+        /// <summary>
+        /// Applies the nomenclature to the name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The name with the applied nomenclature.</returns>
         protected string ApplyNomenclature(string name)
         {
             return this.Info.Config.ApplyNomenclature(name);
         }
 
+        /// <summary>
+        /// Gets the table name with or without the alias.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <param name="withAlias">Whether to include the alias.</param>
+        /// <returns>The table name.</returns>
         protected string GetTableName(QueryBase query, bool withAlias)
         {
             return query.Info.TableName.GetName(withAlias, query.Info.Config);
@@ -281,21 +366,38 @@ namespace SharpOrm.Builder
             return this.builder.ToExpression();
         }
 
+        /// <summary>
+        /// Writes the select columns to the query.
+        /// </summary>
         protected virtual void WriteSelectColumns()
         {
             AddParams(this.Info.Select);
         }
 
+        /// <summary>
+        /// Writes the select column to the query.
+        /// </summary>
+        /// <param name="column">The column.</param>
         protected void WriteSelect(Column column)
         {
             this.builder.AddExpression(column, true);
         }
 
+        /// <summary>
+        /// Appends the cells to the query.
+        /// </summary>
+        /// <param name="values">The cells.</param>
         protected void AppendCells(IEnumerable<Cell> values)
         {
             AddParams(values, cell => cell.Value);
         }
 
+        /// <summary>
+        /// Adds the parameters to the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the values.</typeparam>
+        /// <param name="values">The values.</param>
+        /// <param name="call">The function to get the value.</param>
         protected void AddParams<T>(IEnumerable<T> values, Func<T, object> call = null)
         {
             if (call == null)
@@ -313,6 +415,9 @@ namespace SharpOrm.Builder
             }
         }
 
+        /// <summary>
+        /// Writes the group by clause to the query.
+        /// </summary>
         protected virtual void WriteGroupBy()
         {
             if (this.Info.GroupsBy.Length == 0)

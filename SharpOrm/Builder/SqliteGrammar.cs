@@ -3,8 +3,15 @@ using System.Collections.Generic;
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides the implementation for building SQL table-related commands specific to SQLite.
+    /// </summary>
     public class SqliteGrammar : MysqlGrammar
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqliteGrammar"/> class with the specified query.
+        /// </summary>
+        /// <param name="query">The query.</param>
         public SqliteGrammar(Query query) : base(query)
         {
             this.builder.paramInterceptor += (original) =>

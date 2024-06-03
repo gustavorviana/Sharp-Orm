@@ -4,11 +4,19 @@
     {
         public override bool CanUpdateJoin { get; } = false;
 
+        /// <summary>
+        /// Create an instance that allows only safe modifications.
+        /// </summary>
         public SqliteQueryConfig()
         {
 
         }
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <param name="safeModificationsOnly">Signal whether only safe modifications should be made.</param>
+        /// <remarks>Safe modifications are updates and deletes with a WHERE clause.</remarks>
         public SqliteQueryConfig(bool safeModificationsOnly) : base(safeModificationsOnly)
         {
         }

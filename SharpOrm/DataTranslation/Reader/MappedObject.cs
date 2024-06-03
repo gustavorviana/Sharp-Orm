@@ -5,6 +5,9 @@ using SharpOrm.Builder;
 
 namespace SharpOrm.DataTranslation.Reader
 {
+    /// <summary>
+    /// Represents an object that can be mapped from a database reader.
+    /// </summary>
     public class MappedObject : IMappedObject
     {
         #region Properties\Fields
@@ -18,16 +21,35 @@ namespace SharpOrm.DataTranslation.Reader
         private ColumnInfo parentColumn;
         private MappedObject parent;
 
+        /// <summary>
+        /// Gets the type of the mapped object.
+        /// </summary>
         public Type Type { get; }
 
         private object instance;
         #endregion
 
+        /// <summary>
+        /// Reads and maps an object of type <typeparamref name="T"/> from the database reader.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to read and map.</typeparam>
+        /// <param name="reader">The database reader.</param>
+        /// <param name="registry">The translation registry. If null, the default registry is used.</param>
+        /// <returns>The mapped object of type <typeparamref name="T"/>.</returns>
         public static T Read<T>(DbDataReader reader, TranslationRegistry registry = null)
         {
             return (T)Create(reader, typeof(T), registry: registry).Read(reader);
         }
 
+        /// <summary>
+        /// Creates an <see cref="IMappedObject"/> for the specified type.
+        /// </summary>
+        /// <param name="reader">The database reader.</param>
+        /// <param name="type">The type of the object to create.</param>
+        /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
+        /// <param name="registry">The translation registry. If null, the default registry is used.</param>
+        /// <param name="prefix">The prefix for column names.</param>
+        /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
         public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null, string prefix = "")
         {
             if (registry == null)
