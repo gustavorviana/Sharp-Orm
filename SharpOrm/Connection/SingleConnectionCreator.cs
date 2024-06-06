@@ -18,11 +18,6 @@ namespace SharpOrm.Connection
         private readonly string _connectionString;
         private DbConnection connection;
 
-        /// <summary>
-        /// Indicate whether the connection should remain open when <see cref="SafeDisposeConnection"/> is called, closing the connection only when <see cref="Dispose"/> is called.
-        /// </summary>
-        public bool LeaveOpen { get; set; }
-
         public SingleConnectionCreator(QueryConfig config, string connectionString)
         {
             this._connectionString = connectionString;
@@ -40,7 +35,7 @@ namespace SharpOrm.Connection
                     connection.Disposed += OnConnectionDisposed;
                 }
 
-                return this.connection;
+                return this.AutoOpenConnection ? connection.OpenIfNeeded() : connection;
             }
         }
 
@@ -52,13 +47,13 @@ namespace SharpOrm.Connection
         public override void SafeDisposeConnection(DbConnection connection)
         {
             if (connection != null && this.connection == connection)
-                this.CloseConnection();
+                this.CloseConnection(false);
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            this.CloseConnection();
+            this.CloseConnection(true);
 
             try
             {
@@ -71,11 +66,11 @@ namespace SharpOrm.Connection
             this.connection = null;
         }
 
-        private void CloseConnection()
+        private void CloseConnection(bool forceClose)
         {
             try
             {
-                if (!this.LeaveOpen && this.connection?.State == System.Data.ConnectionState.Open)
+                if (forceClose || (this.Management != ConnectionManagement.LeaveOpen && this.connection.IsOpen()))
                     this.connection.Close();
             }
             catch (Exception) { }

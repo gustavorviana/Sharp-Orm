@@ -62,7 +62,7 @@ namespace SharpOrm.Connection
             {
                 try
                 {
-                    if (NeedLeaveOpen(creator) || this.management == ConnectionManagement.LeaveOpen)
+                    if (creator?.Management == ConnectionManagement.LeaveOpen || this.management == ConnectionManagement.LeaveOpen)
                         return false;
 
                     return this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
@@ -96,15 +96,20 @@ namespace SharpOrm.Connection
             this.Config = creator.Config;
 
             this.Connection.Disposed += DisposeByConnection;
-
-            if (NeedLeaveOpen(creator))
-                this.management = ConnectionManagement.LeaveOpen;
-
+            this.management = GetManagement(creator, openTransaction);
             if (!openTransaction)
                 return;
 
             this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
             this.isMyTransaction = true;
+        }
+
+        private static ConnectionManagement GetManagement(ConnectionCreator creator, bool openTransaction)
+        {
+            if (creator.Management == ConnectionManagement.LeaveOpen)
+                return ConnectionManagement.LeaveOpen;
+
+            return openTransaction ? ConnectionManagement.CloseOnDispose : creator.Management;
         }
 
         private ConnectionManager(ConnectionCreator creator, DbTransaction transaction)
@@ -231,17 +236,6 @@ namespace SharpOrm.Connection
             this.CommandTimeout = manager.CommandTimeout;
             this.autoCommit = manager.autoCommit;
             return this;
-        }
-
-        private static bool NeedLeaveOpen(ConnectionCreator connCreator)
-        {
-            if (connCreator == null) return false;
-
-            var type = connCreator.GetType();
-            if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(SingleConnectionCreator<>))
-                return false;
-
-            return (bool)type.GetProperty(nameof(SingleConnectionCreator.LeaveOpen)).GetValue(connCreator);
         }
 
         /// <summary>

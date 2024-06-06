@@ -60,13 +60,13 @@ namespace UnityTest.SqlServerTests
         {
             ConnectionCreator.Default = Creator;
             using var noTransaction = new ConnectionManager(false);
-            Assert.AreEqual(ConnectionManagement.CloseOnDispose, noTransaction.Management);
+            Assert.AreEqual(ConnectionManagement.CloseOnEndOperation, noTransaction.Management);
             Assert.IsNotNull(noTransaction.Connection);
             Assert.IsNull(noTransaction.Transaction);
 
             using var transaction = noTransaction.BeginTransaction();
             Assert.IsTrue(transaction.isMyTransaction);
-            Assert.AreEqual(ConnectionManagement.CloseOnDispose, noTransaction.Management);
+            Assert.AreEqual(ConnectionManagement.CloseOnDispose, transaction.Management);
             Assert.IsNotNull(transaction.Connection);
             Assert.IsNotNull(transaction.Transaction);
         }

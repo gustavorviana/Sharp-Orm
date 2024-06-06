@@ -13,6 +13,16 @@ namespace SharpOrm.Connection
         public bool Disposed => this._disposed;
 
         /// <summary>
+        /// Open the connection by calling the <see cref="GetConnection"/> function.
+        /// </summary>
+        public bool AutoOpenConnection {  get; set; }
+
+        /// <summary>
+        /// Type of connection management.
+        /// </summary>
+        public ConnectionManagement Management { get; set; } = ConnectionManagement.CloseOnEndOperation;
+
+        /// <summary>
         /// Gets or sets the default instance of the ConnectionCreator class.
         /// </summary>
         public static ConnectionCreator Default { get; set; }

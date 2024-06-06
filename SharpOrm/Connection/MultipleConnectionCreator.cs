@@ -45,7 +45,7 @@ namespace SharpOrm.Connection
             var connection = new T { ConnectionString = this._connectionString };
 
             this.connections.Add(connection);
-            return connection;
+            return this.AutoOpenConnection ? connection.OpenIfNeeded() : connection;
         }
 
         /// <summary>

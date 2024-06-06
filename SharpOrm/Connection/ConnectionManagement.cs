@@ -10,7 +10,7 @@
         /// </summary>
         CloseOnEndOperation,
         /// <summary>
-        /// The connection should be closed when beginning resource release.
+        /// The connection should be closed when any class using the <see cref="ConnectionManager"/>'s connection begins to release its resources.
         /// </summary>
         CloseOnDispose,
         /// <summary>
