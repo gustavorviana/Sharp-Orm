@@ -4,6 +4,9 @@ using System.Data.Common;
 
 namespace SharpOrm.Connection
 {
+    /// <summary>
+    /// Responsible for creating and configuring database connections. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/Connection-Creators
+    /// </summary>
     public abstract class ConnectionCreator : IDisposable
     {
         private bool _disposed;

@@ -5,7 +5,7 @@ using System.Reflection;
 namespace SharpOrm.Builder
 {
     /// <summary>
-    /// Class responsible for loading query management information, its configurations, and translations.
+    /// Class responsible for loading query management information, its configurations, and translations. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/QueryConfig
     /// </summary>
     public abstract class QueryConfig : ICloneable
     {

@@ -2,6 +2,9 @@
 
 namespace SharpOrm.DataTranslation
 {
+    /// <summary>
+    /// Represents a translator for one or more C# types. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/Custom-SQL-Translation
+    /// </summary>
     public interface ISqlTranslation
     {
         /// <summary>
