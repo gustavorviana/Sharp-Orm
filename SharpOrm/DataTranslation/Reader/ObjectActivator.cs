@@ -1,8 +1,8 @@
-﻿using System;
+﻿using SharpOrm;
+using System;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
-using SharpOrm;
 
 namespace SharpOrm.DataTranslation.Reader
 {

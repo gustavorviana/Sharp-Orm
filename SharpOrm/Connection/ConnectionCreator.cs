@@ -18,7 +18,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Open the connection by calling the <see cref="GetConnection"/> function.
         /// </summary>
-        public bool AutoOpenConnection {  get; set; }
+        public bool AutoOpenConnection { get; set; }
 
         /// <summary>
         /// Type of connection management.

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using UnityTest.Utils;
@@ -92,6 +93,26 @@ namespace UnityTest.SqlServerTests
             Assert.IsFalse(transaction.isMyTransaction);
             Assert.IsNotNull(transaction.Connection);
             Assert.IsNotNull(transaction.Transaction);
+        }
+
+        [TestMethod]
+        public void AutoOpenConnectionTest()
+        {
+            using var localCreator = new SingleConnectionCreator(new SqlServerQueryConfig(), ConnectionStr.SqlServer) { AutoOpenConnection = true };
+            using var conn = localCreator.GetConnection();
+            Assert.IsTrue(conn.IsOpen());
+
+            using var localCreator2 = new SingleConnectionCreator(new SqlServerQueryConfig(), ConnectionStr.SqlServer);
+            using var conn2 = localCreator2.GetConnection();
+            Assert.IsFalse(conn2.IsOpen());
+        }
+
+        [TestMethod]
+        public void ManagementTest()
+        {
+            using var localCreator = new SingleConnectionCreator(new SqlServerQueryConfig(), ConnectionStr.SqlServer) { Management = ConnectionManagement.LeaveOpen };
+            using var manager = new ConnectionManager(localCreator);
+            Assert.AreEqual(ConnectionManagement.LeaveOpen, manager.Management);
         }
     }
 }
