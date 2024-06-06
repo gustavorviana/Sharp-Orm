@@ -12,7 +12,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>SharpOrm</Title>
 		<Authors>Gustavo Viana</Authors>
-		<PackageProjectUrl></PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/gustavorviana/Sharp-Orm</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
@@ -21,7 +21,7 @@
 		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Improvements in the use of TranslationRegistry..
+			Introduction of features for table creation, bulk update/delete, and validation of model properties/fields; redesign of connection management, improvements in object reading, and removal of obsolete code.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
@@ -49,9 +49,6 @@
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" Condition="'$(TargetFramework)' != 'net45'" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Reference Include="System.ComponentModel.DataAnnotations" Condition="'$(TargetFramework)' == 'net45'" />
 	</ItemGroup>
 
