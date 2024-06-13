@@ -33,7 +33,7 @@ namespace SharpOrm.DataTranslation.Reader
                 || type.GetMethod("<Clone>$") != null
 #endif
                 )
-                objParams = GetFields(reader, registry) ?? throw new NotSupportedException("A compatible constructor for the received data could not be found.");
+                objParams = GetParams(reader, registry) ?? throw new NotSupportedException("A compatible constructor for the received data could not be found.");
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="reader">The data reader used to match constructor parameters.</param>
         /// <param name="paramsIndex">Array of parameter indexes.</param>
         /// <returns>The matched constructor, or null if none found.</returns>
-        private ParamInfo[] GetFields(DbDataReader reader, TranslationRegistry registry)
+        private ParamInfo[] GetParams(DbDataReader reader, TranslationRegistry registry)
         {
             var constructors = type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
 
