@@ -140,6 +140,9 @@ namespace SharpOrm.Builder
 
             this.WriteGroupBy();
 
+            if (isCount)
+                return;
+
             if (this.CanWriteOrderby())
                 this.ApplyOrderBy();
 

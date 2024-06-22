@@ -68,6 +68,9 @@ namespace SharpOrm.Connection
 
         private void CloseConnection(bool forceClose)
         {
+            if (this.connection == null)
+                return;
+
             try
             {
                 if (forceClose || (this.Management != ConnectionManagement.LeaveOpen && this.connection.IsOpen()))

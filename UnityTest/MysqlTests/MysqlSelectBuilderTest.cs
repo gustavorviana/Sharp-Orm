@@ -848,6 +848,19 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void CountOffset()
+        {
+            using var query = new Query(TABLE, Creator);
+            query.Limit = 10;
+            query.Offset = 1;
+            query.OrderBy(OrderBy.Asc, "Id");
+
+            var g = new MysqlGrammar(query);
+            var sqlExpression = g.Count();
+            TestAssert.AreDecoded("SELECT COUNT(*) FROM `TestTable`", sqlExpression);
+        }
+
+        [TestMethod]
         public void SelectHaving()
         {
             using var query = NewQuery();

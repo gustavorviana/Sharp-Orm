@@ -86,7 +86,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount(Column column)
         {
-            bool isOldOrDistinct = this.HasOffset || this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
+            bool isOldOrDistinct = this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
             if (isOldOrDistinct)
                 this.builder.Add("SELECT COUNT(*) FROM (");
 
