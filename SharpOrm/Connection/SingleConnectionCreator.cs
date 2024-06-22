@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Errors;
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -8,19 +7,18 @@ namespace SharpOrm.Connection
 {
     public class SingleConnectionCreator : SingleConnectionCreator<SqlConnection>
     {
-        public SingleConnectionCreator(IQueryConfig config, string connectionString) : base(config, connectionString)
+        public SingleConnectionCreator(QueryConfig config, string connectionString) : base(config, connectionString)
         {
         }
     }
 
     public class SingleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
     {
+        private readonly object _lock = new object();
         private readonly string _connectionString;
         private DbConnection connection;
 
-        public override IQueryConfig Config { get; }
-
-        public SingleConnectionCreator(IQueryConfig config, string connectionString)
+        public SingleConnectionCreator(QueryConfig config, string connectionString)
         {
             this._connectionString = connectionString;
             this.Config = config;
@@ -28,23 +26,17 @@ namespace SharpOrm.Connection
 
         public override DbConnection GetConnection()
         {
-            if (connection == null)
+            this.ThrowIfDisposed();
+            lock (this._lock)
             {
-                connection = new T { ConnectionString = _connectionString };
-                connection.Disposed += OnConnectionDisposed;
-            }
+                if (connection == null)
+                {
+                    connection = new T { ConnectionString = _connectionString };
+                    connection.Disposed += OnConnectionDisposed;
+                }
 
-            try
-            {
-                if (this.connection.State == System.Data.ConnectionState.Closed)
-                    this.connection.Open();
+                return this.AutoOpenConnection ? connection.OpenIfNeeded() : connection;
             }
-            catch (Exception ex)
-            {
-                throw new DbConnectionException(ex);
-            }
-
-            return this.connection;
         }
 
         private void OnConnectionDisposed(object sender, EventArgs e)
@@ -54,14 +46,37 @@ namespace SharpOrm.Connection
 
         public override void SafeDisposeConnection(DbConnection connection)
         {
+            if (connection != null && this.connection == connection)
+                this.CloseConnection(false);
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+            this.CloseConnection(true);
 
-            if (disposing)
-                this.connection?.Dispose();
+            try
+            {
+                if (disposing)
+                    this.connection?.Dispose();
+            }
+            catch
+            { }
+
+            this.connection = null;
+        }
+
+        private void CloseConnection(bool forceClose)
+        {
+            if (this.connection == null)
+                return;
+
+            try
+            {
+                if (forceClose || (this.Management != ConnectionManagement.LeaveOpen && this.connection.IsOpen()))
+                    this.connection.Close();
+            }
+            catch (Exception) { }
         }
     }
 }

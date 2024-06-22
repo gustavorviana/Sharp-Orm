@@ -1,27 +1,46 @@
-﻿namespace SharpOrm.Builder
+﻿using System.Text;
+
+namespace SharpOrm.Builder
 {
-    public class SqlServerQueryConfig : IQueryConfig
+    /// <summary>
+    /// Provides configuration for building SQL Server queries.
+    /// </summary>
+    public class SqlServerQueryConfig : QueryConfig
     {
-        public bool OnlySafeModifications { get; }
+        private const char StrDelimitor = '\'';
+        /// <summary>
+        /// Gets or sets a value indicating whether to use old pagination without LIMIT and OFFSET, using only ROW_NUMBER().
+        /// </summary>
         public bool UseOldPagination { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class.
+        /// </summary>
         public SqlServerQueryConfig()
         {
         }
 
-        public SqlServerQueryConfig(bool onlySafeModifications)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class with a flag indicating if only safe modifications are allowed.
+        /// </summary>
+        /// <param name="onlySafeModifications">If true, only safe modifications are allowed.</param>
+        public SqlServerQueryConfig(bool onlySafeModifications) : base(onlySafeModifications)
         {
-            this.OnlySafeModifications = onlySafeModifications;
         }
 
-        public string ApplyNomenclature(string name)
+        public override string ApplyNomenclature(string name)
         {
-            return $"[{string.Join("].[", name.AlphaNumericOnly('_', '.').Split('.'))}]";
+            return name.SanitizeSqlName('[', ']');
         }
 
-        public Grammar NewGrammar(Query query)
+        public override Grammar NewGrammar(Query query)
         {
             return new SqlServerGrammar(query);
+        }
+
+        public override TableGrammar NewTableGrammar(TableSchema schema)
+        {
+            return new SqlServerTableGrammar(this, schema);
         }
 
         /// <summary>
@@ -31,7 +50,27 @@
         /// <returns></returns>
         public static string GetLocalConnectionString(string initialCatalog)
         {
-            return $@"Data Source=localhost\SQLEXPRESS;Initial Catalog={initialCatalog};Integrated Security=True";
+            return $@"Data Source=localhost;Initial Catalog={initialCatalog};Integrated Security=True";
+        }
+
+        public override string EscapeString(string value)
+        {
+            StringBuilder builder = new StringBuilder(value.Length + 2).Append(StrDelimitor);
+
+            foreach (var c in value)
+            {
+                if (c == StrDelimitor) builder.Append(StrDelimitor);
+                builder.Append(c);
+            }
+
+            return builder.Append(StrDelimitor).ToString();
+        }
+
+        public override QueryConfig Clone()
+        {
+            var clone = new SqlServerQueryConfig(this.OnlySafeModifications);
+            this.CopyTo(clone);
+            return clone;
         }
     }
 }

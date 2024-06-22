@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 
 namespace SharpOrm
@@ -18,19 +17,49 @@ namespace SharpOrm
             return value.Replace("%", "\\%").Replace("_", "\\_");
         }
 
+        /// <summary>
+        /// Filters the characters in the string using the provided function and returns a new string with the remaining characters.
+        /// </summary>
+        /// <param name="value">The input string.</param>
+        /// <param name="func">The function used to determine which characters to keep.</param>
+        /// <returns>A new string containing only the characters that satisfy the provided function.</returns>
         public static string Only(this string value, Func<char, bool> func)
         {
             return new string(value.Where(c => func(c)).ToArray());
         }
 
-        public static string AlphaNumericOnly(this string value, params char[] exceptions)
+        /// <summary>
+        /// Sanitizes the SQL name by adding the specified prefix and suffix to each part of the name separated by dots.
+        /// </summary>
+        /// <param name="value">The input string representing the SQL name.</param>
+        /// <param name="prefix">The prefix character to add.</param>
+        /// <param name="suffix">The suffix character to add.</param>
+        /// <returns>A sanitized SQL name with the specified prefix and suffix added to each part.</returns>
+        public static string SanitizeSqlName(this string value, char prefix, char suffix)
         {
-            return value.Only(c => char.IsDigit(c) || char.IsLetter(c) || exceptions.Contains(c));
+            string[] splitNames = value.Split('.');
+            for (int i = 0; i < splitNames.Length; i++)
+                if (splitNames[i] != "*")
+                    splitNames[i] = string.Concat(prefix, splitNames[i].Only(c => c != prefix && c != suffix), suffix);
+
+            return string.Join(".", splitNames);
         }
 
-        public static bool Contains(this IEnumerable<string> values, string toCompare, StringComparison stringComparison)
+        internal static IEnumerable<Cell> GetCellsByName(IEnumerable<Cell> cells, string[] columns, bool not = false)
         {
-            return values.Any(v => v.Equals(toCompare, stringComparison));
+            if (not)
+                return cells.Where(c => !columns.ContainsIgnoreCase(c.Name));
+
+            return cells.Where(c => columns.ContainsIgnoreCase(c.Name));
+        }
+
+        internal static bool ContainsIgnoreCase(this IEnumerable<string> values, string toCompare)
+        {
+            foreach (var value in values)
+                if (value.Equals(toCompare, StringComparison.CurrentCultureIgnoreCase))
+                    return true;
+
+            return false;
         }
     }
 }

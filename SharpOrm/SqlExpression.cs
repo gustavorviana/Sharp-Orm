@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,18 +7,18 @@ using System.Text;
 namespace SharpOrm
 {
     /// <summary>
-    /// Represents a SQL expression with optional parameters to be used in a SQL query.
+    /// Represents a SQL values with optional parameters to be used in a SQL query.
     /// </summary>
     public class SqlExpression : IEquatable<SqlExpression>
     {
         private readonly string value;
         /// <summary>
-        /// Gets the parameters used in the SQL expression.
+        /// Gets the parameters used in the SQL values.
         /// </summary>
         public object[] Parameters { get; protected set; }
 
         /// <summary>
-        /// Initializes a new instance of the SqlExpression class with an empty SQL expression string and no parameters.
+        /// Initializes a new instance of the SqlExpression class with an empty SQL values string and no parameters.
         /// </summary>
         protected SqlExpression()
         {
@@ -25,23 +26,37 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Initializes a new instance of the SqlExpression class with the provided SQL expression string and parameters.
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
         /// </summary>
-        /// <param name="value">The SQL expression string.</param>
-        /// <param name="parameters">The parameters used in the SQL expression.</param>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
+        public SqlExpression(StringBuilder value, params object[] parameters)
+        {
+            if (value.Count('?') != parameters.Length)
+                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
+
+            this.value = value.ToString();
+            this.Parameters = parameters;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
         public SqlExpression(string value, params object[] parameters)
         {
             if (value.Count(c => c == '?') != parameters.Length)
-                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
 
             this.value = value;
             this.Parameters = parameters;
         }
 
         /// <summary>
-        /// Returns the SQL expression string.
+        /// Returns the SQL values string.
         /// </summary>
-        /// <returns>The SQL expression string.</returns>
+        /// <returns>The SQL values string.</returns>
         public override string ToString()
         {
             return this.value;
@@ -76,9 +91,10 @@ namespace SharpOrm
             return -1584136870 + EqualityComparer<string>.Default.GetHashCode(value);
         }
 
-        public static bool operator ==(SqlExpression a, SqlExpression b) => a is SqlExpression && a.Equals(b);
-
-        public static bool operator !=(SqlExpression a, SqlExpression b) => a is SqlExpression && !a.Equals(b);
+        internal static SqlExpression Make(params string[] sql)
+        {
+            return new SqlExpression(string.Concat(sql));
+        }
 
         public static explicit operator SqlExpression(StringBuilder builder)
         {

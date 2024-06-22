@@ -22,17 +22,36 @@ namespace SharpOrm
         /// </summary>
         public string Alias { get; set; }
 
+        private bool? isCount;
+        public bool IsCount
+        {
+            get
+            {
+                if (this.isCount == null)
+                    this.isCount = this.expression?.ToString()?.ToLower() is string exp && exp.StartsWith("count(") && exp.EndsWith(")");
+
+                return this.isCount.Value;
+            }
+        }
+
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
         public static Column All => new Column(new SqlExpression("*"));
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Column"/> class.
+        /// </summary>
         protected Column()
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Column"/> class by copying the specified column.
+        /// </summary>
+        /// <param name="column">The column to copy.</param>
         protected Column(Column column)
         {
             this.expression = column.expression;
@@ -101,13 +120,10 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(info.Alias) && !this.Name.Contains("."))
-                builder.AppendFormat("{0}.", info.Config.ApplyNomenclature(info.Alias));
-
             builder.Append(info.Config.ApplyNomenclature(this.Name));
 
             if (alias && !string.IsNullOrEmpty(this.Alias))
-                builder.AppendFormat(" AS {0}", info.Config.ApplyNomenclature(this.Alias));
+                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(this.Alias));
 
             return (SqlExpression)builder;
         }
@@ -119,17 +135,16 @@ namespace SharpOrm
 
         internal string GetCountColumn()
         {
-            if (!string.IsNullOrEmpty(this.Name))
-                return this.Name;
-
-            string exp = this.expression?.ToString();
-            if (exp == "*")
+            if (this.IsAll())
                 return "*";
 
-            if (exp == null || !exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) || !exp.EndsWith(")"))
-                return "";
+            string exp = this.expression?.ToString();
+            return this.IsCount ? exp.Substring(6, exp.Length - 2) : this.Name;
+        }
 
-            return exp.Substring(6, exp.Length - 2);
+        internal bool IsAll()
+        {
+            return (this.expression?.ToString() ?? this.Name).EndsWith("*");
         }
 
         #region IEquatable
@@ -158,9 +173,15 @@ namespace SharpOrm
                    Name == other;
         }
 
-        public static bool operator ==(Column a, Column b) => a is Column && a.Equals(b);
+        public static bool operator ==(Column left, Column right)
+        {
+            return Equals(left, right);
+        }
 
-        public static bool operator !=(Column a, Column b) => a is Column && !a.Equals(b);
+        public static bool operator !=(Column left, Column right)
+        {
+            return !(left == right);
+        }
 
         #endregion
     }

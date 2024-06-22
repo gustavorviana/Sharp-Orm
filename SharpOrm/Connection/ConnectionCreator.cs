@@ -4,55 +4,52 @@ using System.Data.Common;
 
 namespace SharpOrm.Connection
 {
+    /// <summary>
+    /// Responsible for creating and configuring database connections. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/Connection-Creators
+    /// </summary>
     public abstract class ConnectionCreator : IDisposable
     {
         private bool _disposed;
+        /// <summary>
+        /// Indicates whether the ConnectionCreator object has been disposed.
+        /// </summary>
         public bool Disposed => this._disposed;
 
+        /// <summary>
+        /// Open the connection by calling the <see cref="GetConnection"/> function.
+        /// </summary>
+        public bool AutoOpenConnection { get; set; }
+
+        /// <summary>
+        /// Type of connection management.
+        /// </summary>
+        public ConnectionManagement Management { get; set; } = ConnectionManagement.CloseOnEndOperation;
+
+        /// <summary>
+        /// Gets or sets the default instance of the ConnectionCreator class.
+        /// </summary>
         public static ConnectionCreator Default { get; set; }
 
         /// <summary>
-        /// IQueryConfig defaults to "Query". The default object is "DefaultQueryConfig"
+        /// Gets the query configuration for the query build.
         /// </summary>
-        public abstract IQueryConfig Config { get; }
+        public virtual QueryConfig Config { get; protected set; }
 
+        /// <summary>
+        /// Gets a database connection.
+        /// </summary>
         public abstract DbConnection GetConnection();
 
+        /// <summary>
+        /// Safely disposes a database connection.
+        /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
-
-        #region Transaction
-        public static void ExecuteTransaction(TransactionCall call)
-        {
-            DbConnection connection = Default.GetConnection();
-            var transaction = connection.BeginTransaction();
-
-            try
-            {
-                call(transaction);
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-            finally
-            {
-                transaction.Dispose();
-                Default.SafeDisposeConnection(connection);
-            }
-        }
-
-        public static T ExecuteTransaction<T>(TransactionCall<T> func)
-        {
-            T value = default;
-            ExecuteTransaction((transaction) => value = func(transaction));
-            return value;
-        }
-        #endregion
 
         #region IDisposable
 
+        /// <summary>
+        /// Releases the unmanaged resources used by the ConnectionCreator object.
+        /// </summary>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -61,19 +58,28 @@ namespace SharpOrm.Connection
             _disposed = true;
         }
 
+        /// <summary>
+        /// Destructor for the ConnectionCreator class.
+        /// </summary>
         ~ConnectionCreator()
         {
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: false);
         }
 
+        /// <summary>
+        /// Releases the resources used by the ConnectionCreator object.
+        /// </summary>
         public void Dispose()
+        {
+            this.ThrowIfDisposed();
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected void ThrowIfDisposed()
         {
             if (this._disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-
-            this.Dispose(disposing: true);
-            GC.SuppressFinalize(this);
         }
 
         #endregion

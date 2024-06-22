@@ -1,49 +1,54 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net45;net5.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net45;net6.0;net8.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>1.1.6.8</AssemblyVersion>
-		<FileVersion>1.1.6.8</FileVersion>
-		<VersionPrefix>1.1.68</VersionPrefix>
+		<AssemblyVersion>2.0.0.0</AssemblyVersion>
+		<FileVersion>2.0.0.0</FileVersion>
+		<VersionPrefix>2.0.00</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>SharpOrm</Title>
 		<Authors>Gustavo Viana</Authors>
-		<PackageProjectUrl></PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/gustavorviana/Sharp-Orm</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<Company />
 		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
-		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
+		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
 		<Copyright>$(Authors)</Copyright>
-		<PackageReleaseNotes>Added support for blob, fix boolean convertion and added MultipleConnectionCreator T.</PackageReleaseNotes>
+		<PackageReleaseNotes>
+			Introduction of features for table creation, bulk update/delete, and validation of model properties/fields; redesign of connection management, improvements in object reading, and removal of obsolete code.
+		</PackageReleaseNotes>
+		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-	  <WarningLevel>4</WarningLevel>
+		<WarningLevel>4</WarningLevel>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-	  <WarningLevel>4</WarningLevel>
+		<WarningLevel>4</WarningLevel>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Include="..\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
+		<None Include="..\icon.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" Condition="'$(TargetFramework)' != 'net45' " />
-	</ItemGroup>
-
-	<ItemGroup>
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.6" Condition="'$(TargetFramework)' != 'net45'" />
 		<Reference Include="System.ComponentModel.DataAnnotations" Condition="'$(TargetFramework)' == 'net45'" />
 	</ItemGroup>
 

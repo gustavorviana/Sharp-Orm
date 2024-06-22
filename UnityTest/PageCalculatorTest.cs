@@ -6,7 +6,7 @@ namespace UnityTest
     [TestClass]
     public class PageCalculatorTest
     {
-        private static readonly PageCalculator calculator = new PageCalculator(119, 5);
+        private static readonly PageCalculator calculator = new(119, 5);
 
         [TestMethod]
         public void GetPages()

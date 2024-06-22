@@ -1,41 +1,42 @@
-﻿using SharpOrm.Builder.DataTranslation;
-using System;
-using System.Collections;
-using System.Data.Common;
-using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm.Builder
 {
     /// <summary>
     /// Provides the base implementation for building SQL queries using a fluent interface.
     /// </summary>
-    public abstract class Grammar : IDisposable
+    public abstract class Grammar
     {
         #region Fields\Properties
-        public static bool LogQuery { get; set; }
+        /// <summary>
+        /// Gets or sets the action to log the query.
+        /// </summary>
+        public static Action<string> QueryLogger { get; set; }
 
-        private DbCommand _command = null;
-
-        private bool _disposed = false;
-        private readonly ParamWriter whereWriter;
-        private readonly ParamWriter valuesWriter;
-
-        protected StringBuilder QueryBuilder { get; } = new StringBuilder();
+        /// <summary>
+        /// Gets the query builder.
+        /// </summary>
+        protected QueryBuilder builder { get; }
+        /// <summary>
+        /// Gets the query.
+        /// </summary>
         protected Query Query { get; }
+        /// <summary>
+        /// Gets the query information.
+        /// </summary>
         public QueryInfo Info => this.Query.Info;
-        protected DbCommand Command => this._command;
-
-        public virtual TranslationConfig Translation => Query.Translator.Config;
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grammar"/> class.
+        /// </summary>
+        /// <param name="query">The query.</param>
         protected Grammar(Query query)
         {
-            this.whereWriter = new ParamWriter(this, 'c');
-            this.valuesWriter = new ParamWriter(this, 'v');
+            this.builder = new QueryBuilder(query);
             this.Query = query;
-            this.Reset();
         }
 
         #region DML
@@ -44,28 +45,65 @@ namespace SharpOrm.Builder
         /// Performs a record count in the database based on the current Query object configuration.
         /// </summary>
         /// <returns>The database command configured to perform the record count.</returns>
-        public DbCommand Count()
+        public SqlExpression Count()
         {
-            this.Reset();
-            this.ConfigureCount();
-            return this.BuildCommand();
+            return this.Count(this.GetColumnToCount());
+        }
+
+        private Column GetColumnToCount()
+        {
+            if (this.Query.Distinct)
+                return this.Info.Select.Length == 1 ? this.Info.Select[0] : null;
+
+            if (this.Info.Select.Length > 1 || this.Info.Select.Any(c => c.IsAll()))
+                return Column.All;
+
+            return this.Info.Select.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Performs a record count in the database based on the current Query object configuration.
+        /// </summary>
+        /// <returns>The database command configured to perform the record count.</returns>
+        public SqlExpression Count(Column column)
+        {
+            return this.BuildExpression(() => this.ConfigureCount(column));
         }
 
         /// <summary>
         /// Defines the necessary configuration for count operation.
         /// </summary>
-        protected abstract void ConfigureCount();
+        protected abstract void ConfigureCount(Column column);
 
         /// <summary>
         /// Generates a SELECT statement and returns a DbCommand object to execute it.
         /// </summary>
-        /// <param name="configureWhereParams">Indicates whether to include WHERE clause parameters or not.</param>
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
-        public DbCommand Select(bool configureWhereParams = true)
+        public SqlExpression Select()
         {
-            this.Reset();
-            this.ConfigureSelect(configureWhereParams);
-            return this.BuildCommand();
+            return this.BuildExpression(() => this.ConfigureSelect(true));
+        }
+
+        /// <summary>
+        /// Generates a SELECT statement.
+        /// </summary>
+        /// <returns></returns>
+        public string SelectSqlOnly()
+        {
+            this.builder.Clear();
+            this.ConfigureSelect(false);
+            return this.builder.ToString();
+        }
+
+        /// <summary>
+        /// Gets the SQL expression for the SELECT statement.
+        /// </summary>
+        /// <returns>The SQL expression for the SELECT statement.</returns>
+        public SqlExpression GetSelectExpression()
+        {
+            this.builder.Clear();
+            this.ConfigureSelect(false);
+            return this.builder.ToExpression();
         }
 
         /// <summary>
@@ -75,12 +113,15 @@ namespace SharpOrm.Builder
         /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
         protected abstract void ConfigureSelect(bool configureWhereParams);
 
-        internal DbCommand InsertQuery(Query query, string[] columnNames)
+        /// <summary>
+        /// Builds the insert query.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <param name="columnNames">The column names.</param>
+        /// <returns>The SQL expression for the insert query.</returns>
+        internal SqlExpression InsertQuery(QueryBase query, IEnumerable<string> columnNames)
         {
-            this.Reset();
-
-            this.ConfigureInsertQuery(query, columnNames);
-            return this.BuildCommand();
+            return this.BuildExpression(() => this.ConfigureInsertQuery(query, columnNames));
         }
 
         /// <summary>
@@ -88,17 +129,33 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The query to be configured.</param>
         /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected abstract void ConfigureInsertQuery(Query query, string[] columnNames);
+        protected abstract void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames);
+
+        /// <summary>
+        /// Builds the insert expression.
+        /// </summary>
+        /// <param name="expression">The SQL expression.</param>
+        /// <param name="columnNames">The column names.</param>
+        /// <returns>The SQL expression for the insert.</returns>
+        public SqlExpression InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
+        {
+            return this.BuildExpression(() => this.ConfigureInsertExpression(expression, columnNames));
+        }
+
+        /// <summary>
+        /// Configures the insert query for a given table and columns.
+        /// </summary>
+        /// <param name="query">The query to be configured.</param>
+        /// <param name="columnNames">The names of the columns to be inserted.</param>
+        protected abstract void ConfigureInsertExpression(SqlExpression expression, IEnumerable<string> columnNames);
 
         /// <summary>
         /// Inserts a new record into the database table with the specified cell values.
         /// </summary>
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
-        public DbCommand Insert(Cell[] cells)
+        public SqlExpression Insert(IEnumerable<Cell> cells)
         {
-            this.Reset();
-            this.ConfigureInsert(cells, true);
-            return this.BuildCommand();
+            return this.BuildExpression(() => this.ConfigureInsert(cells, true));
         }
 
         /// <summary>
@@ -106,50 +163,44 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="cells">The cells to be inserted.</param>
         /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
-        protected abstract void ConfigureInsert(Cell[] cells, bool getGeneratedId);
+        protected abstract void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId);
 
         /// <summary>
         /// Executes a bulk insert operation with the given rows.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        public DbCommand BulkInsert(Row[] rows)
+        public SqlExpression BulkInsert(IEnumerable<Row> rows)
         {
-            this.Reset();
-            this.ConfigureBulkInsert(rows);
-            return this.BuildCommand();
+            return this.BuildExpression(() => this.ConfigureBulkInsert(rows));
         }
 
         /// <summary>
         /// Configures the INSERT statement for inserting multiple rows in a bulk operation.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        protected abstract void ConfigureBulkInsert(Row[] rows);
+        protected abstract void ConfigureBulkInsert(IEnumerable<Row> rows);
 
         /// <summary>
         /// Builds and returns a database command object for executing an update operation based on the specified array of cells.
         /// </summary>
         /// <param name="cells">An array of cells containing the values to be updated.</param>
-        public DbCommand Update(Cell[] cells)
+        public SqlExpression Update(IEnumerable<Cell> cells)
         {
-            this.Reset();
-            this.ConfigureUpdate(cells);
-            return this.BuildCommand();
+            return this.BuildExpression(() => this.ConfigureUpdate(cells));
         }
 
         /// <summary>
         /// This method is used to configure an SQL UPDATE statement with the given cell array.
         /// </summary>
         /// <param name="cells">The cell array to be updated in the table.</param>
-        protected abstract void ConfigureUpdate(Cell[] cells);
+        protected abstract void ConfigureUpdate(IEnumerable<Cell> cells);
 
         /// <summary>
         /// Creates a DELETE command for deleting data from a table.
         /// </summary>
-        public DbCommand Delete()
+        public SqlExpression Delete()
         {
-            this.Reset();
-            this.ConfigureDelete();
-            return this.BuildCommand();
+            return this.BuildExpression(this.ConfigureDelete);
         }
 
         /// <summary>
@@ -157,101 +208,233 @@ namespace SharpOrm.Builder
         /// </summary>
         protected abstract void ConfigureDelete();
 
-        #endregion
-
-        #region Parameters
         /// <summary>
-        /// Returns a clause parameter value registered in the WHERE clause of the query.
+        /// Applies the delete joins to the query.
         /// </summary>
-        /// <param name="value">The parameter value.</param>
-        /// <returns>The registered clause parameter value.</returns>
-        protected string RegisterClausuleParameter(object value)
+        protected void ApplyDeleteJoins()
         {
-            return this.whereWriter.LoadValue(value, false);
+            if (!this.CanApplyDeleteJoins())
+                return;
+
+            this.builder
+                .Add(' ')
+                .Add(this.TryGetTableAlias(this.Query));
+
+            if (!(this.Query.deleteJoins?.Any() ?? false))
+                return;
+
+            foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
+                this.builder.Add(", ").Add(this.TryGetTableAlias(join));
         }
 
         /// <summary>
-        /// Registers the value of a cell as a parameter in the VALUES clause of an INSERT statement.
+        /// Determines whether delete joins can be applied.
         /// </summary>
-        /// <param name="cell">Cell to be registered</param>
-        /// <returns>Value of the cell registered as parameter</returns>
-        protected string RegisterCellValue(Cell cell)
+        /// <returns>True if delete joins can be applied; otherwise, false.</returns>
+        protected virtual bool CanApplyDeleteJoins()
         {
-            return this.valuesWriter.LoadValue(cell.Value, true);
+            return this.Info.Joins.Any();
         }
-
-        internal DbParameter RegisterParameter(string name, object value)
-        {
-            var p = this.Command.CreateParameter();
-            p.ParameterName = name;
-            p.Value = value;
-
-            this.Command.Parameters.Add(p);
-            return p;
-        }
-        #endregion
 
         /// <summary>
-        /// Resets the grammar object by disposing the current command and creating a new one, clearing the parameters and query builders.
+        /// Determines whether the join can be deleted.
         /// </summary>
-        protected void Reset()
+        /// <param name="info">The query information.</param>
+        /// <returns>True if the join can be deleted; otherwise, false.</returns>
+        protected bool CanDeleteJoin(QueryInfo info)
         {
-            if (this.Command != null)
+            string name = info.TableName.TryGetAlias(this.Info.Config);
+            foreach (var jName in this.Query.deleteJoins)
+                if (jName.Equals(name, StringComparison.CurrentCultureIgnoreCase))
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Applies the order by clause to the query.
+        /// </summary>
+        protected virtual void ApplyOrderBy()
+        {
+            this.ApplyOrderBy(this.Info.Orders, false);
+        }
+
+        /// <summary>
+        /// Applies the order by clause to the query.
+        /// </summary>
+        /// <param name="order">The order by columns.</param>
+        /// <param name="writeOrderByFlag">Indicates whether to write the ORDER BY keyword.</param>
+        protected virtual void ApplyOrderBy(IEnumerable<ColumnOrder> order, bool writeOrderByFlag)
+        {
+            var en = order.GetEnumerator();
+            if (!en.MoveNext())
+                return;
+
+            if (!writeOrderByFlag)
+                this.builder.Add(" ORDER BY ");
+
+            WriteOrderBy(en.Current);
+
+            while (en.MoveNext())
             {
-                this.Command.Parameters.Clear();
-                this.Command.Dispose();
+                this.builder.Add(", ");
+                this.WriteOrderBy(en.Current);
             }
-
-            this._command = this.Query.Connection.CreateCommand();
-            this._command.Transaction = this.Query.Transaction;
-
-            this.QueryBuilder.Clear();
-            this.whereWriter.Reset();
-            this.valuesWriter.Reset();
         }
 
+        /// <summary>
+        /// Writes the order by column.
+        /// </summary>
+        /// <param name="order">The order by column.</param>
+        protected void WriteOrderBy(ColumnOrder order)
+        {
+            if (order.Order == OrderBy.None)
+                return;
+
+            this.WriteColumn(order.Column);
+            this.builder.Add(' ');
+            this.builder.Add(order.Order);
+        }
+
+        /// <summary>
+        /// Writes the column to the query.
+        /// </summary>
+        /// <param name="column">The column.</param>
+        protected void WriteColumn(Column column)
+        {
+            this.builder.Add(column.ToExpression(this.Info.ToReadOnly()));
+        }
+
+        /// <summary>
+        /// Writes the update cell to the query.
+        /// </summary>
+        /// <param name="cell">The cell.</param>
+        protected void WriteUpdateCell(Cell cell)
+        {
+            this.builder.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
+            this.builder.AddParameter(cell.Value);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Tries to get the table alias for the query.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns>The table alias.</returns>
+        protected string TryGetTableAlias(QueryBase query)
+        {
+            return query.Info.TableName.TryGetAlias(query.Info.Config);
+        }
+
+        /// <summary>
+        /// Gets the table name with or without the alias.
+        /// </summary>
+        /// <param name="withAlias">Whether to include the alias.</param>
+        /// <returns>The table name.</returns>
         protected string GetTableName(bool withAlias)
         {
-            return this.GetTableName(this.Info, withAlias);
+            return this.GetTableName(this.Query, withAlias);
         }
 
         /// <summary>
-        /// Returns the table name with optional table alias. If withAlias is true and the table has an alias, the alias is included in the returned string.
+        /// Applies the nomenclature to the name.
         /// </summary>
-        /// <param name="info">The QueryInfo object containing information about the table</param>
-        /// <param name="withAlias">Whether or not to include the table alias in the returned string</param>
-        /// <returns>The table name with optional alias</returns>
-        protected virtual string GetTableName(QueryInfo info, bool withAlias)
+        /// <param name="name">The name.</param>
+        /// <returns>The name with the applied nomenclature.</returns>
+        protected string ApplyNomenclature(string name)
         {
-            string name = this.ApplyTableColumnConfig(info.From);
-            return !withAlias || string.IsNullOrEmpty(info.Alias) ? name : $"{name} {this.ApplyTableColumnConfig(info.Alias)}";
+            return this.Info.Config.ApplyNomenclature(name);
         }
 
-        private DbCommand BuildCommand()
+        /// <summary>
+        /// Gets the table name with or without the alias.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <param name="withAlias">Whether to include the alias.</param>
+        /// <returns>The table name.</returns>
+        protected string GetTableName(QueryBase query, bool withAlias)
         {
-            this.Command.CommandText = this.QueryBuilder.ToString();
-            this.Command.Transaction = this.Query.Transaction;
-            if (LogQuery)
-                System.Diagnostics.Debug.WriteLine(this.Command.CommandText);
-            return this.Command;
+            return query.Info.TableName.GetName(withAlias, query.Info.Config);
         }
 
+        private SqlExpression BuildExpression(Action builderAction)
+        {
+            this.builder.Clear();
+            builderAction();
+
+            return this.builder.ToExpression();
+        }
+
+        /// <summary>
+        /// Writes the select columns to the query.
+        /// </summary>
         protected virtual void WriteSelectColumns()
         {
-            this.QueryBuilder.Append(string.Join(", ", this.Info.Select.Select(WriteSelect)));
+            AddParams(this.Info.Select);
         }
 
-        protected string WriteSelect(Column column)
+        /// <summary>
+        /// Writes the select column to the query.
+        /// </summary>
+        /// <param name="column">The column.</param>
+        protected void WriteSelect(Column column)
         {
-            return this.valuesWriter.LoadValue(column, true);
+            this.builder.AddExpression(column, true);
         }
 
+        /// <summary>
+        /// Appends the cells to the query.
+        /// </summary>
+        /// <param name="values">The cells.</param>
+        protected void AppendCells(IEnumerable<Cell> values)
+        {
+            AddParams(values, cell => cell.Value);
+        }
+
+        /// <summary>
+        /// Adds the parameters to the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the values.</typeparam>
+        /// <param name="values">The values.</param>
+        /// <param name="call">The function to get the value.</param>
+        protected void AddParams<T>(IEnumerable<T> values, Func<T, object> call = null)
+        {
+            if (call == null)
+                call = obj => obj;
+
+            using (var en = values.GetEnumerator())
+            {
+                if (!en.MoveNext())
+                    return;
+
+                this.builder.AddParameter(call(en.Current));
+
+                while (en.MoveNext())
+                    this.builder.Add(", ").AddParameter(call(en.Current));
+            }
+        }
+
+        /// <summary>
+        /// Writes the group by clause to the query.
+        /// </summary>
         protected virtual void WriteGroupBy()
         {
             if (this.Info.GroupsBy.Length == 0)
                 return;
 
-            this.QueryBuilder.AppendFormat(" GROUP BY {0}", string.Join(", ", this.Info.GroupsBy.Select(c => c.ToExpression(this.Info.ToReadOnly()))));
+            this.builder.Add(" GROUP BY ");
+            AddParams(this.Info.GroupsBy);
+            if (this.Info.Having.Empty)
+                return;
+
+            this.builder
+                .Add(" HAVING ")
+                .AddAndReplace(
+                    Info.Having.ToString(),
+                    '?',
+                    (count) => this.builder.AddParameter(Info.Having.Parameters[count - 1])
+                );
         }
 
         /// <summary>
@@ -263,35 +446,5 @@ namespace SharpOrm.Builder
         {
             return this.Info.Config.ApplyNomenclature(name);
         }
-
-        #region IDisposable
-        ~Grammar()
-        {
-            this.Dispose(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (this._disposed)
-                return;
-
-            this.Reset();
-            if (disposing)
-            {
-                this.Command.Dispose();
-            }
-
-            this._disposed = true;
-        }
-
-        public void Dispose()
-        {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
-
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        #endregion
     }
 }

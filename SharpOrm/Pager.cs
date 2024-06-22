@@ -5,25 +5,44 @@ using System.Linq;
 
 namespace SharpOrm
 {
-    public class Pager<T> : IReadOnlyList<T>, IDisposable where T : new()
+    /// <summary>
+    /// Represents a pager for navigating and retrieving data in a paginated manner.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the pager.</typeparam>
+    public class Pager<T> : IReadOnlyList<T>, IDisposable
     {
-        #region Fields
+        #region Properties/Fields
         protected readonly Query query;
         private T[] items = new T[0];
 
-        private int currentPage;
         private int peerPage;
-        private int pagesQtd = 0;
-        private long total = 0;
         private bool disposed;
-        #endregion
 
-        #region Properties
-        public int CurrentPage => this.currentPage;
-        public int Pages => this.pagesQtd;
-        public long Total => this.total;
+        /// <summary>
+        /// Gets the current page number.
+        /// </summary>
+        public int CurrentPage { get; private set; }
 
+        /// <summary>
+        /// Gets the total number of pages.
+        /// </summary>
+        public int Pages { get; private set; }
+
+        /// <summary>
+        /// Gets the total number of items across all pages.
+        /// </summary>
+        public long Total { get; private set; }
+
+        /// <summary>
+        /// Gets the number of items on the current page of the pager.
+        /// </summary>
         public int Count => items.Length;
+
+        /// <summary>
+        /// Gets the item at the specified index.
+        /// </summary>
+        /// <param name="index">The index of the item to get.</param>
+        /// <returns>The item at the specified index.</returns>
         public T this[int index] => items[index];
         #endregion
 
@@ -31,9 +50,16 @@ namespace SharpOrm
         {
             this.query = query;
             this.peerPage = peerPage;
-            this.currentPage = page;
+            this.CurrentPage = page;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <returns>An instance of the <see cref="Pager{T}"/> class.</returns>
         public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage)
         {
             Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage);
@@ -48,17 +74,17 @@ namespace SharpOrm
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
 
         /// <summary>
-        /// 
+        /// Navigates to the specified page.
         /// </summary>
-        /// <param name="page">One based page.</param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <param name="page">The one-based page number to navigate to.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified page number is out of range.</exception>
         public void GoToPage(int page)
         {
             if (page < 1 || page > this.Pages)
                 throw new ArgumentOutOfRangeException(nameof(page));
 
-            int lastPage = this.currentPage;
-            this.currentPage = page;
+            int lastPage = this.CurrentPage;
+            this.CurrentPage = page;
 
             try
             {
@@ -66,16 +92,16 @@ namespace SharpOrm
             }
             catch (Exception)
             {
-                this.currentPage = lastPage;
+                this.CurrentPage = lastPage;
                 throw;
             }
         }
 
         /// <summary>
-        /// 
+        /// Sets the number of items to display per page.
         /// </summary>
-        /// <param name="value">One based page</param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <param name="value">The number of items per page (one-based).</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified value is less than 1.</exception>
         public void SetPeerPage(int value)
         {
             if (value < 1)
@@ -85,25 +111,34 @@ namespace SharpOrm
             this.RefreshPageCount();
 
             if (this.CurrentPage > this.Pages)
-                this.currentPage = this.pagesQtd;
+                this.CurrentPage = this.Pages;
 
             this.RefreshItems();
         }
 
+        /// <summary>
+        /// Refreshes the pager, updating the item collection and page count.
+        /// </summary>
         public void Refresh()
         {
             this.RefreshPageCount();
             this.RefreshItems();
         }
 
+        /// <summary>
+        /// Calculates the total number of pages and updates the pager's page count.
+        /// </summary>
         private void RefreshPageCount()
         {
             this.query.Offset = null;
             this.query.Limit = null;
-            this.total = this.query.Count();
-            this.pagesQtd = PageCalculator.CalcPages(this.total, this.peerPage);
+            this.Total = this.query.Count();
+            this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
         }
 
+        /// <summary>
+        /// Retrieves and updates the items for the current page.
+        /// </summary>
         private void RefreshItems()
         {
             this.query.Offset = this.peerPage * (this.CurrentPage - 1);
@@ -118,6 +153,11 @@ namespace SharpOrm
         }
 
         #region IDisposable
+
+        /// <summary>
+        /// Disposes of the resources used by the pager.
+        /// </summary>
+        /// <param name="disposing">True if disposing managed resources, false if finalizing.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (disposed)
@@ -127,22 +167,22 @@ namespace SharpOrm
                 this.query.Dispose();
 
             this.items = new T[0];
-
             disposed = true;
         }
 
         ~Pager()
         {
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: false);
         }
 
+        /// <summary>
+        /// Disposes of the pager instance, releasing resources.
+        /// </summary>
         public void Dispose()
         {
             if (this.disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
-            // Não altere este código. Coloque o código de limpeza no método 'Dispose(bool disposing)'
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
