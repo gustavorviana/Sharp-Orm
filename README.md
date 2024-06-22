@@ -1,8 +1,8 @@
-Sharp Orm is a **BETA** library that simplifies the creation of database query. Tested with Mysql and Microsoft Sql Server, but also has sqlite compatibility.
+Sharp Orm is a library that simplifies the creation of database query. Tested with Mysql, Microsoft Sql Server and SQLite.
 
 There are two ways to work with the library, defining a global configuration or passing the configuration in each query.
 
-In both cases, it is necessary to define a class that implements the interface "SharpOrm.Builder.IQueryConfig" in order to work with the database, this step is necessary for the library to know how to transform objects into a query.
+In both cases, it is necessary to define a class that implements the interface "SharpOrm.Builder.QueryConfig" in order to work with the database, this step is necessary for the library to know how to transform objects into a query.
 
 ## Using global configuration
 
@@ -16,8 +16,10 @@ To use a global configuration you need to create a new instance of ConnectionCre
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 
-//For Mysql and Sqlite
-ConnectionCreator.Default = new SingleConnectionCreator(new MysqlQueryConfig(false), connectionString);
+//For Sqlite
+ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(new SqliteQueryConfig(false), connectionString);
+//For Mysql
+ConnectionCreator.Default = new SingleConnectionCreator<MySql.Data.MySqlClient.MySqlConnection>(new MysqlQueryConfig(false), connectionString);
 //For Microsoft Sql Server
 ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), connectionString);
 ```
@@ -43,11 +45,11 @@ using SharpOrm.Builder;
 
 var connection = //You connection instance here.
 //For mysql
-IQueryConfig config = new MysqlQueryConfig();
+QueryConfig config = new MysqlQueryConfig();
 //For Microsoft Sql Server
-IQueryConfig config = new SqlServerQueryConfig();
+QueryConfig config = new SqlServerQueryConfig();
 
-using(Query query = new Query(connection, config, "Users"))
+using(Query query = new Query("Users", new ConnectionManager(config, connection)))
 {
     query.Where("active", "=", 1);
     Row[] users = query.ReadRows();
@@ -129,5 +131,19 @@ using(Query query = new Query("Users"))
         new Row(...),
         new Row(...)
     );
+}
+```
+
+### Using temp tables
+```CSharp
+var columns = new TableColumnCollection();
+columns.AddPk("Id").AutoIncrement = true;
+columns.Add<string>("Name");
+//Other columns...
+
+using (var table = DbTable.Create("MyTestTable", true, columns))
+using (var query = table.GetQuery())
+{
+    //Code
 }
 ```

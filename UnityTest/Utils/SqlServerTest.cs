@@ -3,25 +3,16 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using System;
-using System.Data.Common;
 using System.Data.SqlClient;
 using System.IO;
 
 namespace UnityTest.Utils
 {
-    public class SqlServerTest : BaseTest
+    public class SqlServerTest : DbTest<SqlConnection>
     {
         protected static readonly SqlServerQueryConfig EscapeStringsConfig = new(false) { UseOldPagination = false, EscapeStrings = true };
         protected static readonly SqlServerQueryConfig NewConfig = new(false) { UseOldPagination = false };
         protected static readonly SqlServerQueryConfig OldConfig = new(false) { UseOldPagination = true };
-        protected static DbConnection Connection
-        {
-            get
-            {
-                ConnectionStr.Boot<SqlConnection>(() => NewConfig, ConnectionStr.SqlServer);
-                return ConnectionCreator.Default.GetConnection();
-            }
-        }
 
         #region Consts
         protected const string TABLE = "TestTable";
@@ -33,39 +24,37 @@ namespace UnityTest.Utils
         protected const string NUMBER = "number";
         protected const string GUIDID = "custom_id";
         protected const string STATUS = "custom_status";
+
+        public SqlServerTest() : base(NewConfig, ConnectionStr.SqlServer)
+        {
+        }
         #endregion
 
-
         #region Class Init/Clean
-
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void InitConnection(TestContext context)
         {
-            using var q = NewQuery("sysobjects");
-            q.Where("NAME", TABLE).Where("xtype", "U");
-            if (q.Count() > 0)
+            Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
+
+            using var manager = GetManager();
+            if (DbTable.Exists(TABLE, false, manager))
                 return;
 
-            using var conn = Connection;
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = File.ReadAllText("./Scripts/SqlServer.sql");
-            cmd.ExecuteNonQuery();
+            ExecuteScript(File.ReadAllText("./Scripts/SqlServer.sql"), manager.Connection);
         }
 
         [ClassCleanup(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void CleanupDbConnection()
         {
-            using var con = Connection;
-            using var cmd = con.CreateCommand();
-            cmd.CommandText = $"DROP TABLE IF EXISTS {TABLE}";
-            cmd.ExecuteNonQuery();
+            using var manager = GetManager();
+            ExecuteScript($"DROP TABLE IF EXISTS {TABLE}", manager.Connection);
+        }
+
+        private static ConnectionManager GetManager()
+        {
+            return new ConnectionManager(new SingleConnectionCreator(NewConfig, ConnectionStr.SqlServer));
         }
         #endregion
-
-        protected static Query NewQuery(string table, string alias = "", bool useNewConfig = true)
-        {
-            return new Query(Connection, useNewConfig ? NewConfig : OldConfig, new DbName(table, alias));
-        }
 
         protected static Row NewRow(int id, string name)
         {
@@ -76,17 +65,6 @@ namespace UnityTest.Utils
                 new Cell(GUIDID, Guid.NewGuid().ToString()),
                 new Cell(STATUS, 1)
             );
-        }
-
-        [TestCleanup]
-        [TestInitialize]
-        public void CleanupTest()
-        {
-            if (!this.TestContext.Properties.Contains("clearDb"))
-                return;
-
-            using var query = NewQuery(TABLE);
-            query.Delete();
         }
 
         protected void InsertRows(int count)

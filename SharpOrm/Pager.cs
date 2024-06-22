@@ -9,7 +9,7 @@ namespace SharpOrm
     /// Represents a pager for navigating and retrieving data in a paginated manner.
     /// </summary>
     /// <typeparam name="T">The type of items in the pager.</typeparam>
-    public class Pager<T> : IReadOnlyList<T>, IDisposable where T : new()
+    public class Pager<T> : IReadOnlyList<T>, IDisposable
     {
         #region Properties/Fields
         protected readonly Query query;
@@ -167,7 +167,6 @@ namespace SharpOrm
                 this.query.Dispose();
 
             this.items = new T[0];
-
             disposed = true;
         }
 

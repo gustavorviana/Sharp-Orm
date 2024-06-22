@@ -1,6 +1,7 @@
-﻿using SharpOrm.Builder.DataTranslation;
+﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SharpOrm
 {
@@ -18,13 +19,6 @@ namespace SharpOrm
         /// The value of the cell.
         /// </summary>
         public object Value { get; }
-
-        internal string PropName { get; }
-
-        internal Cell(string name, object value, string propName) : this(name, value)
-        {
-            this.PropName = propName;
-        }
 
         /// <summary>
         /// Creates a new instance of a cell with the specified column name and value.
@@ -60,6 +54,40 @@ namespace SharpOrm
 
             return value?.ToString();
         }
+
+        #region Operations
+
+        /// <summary>
+        /// Returns a cell with SqlExpression to update the content of a cell, adding the original content with <paramref name="value"/>.
+        /// </summary>
+        /// <param name="column">Column to be updated.</param>
+        /// <param name="value">Value to sum.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static Cell Sum(string column, object value)
+        {
+            if (!TranslationUtils.IsNumeric(value.GetType()))
+                throw new ArgumentException("Only numeric types are allowed.");
+
+            return new Cell(column, SqlExpression.Make(column, "+", value.ToString()));
+        }
+
+        /// <summary>
+        /// Returns a cell with SqlExpression to update the content of a cell, subtracting the original content by <paramref name="value"/>.
+        /// </summary>
+        /// <param name="column">Column to be updated.</param>
+        /// <param name="value">Value to subtract.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static Cell Subtract(string column, object value)
+        {
+            if (!TranslationUtils.IsNumeric(value.GetType()))
+                throw new ArgumentException("Only numeric types are allowed.");
+
+            return new Cell(column, SqlExpression.Make(column, "-", value.ToString()));
+        }
+
+        #endregion
 
         #region IEquatable
 
@@ -134,7 +162,18 @@ namespace SharpOrm
 
         public static explicit operator byte[](Cell cell)
         {
+            if (cell.Value is MemoryStream ms)
+                return ms.ToArray();
+
             return cell.Value as byte[];
+        }
+
+        public static explicit operator MemoryStream(Cell cell)
+        {
+            if (cell.Value is byte[] buffer)
+                return new MemoryStream(buffer);
+
+            return cell.Value as MemoryStream;
         }
 
         public static explicit operator int?(Cell cell)

@@ -17,6 +17,9 @@ namespace SharpOrm.Builder
         private bool _disposed = false;
         protected internal QueryInfo Info { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the object has been disposed.
+        /// </summary>
         public bool Disposed => this._disposed;
         private static string[] AvailableOperations { get; } = {
             "=",
@@ -41,7 +44,7 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the QueryBase class with the specified configuration.
         /// </summary>
         /// <param name="config">The configuration to use for the query.</param>
-        public QueryBase(IQueryConfig config, DbName table)
+        public QueryBase(QueryConfig config, DbName table)
         {
             this.Info = new QueryInfo(config, table);
         }
@@ -49,9 +52,9 @@ namespace SharpOrm.Builder
         #region Where
 
         /// <summary>
-        /// Adds a clause to the "WHERE" statement based on an ISqlExpressible object, where the expression is safely converted to a SqlExpression.
+        /// Adds a clause to the "WHERE" statement based on an ISqlExpressible object, where the values is safely converted to a SqlExpression.
         /// </summary>
-        /// <param name="expressible">The ISqlExpressible object that contains the expression to be added to the WHERE statement.</param>
+        /// <param name="expressible">The ISqlExpressible object that contains the values to be added to the WHERE statement.</param>
         /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
@@ -71,7 +74,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// Add a clausule (column=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -82,7 +85,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// Add a clausule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -123,7 +126,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clause in parentheses (If there are any previous clauses, "AND" is entered before the new clause).
+        /// AddRaws a clause in parentheses (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="callback">Callback where the clause should be builded.</param>
         /// <returns></returns>
@@ -144,7 +147,7 @@ namespace SharpOrm.Builder
             CheckIsAvailableOperation(operation);
             this.WriteWhereType(AND);
 
-            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            this.Info.Where.AddRaws(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
             return this;
         }
 
@@ -237,7 +240,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// Add a clausule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -248,7 +251,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clusule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// Add a clausule (column!=value) to the "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
@@ -289,7 +292,7 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Add a clause in parentheses (If there are any previous clauses, "OR" is entered before the new clause).
+        /// AddRaws a clause in parentheses (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="callback">Callback where the clause should be builded.</param>
         /// <returns></returns>
@@ -310,7 +313,7 @@ namespace SharpOrm.Builder
             CheckIsAvailableOperation(operation);
             this.WriteWhereType(OR);
 
-            this.Info.Where.Add(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
+            this.Info.Where.AddRaws(this.Info.Config.ApplyNomenclature(column1), operation, this.Info.Config.ApplyNomenclature(column2));
             return this;
         }
 
@@ -417,7 +420,7 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        private QueryConstructor WriteBetweenArgument(object arg)
+        private QueryBuilder WriteBetweenArgument(object arg)
         {
             if (arg == null)
                 throw new ArgumentNullException(nameof(arg));
@@ -437,12 +440,18 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(column));
 
             CheckIsAvailableOperation(operation);
-            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
-
             this.WriteWhereType(type);
+
+            if (value is ICollection collection && collection.Count == 0)
+            {
+                this.Info.Where.Add("1!=1");
+                return this;
+            }
+
             this.ParseColumn(column);
             this.Info.Where.Add().Add(operation).Add();
 
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
             if (isExpressionList)
                 this.Info.Where.Add('(');
 
@@ -469,7 +478,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="column"></param>
         /// <returns></returns>
-        protected QueryConstructor ParseColumn(object column)
+        protected QueryBuilder ParseColumn(object column)
         {
             if (column is string strColumn)
                 return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
@@ -484,11 +493,11 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Loads the value object and converts it to a sql expression.
+        /// Loads the value object and converts it to a sql values.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected QueryConstructor WriteValue(object value)
+        protected QueryBuilder WriteValue(object value)
         {
             if (value is ICollection collection)
                 return this.Info.Where.WriteEnumerableAsValue(collection, true);
@@ -499,12 +508,12 @@ namespace SharpOrm.Builder
             return this.Info.Where.AddParameter(value);
         }
 
-        private QueryConstructor WriteQuery(Query query)
+        private QueryBuilder WriteQuery(Query query)
         {
             return this.Info.Where.Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
         }
 
-        internal QueryConstructor WriteWhereType(string type)
+        internal QueryBuilder WriteWhereType(string type)
         {
             if (!this.Info.Where.Empty)
                 this.Info.Where.Add(' ').Add(type).Add(' ');
@@ -529,6 +538,10 @@ namespace SharpOrm.Builder
             this._disposed = true;
         }
 
+        /// <summary>
+        /// Releases all resources used by the object.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
         public void Dispose()
         {
             if (this._disposed)

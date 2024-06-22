@@ -4,6 +4,9 @@ using System.Data.Common;
 
 namespace SharpOrm.Connection
 {
+    /// <summary>
+    /// Responsible for creating and configuring database connections. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/Connection-Creators
+    /// </summary>
     public abstract class ConnectionCreator : IDisposable
     {
         private bool _disposed;
@@ -13,14 +16,24 @@ namespace SharpOrm.Connection
         public bool Disposed => this._disposed;
 
         /// <summary>
+        /// Open the connection by calling the <see cref="GetConnection"/> function.
+        /// </summary>
+        public bool AutoOpenConnection { get; set; }
+
+        /// <summary>
+        /// Type of connection management.
+        /// </summary>
+        public ConnectionManagement Management { get; set; } = ConnectionManagement.CloseOnEndOperation;
+
+        /// <summary>
         /// Gets or sets the default instance of the ConnectionCreator class.
         /// </summary>
         public static ConnectionCreator Default { get; set; }
 
         /// <summary>
-        /// Configuration for queries.
+        /// Gets the query configuration for the query build.
         /// </summary>
-        public abstract IQueryConfig Config { get; }
+        public virtual QueryConfig Config { get; protected set; }
 
         /// <summary>
         /// Gets a database connection.
@@ -31,44 +44,6 @@ namespace SharpOrm.Connection
         /// Safely disposes a database connection.
         /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
-
-        #region Transaction
-
-        /// <summary>
-        /// Executes a database transaction.
-        /// </summary>
-        public static void ExecuteTransaction(TransactionCall call)
-        {
-            DbConnection connection = Default.GetConnection();
-            var transaction = connection.BeginTransaction();
-
-            try
-            {
-                call(transaction);
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-            finally
-            {
-                transaction.Dispose();
-                Default.SafeDisposeConnection(connection);
-            }
-        }
-
-        /// <summary>
-        /// Executes a database transaction and returns a value.
-        /// </summary>
-        public static T ExecuteTransaction<T>(TransactionCall<T> func)
-        {
-            T value = default;
-            ExecuteTransaction((transaction) => value = func(transaction));
-            return value;
-        }
-        #endregion
 
         #region IDisposable
 

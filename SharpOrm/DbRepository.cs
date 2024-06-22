@@ -1,10 +1,11 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
+using System.Linq;
 using System.Threading;
 
 namespace SharpOrm
@@ -15,34 +16,56 @@ namespace SharpOrm
     public abstract class DbRepository : IDisposable
     {
         #region Fields/Properties
-        private readonly List<DbConnection> _connections = new List<DbConnection>();
-        private readonly List<DbCommand> _commands = new List<DbCommand>();
         private readonly object _lock = new object();
-        private bool _parentTransact = false;
+        private readonly bool forceSingleConnection;
+        private bool isExtTransact = false;
         private bool _disposed;
+        public bool Disposed => this._disposed;
 
-        private DbTransaction _transaction;
-        private DbConnection _transactionConn;
+        internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
+
+        /// <summary>
+        /// Gets the connection manager for the current transaction.
+        /// </summary>
+        protected ConnectionManager Transaction { get; private set; }
+
+        private int? commandTimeout = null;
+        /// <summary>
+        /// Gets or sets the command timeout value for database commands.
+        /// </summary>
+        /// <value>
+        /// The command timeout value in seconds. If not explicitly set, defaults to the command timeout in the configuration or 30 seconds.
+        /// </value>
+        protected int CommandTimeout
+        {
+            get => this.commandTimeout ?? this.Creator?.Config?.CommandTimeout ?? 30;
+            set => this.commandTimeout = value;
+        }
 
         /// <summary>
         /// Gets the default connection creator for the repository.
         /// </summary>
         protected virtual ConnectionCreator Creator => ConnectionCreator.Default;
+
         /// <summary>
         /// Indicates whether the repository has a parent transaction.
         /// </summary>
-        protected bool HasParentTransaction => this._parentTransact;
-
-        /// <summary>
-        /// Indicates whether the repository has an active transaction.
-        /// </summary>
-        protected bool HasTransaction => this._transaction != null;
+        protected bool HasParentTransaction => this.isExtTransact;
 
         /// <summary>
         /// Gets or sets the cancellation token for the repository.
         /// </summary>
         public CancellationToken Token { get; set; }
         #endregion
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbRepository"/> class.
+        /// </summary>
+        /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
+        public DbRepository(bool forceSingleConnection = false)
+        {
+            this.forceSingleConnection = forceSingleConnection;
+        }
 
         #region Transactions
 
@@ -55,7 +78,7 @@ namespace SharpOrm
             if (service == null)
                 throw new ArgumentNullException(nameof(service));
 
-            this.SetTransaction(service._transaction);
+            this.SetTransaction(service.Transaction);
         }
 
         /// <summary>
@@ -64,8 +87,19 @@ namespace SharpOrm
         /// <param name="transaction">The DbTransaction to set.</param>
         public void SetTransaction(DbTransaction transaction)
         {
-            this._transaction = transaction;
-            this._parentTransact = transaction != null;
+            this.SetTransaction(transaction is null ? null : new ConnectionManager(this.Creator.Config, transaction));
+        }
+
+        /// <summary>
+        /// Set a transaction from a <see cref="ConnectionManager"/> class.
+        /// </summary>
+        /// <param name="manager"></param>
+        public void SetTransaction(ConnectionManager manager)
+        {
+            this.ThrowIfDisposed();
+
+            this.Transaction = manager;
+            this.isExtTransact = manager != null;
         }
 
         /// <summary>
@@ -73,16 +107,15 @@ namespace SharpOrm
         /// </summary>
         public virtual void BeginTransaction()
         {
+            this.ThrowIfDisposed();
+
             if (this.HasParentTransaction)
                 return;
 
-            if (this.HasTransaction)
+            if (this.Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            if (this._transactionConn == null)
-                this._transactionConn = this.Creator.GetConnection();
-
-            this._transaction = this._transactionConn.BeginTransaction();
+            this.Transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
         }
 
         /// <summary>
@@ -93,10 +126,10 @@ namespace SharpOrm
             if (this.HasParentTransaction)
                 return;
 
-            if (!this.HasTransaction)
+            if (this.Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this._transaction.Commit();
+            this.Transaction.Commit();
             this.ClearTransaction();
         }
 
@@ -108,10 +141,10 @@ namespace SharpOrm
             if (this.HasParentTransaction)
                 return;
 
-            if (!this.HasTransaction)
+            if (this.Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this._transaction.Rollback();
+            this.Transaction.Rollback();
             this.ClearTransaction();
         }
 
@@ -120,15 +153,18 @@ namespace SharpOrm
         /// </summary>
         protected virtual void ClearTransaction()
         {
-            if (this.HasTransaction && !this.HasParentTransaction)
-                this._transaction.Dispose();
-
-            this._transaction = null;
-            if (this._transactionConn == null)
+            if (this.Transaction is null)
                 return;
 
-            this.Creator.SafeDisposeConnection(this._transactionConn);
-            this._transactionConn = null;
+            if (!this.HasParentTransaction)
+            {
+                var conn = this.Transaction.Connection;
+                this.Transaction.Dispose();
+
+                this.Creator.SafeDisposeConnection(conn);
+            }
+
+            this.Transaction = null;
         }
 
         /// <summary>
@@ -137,7 +173,7 @@ namespace SharpOrm
         /// <param name="callback">The callback action to execute within the transaction.</param>
         public void RunTransaction(Action callback)
         {
-            if (this.HasTransaction)
+            if (this.Transaction != null)
             {
                 callback();
                 return;
@@ -188,12 +224,14 @@ namespace SharpOrm
         /// </summary>
         /// <param name="name">The name of the database table to query.</param>
         /// <returns>A Query object for the specified table.</returns>
-        protected Query Query(DbName name)
+        protected virtual Query Query(DbName name)
         {
-            if (this.HasTransaction)
-                return new Query(this._transaction, this.Creator.Config, name) { Token = this.Token };
+            this.ThrowIfDisposed();
 
-            return new Query(this.Creator, name) { Token = this.Token };
+            if (this.Transaction != null)
+                return new Query(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
+
+            return new Query(name, Creator) { Token = this.Token };
         }
 
         /// <summary>
@@ -202,7 +240,7 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="alias">An alias for the type in the query.</param>
         /// <returns>A Query object for the specified type with an alias.</returns>
-        protected Query<T> Query<T>(string alias = "") where T : new()
+        protected Query<T> Query<T>(string alias = "")
         {
             return this.Query<T>(DbName.Of<T>(alias));
         }
@@ -213,39 +251,100 @@ namespace SharpOrm
         /// <typeparam name="T">The type to query.</typeparam>
         /// <param name="name">The DbName representing the type.</param>
         /// <returns>A Query object for the specified type with a DbName.</returns>
-        protected Query<T> Query<T>(DbName name) where T : new()
+        protected virtual Query<T> Query<T>(DbName name)
         {
-            if (this.HasTransaction)
-                return new Query<T>(this._transaction, this.Creator.Config, name) { Token = this.Token };
+            this.ThrowIfDisposed();
 
-            return new Query<T>(this.Creator, name) { Token = this.Token };
+            if (this.Transaction != null)
+                return new Query<T>(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
+
+            return new Query<T>(name, Creator) { Token = this.Token, CommandTimeout = this.CommandTimeout };
         }
 
         /// <summary>
-        /// Creates a QueryConstructor for constructing custom queries.
+        /// Creates a QueryBuilder for constructing custom queries.
         /// </summary>
         /// <param name="table">The name of the database table (optional).</param>
         /// <param name="alias">An alias for the table (optional).</param>
-        /// <returns>A QueryConstructor for building custom queries.</returns>
-        protected virtual QueryConstructor Constructor(string table = "", string alias = "")
+        /// <returns>A QueryBuilder for building custom queries.</returns>
+        protected virtual QueryBuilder Constructor(string table = "", string alias = "")
         {
-            return new QueryConstructor(new QueryInfo(this.Creator.Config, new DbName(table, alias)));
+            return new QueryBuilder(this.Creator.Config, new DbName(table, alias));
         }
 
         /// <summary>
-        /// Creates a DbCommand from a QueryConstructor.
+        /// Executes a SQL statement against a connection object.
         /// </summary>
-        /// <param name="query">The QueryConstructor used to create the command.</param>
-        /// <returns>A DbCommand created from the QueryConstructor.</returns>
-        protected DbCommand CreateCommand(QueryConstructor query)
+        /// <param name="query">The QueryBuilder used to create the command.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(QueryBuilder query)
         {
-            var qBuilder = new StringBuilder().AppendReplaced(query.ToString(), '?', index => $"@p{index - 1}");
-            var cmd = this.CreateCommand(qBuilder.ToString());
+            using (var cmd = this.CreateCommand(query))
+                return cmd.ExecuteNonQuery();
+        }
 
-            for (int i = 0; i < query.Parameters.Count; i++)
-                cmd.AddParam($"@p{i}", query.Parameters[i]);
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteNonQuery();
+        }
 
-            return cmd;
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <returns></returns>
+        protected int ExecuteNonQuery(string query)
+        {
+            using (var cmd = this.CreateCommand(query))
+                return cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        protected T ExecuteScalar<T>(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteScalar<T>(this.Creator.Config.Translation);
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        protected IEnumerable<T> ExecuteArrayScalar<T>(string query, params object[] args)
+        {
+            using (var cmd = this.CreateCommand(query, args))
+                return cmd.ExecuteArrayScalar<T>(this.Creator.Config.Translation);
+        }
+
+        /// <summary>
+        /// Creates a DbCommand from a QueryBuilder.
+        /// </summary>
+        /// <param name="query">The QueryBuilder used to create the command.</param>
+        /// <returns>A DbCommand created from the QueryBuilder.</returns>
+        protected DbCommand CreateCommand(QueryBuilder query)
+        {
+            return this.CreateCommand(query.ToString(), query.Parameters);
+        }
+
+        /// <summary>
+        /// Creates a DbCommand from a query string.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="args">SQL query args.</param>
+        /// <returns>A DbCommand created from the query string.</returns>
+        protected internal DbCommand CreateCommand(string query, params object[] args)
+        {
+            return this.CreateCommand().SetQuery(query, args);
         }
 
         /// <summary>
@@ -253,12 +352,27 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query">The SQL query string.</param>
         /// <returns>A DbCommand created from the query string.</returns>
-        protected DbCommand CreateCommand(string query)
+        protected internal DbCommand CreateCommand(string query)
         {
-            var cmd = this.GetConnection().CreateCommand();
+            var cmd = this.CreateCommand();
             cmd.CommandText = query;
+            return cmd;
+        }
+
+        /// <summary>
+        /// Creates a DbCommand.
+        /// </summary>
+        /// <param name="open">Signals if the command should already start with the connection open.</param>
+        /// <returns>A DbCommand created from the query string.</returns>
+        protected virtual DbCommand CreateCommand(bool open = true)
+        {
+            var cmd = this.GetManager().CreateCommand();
+            if (open) cmd.Connection?.OpenIfNeeded();
+            cmd.SetCancellationToken(this.Token);
+
+            cmd.CommandTimeout = this.CommandTimeout;
             cmd.Disposed += OnCommandDisposed;
-            this._commands.Add(cmd);
+
             return cmd;
         }
 
@@ -266,39 +380,54 @@ namespace SharpOrm
 
         private void OnCommandDisposed(object sender, EventArgs e)
         {
-            lock (_lock)
-                if (sender is DbCommand cmd)
-                    this._commands.Remove(cmd);
+            if (!(sender is DbCommand cmd))
+                return;
+
+            cmd.Disposed += this.OnCommandDisposed;
+
+            if (cmd.Transaction is null)
+                try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
         }
 
         /// <summary>
-        /// Retrieves a database connection, optionally creating a new one if required.
+        /// Retrieve a new connection manager (if not for reuse, only one per instance).
         /// </summary>
-        /// <param name="forceNew">
-        ///     A flag indicating whether to force the creation of a new connection.
-        ///     If set to true, a new connection will be created even if there is an active transaction.
-        ///     If set to false, the connection from the active transaction, if present, will be returned.
-        /// </param>
-        /// <returns>
-        ///     A DbConnection object, either a newly created connection or the one from the active transaction,
-        ///     based on the value of the 'forceNew' parameter.
-        /// </returns>
-        protected DbConnection GetConnection(bool forceNew = true)
+        /// <param name="useActiveTransaction">Indicate whether the active transaction should be retrieved if it exists.</param>
+        /// <returns></returns>
+        protected virtual ConnectionManager GetManager(bool useActiveTransaction = true)
         {
-            if (!forceNew && this.HasTransaction)
-                return this._transaction.Connection;
+            this.ThrowIfDisposed();
 
-            var conn = this.Creator.GetConnection();
-            this._connections.Add(conn);
-            conn.Disposed += OnConnectionDisposed;
-            return conn;
+            lock (this._lock)
+            {
+                if (useActiveTransaction && this.Transaction != null)
+                    return this.Transaction;
+
+                return GetExistingManager() ?? this.GetNewManager();
+            }
         }
 
-        private void OnConnectionDisposed(object sender, EventArgs e)
+        private ConnectionManager GetExistingManager()
         {
-            lock (_lock)
-                if (sender is DbConnection con)
-                    this._connections.Remove(con);
+            if (this.forceSingleConnection && this._connections.Count > 0)
+            {
+                this._connections.RemoveNotAlive();
+
+                if (this._connections.FirstOrDefault() is ConnectionManager conn)
+                    return conn;
+            }
+
+            return null;
+        }
+
+        private ConnectionManager GetNewManager()
+        {
+            var connection = new ConnectionManager(this.Creator)
+            {
+                CommandTimeout = this.CommandTimeout
+            };
+            _connections.Add(connection);
+            return connection;
         }
 
         #region IDisposable
@@ -317,24 +446,20 @@ namespace SharpOrm
             if (this._disposed)
                 return;
 
-            if (!disposing)
+            this._disposed = true;
+            if (disposing)
             {
-                this._transaction = null;
-                this._transactionConn = null;
+                if (!this.HasParentTransaction && this.Transaction != null)
+                    this.CommitTransaction();
 
-                this._commands.Clear();
+                this._connections.Dispose();
+            }
+            else
+            {
                 this._connections.Clear();
-                return;
             }
 
-            if (!this.HasParentTransaction && this.HasTransaction)
-                this.CommitTransaction();
-
-            foreach (var cmd in this._commands.ToArray())
-                try { cmd.Dispose(); } catch { }
-
-            foreach (var conn in this._connections.ToArray())
-                try { conn.Dispose(); } catch { }
+            this.Transaction = null;
         }
 
         /// <summary>
@@ -342,11 +467,15 @@ namespace SharpOrm
         /// </summary>
         public void Dispose()
         {
-            if (this._disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
+            this.ThrowIfDisposed();
             this.Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        protected void ThrowIfDisposed()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         #endregion

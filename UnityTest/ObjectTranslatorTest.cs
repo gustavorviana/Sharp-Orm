@@ -1,7 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Builder.DataTranslation;
+using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,12 +16,12 @@ namespace UnityTest
     [TestClass]
     public class ObjectTranslatorTest : MockTest
     {
-        private static readonly TableInfo table = new(new TranslationRegistry(), typeof(TestClass));
+        private static readonly TableInfo table = new(typeof(TestClass), new TranslationRegistry());
 
         [TestMethod]
         public void TestInvalidFields()
         {
-            TableInfo table = new(new TranslationRegistry(), typeof(InvalidFields));
+            TableInfo table = new(typeof(InvalidFields), new TranslationRegistry());
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Id)), "The invalid field 'Id' was retrieved.");
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Value)), "The invalid property 'Value' was retrieved.");
             Assert.IsNull(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Name)), "The invalid property 'Name' was retrieved.");
@@ -48,7 +49,7 @@ namespace UnityTest
         [TestMethod]
         public void SelectValidPk()
         {
-            var obj = new Customer { AddressId = 1, Address = new Address { Id = 2 } };
+            var obj = new Customer { AddressId = 1, Address = new Address(2) };
             var cells = new TableInfo(typeof(Customer)).GetObjCells(obj, false, true).Where(c => c.Name == "address_id").ToArray();
             Assert.AreEqual(1, cells.Length);
             Assert.AreEqual(1, cells[0].Value);
@@ -241,12 +242,37 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void FreezedDateTest()
+        {
+            var registry = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
+            var fNow = FreezedDate.Now;
+
+            Assert.AreEqual(fNow.Value, registry.ToSql(fNow));
+            Assert.AreEqual(fNow.Value.ToUniversalTime(), registry.ToSql(fNow.Value));
+        }
+
+        [TestMethod]
+        public void DynamicTranslatorTest()
+        {
+            const int Id = 1;
+            const string Name = "My Dynamic name";
+
+            Connection.QueryReaders.Add("SELECT * FROM `Dynamic`", () => GetReader(i => new[] { new Cell("Id", Id), new Cell("Name", Name), new Cell("Null", DBNull.Value) }, 1));
+            using var query = new Query("Dynamic", GetManager());
+            var value = query.GetEnumerable<dynamic>().First();
+
+            Assert.AreEqual(value.Id, Id);
+            Assert.AreEqual(value.Name, Name);
+            Assert.IsNull(value.Null);
+        }
+
+        [TestMethod]
         public void LoadArrayChild()
         {
             Connection.QueryReaders.Add("SELECT * FROM `Orders` LIMIT 1", () => GetReader(i => MakeOrderCells(1), 3));
             Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
-            using var query = new Query<Order>(Connection, Config);
+            using var query = new Query<Order>(GetManager());
             query.AddForeign(o => o.ArrayItems).AddForeign(o => o.ListItems).AddForeign(o => o.IListItems);
             var obj = query.FirstOrDefault();
 
@@ -261,7 +287,7 @@ namespace UnityTest
         {
             Connection.QueryReaders.Add("SELECT * FROM `RootAdvancedObject` LIMIT 1", GetAdvancedObjectReader);
 
-            using var query = new Query<RootAdvancedObject>(Connection, Config);
+            using var query = new Query<RootAdvancedObject>(GetManager());
             var obj = query.FirstOrDefault();
 
             Assert.IsNotNull(obj);
@@ -272,6 +298,22 @@ namespace UnityTest
             Assert.AreEqual(5, obj.Child2.Id);
             Assert.AreEqual("Value Child 1", obj.Child1.Value);
             Assert.AreEqual("Value Child 2", obj.Child2.Value);
+        }
+
+        [TestMethod]
+        public void TableWithSchemaTest()
+        {
+            var info = new TableInfo(typeof(TableWithSchema));
+            Assert.AreEqual("MySchema.MyName", info.Name);
+        }
+
+        [TestMethod]
+        public void RecursiveCallTest()
+        {
+            Connection.QueryReaders.Add("SELECT * FROM `Recursive` LIMIT 1", GetAdvancedObjectReader);
+
+            using var query = new Query<RecursiveClass>(GetManager());
+            Assert.IsNotNull(query.FirstOrDefault());
         }
 
         private MockDataReader GetAdvancedObjectReader()
@@ -307,6 +349,67 @@ namespace UnityTest
         private static void AssertSqlValueConverted(object expected, object value)
         {
             Assert.AreEqual(expected, TranslationRegistry.Default.FromSql(value, expected?.GetType()));
+        }
+
+        [TestMethod]
+        public void PropertyExpressionVisitorTest()
+        {
+            var column = new PropertyExpressionVisitor().VisitProperty<OrderItem>(x => x.OrderId);
+            Assert.AreEqual("OrderId", column);
+        }
+
+        [TestMethod]
+        public void CheckIsNumericString()
+        {
+            Assert.IsTrue(TranslationUtils.IsNumericString("1"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("123"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("1.1"));
+            Assert.IsTrue(TranslationUtils.IsNumericString("1,2"));
+            Assert.IsFalse(TranslationUtils.IsNumericString(",255"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("255,"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("."));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1m"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1.1.1"));
+            Assert.IsFalse(TranslationUtils.IsNumericString("1,1,1"));
+        }
+
+        [TestMethod]
+        public void TestGetTranslationTest()
+        {
+            TableInfo table = new(typeof(CustomClassInfo), new TranslationRegistry());
+            var owner = new CustomClassInfo();
+            var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
+            Assert.AreEqual(2, cell.Value);
+        }
+
+        [Table("Recursive")]
+        private class RecursiveClass
+        {
+            public int Id { get; set; }
+
+            [SqlConverter(typeof(CustomTranslation))]
+            [Column("Child1_Id")]
+            public RecursiveClass Parent { get; set; }
+        }
+
+        internal class CustomTranslation : ISqlTranslation
+        {
+            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
+
+            public object FromSqlValue(object value, Type expectedType)
+            {
+                return new RecursiveClass { };
+            }
+
+            public object ToSqlValue(object value, Type type)
+            {
+                return value;
+            }
+        }
+
+        [Table("MyName", Schema = "MySchema")]
+        private class TableWithSchema
+        {
         }
 
         private class RootAdvancedObject
@@ -357,6 +460,27 @@ namespace UnityTest
             public int OrderId { get; set; }
 
             public int Value { get; set; }
+        }
+
+        private class CustomClassInfo
+        {
+            [SqlConverter(typeof(TestGetTranslator))]
+            public int MyValue { get; set; }
+        }
+
+        public class TestGetTranslator : ISqlTranslation
+        {
+            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
+
+            public object FromSqlValue(object value, Type expectedType)
+            {
+                return 1;
+            }
+
+            public object ToSqlValue(object value, Type type)
+            {
+                return 2;
+            }
         }
     }
 }

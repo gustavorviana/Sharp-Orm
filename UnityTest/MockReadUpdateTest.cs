@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,26 +31,16 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void ReadWithOutCreateForeignIfNoDepth()
-        {
-            using var query = GetConfiguredOrderQuery();
-            var order = query.FirstOrDefault();
-
-            Assert.IsNull(order.Customer);
-        }
-
-        [TestMethod]
         public void ReadDbNull()
         {
-            var config = new MysqlQueryConfig();
             var reader = new MockDataReader(new Cell("str", DBNull.Value), new Cell("num", null));
             reader.Read();
 
             Assert.AreEqual(DBNull.Value, reader[0]);
             Assert.AreEqual(DBNull.Value, reader[1]);
 
-            Assert.AreEqual(null, reader.GetCell(config, 0).Value);
-            Assert.AreEqual(null, reader.GetCell(config, 1).Value);
+            Assert.AreEqual(null, reader.GetCell(TranslationRegistry.Default, 0).Value);
+            Assert.AreEqual(null, reader.GetCell(TranslationRegistry.Default, 1).Value);
         }
 
         [TestMethod]
@@ -65,7 +56,7 @@ namespace UnityTest
         private static Query<Order> GetConfiguredOrderQuery(bool loadForeign = false, int itens = 1, string queryStr = "SELECT * FROM `Orders` LIMIT 1")
         {
             var config = new MysqlQueryConfig { LoadForeign = loadForeign };
-            var query = new Query<Order>(Connection, config);
+            var query = new Query<Order>(GetConnectionManager(config));
             Connection.QueryReaders.Add(queryStr, () => OrderReader(itens));
             return query;
         }
@@ -88,7 +79,7 @@ namespace UnityTest
                 return reader;
             });
 
-            using var query = new Query<Order>(Connection, Config) { Token = src.Token };
+            using var query = new Query<Order>(GetConnectionManager()) { Token = src.Token };
             Assert.ThrowsException<OperationCanceledException>(() => query.FirstOrDefault());
         }
 
@@ -97,7 +88,7 @@ namespace UnityTest
         {
             var info = new TableInfo(typeof(Order));
             var obj = new Order { Id = 1 };
-            Assert.IsNotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.ToLower() == "id"));
+            Assert.IsNotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase)));
         }
 
         [TestMethod]
@@ -105,7 +96,7 @@ namespace UnityTest
         {
             var info = new TableInfo(typeof(Order));
             var obj = new Order { Id = 1 };
-            Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.ToLower() == "id"));
+            Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase)));
         }
 
         [TestMethod]
@@ -130,7 +121,7 @@ namespace UnityTest
             var config = new MysqlQueryConfig(false);
             var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
 
-            var query = new Query<Order>(conn, config);
+            var query = new Query<Order>(GetConnectionManager(config));
             query.Update(new Order { Quantity = 1 }, o => o.Quantity);
         }
 
@@ -140,7 +131,7 @@ namespace UnityTest
             var config = new MysqlQueryConfig(false);
             var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
 
-            var query = new Query<Order>(conn, config);
+            var query = new Query<Order>(GetConnectionManager(config));
             query.UpdateExcept(new Order { Quantity = 1 }, o => o.Customer, o => o.CustomerId, o => o.Product, o => o.Status);
         }
 

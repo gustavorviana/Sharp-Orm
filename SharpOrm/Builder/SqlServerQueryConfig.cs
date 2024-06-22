@@ -2,15 +2,28 @@
 
 namespace SharpOrm.Builder
 {
+    /// <summary>
+    /// Provides configuration for building SQL Server queries.
+    /// </summary>
     public class SqlServerQueryConfig : QueryConfig
     {
         private const char StrDelimitor = '\'';
+        /// <summary>
+        /// Gets or sets a value indicating whether to use old pagination without LIMIT and OFFSET, using only ROW_NUMBER().
+        /// </summary>
         public bool UseOldPagination { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class.
+        /// </summary>
         public SqlServerQueryConfig()
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class with a flag indicating if only safe modifications are allowed.
+        /// </summary>
+        /// <param name="onlySafeModifications">If true, only safe modifications are allowed.</param>
         public SqlServerQueryConfig(bool onlySafeModifications) : base(onlySafeModifications)
         {
         }
@@ -23,6 +36,11 @@ namespace SharpOrm.Builder
         public override Grammar NewGrammar(Query query)
         {
             return new SqlServerGrammar(query);
+        }
+
+        public override TableGrammar NewTableGrammar(TableSchema schema)
+        {
+            return new SqlServerTableGrammar(this, schema);
         }
 
         /// <summary>
@@ -46,6 +64,13 @@ namespace SharpOrm.Builder
             }
 
             return builder.Append(StrDelimitor).ToString();
+        }
+
+        public override QueryConfig Clone()
+        {
+            var clone = new SqlServerQueryConfig(this.OnlySafeModifications);
+            this.CopyTo(clone);
+            return clone;
         }
     }
 }

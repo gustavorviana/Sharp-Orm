@@ -1,13 +1,13 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
-using SharpOrm.Connection;
+using SharpOrm.Builder;
 using System;
 using System.IO;
 using UnityTest.Models;
 
 namespace UnityTest.Utils
 {
-    public class MysqlTableTest : MysqlConnectionTest
+    public class MysqlTableTest : MysqlTest
     {
         #region Consts
         protected const string TABLE = "TestTable";
@@ -26,26 +26,18 @@ namespace UnityTest.Utils
         [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
         public static void OnMysqlTableTestInit(TestContext context)
         {
-            var con = Connection;
-            try
-            {
-                using var cmd = con.CreateCommand();
-                cmd.CommandText = File.ReadAllText("./Scripts/Mysql.sql");
-                cmd.ExecuteNonQuery();
-            }
-            finally
-            {
-                ConnectionCreator.Default.SafeDisposeConnection(con);
-            }
+            Grammar.QueryLogger = (x) => System.Diagnostics.Debug.WriteLine(x);
+            using var creator = GetCreator();
+            ExecuteScript(File.ReadAllText("./Scripts/Mysql.sql"), creator.GetConnection());
         }
         #endregion
 
-        protected static Row NewRow(int id, string name)
+        protected virtual Row NewRow(int? id, string name, int number = 0)
         {
-            return new Row(new Cell(ID, id), new Cell(NAME, name), new Cell(NUMBER, 0M), new Cell(GUIDID, Guid.NewGuid().ToString()), new Cell(STATUS, Status.Unknow));
+            return new Row(new Cell(ID, id), new Cell(NAME, name), new Cell(NUMBER, number), new Cell(GUIDID, Guid.NewGuid().ToString()), new Cell(STATUS, Status.Unknow));
         }
 
-        protected static void InsertRows(int count)
+        protected void InsertRows(int count)
         {
             Row[] rows = new Row[count];
 
@@ -56,7 +48,7 @@ namespace UnityTest.Utils
             q.BulkInsert(rows);
         }
 
-        protected static Query NewQuery()
+        protected Query NewQuery()
         {
             return NewQuery(TABLE);
         }

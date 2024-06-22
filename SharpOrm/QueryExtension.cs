@@ -1,6 +1,6 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Builder.DataTranslation;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,11 +14,25 @@ namespace SharpOrm
     {
         #region Where
 
+        /// <summary>
+        /// Adds a condition to the query where the value of the first column must be equal to the value of the second column.
+        /// </summary>
+        /// <param name="query">The query to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column.</param>
+        /// <param name="column2">The name of the second column.</param>
+        /// <returns>The modified query with the added condition.</returns>
         public static QueryBase WhereColumn(this QueryBase query, string column1, string column2)
         {
             return query.WhereColumn(column1, "=", column2);
         }
 
+        /// <summary>
+        /// Adds a condition to the query where the value of the first column must not be equal to the value of the second column.
+        /// </summary>
+        /// <param name="query">The query to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column.</param>
+        /// <param name="column2">The name of the second column.</param>
+        /// <returns>The modified query with the added condition.</returns>
         public static QueryBase WhereNotColumn(this QueryBase query, string column1, string column2)
         {
             return query.WhereColumn(column1, "!=", column2);
@@ -32,7 +46,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase WhereContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -43,7 +57,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase WhereStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.Where(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -54,7 +68,40 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase WhereEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.Where(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not contains the value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to filter.</param>
+        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase WhereNotContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase WhereNotStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase WhereNotEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -94,7 +141,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
@@ -104,7 +151,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
@@ -163,11 +210,25 @@ namespace SharpOrm
 
         #region Or
 
+        /// <summary>
+        /// Adds an OR condition to the query that compares the values of two columns for equality.
+        /// </summary>
+        /// <param name="query">The query object to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column to be compared.</param>
+        /// <param name="column2">The name of the second column to be compared.</param>
+        /// <returns>The updated query object with the added condition.</returns>
         public static QueryBase OrWhereColumn(this QueryBase query, string column1, string column2)
         {
             return query.OrWhereColumn(column1, "=", column2);
         }
 
+        /// <summary>
+        /// Adds an OR condition to the query that compares the values of two columns for inequality.
+        /// </summary>
+        /// <param name="query">The query object to which the condition will be added.</param>
+        /// <param name="column1">The name of the first column to be compared.</param>
+        /// <param name="column2">The name of the second column to be compared.</param>
+        /// <returns>The updated query object with the added condition.</returns>
         public static QueryBase OrWhereNotColumn(this QueryBase query, string column1, string column2)
         {
             return query.OrWhereColumn(column1, "!=", column2);
@@ -181,7 +242,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public static QueryBase OrWhereContains(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -192,7 +253,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public static QueryBase OrWhereStartsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"{value.SanitizeSqlValue()}%");
+            return qBase.OrWhere(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -203,7 +264,40 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public static QueryBase OrWhereEndsWith(this QueryBase qBase, string column, string value)
         {
-            return qBase.OrWhere(column, "LIKE", $"%{value.SanitizeSqlValue()}");
+            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not contains the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public static QueryBase OrWhereNotContains(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public static QueryBase OrWhereNotStartsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public static QueryBase OrWhereNotEndsWith(this QueryBase qBase, string column, string value)
+        {
+            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -243,7 +337,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
@@ -253,7 +347,7 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the expression.
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
@@ -333,6 +427,13 @@ namespace SharpOrm
 
         #region Query
 
+        /// <summary>
+        /// Inserts a large number of rows into the database in batches of the specified page size using the given query.
+        /// </summary>
+        /// <typeparam name="T">The type of the rows to be inserted.</typeparam>
+        /// <param name="query">The query object used to execute the batch insertion.</param>
+        /// <param name="rows">The collection of rows to be inserted into the database.</param>
+        /// <param name="pageSize">The number of rows to be inserted in each batch.</param>
         public static void InsertLot<T>(this Query<T> query, IEnumerable<T> rows, int pageSize) where T : class, new()
         {
             using (var enumerator = rows.GetEnumerator())
@@ -340,6 +441,12 @@ namespace SharpOrm
                     query.BulkInsert(GetPage(enumerator, pageSize));
         }
 
+        /// <summary>
+        /// Inserts a large number of rows into the database in batches of the specified page size using the given query.
+        /// </summary>
+        /// <param name="query">The query object used to execute the batch insertion.</param>
+        /// <param name="rows">The collection of rows to be inserted into the database.</param>
+        /// <param name="pageSize">The number of rows to be inserted in each batch.</param>
         public static void InsertLot(this Query query, IEnumerable<Row> rows, int pageSize)
         {
             using (var enumerator = rows.GetEnumerator())
@@ -377,13 +484,13 @@ namespace SharpOrm
         /// <param name="calls">Calls to retrieve the names of the properties.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
             var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            return query.Update(query.GetCellsOf(obj, false).Where(c => !props.Contains(c.PropName)));
+            return query.Update(query.GetCellsOf(obj, false, props, false, true));
         }
 
         /// <summary>
@@ -395,52 +502,49 @@ namespace SharpOrm
         /// <param name="columns">Columns that should not be updated.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns) where T : new()
+        public static int UpdateExcept<T>(this Query<T> query, T obj, params string[] columns)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false), columns, true));
+            return query.Update(SqlExtension.GetCellsByName(query.GetCellsOf(obj, false, validate: true), columns, true));
         }
 
         /// <summary>
-        /// Inserts one row into the table.
+        /// Inserts the specified cells into the database using the given query and returns the result as an object of type T.
         /// </summary>
-        /// <param name="obj"></param>
-        /// <returns>Id of row (long).</returns>
-        public static long InsertL<T>(this Query<T> query, T obj) where T : new()
+        /// <typeparam name="T">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="cells">An array of cells to be inserted into the database.</param>
+        /// <returns>An object of type T representing the result of the insertion.</returns>
+        public static T Insert<T>(this Query query, params Cell[] cells)
         {
-            return query.InsertL(Query<T>.TableInfo.GetRow(obj, true, query.Creator.Config.LoadForeign).Cells);
+            return Insert<T>(query, (IEnumerable<Cell>)cells);
         }
 
         /// <summary>
-        /// Inserts a new row into the table using the provided dictionary of cell values.
+        /// Inserts the specified object into the database using the given query and returns the result as an object of type R.
         /// </summary>
-        /// <param name="query">The Query object representing the database query.</param>
-        /// <param name="cells">A dictionary containing column names and their corresponding values for the new row.</param>
-        /// <returns>Id of row.</returns>
-        public static long InsertL(this Query query, Dictionary<string, object> cells)
+        /// <typeparam name="T">The type of the object to be inserted.</typeparam>
+        /// <typeparam name="R">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="obj">The object to be inserted into the database.</param>
+        /// <returns>An object of type R representing the result of the insertion.</returns>
+        public static R Insert<T, R>(this Query<T> query, T obj)
         {
-            return query.InsertL(cells.Select(x => new Cell(x.Key, x.Value)).ToArray());
+            return Insert<R>(query, query.GetCellsOf(obj, true, validate: true));
         }
 
         /// <summary>
-        /// Inserts one row into the table.
+        /// Inserts the specified cells into the database using the given query and returns the result as an object of type T.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row (long).</returns>
-        public static long InsertL(this Query query, params Cell[] cells)
+        /// <typeparam name="T">The type of the result expected from the query execution.</typeparam>
+        /// <param name="query">The query object used to execute the insertion.</param>
+        /// <param name="cells">The collection of cells to be inserted into the database.</param>
+        /// <returns>An object of type T representing the result of the insertion.</returns>
+        public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
-            if (cells.Length == 0)
-                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
-
-            using (Grammar grammar = query.Info.Config.NewGrammar(query))
-            using (DbCommand cmd = grammar.Insert(cells))
-            {
-                object result = cmd.ExecuteScalar();
-                query.Token.ThrowIfCancellationRequested();
-                return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt64(result) : 0;
-            }
+            return query.Config.Translation.FromSql<T>(query.ExecuteScalar(query.GetGrammar().Insert(cells)));
         }
 
         /// <summary>
@@ -465,7 +569,14 @@ namespace SharpOrm
             return query.Count() > 0;
         }
 
-        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns) where T : new()
+        /// <summary>
+        /// Performs a bulk upsert operation on a collection of items in the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to be upserted.</typeparam>
+        /// <param name="query">The query object to perform the upsert operation on.</param>
+        /// <param name="items">The collection of items to be upserted.</param>
+        /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
+        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns)
         {
             foreach (var item in items)
                 query.Upsert(item, toCheckColumns);
@@ -481,7 +592,7 @@ namespace SharpOrm
         /// <remarks>
         /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
         /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns) where T : new()
+        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns)
         {
             if (toCheckColumns.Length < 1)
                 throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
@@ -489,17 +600,50 @@ namespace SharpOrm
             using (query = (Query<T>)query.Clone(false))
             {
                 foreach (var column in toCheckColumns)
-                    query.Where(column, Query<T>.TableInfo.GetValue(obj, column));
+                    query.Where(column, query.TableInfo.GetValue(obj, column));
 
                 if (query.Any()) query.Update(obj);
                 else query.Insert(obj);
             }
         }
 
+        /// <summary>
+        /// Performs a bulk upsert operation on a collection of rows in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the upsert operation on.</param>
+        /// <param name="rows">The collection of rows to be upserted.</param>
+        /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
         public static void BulkUpsert(this Query query, IEnumerable<Row> rows, string[] toCheckColumns)
         {
             foreach (var row in rows)
                 query.Upsert(row, toCheckColumns);
+        }
+
+        /// <summary>
+        /// Performs a bulk delete operation on a collection of values in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the delete operation on.</param>
+        /// <param name="values">The array of values to be deleted.</param>
+        /// <param name="insertLot">An optional integer specifying the insert lot size. Default is 0.</param>
+        /// <returns>The number of rows deleted.</returns>
+        public static int BulkDelete(this Query query, Row[] values, int? insertLot = 0)
+        {
+            using (var bulk = new BulkOperation(query, values, insertLot))
+                return bulk.Delete();
+        }
+
+        /// <summary>
+        /// Performs a bulk update operation on a collection of values in the query.
+        /// </summary>
+        /// <param name="query">The query object to perform the update operation on.</param>
+        /// <param name="values">The array of values to be updated.</param>
+        /// <param name="comparationColumns">The columns that should be compared to perform the update.</param>
+        /// <param name="insertLot">An optional integer specifying the insert lot size. Default is 0.</param>
+        /// <returns>The number of rows updated.</returns>
+        public static int BulkUpdate(this Query query, Row[] values, string[] comparationColumns, int? insertLot = 0)
+        {
+            using (var bulk = new BulkOperation(query, values, insertLot))
+                return bulk.Update(comparationColumns);
         }
 
         /// <summary>
@@ -613,39 +757,33 @@ namespace SharpOrm
 
         #endregion
 
-        internal static DbParameter AddParam(this DbCommand command, string name, object value)
-        {
-            var param = command.CreateParameter();
-            param.ParameterName = name;
-            param.Value = value;
-            command.Parameters.Add(param);
-
-            return param;
-        }
-
         #region DbDataReader
 
+        /// <summary>
+        /// Retrieves the value of the specified column from the data reader, ignoring the case of the column name.
+        /// </summary>
+        /// <param name="reader">The data reader to retrieve the value from.</param>
+        /// <param name="key">The name of the column to retrieve the value from.</param>
+        /// <returns>The value of the specified column, or DBNull.Value if the column is not found.</returns>
         public static object Get(this DbDataReader reader, string key)
         {
-            key = key.ToLower();
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).ToLower() == key)
+                if (reader.GetName(i).Equals(key, StringComparison.CurrentCultureIgnoreCase))
                     return reader[i];
 
             return DBNull.Value;
         }
 
         /// <summary>
-        /// Gets the index of the column with the specified name in the DbDataReader.
+        /// Retrieves the index of the specified column from the data reader, ignoring the case of the column name.
         /// </summary>
-        /// <param name="reader">The DbDataReader to get the column index from.</param>
-        /// <param name="name">The name of the column to find the index for.</param>
-        /// <returns>The index of the column, or -1 if the column is not found.</returns>
+        /// <param name="reader">The data reader to retrieve the column index from.</param>
+        /// <param name="name">The name of the column to find the index of.</param>
+        /// <returns>The index of the specified column, or -1 if the column is not found.</returns>
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
-            name = name.ToLower();
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).ToLower() == name)
+                if (reader.GetName(i).Equals(name, StringComparison.CurrentCultureIgnoreCase))
                     return i;
 
             return -1;

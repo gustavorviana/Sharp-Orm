@@ -40,11 +40,18 @@ namespace SharpOrm
         public static Column All => new Column(new SqlExpression("*"));
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Column"/> class.
+        /// </summary>
         protected Column()
         {
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Column"/> class by copying the specified column.
+        /// </summary>
+        /// <param name="column">The column to copy.</param>
         protected Column(Column column)
         {
             this.expression = column.expression;
