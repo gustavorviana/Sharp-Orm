@@ -1,10 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Data.Common;
 using System.Drawing;
+using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 using UnityTest.Utils.Mock;
@@ -84,6 +86,25 @@ namespace UnityTest
             Assert.IsNull(instance.Status);
         }
 
+        [TestMethod]
+        public void MyTestMethod()
+        {
+            var reader = new MockDataReader(new Cell("TestName", "AA Name"), new Cell("MyId", 1), new Cell("Lvl3Name", "My Custom Name"));
+            var tm = new TableMap<MyClass>();
+
+            tm.Property(x => x.AA, "TestName");
+            tm.Property(x => x.Level1.Id, "MyId");
+            tm.Property(x => x.Level1.Level2.Level3.MyLevelName, "Lvl3Name");
+
+            reader.Read();
+            var m = Mapper.FromMap(tm, TranslationRegistry.Default, reader);
+            var instance = (MyClass)m.Read(reader);
+
+            Assert.AreEqual(instance.AA, "AA Name");
+            Assert.AreEqual(instance.Level1.Id, 1);
+            Assert.AreEqual(instance.Level1.Level2.Level3.MyLevelName, "My Custom Name");
+        }
+
         private static T CreateInstance<T>(DbDataReader reader)
         {
             var activator = new ObjectActivator(typeof(T), reader, TranslationRegistry.Default);
@@ -131,6 +152,28 @@ namespace UnityTest
             {
                 this.Id = id;
             }
+        }
+
+        public class MyClass
+        {
+            public Level1 Level1 { get; set; }
+            public string AA { get; set; }
+        }
+
+        public class Level1
+        {
+            public Level2 Level2 { get; set; }
+            public int Id { get; set; }
+        }
+
+        public class Level2
+        {
+            public Level3 Level3 { get; set; }
+        }
+
+        public class Level3
+        {
+            public string MyLevelName { get; set; }
         }
     }
 }
