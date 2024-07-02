@@ -5,11 +5,12 @@ using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 using UnityTest.Utils.Mock;
+using static SharpOrm.DataTranslation.Reader.Mapper;
 
 namespace UnityTest
 {
@@ -87,7 +88,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void MyTestMethod()
+        public void ManualPropMapTest()
         {
             var reader = new MockDataReader(new Cell("TestName", "AA Name"), new Cell("MyId", 1), new Cell("Lvl3Name", "My Custom Name"));
             var tm = new TableMap<MyClass>();
@@ -103,6 +104,18 @@ namespace UnityTest
             Assert.AreEqual(instance.AA, "AA Name");
             Assert.AreEqual(instance.Level1.Id, 1);
             Assert.AreEqual(instance.Level1.Level2.Level3.MyLevelName, "My Custom Name");
+        }
+
+        [TestMethod]
+        public void TreeMapTest()
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            var treeRoot = TreeNode.Map(typeof(MyClass));
+            var obj = treeRoot.FindChild("Level1.Level2.Level3.MyLevelName");
+
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.Elapsed);
+            Assert.IsNotNull(obj);
         }
 
         private static T CreateInstance<T>(DbDataReader reader)

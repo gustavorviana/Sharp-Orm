@@ -29,7 +29,7 @@ namespace SharpOrm.Builder
                 return false;
 
             type = type.GetGenericTypeDefinition();
-            return type == typeof(IList<>) || type == typeof(List<>);
+            return type == typeof(IList<>) || type == typeof(List<>) || type == typeof(IList);
         }
 
         public static IList CreateList(Type type)
