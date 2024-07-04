@@ -12,6 +12,7 @@ namespace SharpOrm.Builder
         public string Name { get; }
         public MemberInfo[] Path { get; }
         public ColumnInfo Column;
+        public string ParentPah { get; }
 
         public ReflectedField(TranslationRegistry registry, string name, IEnumerable<MemberInfo> path)
         {
@@ -22,9 +23,11 @@ namespace SharpOrm.Builder
             if (member is PropertyInfo pi) this.Column = new ColumnInfo(registry, pi);
             else if (member is FieldInfo fi) this.Column = new ColumnInfo(registry, fi);
             else throw new NotSupportedException();
+
+            this.ParentPah = this.GetParentPath();
         }
 
-        public string GetParentPath()
+        private string GetParentPath()
         {
             if (this.Path.Length == 1) return string.Empty;
 
@@ -38,7 +41,13 @@ namespace SharpOrm.Builder
 
         public override string ToString()
         {
-            return string.Concat(this.Column.Type.FullName, " ", this.GetParentPath());
+            StringBuilder builder = new StringBuilder(this.Column.Type.FullName);
+            builder.Append(' ').Append(this.ParentPah);
+
+            if (!string.IsNullOrEmpty(this.ParentPah))
+                builder.Append('.');
+
+            return builder.Append(this.Name).ToString();
         }
     }
 }

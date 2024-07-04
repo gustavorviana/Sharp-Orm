@@ -8,6 +8,14 @@ namespace SharpOrm.Builder
 {
     internal static class ReflectionUtils
     {
+        public static Type GetMemberType(MemberInfo member)
+        {
+            if (member is PropertyInfo prop) return prop.PropertyType;
+            if (member is FieldInfo field) return field.FieldType;
+
+            throw new NotSupportedException();
+        }
+
         public static bool IsDynamic(Type type)
         {
             return type == typeof(object) || type == typeof(ExpandoObject);

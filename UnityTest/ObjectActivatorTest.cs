@@ -7,10 +7,10 @@ using System;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 using UnityTest.Utils.Mock;
-using static SharpOrm.DataTranslation.Reader.Mapper;
 
 namespace UnityTest
 {
@@ -110,12 +110,16 @@ namespace UnityTest
         public void TreeMapTest()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            var treeRoot = TreeNode.Map(typeof(MyClass));
+            var treeRoot = new TableMap<MyClass>();
+            treeRoot.Map();
             var obj = treeRoot.FindChild("Level1.Level2.Level3.MyLevelName");
 
             stopwatch.Stop();
             Console.WriteLine(stopwatch.Elapsed);
             Assert.IsNotNull(obj);
+
+            var fieldTree = treeRoot.ToReflectedFields(TranslationRegistry.Default).ToArray();
+            Assert.AreEqual(3, fieldTree.Length);
         }
 
         private static T CreateInstance<T>(DbDataReader reader)

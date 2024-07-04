@@ -47,9 +47,8 @@ namespace SharpOrm.DataTranslation.Reader
 
         private InstanceMap BuildInstanceTree(ReflectedField field)
         {
-            string parentPath = field.GetParentPath();
-            if (string.IsNullOrWhiteSpace(parentPath)) return this.root;
-            if (this.objPath.TryGetValue(parentPath, out var parent)) return parent;
+            if (string.IsNullOrWhiteSpace(field.ParentPah)) return this.root;
+            if (this.objPath.TryGetValue(field.ParentPah, out var parent)) return parent;
 
             parent = this.root;
 
@@ -166,61 +165,6 @@ namespace SharpOrm.DataTranslation.Reader
         public override string ToString()
         {
             return Type.Name;
-        }
-
-        public class TreeNode
-        {
-            public string Key { get; set; }
-            public List<TreeNode> Children { get; } = new List<TreeNode>();
-
-            public TreeNode(string key)
-            {
-                Key = key;
-            }
-
-            public void AddChild(TreeNode child)
-            {
-                Children.Add(child);
-            }
-
-            public TreeNode FindChild(string path)
-            {
-                if (path == null) return null;
-
-                return this.InternalFindChild(path.Split('.'), 0);
-            }
-
-            private TreeNode InternalFindChild(string[] keys, int offset)
-            {
-                if (keys.Length <= offset) return null;
-
-                string key = keys[offset];
-                foreach (var node in this.Children)
-                    if (keys.Length == offset + 1 && node.Key == key) return node;
-                    else if (node.Key == key) return node.InternalFindChild(keys, offset + 1);
-
-                return null;
-            }
-
-            public static TreeNode Map(Type type, string parentKey = "")
-            {
-                var rootNode = new TreeNode(parentKey);
-                foreach (var property in type.GetProperties())
-                {
-                    bool isNative = TranslationUtils.IsNative(property.PropertyType, false) || ReflectionUtils.IsCollection(property.PropertyType);
-                    if (isNative) rootNode.AddChild(new TreeNode(property.Name));
-                    else rootNode.AddChild(Map(property.PropertyType, property.Name));
-                }
-
-                return rootNode;
-            }
-
-            public static void PrintTree(TreeNode node, int level = 0)
-            {
-                Console.WriteLine(new string('-', level * 2) + node.Key);
-                foreach (var child in node.Children)
-                    PrintTree(child, level + 1);
-            }
         }
     }
 }
