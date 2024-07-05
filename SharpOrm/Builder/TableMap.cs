@@ -12,17 +12,9 @@ namespace SharpOrm.Builder
     {
         private static readonly BindingFlags Binding = BindingFlags.Instance | BindingFlags.Public;
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
-        private readonly List<ReflectedField> memberInfos = new List<ReflectedField>();
         public TranslationRegistry Registry { get; set; } = TranslationRegistry.Default;
 
-        public void Property(Expression<Func<T, object>> expression, string name)
-        {
-            memberInfos.Add(new ReflectedField(this.Registry, name, PropertyPathVisitor.GetPropertyPaths(expression)));
-        }
-
-        public IEnumerable<ReflectedField> GetPaths() => memberInfos;
-
-        public TableMap<T> Map()
+        public TableMap()
         {
             foreach (var property in typeof(T).GetProperties(Binding))
                 if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
@@ -31,8 +23,6 @@ namespace SharpOrm.Builder
             foreach (var field in typeof(T).GetFields(Binding))
                 if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
                 else this.Nodes.Add(Map(field));
-
-            return this;
         }
 
         private MemberTreeNode Map(MemberInfo member)
@@ -51,14 +41,26 @@ namespace SharpOrm.Builder
             return rootNode;
         }
 
-        internal MemberTreeNode FindChild(string path)
+        public void Property(Expression<Func<T, object>> expression, string name)
         {
-            if (string.IsNullOrEmpty(path)) return null;
+            var path = PropertyPathVisitor.GetPropertyPaths(expression).ToArray();
+            if (path.Length == 0) throw new ArgumentException();
 
-            var pathPart = path.Split('.');
-            string root = pathPart[0];
+            if (path.Length == 1) this.SetMember(path[0], name);
+            else if (this.FindByMember(path[0])?.InternalFindChild(path, 1) is MemberTreeNode node) node.Name = name;
+        }
 
-            return this.Nodes.FirstOrDefault(x => x.Name == root)?.InternalFindChild(pathPart, 1);
+        private void SetMember(MemberInfo member, string name)
+        {
+            if (!IsNative(ReflectionUtils.GetMemberType(member)))
+                throw new InvalidOperationException();
+
+            this.FindByMember(member).Name = name;
+        }
+
+        private MemberTreeNode FindByMember(MemberInfo member)
+        {
+            return this.Nodes.FirstOrDefault(x => x.Member == member);
         }
 
         private static bool IsNative(Type type)
@@ -66,7 +68,7 @@ namespace SharpOrm.Builder
             return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
-        public IEnumerable<ReflectedField> ToReflectedFields(TranslationRegistry registry)
+        public IEnumerable<ReflectedField> GetReflectedFields(TranslationRegistry registry)
         {
             List<MemberInfo> root = new List<MemberInfo>();
 

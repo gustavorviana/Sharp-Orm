@@ -28,7 +28,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         public static Mapper FromMap<T>(TableMap<T> map, TranslationRegistry registry, DbDataReader reader)
         {
-            return new Mapper(typeof(T), map.GetPaths(), registry, reader);
+            return new Mapper(typeof(T), map.GetReflectedFields(registry), registry, reader);
         }
 
         private Mapper(Type type, IEnumerable<ReflectedField> fields, TranslationRegistry registry, DbDataReader reader)

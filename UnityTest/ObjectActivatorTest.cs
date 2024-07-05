@@ -97,6 +97,9 @@ namespace UnityTest
             tm.Property(x => x.Level1.Id, "MyId");
             tm.Property(x => x.Level1.Level2.Level3.MyLevelName, "Lvl3Name");
 
+            var fieldTree = tm.GetReflectedFields(TranslationRegistry.Default).ToArray();
+            Assert.AreEqual(3, fieldTree.Length);
+
             reader.Read();
             var m = Mapper.FromMap(tm, TranslationRegistry.Default, reader);
             var instance = (MyClass)m.Read(reader);
@@ -104,22 +107,6 @@ namespace UnityTest
             Assert.AreEqual(instance.AA, "AA Name");
             Assert.AreEqual(instance.Level1.Id, 1);
             Assert.AreEqual(instance.Level1.Level2.Level3.MyLevelName, "My Custom Name");
-        }
-
-        [TestMethod]
-        public void TreeMapTest()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            var treeRoot = new TableMap<MyClass>();
-            treeRoot.Map();
-            var obj = treeRoot.FindChild("Level1.Level2.Level3.MyLevelName");
-
-            stopwatch.Stop();
-            Console.WriteLine(stopwatch.Elapsed);
-            Assert.IsNotNull(obj);
-
-            var fieldTree = treeRoot.ToReflectedFields(TranslationRegistry.Default).ToArray();
-            Assert.AreEqual(3, fieldTree.Length);
         }
 
         private static T CreateInstance<T>(DbDataReader reader)

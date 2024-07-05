@@ -47,7 +47,14 @@ namespace SharpOrm.Builder
             if (!string.IsNullOrEmpty(this.ParentPah))
                 builder.Append('.');
 
-            return builder.Append(this.Name).ToString();
+            string name = this.Path[this.Path.Length - 1].Name;
+
+            builder.Append(name);
+
+            if (name != this.Name)
+                builder.Append(" (").Append(this.Name).Append(')');
+
+            return builder.ToString();
         }
     }
 }

@@ -8,9 +8,9 @@ namespace SharpOrm.Builder
 {
     internal class MemberTreeNode
     {
-        public MemberInfo Member { get; set; }
-        public string Name { get; set; }
         public List<MemberTreeNode> Children { get; } = new List<MemberTreeNode>();
+        public MemberInfo Member { get; }
+        public string Name { get; set; }
 
         public MemberTreeNode(MemberInfo member)
         {
@@ -23,14 +23,14 @@ namespace SharpOrm.Builder
             Children.Add(child);
         }
 
-        internal MemberTreeNode InternalFindChild(string[] keys, int offset)
+        internal MemberTreeNode InternalFindChild(MemberInfo[] members, int offset)
         {
-            if (keys.Length <= offset) return null;
+            if (members.Length <= offset) return null;
 
-            string key = keys[offset];
+            var member = members[offset];
             foreach (var node in this.Children)
-                if (keys.Length == offset + 1 && node.Member.Name == key) return node;
-                else if (node.Member?.Name == key) return node.InternalFindChild(keys, offset + 1);
+                if (members.Length == offset + 1 && node.Member == member) return node;
+                else if (node.Member == member) return node.InternalFindChild(members, offset + 1);
 
             return null;
         }
@@ -56,7 +56,7 @@ namespace SharpOrm.Builder
 
         private ReflectedField ToField(TranslationRegistry registry, IEnumerable<MemberInfo> members)
         {
-            return new ReflectedField(registry, this.Member.Name, members);
+            return new ReflectedField(registry, this.Name, members);
         }
 
         public override string ToString()
