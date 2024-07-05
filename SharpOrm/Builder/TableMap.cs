@@ -11,55 +11,62 @@ namespace SharpOrm.Builder
     {
         private static readonly BindingFlags Binding = BindingFlags.Instance | BindingFlags.Public;
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
-        public TranslationRegistry Registry { get; set; } = TranslationRegistry.Default;
 
-        public TableMap()
+        public TranslationRegistry Registry { get; }
+
+        public TableMap(TranslationRegistry registry)
         {
+            this.Registry = registry;
+
             foreach (var property in typeof(T).GetProperties(Binding))
-                if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
-                else this.Nodes.Add(Map(property));
+                if (ColumnInfo.CanWork(property))
+                    if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(this.Registry, property));
+                    else this.Nodes.Add(Map(property));
 
             foreach (var field in typeof(T).GetFields(Binding))
-                if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
-                else this.Nodes.Add(Map(field));
+                if (ColumnInfo.CanWork(field))
+                    if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(this.Registry, field));
+                    else this.Nodes.Add(Map(field));
         }
 
         private MemberTreeNode Map(MemberInfo member)
         {
-            var rootNode = new MemberTreeNode(member);
+            var rootNode = new MemberTreeNode(this.Registry, member);
             var type = ReflectionUtils.GetMemberType(member);
 
             foreach (var property in type.GetProperties(Binding))
-                if (IsNative(property.PropertyType)) rootNode.AddChild(new MemberTreeNode(property));
-                else rootNode.AddChild(Map(property));
+                if (ColumnInfo.CanWork(property))
+                    if (IsNative(property.PropertyType)) rootNode.AddChild(new MemberTreeNode(this.Registry, property));
+                    else rootNode.AddChild(Map(property));
 
             foreach (var field in type.GetFields(Binding))
-                if (IsNative(field.FieldType)) rootNode.AddChild(new MemberTreeNode(field));
-                else rootNode.AddChild(Map(field));
+                if (ColumnInfo.CanWork(field))
+                    if (IsNative(field.FieldType)) rootNode.AddChild(new MemberTreeNode(this.Registry, field));
+                    else rootNode.AddChild(Map(field));
 
             return rootNode;
         }
 
-        public void Property(Expression<Func<T, object>> expression, string name)
+        public ColumnMapInfo Property(Expression<Func<T, object>> expression, string columnName)
         {
-            var path = PropertyPathVisitor.GetPropertyPaths(expression).ToArray();
-            if (path.Length == 0) throw new ArgumentException();
-
-            if (path.Length == 1) this.SetMember(path[0], name);
-            else if (this.FindByMember(path[0])?.InternalFindChild(path, 1) is MemberTreeNode node) node.Name = name;
+            return this.Property(expression).SetColumn(columnName);
         }
 
-        private void SetMember(MemberInfo member, string name)
+        public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
-            if (!IsNative(ReflectionUtils.GetMemberType(member)))
-                throw new InvalidOperationException();
+            var path = PropertyPathVisitor.GetPropertyPaths(expression);
+            if (path.Count == 0) throw new ArgumentOutOfRangeException(nameof(expression), "At least one field must be selected.");
 
-            this.FindByMember(member).Name = name;
-        }
+            var root = this.Nodes.FirstOrDefault(x => x.Member == path[0]) ?? throw new ArgumentOutOfRangeException();
 
-        private MemberTreeNode FindByMember(MemberInfo member)
-        {
-            return this.Nodes.FirstOrDefault(x => x.Member == member);
+            if (path.Count > 1)
+                return root.InternalFindChild(path, 1).GetColumn() ?? throw new ArgumentOutOfRangeException();
+
+            Type memberType = ReflectionUtils.GetMemberType(root.Member);
+            if (!IsNative(memberType))
+                throw new InvalidOperationException($"It is not possible to map the member \"{root.Member}\" of type \"{memberType}\".");
+
+            return root.GetColumn();
         }
 
         private static bool IsNative(Type type)
@@ -67,7 +74,7 @@ namespace SharpOrm.Builder
             return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
-        public IEnumerable<ReflectedField> GetReflectedFields(TranslationRegistry registry)
+        public IEnumerable<ColumnTree> GetFields()
         {
             List<MemberInfo> root = new List<MemberInfo>();
 
@@ -75,7 +82,7 @@ namespace SharpOrm.Builder
             {
                 root.Add(child.Member);
 
-                foreach (var result in child.ToFieldTree(root, registry))
+                foreach (var result in child.BuildTree(root))
                     yield return result;
 
                 root.RemoveAt(root.Count - 1);
@@ -89,8 +96,12 @@ namespace SharpOrm.Builder
             protected override Expression VisitMember(MemberExpression node)
             {
                 members.Insert(0, node.Member);
-
                 return base.VisitMember(node);
+            }
+
+            protected override Expression VisitMethodCall(MethodCallExpression node)
+            {
+                throw new ArgumentException("Only properties and fields are supported in this operation.");
             }
 
             public static List<MemberInfo> GetPropertyPaths<K>(Expression<Func<K, object>> expression)

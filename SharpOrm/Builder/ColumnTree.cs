@@ -1,29 +1,20 @@
-﻿using SharpOrm.DataTranslation;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class ReflectedField
+    public class ColumnTree
     {
-        public string Name { get; }
         public MemberInfo[] Path { get; }
-        public ColumnInfo Column;
+        public ColumnInfo Column { get; }
         public string ParentPah { get; }
 
-        public ReflectedField(TranslationRegistry registry, string name, IEnumerable<MemberInfo> path)
+        internal ColumnTree(ColumnInfo column, IEnumerable<MemberInfo> path)
         {
-            this.Name = name;
+            this.Column = column;
             this.Path = path.ToArray();
-            var member = this.Path[this.Path.Length - 1];
-
-            if (member is PropertyInfo pi) this.Column = new ColumnInfo(registry, pi);
-            else if (member is FieldInfo fi) this.Column = new ColumnInfo(registry, fi);
-            else throw new NotSupportedException();
-
             this.ParentPah = this.GetParentPath();
         }
 
@@ -47,14 +38,7 @@ namespace SharpOrm.Builder
             if (!string.IsNullOrEmpty(this.ParentPah))
                 builder.Append('.');
 
-            string name = this.Path[this.Path.Length - 1].Name;
-
-            builder.Append(name);
-
-            if (name != this.Name)
-                builder.Append(" (").Append(this.Name).Append(')');
-
-            return builder.ToString();
+            return builder.Append(this.Path[this.Path.Length - 1].Name).ToString();
         }
     }
 }

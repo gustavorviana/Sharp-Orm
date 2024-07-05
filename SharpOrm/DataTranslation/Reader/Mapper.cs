@@ -25,12 +25,12 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
         #endregion
 
-        public static Mapper FromMap<T>(TableMap<T> map, TranslationRegistry registry, DbDataReader reader)
+        public static Mapper FromMap<T>(TableMap<T> map, DbDataReader reader)
         {
-            return new Mapper(typeof(T), map.GetReflectedFields(registry), registry, reader);
+            return new Mapper(typeof(T), map.GetFields(), map.Registry, reader);
         }
 
-        private Mapper(Type type, IEnumerable<ReflectedField> fields, TranslationRegistry registry, DbDataReader reader)
+        private Mapper(Type type, IEnumerable<ColumnTree> fields, TranslationRegistry registry, DbDataReader reader)
         {
             root = new InstanceMap(type);
             this.registry = registry;
@@ -39,12 +39,12 @@ namespace SharpOrm.DataTranslation.Reader
                 this.Map(field, reader);
         }
 
-        private void Map(ReflectedField field, DbDataReader reader)
+        private void Map(ColumnTree field, DbDataReader reader)
         {
-            this.columns.Add(new MappedColumn(this.BuildInstanceTree(field), this.GetColumn(field.Path[field.Path.Length - 1]), reader.GetIndexOf(field.Name)));
+            this.columns.Add(new MappedColumn(this.BuildInstanceTree(field), ColumnInfo.FromMember(field.Path[field.Path.Length - 1], this.registry), reader.GetIndexOf(field.Column.Name)));
         }
 
-        private InstanceMap BuildInstanceTree(ReflectedField field)
+        private InstanceMap BuildInstanceTree(ColumnTree field)
         {
             if (string.IsNullOrWhiteSpace(field.ParentPah)) return this.root;
             if (this.objPath.TryGetValue(field.ParentPah, out var parent)) return parent;
@@ -73,20 +73,13 @@ namespace SharpOrm.DataTranslation.Reader
             return map;
         }
 
-        private ColumnInfo GetColumn(MemberInfo member)
-        {
-            if (member is PropertyInfo prop) return new ColumnInfo(this.registry, prop);
-            if (member is FieldInfo field) return new ColumnInfo(this.registry, field);
-
-            throw new NotSupportedException();
-        }
-
         public object Read(DbDataReader reader)
         {
             this.CreateInstance();
 
             foreach (var item in this.columns)
-                item.Set(reader[item.Index]);
+                if (item.Index >= 0)
+                    item.Set(reader[item.Index]);
 
             return this.root.Instance;
         }
