@@ -5,7 +5,6 @@ using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using UnityTest.Models;
