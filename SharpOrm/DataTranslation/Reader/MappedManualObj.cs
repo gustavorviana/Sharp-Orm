@@ -11,7 +11,7 @@ namespace SharpOrm.DataTranslation.Reader
     /// <summary>
     /// Represents an object that can be mapped from a database reader.
     /// </summary>
-    public class Mapper : IMappedObject
+    internal class MappedManualObj : IMappedObject
     {
         #region Properties\Fields
         private readonly Dictionary<string, InstanceMap> objPath = new Dictionary<string, InstanceMap>();
@@ -25,12 +25,17 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
         #endregion
 
-        public static Mapper FromMap<T>(TableMap<T> map, DbDataReader reader)
+        public static MappedManualObj FromMap<T>(TableMap<T> map, DbDataReader reader)
         {
-            return new Mapper(typeof(T), map.GetFields(), map.Registry, reader);
+            return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, reader);
         }
 
-        private Mapper(Type type, IEnumerable<ColumnTree> fields, TranslationRegistry registry, DbDataReader reader)
+        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, table.ColumnTrees, registry, reader)
+        {
+
+        }
+
+        private MappedManualObj(Type type, IEnumerable<ColumnTree> fields, TranslationRegistry registry, DbDataReader reader)
         {
             root = new InstanceMap(type);
             this.registry = registry;
@@ -41,7 +46,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         private void Map(ColumnTree field, DbDataReader reader)
         {
-            this.columns.Add(new MappedColumn(this.BuildInstanceTree(field), ColumnInfo.FromMember(field.Path[field.Path.Length - 1], this.registry), reader.GetIndexOf(field.Column.Name)));
+            this.columns.Add(new MappedColumn(this.BuildInstanceTree(field), field.Column, reader.GetIndexOf(field.Column.Name)));
         }
 
         private InstanceMap BuildInstanceTree(ColumnTree field)

@@ -12,6 +12,13 @@ namespace SharpOrm.Builder
         private static readonly BindingFlags Binding = BindingFlags.Instance | BindingFlags.Public;
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
 
+        public string Name { get; set; }
+
+        public TableMap()
+        {
+            this.Name = typeof(T).Name;
+        }
+
         public TranslationRegistry Registry { get; }
 
         public TableMap(TranslationRegistry registry)
@@ -36,13 +43,13 @@ namespace SharpOrm.Builder
 
             foreach (var property in type.GetProperties(Binding))
                 if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) rootNode.AddChild(new MemberTreeNode(this.Registry, property));
-                    else rootNode.AddChild(Map(property));
+                    if (IsNative(property.PropertyType)) rootNode.Children.Add(new MemberTreeNode(this.Registry, property));
+                    else rootNode.Children.Add(Map(property));
 
             foreach (var field in type.GetFields(Binding))
                 if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) rootNode.AddChild(new MemberTreeNode(this.Registry, field));
-                    else rootNode.AddChild(Map(field));
+                    if (IsNative(field.FieldType)) rootNode.Children.Add(new MemberTreeNode(this.Registry, field));
+                    else rootNode.Children.Add(Map(field));
 
             return rootNode;
         }
@@ -74,7 +81,7 @@ namespace SharpOrm.Builder
             return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
-        public IEnumerable<ColumnTree> GetFields()
+        internal IEnumerable<ColumnTree> GetFields()
         {
             List<MemberInfo> root = new List<MemberInfo>();
 
@@ -87,6 +94,12 @@ namespace SharpOrm.Builder
 
                 root.RemoveAt(root.Count - 1);
             }
+        }
+
+        public void Build()
+        {
+            if (this.Nodes.Count == 0) return;
+            TableInfo.AddManualMap(this);
         }
 
         private class PropertyPathVisitor : ExpressionVisitor

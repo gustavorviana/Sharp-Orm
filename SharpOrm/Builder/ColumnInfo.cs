@@ -125,14 +125,6 @@ namespace SharpOrm.Builder
             this.Validations = this.column.GetCustomAttributes<ValidationAttribute>().ToArray();
         }
 
-        internal static ColumnInfo FromMember(MemberInfo member, TranslationRegistry registry)
-        {
-            if (member is PropertyInfo prop) return new ColumnInfo(registry, prop);
-            if (member is FieldInfo field) return new ColumnInfo(registry, field);
-
-            throw new NotSupportedException();
-        }
-
         internal static bool CanWork(PropertyInfo prop)
         {
             return prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null;

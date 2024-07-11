@@ -19,11 +19,6 @@ namespace SharpOrm.Builder
             this.registry = registry;
         }
 
-        public void AddChild(MemberTreeNode child)
-        {
-            Children.Add(child);
-        }
-
         internal MemberTreeNode InternalFindChild(IList<MemberInfo> members, int offset)
         {
             if (members.Count <= offset) return null;

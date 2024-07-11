@@ -103,13 +103,13 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
-            TableInfo = new TableInfo(typeof(T), manager.Config.Translation);
+            TableInfo = TableInfo.Get(typeof(T), manager.Config.Translation);
             this.ApplyValidations();
         }
 
         private void ApplyValidations()
         {
-            this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
+            this.ReturnsInsetionId = !TableInfo.IsManualMap && TableInfo.GetPrimaryKeys().Length > 0;
         }
 
         #endregion
@@ -329,6 +329,12 @@ namespace SharpOrm
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
             return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
+        }
+
+        protected override void CheckCanInsertUpdateDelete()
+        {
+            if (this.TableInfo.IsManualMap)
+                throw new NotSupportedException($"The object '{typeof(T)}' was manually mapped. Types mapped in this way do not support writing, editing, or removal.");
         }
 
         #region Join
@@ -744,6 +750,8 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
@@ -769,6 +777,8 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
@@ -781,6 +791,8 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
@@ -792,6 +804,8 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
         }
@@ -811,6 +825,8 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
         }
@@ -821,6 +837,8 @@ namespace SharpOrm
         /// <returns></returns>
         public int Delete()
         {
+            this.CheckCanInsertUpdateDelete();
+
             this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
@@ -975,6 +993,11 @@ namespace SharpOrm
                 throw new InvalidOperationException("This query is read-only.");
         }
 
+        protected virtual void CheckCanInsertUpdateDelete()
+        {
+
+        }
+
         #endregion
 
         #region Clone and safety
@@ -1023,6 +1046,8 @@ namespace SharpOrm
 
         #endregion
 
+        #region SQL Execution
+
         protected internal object ExecuteScalar(SqlExpression expression)
         {
             return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteScalar());
@@ -1063,6 +1088,8 @@ namespace SharpOrm
                 .SetExpression(expression)
                 .SetCancellationToken(this.Token);
         }
+
+        #endregion
 
         protected override void Dispose(bool disposing)
         {

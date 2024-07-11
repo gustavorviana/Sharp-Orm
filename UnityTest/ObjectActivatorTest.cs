@@ -97,7 +97,7 @@ namespace UnityTest
             tm.Property(x => x.Level1.Level2.Level3.MyLevelName, "Lvl3Name");
 
             reader.Read();
-            var m = Mapper.FromMap(tm, reader);
+            var m = MappedManualObj.FromMap(tm, reader);
             var instance = (MyClass)m.Read(reader);
 
             Assert.AreEqual(1, instance.Level1.Id);

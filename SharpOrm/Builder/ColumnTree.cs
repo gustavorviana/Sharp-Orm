@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class ColumnTree
+    internal class ColumnTree
     {
         public MemberInfo[] Path { get; }
         public ColumnInfo Column { get; }

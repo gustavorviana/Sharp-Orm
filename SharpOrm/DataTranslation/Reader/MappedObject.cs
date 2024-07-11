@@ -20,7 +20,7 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly IFkQueue enqueueable;
         private ColumnInfo parentColumn;
         private MappedObject parent;
-
+        
         /// <summary>
         /// Gets the type of the mapped object.
         /// </summary>
@@ -50,18 +50,21 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <param name="prefix">The prefix for column names.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
-        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null, string prefix = "")
+        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
-            if (enqueueable == null)
-                enqueueable = new ObjIdFkQueue();
-
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(reader, registry);
 
-            return new MappedObject(type, registry, enqueueable).Map(registry, reader, prefix);
+            if (TableInfo.TryGetManualMap(type) is TableInfo table)
+                return new MappedManualObj(table, registry, reader);
+
+            if (enqueueable == null)
+                enqueueable = new ObjIdFkQueue();
+
+            return new MappedObject(type, registry, enqueueable).Map(registry, reader, "");
         }
 
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
