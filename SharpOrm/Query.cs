@@ -103,7 +103,7 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
-            TableInfo = TableInfo.Get(typeof(T), manager.Config.Translation);
+            TableInfo = manager.Config.Translation.GetTable(typeof(T));
             this.ApplyValidations();
         }
 
@@ -329,12 +329,6 @@ namespace SharpOrm
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
             return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
-        }
-
-        protected override void CheckCanInsertUpdateDelete()
-        {
-            if (this.TableInfo.IsManualMap)
-                throw new NotSupportedException($"The object '{typeof(T)}' was manually mapped. Types mapped in this way do not support writing, editing, or removal.");
         }
 
         #region Join
@@ -750,8 +744,6 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
@@ -777,8 +769,6 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
@@ -791,8 +781,6 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             object result = this.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
@@ -804,8 +792,6 @@ namespace SharpOrm
         /// <param table="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
         }
@@ -825,8 +811,6 @@ namespace SharpOrm
         /// <param table="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
         }
@@ -837,8 +821,6 @@ namespace SharpOrm
         /// <returns></returns>
         public int Delete()
         {
-            this.CheckCanInsertUpdateDelete();
-
             this.ValidateReadonly();
             this.CheckIsSafeOperation();
             return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
@@ -991,11 +973,6 @@ namespace SharpOrm
         {
             if (this.Manager is null)
                 throw new InvalidOperationException("This query is read-only.");
-        }
-
-        protected virtual void CheckCanInsertUpdateDelete()
-        {
-
         }
 
         #endregion

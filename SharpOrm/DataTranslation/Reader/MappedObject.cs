@@ -20,7 +20,7 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly IFkQueue enqueueable;
         private ColumnInfo parentColumn;
         private MappedObject parent;
-        
+
         /// <summary>
         /// Gets the type of the mapped object.
         /// </summary>
@@ -48,7 +48,6 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="type">The type of the object to create.</param>
         /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
-        /// <param name="prefix">The prefix for column names.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
         public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
@@ -58,30 +57,30 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(reader, registry);
 
-            if (TableInfo.TryGetManualMap(type) is TableInfo table)
+            if (registry.GetManualMap(type) is TableInfo table)
                 return new MappedManualObj(table, registry, reader);
 
-            if (enqueueable == null)
-                enqueueable = new ObjIdFkQueue();
-
-            return new MappedObject(type, registry, enqueueable).Map(registry, reader, "");
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue()).Map(registry, reader, "");
         }
 
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
         {
-            Type = type;
+            this.Type = type;
             this.registry = registry;
             this.enqueueable = enqueueable;
         }
 
         private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
-            objectActivator = new ObjectActivator(Type, reader, registry);
+            if (this.Type == typeof(Row))
+                return this;
+
+            objectActivator = new ObjectActivator(this.Type, reader, registry);
 
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
-            foreach (var column in TableInfo.GetColumns(Type, registry))
+            foreach (var column in new TableInfo(this.Type, registry).Columns)
                 if (column.IsForeignKey) AddIfValidId(reader, fkColumns, column.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
                 else childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));

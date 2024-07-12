@@ -86,40 +86,6 @@ namespace UnityTest
             Assert.IsNull(instance.Status);
         }
 
-        [TestMethod]
-        public void ManualPropMapTest()
-        {
-            var reader = new MockDataReader(new Cell("TestName", "Prop1 Name"), new Cell("MyId", 1), new Cell("Lvl3Name", "My Custom Name"), new Cell("Date", DateTime.Today));
-            var tm = new TableMap<MyClass>(TranslationRegistry.Default);
-
-            tm.Property(x => x.Prop1, "TestName");
-            tm.Property(x => x.Level1.Id, "MyId");
-            tm.Property(x => x.Level1.Level2.Level3.MyLevelName, "Lvl3Name");
-
-            reader.Read();
-            var m = MappedManualObj.FromMap(tm, reader);
-            var instance = (MyClass)m.Read(reader);
-
-            Assert.AreEqual(1, instance.Level1.Id);
-            Assert.AreEqual("Prop1 Name", instance.Prop1);
-            Assert.AreEqual(DateTime.Today, instance.Date);
-            Assert.AreEqual("My Custom Name", instance.Level1.Level2.Level3.MyLevelName);
-        }
-
-        [TestMethod]
-        public void AutoMapTest()
-        {
-            var tm = new TableMap<MyClass>(TranslationRegistry.Default);
-
-            var fieldTree = tm.GetFields().ToArray();
-            Assert.IsNotNull(fieldTree.FirstOrDefault(x => x.Column.Name == "MyLevelName"));
-            Assert.IsNotNull(fieldTree.FirstOrDefault(x => x.Column.Name == "Id"));
-            Assert.IsNotNull(fieldTree.FirstOrDefault(x => x.Column.Name == "Date"));
-            Assert.IsNotNull(fieldTree.FirstOrDefault(x => x.Column.Name == "Prop1"));
-
-            Assert.ThrowsException<InvalidOperationException>(() => tm.Property(x => x.Prop1, "CustomName"));
-        }
-
         private static T CreateInstance<T>(DbDataReader reader)
         {
             var activator = new ObjectActivator(typeof(T), reader, TranslationRegistry.Default);

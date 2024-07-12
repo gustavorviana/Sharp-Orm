@@ -15,7 +15,6 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private static readonly List<TableInfo> manualMapped = new List<TableInfo>();
         private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         private readonly TranslationRegistry registry;
 
@@ -33,29 +32,7 @@ namespace SharpOrm.Builder
 
         internal ColumnTree[] ColumnTrees { get; }
 
-        internal static void AddManualMap<T>(TableMap<T> map)
-        {
-            var type = typeof(T);
-            if (manualMapped.Any(x => x.Type == type))
-                throw new InvalidOperationException("The type has already been mapped.");
-
-            if (string.IsNullOrEmpty(map.Name))
-                throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
-
-            manualMapped.Add(new TableInfo(map.Registry, type, map.Name, map.GetFields()));
-        }
-
-        internal static TableInfo Get(Type type, TranslationRegistry registry)
-        {
-            return TryGetManualMap(type) ?? new TableInfo(type, registry);
-        }
-
-        internal static TableInfo TryGetManualMap(Type type)
-        {
-            return manualMapped.FirstOrDefault(x => x.Type == type);
-        }
-
-        private TableInfo(TranslationRegistry registry, Type type, string name, IEnumerable<ColumnTree> trees)
+        internal TableInfo(Type type, TranslationRegistry registry, string name, IEnumerable<ColumnTree> trees)
         {
             this.IsManualMap = true;
 
@@ -88,7 +65,7 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.registry = config;
             this.Name = GetNameOf(type);
-            this.Columns = GetColumns(Type, registry).ToArray();
+            this.Columns = this.GetColumns().ToArray();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
@@ -96,21 +73,20 @@ namespace SharpOrm.Builder
             return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
         }
 
-        public static IEnumerable<ColumnInfo> GetColumns<T>(Type type, TranslationRegistry registry, Expression<ColumnExpression<T>>[] calls, bool except)
+        public IEnumerable<ColumnInfo> GetColumns<T>(Expression<ColumnExpression<T>>[] calls, bool except)
         {
             var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            var columns = TableInfo.GetColumns(typeof(T), registry);
 
-            if (except) columns.Where(x => !props.Contains(x.PropName));
-            return columns.Where(x => props.Contains(x.PropName));
+            if (except) this.Columns.Where(x => !props.Contains(x.PropName));
+            return this.Columns.Where(x => props.Contains(x.PropName));
         }
 
-        public static IEnumerable<ColumnInfo> GetColumns(Type type, TranslationRegistry registry)
+        private IEnumerable<ColumnInfo> GetColumns()
         {
-            foreach (var prop in type.GetProperties(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var prop in this.Type.GetProperties(propertiesFlags).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in type.GetFields(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var field in this.Type.GetFields(propertiesFlags).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, field);
         }
 
@@ -121,7 +97,6 @@ namespace SharpOrm.Builder
         /// <param name="columns">Fields/Properties of the object to be validated.</param>
         public void Validate(object owner, params string[] columns)
         {
-            this.ValidateManualOperation();
             if (columns.Length == 0)
             {
                 this.Validate(owner);
@@ -139,7 +114,6 @@ namespace SharpOrm.Builder
         /// <param name="owner"></param>
         public void Validate(object owner)
         {
-            this.ValidateManualOperation();
             foreach (var item in this.Columns) item.Validate(owner);
         }
 
@@ -152,7 +126,6 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Row GetRow(object owner, bool readPk, bool readFk, bool validate)
         {
-            this.ValidateManualOperation();
             if (owner is Row row)
                 return row;
 
@@ -168,7 +141,6 @@ namespace SharpOrm.Builder
         /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
-            this.ValidateManualOperation();
             if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) is ColumnInfo col))
                 throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
 
@@ -186,7 +158,6 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            this.ValidateManualOperation();
             foreach (var column in this.Columns)
             {
                 if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
@@ -266,12 +237,6 @@ namespace SharpOrm.Builder
         private static Type GetValidType(Type type)
         {
             return ReflectionUtils.IsCollection(type) ? ReflectionUtils.GetGenericArg(type) : type;
-        }
-
-        private void ValidateManualOperation()
-        {
-            if (this.ColumnTrees != null)
-                throw new NotSupportedException("Manually mapped types do not support this operation.");
         }
     }
 }

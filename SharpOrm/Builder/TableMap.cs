@@ -11,18 +11,15 @@ namespace SharpOrm.Builder
     {
         private static readonly BindingFlags Binding = BindingFlags.Instance | BindingFlags.Public;
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
+        private TableInfo table;
 
         public string Name { get; set; }
-
-        public TableMap()
-        {
-            this.Name = typeof(T).Name;
-        }
 
         public TranslationRegistry Registry { get; }
 
         public TableMap(TranslationRegistry registry)
         {
+            this.Name = typeof(T).Name;
             this.Registry = registry;
 
             foreach (var property in typeof(T).GetProperties(Binding))
@@ -96,10 +93,12 @@ namespace SharpOrm.Builder
             }
         }
 
-        public void Build()
+        public TableInfo Build()
         {
-            if (this.Nodes.Count == 0) return;
-            TableInfo.AddManualMap(this);
+            if (this.Nodes.Count == 0) return null;
+            if (this.table != null) return this.table;
+
+            return this.table = this.Registry.AddTableMap(this);
         }
 
         private class PropertyPathVisitor : ExpressionVisitor
