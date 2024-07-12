@@ -37,7 +37,6 @@ namespace SharpOrm.Collections
         /// <param name="token">The cancellation token.</param>
         public DbCommandEnumerable(DbCommand command, TranslationRegistry translation, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
         {
-            Grammar.QueryLogger?.Invoke(command.CommandText);
             this.translation = translation;
             this.management = management;
             this.command = command;
