@@ -23,7 +23,7 @@ namespace SharpOrm
         /// </summary>
         public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo { get; }
-        private LambdaColumn[] _fkToLoad = new LambdaColumn[0];
+        private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
 
         #region Query
 
@@ -365,7 +365,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad = (LambdaColumn[])this._fkToLoad.Clone();
+            query._fkToLoad = (MemberInfoColumn[])this._fkToLoad.Clone();
         }
     }
 

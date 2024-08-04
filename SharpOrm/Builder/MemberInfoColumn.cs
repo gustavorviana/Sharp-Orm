@@ -3,33 +3,22 @@ using System.Reflection;
 
 namespace SharpOrm.Builder
 {
-    internal class LambdaColumn : Column, IEquatable<LambdaColumn>
+    public class MemberInfoColumn : Column, IEquatable<MemberInfoColumn>
     {
         public string PropertyName { get; }
         public Type DeclaringType { get; }
         public Type ValueType { get; }
 
-        internal LambdaColumn(MemberInfo member)
+        public MemberInfoColumn(MemberInfo member)
         {
             this.DeclaringType = member.DeclaringType;
 
             this.Name = ColumnInfo.GetName(member);
             this.PropertyName = member.Name;
-            this.ValueType = GetValueType(member);
+            this.ValueType = ReflectionUtils.GetMemberValueType(member);
         }
 
-        private static Type GetValueType(MemberInfo member)
-        {
-            if (member is PropertyInfo prop)
-                return prop.PropertyType;
-
-            if (member is FieldInfo field)
-                return field.FieldType;
-
-            throw new NotSupportedException();
-        }
-
-        public bool Equals(LambdaColumn other)
+        public bool Equals(MemberInfoColumn other)
         {
             return other != null &&
                 this.PropertyName == other.PropertyName &&

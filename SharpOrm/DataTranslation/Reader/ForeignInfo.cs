@@ -12,7 +12,7 @@ namespace SharpOrm.DataTranslation.Reader
         public string TableName { get; }
         public Type Type { get; }
 
-        public ForeignInfo(LambdaColumn column, object foreignKey)
+        public ForeignInfo(MemberInfoColumn column, object foreignKey)
         {
             TableName = TableInfo.GetNameOf(column.ValueType);
             ForeignKey = foreignKey;

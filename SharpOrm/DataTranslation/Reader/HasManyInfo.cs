@@ -6,7 +6,7 @@ namespace SharpOrm.DataTranslation.Reader
     {
         public string LocalKey { get; }
 
-        public HasManyInfo(LambdaColumn column, object foreignKey, string localKey) : base(column, foreignKey)
+        public HasManyInfo(MemberInfoColumn column, object foreignKey, string localKey) : base(column, foreignKey)
         {
             LocalKey = localKey;
         }

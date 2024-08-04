@@ -28,7 +28,7 @@ namespace UnityTest
             Assert.AreEqual(typeof(Address), columns[1].ValueType);
         }
 
-        private static LambdaColumn[] ToColumn(Expression<ColumnExpression<Order>> check)
+        private static MemberInfoColumn[] ToColumn(Expression<ColumnExpression<Order>> check)
         {
             return ExpressionUtils<Order>.GetColumnPath(check).ToArray();
         }

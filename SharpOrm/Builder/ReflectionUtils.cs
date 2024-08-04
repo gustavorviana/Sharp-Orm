@@ -18,7 +18,7 @@ namespace SharpOrm.Builder
             if (member is PropertyInfo prop) return prop.PropertyType;
             if (member is FieldInfo field) return field.FieldType;
 
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
 
         public static void AddToArray<T>(ref T[] array, IList<T> items)

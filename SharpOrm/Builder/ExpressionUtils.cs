@@ -9,14 +9,14 @@ namespace SharpOrm.Builder
 {
     internal static class ExpressionUtils<T>
     {
-        public static List<LambdaColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)
+        public static List<MemberInfoColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)
         {
-            var cols = new List<LambdaColumn>();
+            var cols = new List<MemberInfoColumn>();
 
             foreach (var member in GetValueMemberPath(propertyExpression))
             {
                 ValidateMemberType(member);
-                cols.Insert(0, new LambdaColumn(member));
+                cols.Insert(0, new MemberInfoColumn(member));
             }
 
             return cols;
