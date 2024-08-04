@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
@@ -571,7 +570,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
             return query.Update(query.GetCellsOf(obj, false, props, false, true));
         }
 

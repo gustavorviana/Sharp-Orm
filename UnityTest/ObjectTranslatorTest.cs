@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
@@ -354,7 +353,7 @@ namespace UnityTest
         [TestMethod]
         public void PropertyExpressionVisitorTest()
         {
-            var column = new PropertyExpressionVisitor().VisitProperty<OrderItem>(x => x.OrderId);
+            var column = ExpressionUtils<OrderItem>.GetName(x => x.OrderId);
             Assert.AreEqual("OrderId", column);
         }
 

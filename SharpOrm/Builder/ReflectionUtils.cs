@@ -13,6 +13,14 @@ namespace SharpOrm.Builder
             return type == typeof(object) || type == typeof(ExpandoObject);
         }
 
+        public static Type GetMemberValueType(MemberInfo member)
+        {
+            if (member is PropertyInfo prop) return prop.PropertyType;
+            if (member is FieldInfo field) return field.FieldType;
+
+            throw new InvalidOperationException();
+        }
+
         public static void AddToArray<T>(ref T[] array, IList<T> items)
         {
             int lastSize = array.Length;

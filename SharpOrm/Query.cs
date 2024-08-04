@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -122,7 +121,7 @@ namespace SharpOrm
         /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
-            var cols = new ColumnExpressionVisitor().VisitColumn(call);
+            var cols = ExpressionUtils<T>.GetColumnPath(call);
             ReflectionUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
             return this;
         }
@@ -130,8 +129,8 @@ namespace SharpOrm
         /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
-        /// <param table="peerPage">The number of items per page.</param>
-        /// <param table="currentPage">The current page number (One based).</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
         /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
@@ -187,7 +186,7 @@ namespace SharpOrm
         /// <summary>
         /// Searches and returns the first occurrence of an object of type T that matches the values of the provided primary keys.
         /// </summary>
-        /// <param table="primaryKeysValues">The values of the primary keys to search for.</param>
+        /// <param name="primaryKeysValues">The values of the primary keys to search for.</param>
         /// <returns>The first occurrence of an object of type T that matches the provided primary keys.</returns>
         public T Find(params object[] primaryKeysValues)
         {
@@ -198,7 +197,7 @@ namespace SharpOrm
         /// <summary>
         /// AddRaws a clause to retrieve the items that have the primary key of the object.
         /// </summary>
-        /// <param table="primaryKeysValues">Primary keys.</param>
+        /// <param name="primaryKeysValues">Primary keys.</param>
         /// <returns></returns>
         public Query<T> WherePk(params object[] primaryKeysValues)
         {
@@ -242,7 +241,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param table="obj"></param>
+        /// <param name="obj"></param>
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
@@ -252,7 +251,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param table="rows"></param>
+        /// <param name="rows"></param>
         public int BulkInsert(params T[] objs)
         {
             return base.BulkInsert(objs.Select(ValidateAndConvert));
@@ -261,7 +260,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param table="rows"></param>
+        /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
             return base.BulkInsert(objs.Select(ValidateAndConvert));
@@ -275,7 +274,7 @@ namespace SharpOrm
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param table="obj"></param>
+        /// <param name="obj"></param>
         /// <returns></returns>
         public int Update(T obj)
         {
@@ -288,8 +287,8 @@ namespace SharpOrm
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param table="obj"></param>
-        /// <param table="calls">Calls to retrieve the properties that should be saved.</param>
+        /// <param name="obj"></param>
+        /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
@@ -300,16 +299,15 @@ namespace SharpOrm
             if (calls.Length == 0)
                 throw new ArgumentNullException(nameof(calls));
 
-            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
             return this.Update(this.GetCellsOf(obj, false, props));
         }
 
         /// <summary>
         /// Update table keys using object values.
         /// </summary>
-        /// <param table="obj"></param>
-        /// <param table="column1">Column to be updated</param>
-        /// <param table="columns">Update table keys using object values..</param>
+        /// <param name="obj"></param>
+        /// <param name="columns">Update table keys using object values..</param>
         /// <returns></returns>
         public int Update(T obj, params string[] columns)
         {
@@ -518,7 +516,7 @@ namespace SharpOrm
         /// <summary>
         /// Select keys of table by table.
         /// </summary>
-        /// <param table="columnNames"></param>
+        /// <param name="columnNames"></param>
         /// <returns></returns>
         public Query Select(params string[] columnNames)
         {
@@ -534,7 +532,7 @@ namespace SharpOrm
         /// <summary>
         /// Select column of table by Column object.
         /// </summary>
-        /// <param table="columns"></param>
+        /// <param name="columns"></param>
         /// <returns></returns>
         public Query Select(params Column[] columns)
         {
@@ -668,7 +666,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies an ascending sort.
         /// </summary>
-        /// <param table="columns">Columns that must be ordered.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(params string[] columns)
         {
@@ -678,7 +676,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies descending sort.
         /// </summary>
-        /// <param table="columns">Columns that must be ordered.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderByDesc(params string[] columns)
         {
@@ -688,8 +686,8 @@ namespace SharpOrm
         /// <summary>
         /// Applies an ascending sort.
         /// </summary>
-        /// <param table="order">Field ordering.</param>
-        /// <param table="columns">Columns that must be ordered.</param>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params string[] columns)
         {
@@ -699,8 +697,8 @@ namespace SharpOrm
         /// <summary>
         /// Applies sorting to the query.
         /// </summary>
-        /// <param table="order">Field ordering.</param>
-        /// <param table="columns">Columns that must be ordered.</param>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params Column[] columns)
         {
@@ -710,7 +708,7 @@ namespace SharpOrm
         /// <summary>
         /// Applies sorting to the query.
         /// </summary>
-        /// <param table="orders"></param>
+        /// <param name="orders"></param>
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
@@ -726,7 +724,7 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param table="cells"></param>
+        /// <param name="cells"></param>
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
@@ -740,7 +738,7 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param table="cells"></param>
+        /// <param name="cells"></param>
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
@@ -752,7 +750,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param table="cells"></param>
+        /// <param name="cells"></param>
         /// <returns>Id of row.</returns>
         public int Insert(params Cell[] cells)
         {
@@ -765,7 +763,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param table="cells"></param>
+        /// <param name="cells"></param>
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
@@ -777,8 +775,8 @@ namespace SharpOrm
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param table="query"></param>
-        /// <param table="columnNames"></param>
+        /// <param name="query"></param>
+        /// <param name="columnNames"></param>
         public int Insert(QueryBase query, params string[] columnNames)
         {
             this.ValidateReadonly();
@@ -789,7 +787,7 @@ namespace SharpOrm
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param table="columnNames"></param>
+        /// <param name="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
             this.ValidateReadonly();
@@ -799,7 +797,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param table="rows"></param>
+        /// <param name="rows"></param>
         public int BulkInsert(params Row[] rows)
         {
             return this.BulkInsert((ICollection<Row>)rows);
@@ -808,7 +806,7 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param table="rows"></param>
+        /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
             this.ValidateReadonly();
@@ -839,7 +837,7 @@ namespace SharpOrm
         /// <summary>
         /// Counts the amount of results available. 
         /// </summary>
-        /// <param table="column">Column to count.</param>
+        /// <param name="column">Column to count.</param>
         /// <returns></returns>
         public long Count(string columnName)
         {
@@ -849,7 +847,7 @@ namespace SharpOrm
         /// <summary>
         /// Counts the amount of results available. 
         /// </summary>
-        /// <param table="column">Column to count.</param>
+        /// <param name="column">Column to count.</param>
         /// <returns></returns>
         public long Count(Column column)
         {
@@ -991,7 +989,7 @@ namespace SharpOrm
         /// <summary>
         /// Clones the Query object.
         /// </summary>
-        /// <param table="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
+        /// <param name="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
         /// <returns></returns>
         public virtual Query Clone(bool withWhere)
         {

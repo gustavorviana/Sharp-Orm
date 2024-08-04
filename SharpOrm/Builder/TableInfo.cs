@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
+﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -60,7 +59,7 @@ namespace SharpOrm.Builder
 
         public static IEnumerable<ColumnInfo> GetColumns<T>(Type type, TranslationRegistry registry, Expression<ColumnExpression<T>>[] calls, bool except)
         {
-            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
             var columns = TableInfo.GetColumns(typeof(T), registry);
 
             if (except) columns.Where(x => !props.Contains(x.PropName));
