@@ -206,6 +206,34 @@ namespace SharpOrm
             return WhereInColumn(qBase, true, value, columns, QueryBase.AND);
         }
 
+        /// <summary>
+        /// A NOT LIKE clause for each option <paramref name="likeOptions"/>.
+        /// </summary>
+        /// <param name="qBase"></param>
+        /// <param name="column">Column to be checked.</param>
+        /// <param name="likeOptions">LIKE checks that should be added.</param>
+        /// <returns></returns>
+        public static QueryBase WhereNotLikeIn(this QueryBase qBase, string column, string[] likeOptions)
+        {
+            qBase.WriteWhereType(QueryBase.AND);
+            qBase.Info.Where.Add(" NOT ");
+            InternalWhereLikeIn(qBase, column, likeOptions);
+            return qBase;
+        }
+
+        /// <summary>
+        /// A LIKE clause for each option <paramref name="likeOptions"/>.
+        /// </summary>
+        /// <param name="qBase"></param>
+        /// <param name="column">Column to be checked.</param>
+        /// <param name="likeOptions">LIKE checks that should be added.</param>
+        /// <returns></returns>
+        public static QueryBase WhereLikeIn(this QueryBase qBase, string column, string[] likeOptions)
+        {
+            qBase.WriteWhereType(QueryBase.AND);
+            return InternalWhereLikeIn(qBase, column, likeOptions);
+        }
+
         #endregion
 
         #region Or
@@ -402,7 +430,61 @@ namespace SharpOrm
             return WhereInColumn(qBase, true, value, columns, QueryBase.OR);
         }
 
+        /// <summary>
+        /// A NOT LIKE clause for each option <paramref name="likeOptions"/>.
+        /// </summary>
+        /// <param name="qBase"></param>
+        /// <param name="column">Column to be checked.</param>
+        /// <param name="likeOptions">LIKE checks that should be added.</param>
+        /// <returns></returns>
+        public static QueryBase OrWhereNotLikeIn(this QueryBase qBase, string column, string[] likeOptions)
+        {
+            qBase.WriteWhereType(QueryBase.OR);
+            qBase.Info.Where.Add(" NOT ");
+            InternalWhereLikeIn(qBase, column, likeOptions);
+            return qBase;
+        }
+
+        /// <summary>
+        /// A LIKE clause for each option <paramref name="likeOptions"/>.
+        /// </summary>
+        /// <param name="qBase"></param>
+        /// <param name="column">Column to be checked.</param>
+        /// <param name="likeOptions">LIKE checks that should be added.</param>
+        /// <returns></returns>
+        public static QueryBase OrWhereLikeIn(this QueryBase qBase, string column, string[] likeOptions)
+        {
+            qBase.WriteWhereType(QueryBase.OR);
+            return InternalWhereLikeIn(qBase, column, likeOptions);
+        }
+
         #endregion
+
+        /// <summary>
+        /// A LIKE clause for each option <paramref name="likeOptions"/>.
+        /// </summary>
+        /// <param name="qBase"></param>
+        /// <param name="likeWhereType"></param>
+        /// <param name="column"></param>
+        /// <param name="likeOptions"></param>
+        /// <param name="whereType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        private static QueryBase InternalWhereLikeIn(QueryBase qBase, string column, string[] likeOptions)
+        {
+            if (likeOptions == null || likeOptions.Length < 1)
+                throw new ArgumentNullException(nameof(likeOptions));
+
+            QueryBuilder builder = new QueryBuilder(qBase);
+            builder.Add('(').Add(column).Add(" LIKE ").AddParameter(likeOptions[0]);
+
+            for (int i = 1; i < likeOptions.Length; i++)
+                builder.Add(" OR LIKE ").AddParameter(likeOptions[i]);
+
+            builder.Add(')');
+            qBase.Info.Where.Add(builder);
+            return qBase;
+        }
 
         private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
         {

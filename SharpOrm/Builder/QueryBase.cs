@@ -61,6 +61,13 @@ namespace SharpOrm.Builder
             return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
         }
 
+        public QueryBase Where(QueryBuilder builder)
+        {
+            this.WriteWhereType(AND);
+            this.Info.Where.Add(builder);
+            return this;
+        }
+
         /// <summary>
         /// Adds the sql clause to the "WHERE" (If there are any previous clauses, "AND" is inserted before the new clause)
         /// </summary>
@@ -236,6 +243,13 @@ namespace SharpOrm.Builder
         {
             this.WriteWhereType(OR);
             this.Info.Where.AddParameter(expression);
+            return this;
+        }
+
+        public QueryBase OrWhere(QueryBuilder builder)
+        {
+            this.WriteWhereType(OR);
+            this.Info.Where.Add(builder);
             return this;
         }
 

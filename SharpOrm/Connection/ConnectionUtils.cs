@@ -1,5 +1,10 @@
-﻿using System;
+﻿using SharpOrm.Collections;
+using SharpOrm.DataTranslation;
+using System;
+using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
+using System.Threading;
 
 namespace SharpOrm.Connection
 {
@@ -27,7 +32,30 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// executes a SQL statement against a connection object.
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> ExecuteEnumerable<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return new DbCommandEnumerable<T>(manager.CreateCommand().SetCancellationToken(token).SetExpression(expression), registry, manager.Management, token);
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public static T[] ExecuteArray<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            using (var cmd = manager.CreateCommand().SetCancellationToken(token).SetExpression(expression))
+                return cmd.ExecuteEnumerable<T>().ToArray();
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="expression"></param>
