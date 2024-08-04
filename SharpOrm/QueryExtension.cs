@@ -570,7 +570,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
             return query.Update(query.GetCellsOf(obj, false, props, false, true));
         }
 

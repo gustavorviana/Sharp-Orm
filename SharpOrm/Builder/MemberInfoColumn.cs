@@ -9,13 +9,13 @@ namespace SharpOrm.Builder
         public Type DeclaringType { get; }
         public Type ValueType { get; }
 
-        public MemberInfoColumn(MemberInfo member)
+        internal MemberInfoColumn(MemberInfo member)
         {
             this.DeclaringType = member.DeclaringType;
 
+            this.ValueType = ReflectionUtils.GetMemberValueType(member);
             this.Name = ColumnInfo.GetName(member);
             this.PropertyName = member.Name;
-            this.ValueType = ReflectionUtils.GetMemberValueType(member);
         }
 
         public bool Equals(MemberInfoColumn other)

@@ -353,7 +353,7 @@ namespace UnityTest
         [TestMethod]
         public void PropertyExpressionVisitorTest()
         {
-            var column = ExpressionUtils<OrderItem>.GetName(x => x.OrderId);
+            var column = ExpressionUtils<OrderItem>.GetPropName(x => x.OrderId);
             Assert.AreEqual("OrderId", column);
         }
 

@@ -59,7 +59,7 @@ namespace SharpOrm.Builder
 
         public static IEnumerable<ColumnInfo> GetColumns<T>(Type type, TranslationRegistry registry, Expression<ColumnExpression<T>>[] calls, bool except)
         {
-            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
             var columns = TableInfo.GetColumns(typeof(T), registry);
 
             if (except) columns.Where(x => !props.Contains(x.PropName));

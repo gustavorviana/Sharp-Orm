@@ -1,14 +1,19 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace SharpOrm.Builder
 {
     internal static class ExpressionUtils<T>
     {
+        public static Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
+        {
+            return new MemberInfoColumn(GetValueMemberPath(columnExpression).FirstOrDefault());
+        }
+
         public static List<MemberInfoColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)
         {
             var cols = new List<MemberInfoColumn>();
@@ -31,7 +36,7 @@ namespace SharpOrm.Builder
             throw new InvalidOperationException($"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
         }
 
-        public static string GetName(Expression<ColumnExpression<T>> exp)
+        public static string GetPropName(Expression<ColumnExpression<T>> exp)
         {
             return GetMemberExpression(exp).Member.Name;
         }

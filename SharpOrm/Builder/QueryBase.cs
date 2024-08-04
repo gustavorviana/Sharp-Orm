@@ -8,19 +8,14 @@ namespace SharpOrm.Builder
     /// <summary>
     /// SQL clause creator. Provides methods to build SQL SELECT, INSERT, UPDATE and DELETE queries. Allows defining WHERE, ORDER BY, GROUP BY, JOIN and other clauses.
     /// </summary>
-    public class QueryBase : IDisposable
+    public class QueryBase
     {
         #region Fields\Const
         internal const string AND = "AND";
         internal const string OR = "OR";
 
-        private bool _disposed = false;
-        protected internal QueryInfo Info { get; }
+        protected internal QueryBaseInfo Info { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether the object has been disposed.
-        /// </summary>
-        public bool Disposed => this._disposed;
         private static string[] AvailableOperations { get; } = {
             "=",
             ">",
@@ -47,6 +42,11 @@ namespace SharpOrm.Builder
         public QueryBase(QueryConfig config, DbName table)
         {
             this.Info = new QueryInfo(config, table);
+        }
+
+        protected QueryBase(QueryInfo info)
+        {
+            this.Info = info;
         }
 
         #region Where
@@ -533,37 +533,6 @@ namespace SharpOrm.Builder
                 this.Info.Where.Add(' ').Add(type).Add(' ');
 
             return this.Info.Where;
-        }
-
-        #endregion
-
-        #region IDisposed
-
-        ~QueryBase()
-        {
-            this.Dispose(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (this._disposed)
-                return;
-
-            this._disposed = true;
-        }
-
-        /// <summary>
-        /// Releases all resources used by the object.
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
-        public void Dispose()
-        {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
-
-            this.Dispose(true);
-
-            GC.SuppressFinalize(this);
         }
 
         #endregion

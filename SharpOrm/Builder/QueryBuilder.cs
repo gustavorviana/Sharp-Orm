@@ -57,7 +57,7 @@ namespace SharpOrm.Builder
         /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryInfo"/>.
         /// </summary>
         /// <param name="info"></param>
-        public QueryBuilder(QueryInfo info) : this(info.ToReadOnly())
+        public QueryBuilder(QueryBaseInfo info) : this(info.ToReadOnly())
         {
         }
 

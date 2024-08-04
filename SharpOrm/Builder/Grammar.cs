@@ -241,7 +241,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="info">The query information.</param>
         /// <returns>True if the join can be deleted; otherwise, false.</returns>
-        protected bool CanDeleteJoin(QueryInfo info)
+        protected bool CanDeleteJoin(QueryBaseInfo info)
         {
             string name = info.TableName.TryGetAlias(this.Info.Config);
             foreach (var jName in this.Query.deleteJoins)

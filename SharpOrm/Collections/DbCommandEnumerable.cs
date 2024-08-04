@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder;
-using SharpOrm.Connection;
+﻿using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;

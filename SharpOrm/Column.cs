@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace SharpOrm
@@ -131,6 +132,16 @@ namespace SharpOrm
         public static explicit operator Column(string rawColumn)
         {
             return new Column(new SqlExpression(rawColumn));
+        }
+
+        /// <summary>
+        /// Retrieves a column that represents the last field or property of the expression.
+        /// </summary>
+        /// <param name="columnExpression"></param>
+        /// <returns></returns>
+        public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression)
+        {
+            return ExpressionUtils<T>.GetColumn(columnExpression);
         }
 
         internal string GetCountColumn()

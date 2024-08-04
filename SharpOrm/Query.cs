@@ -299,7 +299,7 @@ namespace SharpOrm
             if (calls.Length == 0)
                 throw new ArgumentNullException(nameof(calls));
 
-            var props = calls.Select(ExpressionUtils<T>.GetName).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
             return this.Update(this.GetCellsOf(obj, false, props));
         }
 
@@ -375,10 +375,18 @@ namespace SharpOrm
     /// <summary>
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
-    public class Query : QueryBase, ICloneable, IGrammarOptions
+    public class Query : QueryBase, ICloneable, IGrammarOptions, IDisposable
     {
         #region Properties
         internal string[] deleteJoins = null;
+        private bool _disposed = false;
+
+        protected internal new QueryInfo Info => (QueryInfo)base.Info;
+
+        /// <summary>
+        /// Gets a value indicating whether the object has been disposed.
+        /// </summary>
+        public bool Disposed => this._disposed;
 
         /// <summary>
         /// Indicate whether the database should return only distinct items.
@@ -502,12 +510,12 @@ namespace SharpOrm
         /// </summary>
         /// <param name="table">Name of the table to be used.</param>
         /// <param name="manager">Connection manager to be used.</param>
-        public Query(DbName table, ConnectionManager manager) : base(manager.Config, table)
+        public Query(DbName table, ConnectionManager manager) : this(table, manager.Config)
         {
             this.Manager = manager;
         }
 
-        private Query(DbName table, QueryConfig config) : base(config, table)
+        private Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
         {
 
         }
@@ -1065,17 +1073,6 @@ namespace SharpOrm
                 .SetCancellationToken(this.Token);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (disposing && this.lastOpenReader is OpenReader last)
-                last.Dispose();
-
-            this.Manager?.CloseByDisposeChild();
-            this.lastOpenReader = null;
-        }
-
         /// <summary>
         /// Returns a string representation of the object.
         /// </summary>
@@ -1098,6 +1095,43 @@ namespace SharpOrm
         {
             return this.Info.Config.NewGrammar(this);
         }
+
+        #region IDisposed
+
+        ~Query()
+        {
+            this.Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed)
+                return;
+
+            this._disposed = true;
+
+            if (disposing && this.lastOpenReader is OpenReader last)
+                last.Dispose();
+
+            this.Manager?.CloseByDisposeChild();
+            this.lastOpenReader = null;
+        }
+
+        /// <summary>
+        /// Releases all resources used by the object.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
+        public void Dispose()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(this.GetType().Name);
+
+            this.Dispose(true);
+
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
 
         private class OpenReader : IDisposable
         {

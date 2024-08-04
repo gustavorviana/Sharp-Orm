@@ -227,7 +227,7 @@ namespace SharpOrm.Builder
             else this.builder.Add(this.Info.Where);
         }
 
-        protected void WriteWhereContent(QueryInfo info)
+        protected void WriteWhereContent(QueryBaseInfo info)
         {
             this.builder.AddAndReplace(
                 info.Where.ToString(),
