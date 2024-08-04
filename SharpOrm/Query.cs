@@ -326,6 +326,9 @@ namespace SharpOrm
 
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
+            if (this.Config.ValidateModelOnSave)
+                TableInfo.Validate(obj, properties);
+
             return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
         }
 

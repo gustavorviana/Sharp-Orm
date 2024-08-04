@@ -10,6 +10,11 @@ namespace SharpOrm.Builder
     public abstract class QueryConfig : ICloneable
     {
         /// <summary>
+        /// If the model has one or more validations defined, they will be checked before saving or updating.
+        /// </summary>
+        public bool ValidateModelOnSave { get; set; }
+
+        /// <summary>
         /// Indicate whether the DBMS supports performing an update or delete with the SQL join clause.
         /// </summary>
         public virtual bool CanUpdateJoin { get; } = true;

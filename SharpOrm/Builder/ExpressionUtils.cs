@@ -22,7 +22,6 @@ namespace SharpOrm.Builder
             return cols;
         }
 
-
         private static void ValidateMemberType(MemberInfo member)
         {
             if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberValueType(member), false))
@@ -31,7 +30,6 @@ namespace SharpOrm.Builder
             string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
             throw new InvalidOperationException($"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
         }
-
 
         public static string GetName(Expression<ColumnExpression<T>> exp)
         {
