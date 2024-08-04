@@ -1,6 +1,8 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Connection
 {
@@ -247,6 +249,18 @@ namespace SharpOrm.Connection
                 return;
 
             this.Connection.Open();
+            try { this.Connection.Close(); } catch { }
+        }
+
+        /// <summary>
+        /// Check if it is possible to connect to the database.
+        /// </summary>
+        public async Task CheckConnectionAsync(CancellationToken token)
+        {
+            if (this.Connection.State == System.Data.ConnectionState.Open)
+                return;
+
+            await this.Connection.OpenAsync(token);
             try { this.Connection.Close(); } catch { }
         }
 

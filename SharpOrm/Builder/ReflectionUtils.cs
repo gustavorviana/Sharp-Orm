@@ -13,6 +13,15 @@ namespace SharpOrm.Builder
             return type == typeof(object) || type == typeof(ExpandoObject);
         }
 
+        public static void AddToArray<T>(ref T[] array, IList<T> items)
+        {
+            int lastSize = array.Length;
+            Array.Resize(ref array, array.Length + items.Count);
+
+            for (int i = 0; i < items.Count; i++)
+                array[lastSize + i] = items[i];
+        }
+
         public static Array ToArray(Type type, ICollection collection)
         {
             Array array = Array.CreateInstance(type, collection.Count);

@@ -125,15 +125,6 @@ namespace SharpOrm.DataTranslation
             return (T)registry.FromSql(value, typeof(T));
         }
 
-        public static void AddToArray<T>(ref T[] array, IList<T> items)
-        {
-            int lastSize = array.Length;
-            Array.Resize(ref array, array.Length + items.Count);
-
-            for (int i = 0; i < items.Count; i++)
-                array[lastSize + i] = items[i];
-        }
-
         public static bool IsNullOrEmpty(ICollection collection)
         {
             return collection == null || collection.Count == 0;

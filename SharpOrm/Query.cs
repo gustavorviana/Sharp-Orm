@@ -123,7 +123,7 @@ namespace SharpOrm
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var cols = new ColumnExpressionVisitor().VisitColumn(call);
-            TranslationUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
+            ReflectionUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
             return this;
         }
 
