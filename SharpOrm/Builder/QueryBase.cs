@@ -86,7 +86,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase Where(string column, object value)
+        public QueryBase Where(object column, object value)
         {
             return this.Where(column, value is null ? "IS" : "=", value);
         }
@@ -97,7 +97,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase WhereNot(string column, object value)
+        public QueryBase WhereNot(object column, object value)
         {
             return this.Where(column, value is null ? "IS NOT" : "!=", value);
         }
@@ -123,11 +123,11 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Adds a clause to "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
-        /// <param name="column">Column to check.</param>
-        /// <param name="operation">Clause operator.</param>
-        /// <param name="value">Value to check.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public QueryBase Where(string column, string operation, object value)
+        public QueryBase Where(object column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, AND);
         }
@@ -294,13 +294,13 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Adds a clause to "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// Adds an OR WHERE clause with a specified operation and value.
         /// </summary>
-        /// <param name="column">Column to check.</param>
-        /// <param name="operation">Clause operator.</param>
-        /// <param name="value">Value to check.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public QueryBase OrWhere(string column, string operation, object value)
+        public QueryBase OrWhere(object column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, OR);
         }

@@ -342,7 +342,7 @@ namespace SharpOrm.Builder
         {
             var @enum = enumerable.GetEnumerator();
             if (!@enum.MoveNext())
-                throw new InvalidOperationException(Messages.CannotUseEmptyCollection);
+                return this.Add("1!=1");
 
             this.Add('(');
             this.AddParameter(@enum.Current, allowAlias);

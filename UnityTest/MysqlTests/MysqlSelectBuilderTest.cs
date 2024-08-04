@@ -888,5 +888,33 @@ namespace UnityTest.MysqlTests
             var sqlExpression = g.Select();
             TestAssert.AreDecoded("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = @p1 AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", sqlExpression);
         }
+
+        [TestMethod]
+        public void SelectWhereLikeIn()
+        {
+            using var query = new Query(TABLE, Creator);
+            query.Where("Test", true).WhereLikeIn("Column", "%Name1%", "Name 2%", "%Name 3");
+
+
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            var expectedExp = new SqlExpression("SELECT * FROM `TestTable` WHERE `Test` = 1 AND (Column LIKE ? OR LIKE ? OR LIKE ?)", "%Name1%", "Name 2%", "%Name 3");
+            TestAssert.AreEqual(expectedExp, sqlExpression);
+        }
+
+        [TestMethod]
+        public void SelectWhereNotLikeIn()
+        {
+            using var query = new Query(TABLE, Creator);
+            query.Where("Test", true).WhereNotLikeIn("Column", "%Name1%", "Name 2%", "%Name 3");
+
+
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            var expectedExp = new SqlExpression("SELECT * FROM `TestTable` WHERE `Test` = 1 AND NOT (Column LIKE ? OR LIKE ? OR LIKE ?)", "%Name1%", "Name 2%", "%Name 3");
+            TestAssert.AreEqual(expectedExp, sqlExpression);
+        }
     }
 }

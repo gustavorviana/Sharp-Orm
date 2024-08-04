@@ -25,6 +25,11 @@ namespace SharpOrm
         protected internal TableInfo TableInfo { get; }
         private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
 
+        /// <summary>
+        /// If the model has one or more validations defined, they will be checked before saving or updating.
+        /// </summary>
+        public bool ValidateModelOnSave { get; set; }
+
         #region Query
 
         /// <summary>
@@ -103,6 +108,7 @@ namespace SharpOrm
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
             TableInfo = new TableInfo(typeof(T), manager.Config.Translation);
+            this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
             this.ApplyValidations();
         }
 
@@ -268,6 +274,9 @@ namespace SharpOrm
 
         private Row ValidateAndConvert(T obj)
         {
+            if (this.ValidateModelOnSave)
+                TableInfo.Validate(obj);
+
             return TableInfo.GetRow(obj, true, this.Config.LoadForeign, true);
         }
 
@@ -326,7 +335,7 @@ namespace SharpOrm
 
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            if (this.Config.ValidateModelOnSave)
+            if (this.ValidateModelOnSave)
                 TableInfo.Validate(obj, properties);
 
             return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
