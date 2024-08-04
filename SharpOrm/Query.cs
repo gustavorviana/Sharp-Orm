@@ -1032,6 +1032,15 @@ namespace SharpOrm
 
         #endregion
 
+        public Query Where(QueryBase where)
+        {
+            if (where is Query) throw new NotSupportedException($"Cannot add a {where.GetType().FullName} to the WHERE clause.");
+
+            this.Info.Where.Add(where.Info.Where);
+
+            return this;
+        }
+
         protected internal object ExecuteScalar(SqlExpression expression)
         {
             return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteScalar());
