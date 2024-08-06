@@ -358,6 +358,49 @@ namespace SharpOrm
         }
         #endregion
 
+        #region Where
+
+        public Query<T> WhereNot(Expression<ColumnExpression<T>> columnExp, object value)
+        {
+            base.WhereNot(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        public Query<T> Where(Expression<ColumnExpression<T>> columnExp, object value)
+        {
+            base.Where(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        public Query<T> Where(Expression<ColumnExpression<T>> columnExp, string operation, object value)
+        {
+            this.Where(Column.FromExp(columnExp), operation, value);
+            return this;
+        }
+
+        #region OR
+
+        public Query<T> OrWhereNot(Expression<ColumnExpression<T>> columnExp, object value)
+        {
+            base.OrWhereNot(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, object value)
+        {
+            base.OrWhere(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, string operation, object value)
+        {
+            this.OrWhere(Column.FromExp(columnExp), operation, value);
+            return this;
+        }
+
+        #endregion
+        #endregion
+
         public override Query Clone(bool withWhere)
         {
             Query<T> query = new Query<T>(this.Info.TableName, this.Manager);

@@ -259,7 +259,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase OrWhere(string column, object value)
+        public QueryBase OrWhere(object column, object value)
         {
             return this.OrWhere(column, value is null ? "IS" : "=", value);
         }
@@ -270,7 +270,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase OrWhereNot(string column, object value)
+        public QueryBase OrWhereNot(object column, object value)
         {
             return this.OrWhere(column, value is null ? "IS NOT" : "!=", value);
         }

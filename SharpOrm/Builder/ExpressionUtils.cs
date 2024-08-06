@@ -1,6 +1,7 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -11,7 +12,11 @@ namespace SharpOrm.Builder
     {
         public static Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
         {
-            return new MemberInfoColumn(GetValueMemberPath(columnExpression).FirstOrDefault());
+            var member = GetValueMemberPath(columnExpression).First();
+            if (member.IsDefined(typeof(NotMappedAttribute)))
+                throw new InvalidOperationException($"It is not possible to retrieve the column {member.DeclaringType.FullName}.{member.Name}, it was defined as unmapped.");
+
+            return new MemberInfoColumn(member);
         }
 
         public static List<MemberInfoColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)

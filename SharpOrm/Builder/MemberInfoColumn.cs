@@ -5,17 +5,16 @@ namespace SharpOrm.Builder
 {
     public class MemberInfoColumn : Column, IEquatable<MemberInfoColumn>
     {
-        public string PropertyName { get; }
-        public Type DeclaringType { get; }
+        private readonly MemberInfo member;
+
+        public string PropertyName => this.member.Name;
+        public Type DeclaringType => member.DeclaringType;
         public Type ValueType { get; }
 
         internal MemberInfoColumn(MemberInfo member)
         {
-            this.DeclaringType = member.DeclaringType;
-
             this.ValueType = ReflectionUtils.GetMemberValueType(member);
             this.Name = ColumnInfo.GetName(member);
-            this.PropertyName = member.Name;
         }
 
         public bool Equals(MemberInfoColumn other)
@@ -30,6 +29,11 @@ namespace SharpOrm.Builder
         public bool IsSame(ColumnInfo column)
         {
             return this.DeclaringType == column.DeclaringType && this.PropertyName == column.PropName;
+        }
+
+        public T GetAttribute<T>() where T : Attribute
+        {
+            return this.member.GetCustomAttribute<T>();
         }
     }
 }
