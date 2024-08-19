@@ -15,6 +15,7 @@ namespace SharpOrm.Builder
         {
             this.ValueType = ReflectionUtils.GetMemberValueType(member);
             this.Name = ColumnInfo.GetName(member);
+            this.member = member;
         }
 
         public bool Equals(MemberInfoColumn other)

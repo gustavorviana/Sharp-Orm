@@ -38,7 +38,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
-        public static Column All => new Column(new SqlExpression("*"));
+        public static Column All => (Column)"*";
         #endregion
 
         /// <summary>
