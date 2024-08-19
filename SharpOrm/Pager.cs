@@ -12,6 +12,7 @@ namespace SharpOrm
     public class Pager<T> : IReadOnlyList<T>, IDisposable
     {
         #region Properties/Fields
+        private readonly Column countColunm;
         protected readonly Query query;
         private T[] items = new T[0];
 
@@ -46,11 +47,12 @@ namespace SharpOrm
         public T this[int index] => items[index];
         #endregion
 
-        protected Pager(Query query, int peerPage, int page = 1)
+        protected Pager(Query query, int peerPage, int page, Column countColunm)
         {
             this.query = query;
-            this.peerPage = peerPage;
             this.CurrentPage = page;
+            this.peerPage = peerPage;
+            this.countColunm = countColunm;
         }
 
         /// <summary>
@@ -59,10 +61,24 @@ namespace SharpOrm
         /// <param name="builder">The query builder to use.</param>
         /// <param name="peerPage">The number of items per page.</param>
         /// <param name="currentPage">The current page number.</param>
+        /// <param name="columnName"></param>
         /// <returns>An instance of the <see cref="Pager{T}"/> class.</returns>
-        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage)
+        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, string columnName)
         {
-            Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage);
+            return FromBuilder(builder, peerPage, currentPage, new Column(columnName));
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <param name="column"></param>
+        /// <returns>An instance of the <see cref="Pager{T}"/> class.</returns>
+        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, Column column = null)
+        {
+            Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage, column);
 
             list.Refresh();
 
@@ -132,7 +148,7 @@ namespace SharpOrm
         {
             this.query.Offset = null;
             this.query.Limit = null;
-            this.Total = this.query.Count();
+            this.Total = this.countColunm == null ? this.query.Count() : this.query.Count(this.countColunm);
             this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
         }
 
