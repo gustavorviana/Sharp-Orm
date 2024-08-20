@@ -73,7 +73,8 @@ namespace SharpOrm.DataTranslation.Reader
 
         private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
-            objectActivator = new ObjectActivator(Type, reader, registry);
+            if (!Type.IsArray)
+                objectActivator = new ObjectActivator(Type, reader, registry);
 
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
@@ -127,7 +128,8 @@ namespace SharpOrm.DataTranslation.Reader
             instance = objectActivator.CreateInstance(reader);
 
             foreach (var children in childrens)
-                children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
+                if (!children.Type.IsArray)
+                    children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
 
             return instance;
         }

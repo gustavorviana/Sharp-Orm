@@ -297,6 +297,7 @@ namespace UnityTest
             Assert.AreEqual(5, obj.Child2.Id);
             Assert.AreEqual("Value Child 1", obj.Child1.Value);
             Assert.AreEqual("Value Child 2", obj.Child2.Value);
+            CollectionAssert.AreEquivalent(Array.Empty<string>(), obj.StrArray);
         }
 
         [TestMethod]
@@ -416,6 +417,8 @@ namespace UnityTest
             public int Id { get; set; }
             public ChildAdvancedObject Child1 { get; set; }
             public ChildAdvancedObject Child2 { get; set; }
+
+            public string[] StrArray { get; set; } = new string[0];
         }
 
         private class ChildAdvancedObject
