@@ -119,7 +119,7 @@ namespace SharpOrm.Builder
         {
             base.ConfigureInsert(cells, false);
 
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
+            if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
                 this.builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 

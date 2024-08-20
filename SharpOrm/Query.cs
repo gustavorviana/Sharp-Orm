@@ -4,6 +4,7 @@ using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -440,6 +441,8 @@ namespace SharpOrm
         /// </summary>
         public bool Disposed => this._disposed;
 
+        public bool InsertReturnId { get; set; } = true;
+
         /// <summary>
         /// Indicate whether the database should return only distinct items.
         /// </summary>
@@ -831,6 +834,9 @@ namespace SharpOrm
         public int Insert(IEnumerable<Cell> cells)
         {
             this.ValidateReadonly();
+            if (!this.InsertReturnId)
+                return this.ExecuteAndGetAffected(this.GetGrammar().Insert(cells));
+
             object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
@@ -843,8 +849,7 @@ namespace SharpOrm
         public int Insert(QueryBase query, params string[] columnNames)
         {
             this.ValidateReadonly();
-            object result = this.ExecuteScalar(this.GetGrammar().InsertQuery(query, columnNames));
-            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
+            return this.ExecuteAndGetAffected(this.GetGrammar().InsertQuery(query, columnNames));
         }
 
         /// <summary>

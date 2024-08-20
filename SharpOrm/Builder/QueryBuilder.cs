@@ -35,6 +35,15 @@ namespace SharpOrm.Builder
         public ReadOnlyCollection<object> Parameters { get; }
 
         /// <summary>
+        /// Create an instance of <see cref="QueryBuilder"/> using the query configuration using <see cref="Connection.ConnectionCreator.Default"/> config.
+        /// </summary>
+        /// <param name="query"></param>
+        public QueryBuilder(string tableFullName = "") : this(Connection.ConnectionCreator.Default?.Config, DbName.FromPossibleEmptyName(tableFullName))
+        {
+
+        }
+
+        /// <summary>
         /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryBase"/>.
         /// </summary>
         /// <param name="query"></param>
