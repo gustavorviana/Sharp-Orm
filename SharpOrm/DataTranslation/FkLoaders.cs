@@ -55,8 +55,8 @@ namespace SharpOrm.DataTranslation
 
         private object GetValueFor(ForeignInfo info)
         {
-            if (info is HasManyInfo manyInfo)
-                return GetCollectionValueFor(manyInfo);
+            if (ReflectionUtils.IsCollection(info.Type))
+                return GetCollectionValueFor(info);
 
             using (var query = CreateQuery(info))
             {
@@ -67,7 +67,7 @@ namespace SharpOrm.DataTranslation
             }
         }
 
-        private object GetCollectionValueFor(HasManyInfo info)
+        private object GetCollectionValueFor(ForeignInfo info)
         {
             using (var query = CreateQuery(info))
             {
@@ -87,7 +87,7 @@ namespace SharpOrm.DataTranslation
         private Query CreateQuery(ForeignInfo info)
         {
             var query = CreateQuery(info.TableName);
-            query.Where(info is HasManyInfo many ? many.LocalKey : "Id", info.ForeignKey);
+            query.Where(info.LocalKey ?? "Id", info.ForeignKey);
             return query;
         }
 
@@ -106,10 +106,7 @@ namespace SharpOrm.DataTranslation
         {
             var info = foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
             if (info == null)
-            {
-                info = column.HasManyInfo != null ? new HasManyInfo(lCol, fkValue, column.HasManyInfo.LocalKey) : new ForeignInfo(lCol, fkValue);
-                foreignKeyToLoad.Enqueue(info);
-            }
+                foreignKeyToLoad.Enqueue(info = new ForeignInfo(lCol, fkValue, null));
 
             info.AddFkColumn(owner, column);
         }

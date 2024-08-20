@@ -345,8 +345,9 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void ExecuteArrayScalar()
         {
-            InsertRows(5);
             using var q = NewQuery();
+            q.Delete();
+            InsertRows(5);
             q.Select("Name");
 
             var names = q.ExecuteArrayScalar<string>();
