@@ -82,7 +82,7 @@ namespace SharpOrm.DataTranslation.Reader
             foreach (var column in TableInfo.GetColumns(Type, registry))
                 if (column.IsForeignKey) AddIfValidId(reader, fkColumns, column.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
-                else childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
+                else if (column.Type != this.Type) childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
 
             return this;
         }

@@ -40,7 +40,8 @@ namespace UnityTest.Utils.Mock
 
         public override int Depth => 1;
 
-        public override bool IsClosed => !this.HasRows || currentIndex >= this.Size;
+        private bool closed = false;
+        public override bool IsClosed => this.closed;
 
         public override int RecordsAffected => -1;
 
@@ -48,6 +49,7 @@ namespace UnityTest.Utils.Mock
 
         public override void Close()
         {
+            this.closed = true;
             currentIndex = this.Size;
         }
 

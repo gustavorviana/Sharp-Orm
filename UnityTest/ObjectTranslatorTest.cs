@@ -443,7 +443,7 @@ namespace UnityTest
         {
             public int Id { get; set; }
 
-            [HasMany("id")]
+            [ForeignKey("id")]
             public OrderItem[] ArrayItems { get; set; }
 
             [HasMany("id")]
@@ -451,6 +451,9 @@ namespace UnityTest
 
             [HasMany("id")]
             public IList<OrderItem> IListItems { get; set; }
+
+            [ForeignKey("id")]
+            public Order Parent { get; set; }
         }
 
         [Table("OrderItems")]
