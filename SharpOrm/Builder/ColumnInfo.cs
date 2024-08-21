@@ -100,7 +100,7 @@ namespace SharpOrm.Builder
             this.Name = colAttr?.Name ?? member.Name;
             this.Order = colAttr?.Order ?? -1;
 
-            this.Key = this.GetAttribute<KeyAttribute>() != null || this.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase);
+            this.Key = this.GetAttribute<KeyAttribute>() != null || this.Name.Equals("id", StringComparison.OrdinalIgnoreCase);
             this.Validations = this.column.GetCustomAttributes<ValidationAttribute>().ToArray();
         }
 

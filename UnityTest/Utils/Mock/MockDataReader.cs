@@ -173,7 +173,7 @@ namespace UnityTest.Utils.Mock
             int index = 0;
             foreach (var row in this.currentRow)
             {
-                if (row.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))
+                if (row.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return index;
 
                 index++;

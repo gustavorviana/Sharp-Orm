@@ -26,12 +26,12 @@ namespace SharpOrm.Builder
             "!=",
             "!>",
             "!<",
-            "like",
-            "in",
-            "not in",
-            "not like",
-            "is",
-            "is not"
+            "LIKE",
+            "IN",
+            "NOT IN",
+            "NOT LIKE",
+            "IS",
+            "IS NOT"
         };
         #endregion
 
@@ -483,7 +483,8 @@ namespace SharpOrm.Builder
         /// <param name="operation"></param>
         internal protected static void CheckIsAvailableOperation(string operation)
         {
-            if (!AvailableOperations.Contains(operation.ToLower()))
+            if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
+            if (!AvailableOperations.ContainsIgnoreCase(operation))
                 throw new DatabaseException("Invalid SQL operation: " + operation);
         }
 

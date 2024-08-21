@@ -245,7 +245,7 @@ namespace SharpOrm.Builder
         {
             string name = info.TableName.TryGetAlias(this.Info.Config);
             foreach (var jName in this.Query.deleteJoins)
-                if (jName.Equals(name, StringComparison.CurrentCultureIgnoreCase))
+                if (jName.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return true;
 
             return false;

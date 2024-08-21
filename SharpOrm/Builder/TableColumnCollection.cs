@@ -290,7 +290,7 @@ namespace SharpOrm.Builder
         public int IndexOf(string columnName)
         {
             for (int i = 0; i < this.columns.Count; i++)
-                if (this.columns[i].ColumnName == columnName)
+                if (this.columns[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;

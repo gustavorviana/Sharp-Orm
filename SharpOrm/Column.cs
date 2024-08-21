@@ -29,7 +29,7 @@ namespace SharpOrm
             get
             {
                 if (this.isCount == null)
-                    this.isCount = this.expression?.ToString()?.ToLower() is string exp && exp.StartsWith("count(") && exp.EndsWith(")");
+                    this.isCount = this.expression?.ToString() is string exp && exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) && exp.EndsWith(")");
 
                 return this.isCount.Value;
             }

@@ -823,7 +823,7 @@ namespace SharpOrm
         public static object Get(this DbDataReader reader, string key)
         {
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).Equals(key, StringComparison.CurrentCultureIgnoreCase))
+                if (reader.GetName(i).Equals(key, StringComparison.OrdinalIgnoreCase))
                     return reader[i];
 
             return DBNull.Value;
@@ -838,7 +838,7 @@ namespace SharpOrm
         public static int GetIndexOf(this DbDataReader reader, string name)
         {
             for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).Equals(name, StringComparison.CurrentCultureIgnoreCase))
+                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;

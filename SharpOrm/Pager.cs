@@ -93,6 +93,9 @@ namespace SharpOrm
         /// Navigates to the specified page.
         /// </summary>
         /// <param name="page">The one-based page number to navigate to.</param>
+        /// <remarks>
+        /// This value is one-based, meaning that the page count starts from 1.
+        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified page number is out of range.</exception>
         public void GoToPage(int page)
         {

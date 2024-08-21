@@ -91,7 +91,7 @@ namespace SharpOrm.Builder
             }
 
             foreach (var column in this.Columns)
-                if (columns.Any(x => x.Equals(column.Name, StringComparison.CurrentCultureIgnoreCase)))
+                if (columns.ContainsIgnoreCase(column.Name))
                     column.Validate(owner);
         }
 
@@ -128,7 +128,7 @@ namespace SharpOrm.Builder
         /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
-            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) is ColumnInfo col))
+            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))
                 throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
 
             return col.Get(owner);
@@ -149,7 +149,7 @@ namespace SharpOrm.Builder
             {
                 var column = this.Columns[i];
 
-                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
+                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.OrdinalIgnoreCase)) != needContains)
                     continue;
 
                 if (column.ForeignInfo != null)
@@ -172,7 +172,7 @@ namespace SharpOrm.Builder
 
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)

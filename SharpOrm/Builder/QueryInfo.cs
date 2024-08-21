@@ -71,8 +71,8 @@ namespace SharpOrm.Builder
             if (this.Select.Length != 1)
                 return false;
 
-            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString().ToLower();
-            return select.StartsWith("count(");
+            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString();
+            return select.StartsWith("count(", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
