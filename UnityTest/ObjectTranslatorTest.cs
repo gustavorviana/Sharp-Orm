@@ -272,7 +272,8 @@ namespace UnityTest
             Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
             using var query = new Query<Order>(GetManager());
-            query.AddForeign(o => o.ArrayItems).AddForeign(o => o.ListItems).AddForeign(o => o.IListItems);
+            query.AddForeign(x => x.ArrayItems, x => x.ListItems, x => x.IListItems);
+
             var obj = query.FirstOrDefault();
 
             Assert.IsNotNull(obj);

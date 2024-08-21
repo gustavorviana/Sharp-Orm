@@ -120,6 +120,16 @@ namespace SharpOrm
 
         #endregion
 
+        public Query<T> AddForeign(Expression<ColumnExpression<T>> call, params Expression<ColumnExpression<T>>[] calls)
+        {
+            this.AddForeign(call);
+
+            foreach (var item in calls)
+                this.AddForeign(item);
+
+            return this;
+        }
+
         /// <summary>
         /// Adds a foreign key to the query based on the specified column expression.
         /// </summary>
