@@ -497,6 +497,9 @@ namespace SharpOrm.Builder
             if (column is string strColumn)
                 return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
 
+            if (column is MemberInfoColumn memberColumn)
+                return this.Info.Where.AddParameter(memberColumn);
+
             if (column is ISqlExpressible iExp)
                 column = iExp.ToSafeExpression(this.Info.ToReadOnly(), true);
 

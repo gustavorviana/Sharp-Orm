@@ -67,6 +67,31 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void WhereLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.Where(x => x.Name, "Test");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` WHERE `Name` = @p1", sqlExpression);
+        }
+
+        [TestMethod]
+        public void WhereLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.Where(x => x.Name, "Test");
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` WHERE `TestTable`.`Name` = @p1", sqlExpression);
+        }
+
+        [TestMethod]
         public void GroupByLambdaWithJoinTest()
         {
             ConnectionCreator.Default = this.Creator;

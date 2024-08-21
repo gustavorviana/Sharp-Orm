@@ -31,8 +31,9 @@ namespace SharpOrm.Builder
             builder.Capacity += toAdd.Length;
 
             int count = 0;
-            foreach (var c in toAdd)
+            for (int i = 0; i < toAdd.Length; i++)
             {
+                char c = toAdd[i];
                 if (c != toReplace)
                 {
                     builder.Append(c);

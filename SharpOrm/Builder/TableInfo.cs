@@ -145,8 +145,10 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            foreach (var column in this.Columns)
+            for (int i = 0; i < this.Columns.Length; i++)
             {
+                var column = this.Columns[i];
+
                 if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
                     continue;
 

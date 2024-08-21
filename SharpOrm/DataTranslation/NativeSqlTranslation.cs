@@ -93,8 +93,8 @@ namespace SharpOrm.DataTranslation
         {
             if (string.IsNullOrWhiteSpace(value)) return false;
 
-            foreach (var @char in value)
-                if (!char.IsNumber(@char)) return false;
+            for (int i = 0; i < value.Length; i++)
+                if (!char.IsNumber(value[i])) return false;
 
             return true;
         }

@@ -79,8 +79,9 @@ namespace SharpOrm.DataTranslation
 
             bool hasDot = false;
 
-            foreach (var c in value)
+            for (int i = 0; i < value.Length; i++)
             {
+                var c = value[i];
                 bool digit = char.IsDigit(c);
                 bool isDot = c == '.' || c == ',';
                 if (!digit && !isDot)

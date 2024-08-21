@@ -165,6 +165,8 @@ namespace SharpOrm
             return this.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
+        #region AddForeign
+
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call, params Expression<ColumnExpression<T>>[] calls)
         {
             this.AddForeign(call);
@@ -187,6 +189,23 @@ namespace SharpOrm
             ReflectionUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
             return this;
         }
+
+        #endregion
+
+        private static void ValidatePkVals(ColumnInfo[] keys, object[] pkValues)
+        {
+            if (keys.Length == 0)
+                throw new DatabaseException(Messages.MissingPrimaryKey);
+
+            if (keys.Length != pkValues.Length)
+                throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pkValues));
+
+            for (int i = 0; i < keys.Length; i++)
+                if (!TranslationUtils.IsSimilar(keys[i].Type, pkValues[i]?.GetType()))
+                    throw new InvalidCastException(Messages.InsertedTypeMismatch);
+        }
+
+        #region DML SQL commands
 
         /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
@@ -276,19 +295,6 @@ namespace SharpOrm
                 for (var i = 0; i < primaryKeysValues.Length; i++)
                     query.Where(pkCols[i].Name, primaryKeysValues[i]);
             });
-        }
-
-        private static void ValidatePkVals(ColumnInfo[] keys, object[] pkValues)
-        {
-            if (keys.Length == 0)
-                throw new DatabaseException(Messages.MissingPrimaryKey);
-
-            if (keys.Length != pkValues.Length)
-                throw new ArgumentException(Messages.InsertValuesMismatch, nameof(pkValues));
-
-            for (int i = 0; i < keys.Length; i++)
-                if (!TranslationUtils.IsSimilar(keys[i].Type, pkValues[i]?.GetType()))
-                    throw new InvalidCastException(Messages.InsertedTypeMismatch);
         }
 
         /// <summary>
@@ -389,6 +395,8 @@ namespace SharpOrm
             return base.Update(toUpdate);
         }
 
+        #endregion
+
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
             if (this.ValidateModelOnSave)
@@ -434,6 +442,24 @@ namespace SharpOrm
             return this;
         }
 
+        public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
+        {
+            base.Where(Column.FromExp(columnExp), Column.FromExp(column2Exp));
+            return this;
+        }
+
+        public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
+        {
+            this.Where(Column.FromExp(columnExp), operation, Column.FromExp(column2Exp));
+            return this;
+        }
+
+        public Query<T> WhereNotColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
+        {
+            base.Where(Column.FromExp(columnExp), "!=", Column.FromExp(column2Exp));
+            return this;
+        }
+
         #region OR
 
         public Query<T> OrWhereNot(Expression<ColumnExpression<T>> columnExp, object value)
@@ -454,7 +480,26 @@ namespace SharpOrm
             return this;
         }
 
+        public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
+        {
+            base.OrWhere(Column.FromExp(columnExp), Column.FromExp(column2Exp));
+            return this;
+        }
+
+        public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
+        {
+            this.OrWhere(Column.FromExp(columnExp), operation, Column.FromExp(column2Exp));
+            return this;
+        }
+
+        public Query<T> OrWhereNotColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
+        {
+            base.OrWhere(Column.FromExp(columnExp), "!=", Column.FromExp(column2Exp));
+            return this;
+        }
+
         #endregion
+
         #endregion
 
         public override Query Clone(bool withWhere)

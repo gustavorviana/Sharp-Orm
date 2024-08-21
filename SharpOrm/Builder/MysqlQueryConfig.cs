@@ -62,8 +62,9 @@ namespace SharpOrm.Builder
         {
             StringBuilder build = new StringBuilder(value.Length + 2);
             build.Append('"');
-            foreach (char c in value)
+            for (int i = 0; i < value.Length; i++)
             {
+                var c = value[i];
                 if (IsUnsafe(c)) build.Append("\\");
 
                 build.Append(c);

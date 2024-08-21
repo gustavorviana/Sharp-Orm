@@ -201,8 +201,8 @@ namespace SharpOrm.Builder
             if (value == DBNull.Value)
                 value = null;
 
-            foreach (var item in Validations)
-                item.Validate(value, this.Name);
+            for (int i = 0; i < Validations.Length; i++)
+                Validations[i].Validate(value, this.Name);
         }
 
         public override string ToString()

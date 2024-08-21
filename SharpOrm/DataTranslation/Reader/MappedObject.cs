@@ -127,9 +127,12 @@ namespace SharpOrm.DataTranslation.Reader
         {
             instance = objectActivator.CreateInstance(reader);
 
-            foreach (var children in childrens)
+            for (int i = 0; i < childrens.Count; i++)
+            {
+                var children = childrens[i];
                 if (!children.Type.IsArray)
                     children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
+            }
 
             return instance;
         }
@@ -139,12 +142,16 @@ namespace SharpOrm.DataTranslation.Reader
             if (enqueueable != null)
                 EnqueueFk(index, value);
 
-            foreach (var column in columns)
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var column = columns[i];
+
                 if (column.Index == index)
                     column.Set(instance, value);
+            }
 
-            foreach (var children in childrens)
-                children.SetValue(index, value);
+            for (int i = 0; i < childrens.Count; i++)
+                childrens[i].SetValue(index, value);
         }
 
         private void EnqueueFk(int index, object value)
