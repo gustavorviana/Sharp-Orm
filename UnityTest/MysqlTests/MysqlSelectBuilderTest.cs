@@ -30,6 +30,56 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void OrderByLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.OrderBy(x => x.Name);
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` ORDER BY `Name` Asc", sqlExpression);
+        }
+
+        [TestMethod]
+        public void OrderByLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.OrderBy(x => x.Name);
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` ORDER BY `TestTable`.`Name` Asc", sqlExpression);
+        }
+
+        [TestMethod]
+        public void GroupByLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.GroupBy(x => x.Name);
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` GROUP BY `Name`", sqlExpression);
+        }
+
+        [TestMethod]
+        public void GroupByLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.GroupBy(x => x.Name);
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` GROUP BY `TestTable`.`Name`", sqlExpression);
+        }
+
+        [TestMethod]
         public void BasicSelect()
         {
             ConnectionCreator.Default = this.Creator;

@@ -5,10 +5,8 @@ using System.Text;
 
 namespace SharpOrm
 {
-    public class QueryBaseInfo
+    public class QueryBaseInfo : IReadonlyQueryInfo
     {
-        private IReadonlyQueryInfo _queryInfo;
-
         /// <summary>
         /// Gets the WHERE clause builder.
         /// </summary>
@@ -24,7 +22,6 @@ namespace SharpOrm
         /// </summary>
         public DbName TableName { get; }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="QueryInfo"/> class with the specified configuration and table name.
         /// </summary>
@@ -34,7 +31,6 @@ namespace SharpOrm
         public QueryBaseInfo(QueryConfig config, DbName table)
         {
             this.Config = config ?? throw new ArgumentNullException(nameof(config));
-            this._queryInfo = new ReadonlyQueryInfo(config, table);
             this.TableName = table;
 
             this.Where = new QueryBuilder(this.ToReadOnly());
@@ -46,7 +42,7 @@ namespace SharpOrm
         /// <returns>The read-only query information.</returns>
         public IReadonlyQueryInfo ToReadOnly()
         {
-            return this._queryInfo;
+            return this;
         }
     }
 }

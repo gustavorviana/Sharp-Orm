@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -35,6 +36,21 @@ namespace SharpOrm.Builder
         public T GetAttribute<T>() where T : Attribute
         {
             return this.member.GetCustomAttribute<T>();
+        }
+
+        public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            if (info is QueryInfo qi && qi.Joins.Count > 0)
+                builder.Append(info.Config.ApplyNomenclature(info.TableName.TryGetAlias(info.Config))).Append('.');
+
+            builder.Append(info.Config.ApplyNomenclature(this.Name));
+
+            if (alias && !string.IsNullOrEmpty(this.Alias))
+                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(this.Alias));
+
+            return (SqlExpression)builder;
         }
     }
 }

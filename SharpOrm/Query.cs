@@ -120,6 +120,51 @@ namespace SharpOrm
 
         #endregion
 
+        #region OrderBy
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderBy(params Expression<ColumnExpression<T>>[] columns)
+        {
+            return this.OrderBy(SharpOrm.OrderBy.Asc, columns);
+        }
+
+        /// <summary>
+        /// Applies descending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
+        {
+            return this.OrderBy(SharpOrm.OrderBy.Desc, columns);
+        }
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
+        {
+            return this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// </summary>
+        /// <param name="columnNames">The column names by which the results should be grouped.</param>
+        /// <returns></returns>
+        public Query GroupBy(params Expression<ColumnExpression<T>>[] columns)
+        {
+            return this.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+        }
+
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call, params Expression<ColumnExpression<T>>[] calls)
         {
             this.AddForeign(call);
