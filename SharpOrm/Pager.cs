@@ -61,11 +61,11 @@ namespace SharpOrm
         /// <param name="builder">The query builder to use.</param>
         /// <param name="peerPage">The number of items per page.</param>
         /// <param name="currentPage">The current page number.</param>
-        /// <param name="columnName"></param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
         /// <returns>An instance of the <see cref="Pager{T}"/> class.</returns>
-        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, string columnName)
+        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, string countColumnName)
         {
-            return FromBuilder(builder, peerPage, currentPage, new Column(columnName));
+            return FromBuilder(builder, peerPage, currentPage, new Column(countColumnName));
         }
 
         /// <summary>
@@ -74,11 +74,11 @@ namespace SharpOrm
         /// <param name="builder">The query builder to use.</param>
         /// <param name="peerPage">The number of items per page.</param>
         /// <param name="currentPage">The current page number.</param>
-        /// <param name="column"></param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
         /// <returns>An instance of the <see cref="Pager{T}"/> class.</returns>
-        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, Column column = null)
+        public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, Column countColumn = null)
         {
-            Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage, column);
+            Pager<T> list = new Pager<T>(builder.Clone(true), peerPage, currentPage, countColumn);
 
             list.Refresh();
 

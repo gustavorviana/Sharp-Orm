@@ -15,7 +15,7 @@ namespace SharpOrm
         /// <summary>
         /// Name of the column in the child table.
         /// </summary>
-        public string ForeignKey { get; set; }
+        public string ForeignKey { get; }
 
         /// <summary>
         /// Name of the column in the current table.

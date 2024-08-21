@@ -212,6 +212,30 @@ namespace SharpOrm
         /// </summary>
         /// <param name="peerPage">The number of items per page.</param>
         /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
+        /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
+        public Pager<T> Paginate(int peerPage, int currentPage, Column countColumn)
+        {
+            return Pager<T>.FromBuilder(this, peerPage, currentPage, countColumn);
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
+        /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
+        public Pager<T> Paginate(int peerPage, int currentPage, string countColumnName)
+        {
+            return Pager<T>.FromBuilder(this, peerPage, currentPage, countColumnName);
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
         /// <returns>A Pager<T> object for performing pagination on the query result.</returns>
         public Pager<T> Paginate(int peerPage, int currentPage)
         {
