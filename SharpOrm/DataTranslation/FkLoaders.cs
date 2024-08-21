@@ -106,7 +106,7 @@ namespace SharpOrm.DataTranslation
         {
             var info = foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
             if (info == null)
-                foreignKeyToLoad.Enqueue(info = new ForeignInfo(lCol, fkValue, null));
+                foreignKeyToLoad.Enqueue(info = new ForeignInfo(lCol, fkValue, column.ForeignInfo.LocalKey));
 
             info.AddFkColumn(owner, column);
         }

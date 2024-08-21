@@ -150,10 +150,10 @@ namespace SharpOrm.Builder
                 if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
                     continue;
 
-                if (column.IsForeignKey)
+                if (column.ForeignInfo != null)
                 {
                     if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                        yield return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
                     continue;
                 }
 
@@ -170,13 +170,13 @@ namespace SharpOrm.Builder
 
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
         {
             object obj = column.Get(owner);
-            if (!readForeignKey || !column.Type.IsClass || !column.IsForeignKey || TranslationUtils.IsNull(obj))
+            if (!readForeignKey || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
             if (obj is null)
