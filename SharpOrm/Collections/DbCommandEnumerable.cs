@@ -25,7 +25,7 @@ namespace SharpOrm.Collections
         /// <summary>
         /// Gets or sets a value indicating whether to dispose the command after execution.
         /// </summary>
-        public bool DisposeCommand { get; set; }
+        public bool DisposeCommand { get; set; } = true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbCommandEnumerable{T}"/> class.

@@ -31,6 +31,8 @@ namespace SharpOrm
         /// <exception cref="OperationCanceledException">Thrown if the cancellation token has already been canceled.</exception>
         public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
         {
+            if (token == default) return command;
+
             token.ThrowIfCancellationRequested();
             CancellationTokenRegistration registry = default;
             registry = token.Register(() =>
