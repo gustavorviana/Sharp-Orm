@@ -50,7 +50,7 @@ namespace UnityTest
         }
 
         [TestMethod]
-        public void InvalidPk()
+        public void ReadComplexObjectTest()
         {
             var tm = new TableMap<MyClass>(new TranslationRegistry());
             var table = tm.Build();
@@ -71,6 +71,18 @@ namespace UnityTest
             var cells = table.GetObjCells(instance, true, false).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
             Assert.AreEqual(4, cells.Length);
+        }
+
+        [TestMethod]
+        public void SetComplexObjectTest()
+        {
+            var tm = new TableMap<MyClass>(new TranslationRegistry());
+            var table = tm.Build();
+
+            var instance = new MyClass();
+
+            table.GetColumns("MyLevelName").Set(instance, "My custom level name");
+            Assert.AreEqual("My custom level name", instance.Level1.Level2.Level3.MyLevelName);
         }
     }
 }

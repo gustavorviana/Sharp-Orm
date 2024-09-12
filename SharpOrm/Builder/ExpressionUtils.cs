@@ -34,7 +34,7 @@ namespace SharpOrm.Builder
 
         private static void ValidateMemberType(MemberInfo member)
         {
-            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberValueType(member), false))
+            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
                 return;
 
             string mType = member.MemberType == MemberTypes.Property ? "property" : "field";

@@ -35,14 +35,6 @@ namespace SharpOrm.Builder
             else ((PropertyInfo)member).SetValue(owner, value);
         }
 
-        public static Type GetMemberValueType(MemberInfo member)
-        {
-            if (member is PropertyInfo prop) return prop.PropertyType;
-            if (member is FieldInfo field) return field.FieldType;
-
-            throw new NotSupportedException();
-        }
-
         public static void AddToArray<T>(ref T[] array, IList<T> items)
         {
             int lastSize = array.Length;

@@ -236,5 +236,10 @@ namespace SharpOrm.Builder
         {
             return ReflectionUtils.IsCollection(type) ? ReflectionUtils.GetGenericArg(type) : type;
         }
+
+        public ColumnInfo GetColumns(string name)
+        {
+            return this.Columns.FirstOrDefault(c => c.Name == name);
+        }
     }
 }

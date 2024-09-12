@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
 
         internal MemberInfoColumn(MemberInfo member)
         {
-            this.ValueType = ReflectionUtils.GetMemberValueType(member);
+            this.ValueType = ReflectionUtils.GetMemberType(member);
             this.Name = ColumnInfo.GetName(member);
             this.member = member;
         }

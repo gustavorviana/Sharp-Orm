@@ -45,24 +45,33 @@ namespace SharpOrm.Builder
 
         public override object GetRaw(object owner)
         {
-            owner = GetValidOwner(owner);
-            if (owner == null) return null;
+            for (int i = 0; i < this.Path.Length; i++)
+                if ((owner = ReflectionUtils.GetMemberValue(this.Path[i], owner)) == null)
+                    return null;
 
             return base.GetRaw(owner);
         }
 
-        private object GetValidOwner(object rootOwner)
-        {
-            for (int i = 0; i < this.Path.Length; i++)
-                if ((rootOwner = ReflectionUtils.GetMemberValue(this.Path[i], rootOwner)) == null)
-                    return null;
-
-            return rootOwner;
-        }
-
         internal void InternalSet(object owner, object value)
         {
-            base.Set(owner, value);
+            base.SetRaw(owner, this.Translation.FromSqlValue(value, this.GetValidValueType()));
+        }
+
+        public override void SetRaw(object owner, object value)
+        {
+            for (int i = 0; i < this.Path.Length; i++)
+                owner = SafeGetOwner(this.Path[i], owner);
+
+            base.SetRaw(owner, value);
+        }
+
+        private object SafeGetOwner(MemberInfo member, object owner)
+        {
+            if (ReflectionUtils.GetMemberValue(member, owner) is object foundOwner) return foundOwner;
+            foundOwner = Activator.CreateInstance(ReflectionUtils.GetMemberType(member));
+            ReflectionUtils.SetMemberValue(member, owner, foundOwner);
+
+            return foundOwner;
         }
     }
 }
