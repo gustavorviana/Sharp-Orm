@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -77,8 +76,9 @@ namespace SharpOrm.DataTranslation
 
             bool hasDot = false;
 
-            foreach (var c in value)
+            for (int i = 0; i < value.Length; i++)
             {
+                var c = value[i];
                 bool digit = char.IsDigit(c);
                 bool isDot = c == '.' || c == ',';
                 if (!digit && !isDot)
@@ -120,15 +120,6 @@ namespace SharpOrm.DataTranslation
                 return default;
 
             return (T)registry.FromSql(value, typeof(T));
-        }
-
-        public static void AddToArray<T>(ref T[] array, IList<T> items)
-        {
-            int lastSize = array.Length;
-            Array.Resize(ref array, array.Length + items.Count);
-
-            for (int i = 0; i < items.Count; i++)
-                array[lastSize + i] = items[i];
         }
 
         public static bool IsNullOrEmpty(ICollection collection)

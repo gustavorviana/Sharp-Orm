@@ -1,5 +1,10 @@
-﻿using System;
+﻿using SharpOrm.Collections;
+using SharpOrm.DataTranslation;
+using System;
+using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
+using System.Threading;
 
 namespace SharpOrm.Connection
 {
@@ -27,16 +32,38 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// executes a SQL statement against a connection object.
+        /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression)
+        public static T[] ExecuteArray<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return ExecuteEnumerable<T>(manager, expression, registry, token).ToArray();
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> ExecuteEnumerable<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return new DbCommandEnumerable<T>(manager.CreateCommand(expression).SetCancellationToken(token), registry, manager.Management, token);
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
             try
             {
-                using (var cmd = manager.CreateCommand().SetExpression(expression))
+                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteNonQuery();
             }
             finally
@@ -49,12 +76,13 @@ namespace SharpOrm.Connection
         /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <param name="expression">SqlExpression to execute.</param>
         /// <returns>The first column of the first row in the result set.</returns>
-        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression)
+        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
             try
             {
-                using (var cmd = manager.CreateCommand().SetExpression(expression))
+                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteScalar<T>();
             }
             finally
@@ -69,9 +97,20 @@ namespace SharpOrm.Connection
         /// <param name="manager">The connection manager.</param>
         /// <param name="expression">The SQL expression to set in the command.</param>
         /// <returns>The configured database command.</returns>
+        [Obsolete("Use CreateCommand(SqlExpression).")]
         public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
         {
             return manager.CreateCommand().SetExpression(expression);
+        }
+
+        /// <summary>
+        /// Creates a new database command with the default command timeout.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <returns>The created database command.</returns>
+        public static DbCommand CreateCommand(this ConnectionManager manager, SqlExpression expression)
+        {
+            return CreateCommand(manager, manager.CommandTimeout).SetExpression(expression);
         }
 
         /// <summary>

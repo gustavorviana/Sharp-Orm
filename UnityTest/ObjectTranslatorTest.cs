@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
@@ -273,7 +272,8 @@ namespace UnityTest
             Connection.QueryReaders.Add("SELECT * FROM `OrderItems` WHERE `id` = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
             using var query = new Query<Order>(GetManager());
-            query.AddForeign(o => o.ArrayItems).AddForeign(o => o.ListItems).AddForeign(o => o.IListItems);
+            query.AddForeign(x => x.ArrayItems, x => x.ListItems, x => x.IListItems);
+
             var obj = query.FirstOrDefault();
 
             Assert.IsNotNull(obj);
@@ -298,6 +298,7 @@ namespace UnityTest
             Assert.AreEqual(5, obj.Child2.Id);
             Assert.AreEqual("Value Child 1", obj.Child1.Value);
             Assert.AreEqual("Value Child 2", obj.Child2.Value);
+            CollectionAssert.AreEquivalent(Array.Empty<string>(), obj.StrArray);
         }
 
         [TestMethod]
@@ -354,7 +355,7 @@ namespace UnityTest
         [TestMethod]
         public void PropertyExpressionVisitorTest()
         {
-            var column = new PropertyExpressionVisitor().VisitProperty<OrderItem>(x => x.OrderId);
+            var column = ExpressionUtils<OrderItem>.GetPropName(x => x.OrderId);
             Assert.AreEqual("OrderId", column);
         }
 
@@ -417,6 +418,8 @@ namespace UnityTest
             public int Id { get; set; }
             public ChildAdvancedObject Child1 { get; set; }
             public ChildAdvancedObject Child2 { get; set; }
+
+            public string[] StrArray { get; set; } = new string[0];
         }
 
         private class ChildAdvancedObject
@@ -441,7 +444,7 @@ namespace UnityTest
         {
             public int Id { get; set; }
 
-            [HasMany("id")]
+            [ForeignKey("id")]
             public OrderItem[] ArrayItems { get; set; }
 
             [HasMany("id")]
@@ -449,6 +452,9 @@ namespace UnityTest
 
             [HasMany("id")]
             public IList<OrderItem> IListItems { get; set; }
+
+            [ForeignKey("id")]
+            public Order Parent { get; set; }
         }
 
         [Table("OrderItems")]

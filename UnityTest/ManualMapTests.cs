@@ -70,7 +70,7 @@ namespace UnityTest
 
             var cells = table.GetObjCells(instance, true, false).ToArray();
             Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
-            Assert.AreEqual(6, cells.Length);
+            Assert.AreEqual(4, cells.Length);
         }
     }
 }

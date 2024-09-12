@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace SharpOrm
@@ -28,7 +29,7 @@ namespace SharpOrm
             get
             {
                 if (this.isCount == null)
-                    this.isCount = this.expression?.ToString()?.ToLower() is string exp && exp.StartsWith("count(") && exp.EndsWith(")");
+                    this.isCount = this.expression?.ToString() is string exp && exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) && exp.EndsWith(")");
 
                 return this.isCount.Value;
             }
@@ -37,7 +38,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
-        public static Column All => new Column(new SqlExpression("*"));
+        public static Column All => (Column)"*";
         #endregion
 
         /// <summary>
@@ -131,6 +132,16 @@ namespace SharpOrm
         public static explicit operator Column(string rawColumn)
         {
             return new Column(new SqlExpression(rawColumn));
+        }
+
+        /// <summary>
+        /// Retrieves a column that represents the last field or property of the expression.
+        /// </summary>
+        /// <param name="columnExpression"></param>
+        /// <returns></returns>
+        public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression)
+        {
+            return ExpressionUtils<T>.GetColumn(columnExpression);
         }
 
         internal string GetCountColumn()

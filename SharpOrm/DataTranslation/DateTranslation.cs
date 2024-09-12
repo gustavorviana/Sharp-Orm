@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace SharpOrm.DataTranslation
 {
-    internal class DateTranslation : ISqlTranslation
+    public class DateTranslation : ISqlTranslation
     {
         #region Fields\Properties
         private TimeZoneInfo _dbTimeZone = TimeZoneInfo.Local;

@@ -8,15 +8,13 @@ namespace SharpOrm.Builder
     internal class MemberTreeNode
     {
         private ColumnMapInfo columnInfo;
-        private readonly TranslationRegistry registry;
 
         public List<MemberTreeNode> Children { get; } = new List<MemberTreeNode>();
         public MemberInfo Member { get; }
 
-        public MemberTreeNode(TranslationRegistry registry, MemberInfo member)
+        public MemberTreeNode(MemberInfo member)
         {
             this.Member = member;
-            this.registry = registry;
         }
 
         internal MemberTreeNode InternalFindChild(IList<MemberInfo> members, int offset)
@@ -34,17 +32,14 @@ namespace SharpOrm.Builder
         internal ColumnMapInfo GetColumn()
         {
             if (this.columnInfo != null) return this.columnInfo;
-
-            if (this.Member is PropertyInfo prop) return this.columnInfo = new ColumnMapInfo(new ColumnInfo(registry, prop));
-            if (this.Member is FieldInfo field) return this.columnInfo = new ColumnMapInfo(new ColumnInfo(registry, field));
-            throw new NotSupportedException();
+            return this.columnInfo = new ColumnMapInfo(this.Member);
         }
 
-        internal IEnumerable<ColumnTree> BuildTree(List<MemberInfo> root)
+        internal IEnumerable<ColumnTreeInfo> BuildTree(List<MemberInfo> root, TranslationRegistry registry)
         {
             if (this.Children.Count == 0)
             {
-                yield return this.Build(root);
+                yield return this.Build(root, registry);
                 yield break;
             }
 
@@ -52,22 +47,17 @@ namespace SharpOrm.Builder
             {
                 root.Add(child.Member);
 
-                foreach (var result in child.BuildTree(root))
+                foreach (var result in child.BuildTree(root, registry))
                     yield return result;
 
                 root.RemoveAt(root.Count - 1);
             }
         }
 
-        private ColumnTree Build(IEnumerable<MemberInfo> members)
+        private ColumnTreeInfo Build(List<MemberInfo> path, TranslationRegistry registry)
         {
             this.GetColumn().builded = true;
-            return new ColumnTree(this.columnInfo.column, members);
-        }
-
-        public override string ToString()
-        {
-            return this.columnInfo.column.Name;
+            return new ColumnTreeInfo(path, this.GetColumn(), registry);
         }
     }
 }

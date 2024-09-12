@@ -21,6 +21,37 @@ namespace SharpOrm.Builder
             return type == typeof(object) || type == typeof(ExpandoObject);
         }
 
+        public static object GetMemberValue(MemberInfo member, object owner)
+        {
+            if (member is FieldInfo field)
+                return field.GetValue(owner);
+
+            return ((PropertyInfo)member).GetValue(owner);
+        }
+
+        public static void SetMemberValue(MemberInfo member, object owner, object value)
+        {
+            if (member is FieldInfo field) field.SetValue(owner, value);
+            else ((PropertyInfo)member).SetValue(owner, value);
+        }
+
+        public static Type GetMemberValueType(MemberInfo member)
+        {
+            if (member is PropertyInfo prop) return prop.PropertyType;
+            if (member is FieldInfo field) return field.FieldType;
+
+            throw new NotSupportedException();
+        }
+
+        public static void AddToArray<T>(ref T[] array, IList<T> items)
+        {
+            int lastSize = array.Length;
+            Array.Resize(ref array, array.Length + items.Count);
+
+            for (int i = 0; i < items.Count; i++)
+                array[lastSize + i] = items[i];
+        }
+
         public static Array ToArray(Type type, ICollection collection)
         {
             Array array = Array.CreateInstance(type, collection.Count);

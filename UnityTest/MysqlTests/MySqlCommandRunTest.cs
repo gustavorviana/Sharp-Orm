@@ -52,6 +52,14 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void SelectInvalidColumn()
+        {
+            var config = new MysqlQueryConfig(false) { LoadForeign = true };
+            using var query = new Query<Customer>(GetConnectionManager(config));
+            Assert.ThrowsException<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));
+        }
+
+        [TestMethod]
         public void DeepSelect()
         {
             var config = new MysqlQueryConfig(false) { LoadForeign = true };
@@ -67,8 +75,7 @@ namespace UnityTest.MysqlTests
 
             addrQuery.Insert(new Address(1) { Name = "Addr", Street = "str" });
             query.Insert(new Cell("Id", Id), new Cell("Name", Name), new Cell("Email", Email), new Cell("address_id", Addr));
-
-            Assert.ThrowsException<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));
+            
             var customer = query.AddForeign(f => f.Address).FirstOrDefault();
 
             Assert.IsNotNull(customer, "Customer failed");
@@ -345,8 +352,9 @@ namespace UnityTest.MysqlTests
         [TestMethod]
         public void ExecuteArrayScalar()
         {
-            InsertRows(5);
             using var q = NewQuery();
+            q.Delete();
+            InsertRows(5);
             q.Select("Name");
 
             var names = q.ExecuteArrayScalar<string>();

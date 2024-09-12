@@ -31,6 +31,8 @@ namespace SharpOrm
         /// <exception cref="OperationCanceledException">Thrown if the cancellation token has already been canceled.</exception>
         public static DbCommand SetCancellationToken(this DbCommand command, CancellationToken token)
         {
+            if (token == default) return command;
+
             token.ThrowIfCancellationRequested();
             CancellationTokenRegistration registry = default;
             registry = token.Register(() =>
@@ -66,11 +68,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public static T ExecuteScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
         {
-            var obj = cmd.ExecuteScalar();
-            if (obj is DBNull || obj == null)
-                return default;
-
-            return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(obj);
+            return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(cmd.ExecuteScalar());
         }
 
         /// <summary>

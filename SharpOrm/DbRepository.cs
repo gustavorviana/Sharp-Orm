@@ -269,7 +269,7 @@ namespace SharpOrm
         /// <returns>A QueryBuilder for building custom queries.</returns>
         protected virtual QueryBuilder Constructor(string table = "", string alias = "")
         {
-            return new QueryBuilder(this.Creator.Config, new DbName(table, alias));
+            return new QueryBuilder(this.Creator.Config, new DbName(table, alias, false));
         }
 
         /// <summary>

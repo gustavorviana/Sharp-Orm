@@ -30,26 +30,26 @@ namespace SharpOrm.DataTranslation.Reader
             return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, reader);
         }
 
-        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, table.ColumnTrees, registry, reader)
+        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, table.Columns, registry, reader)
         {
 
         }
 
-        private MappedManualObj(Type type, IEnumerable<ColumnTree> fields, TranslationRegistry registry, DbDataReader reader)
+        private MappedManualObj(Type type, IEnumerable<ColumnInfo> columns, TranslationRegistry registry, DbDataReader reader)
         {
             root = new InstanceMap(type);
             this.registry = registry;
 
-            foreach (var field in fields)
-                this.Map(field, reader);
+            foreach (var column in columns.OfType<ColumnTreeInfo>())
+                this.Map(column, reader);
         }
 
-        private void Map(ColumnTree field, DbDataReader reader)
+        private void Map(ColumnTreeInfo column, DbDataReader reader)
         {
-            this.columns.Add(new MappedColumn(this.BuildInstanceTree(field), field.Column, reader.GetIndexOf(field.Column.Name)));
+            this.columns.Add(new MappedColumn(this.BuildInstanceTree(column), column, reader.GetIndexOf(column.Name)));
         }
 
-        private InstanceMap BuildInstanceTree(ColumnTree field)
+        private InstanceMap BuildInstanceTree(ColumnTreeInfo field)
         {
             if (string.IsNullOrWhiteSpace(field.ParentPah)) return this.root;
             if (this.objPath.TryGetValue(field.ParentPah, out var parent)) return parent;
@@ -101,10 +101,10 @@ namespace SharpOrm.DataTranslation.Reader
         {
             private readonly InstanceMap owner;
 
-            public ColumnInfo Column { get; }
+            public ColumnTreeInfo Column { get; }
             public int Index { get; }
 
-            public MappedColumn(InstanceMap owner, ColumnInfo column, int index)
+            public MappedColumn(InstanceMap owner, ColumnTreeInfo column, int index)
             {
                 this.owner = owner;
                 this.Index = index;
@@ -113,7 +113,7 @@ namespace SharpOrm.DataTranslation.Reader
 
             public void Set(object value)
             {
-                Column.Set(this.owner.Instance, value);
+                Column.InternalSet(this.owner.Instance, value);
             }
         }
 

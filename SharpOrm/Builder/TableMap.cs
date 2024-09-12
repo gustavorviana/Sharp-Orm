@@ -24,28 +24,28 @@ namespace SharpOrm.Builder
 
             foreach (var property in typeof(T).GetProperties(Binding))
                 if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(this.Registry, property));
+                    if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
                     else this.Nodes.Add(Map(property));
 
             foreach (var field in typeof(T).GetFields(Binding))
                 if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(this.Registry, field));
+                    if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
                     else this.Nodes.Add(Map(field));
         }
 
         private MemberTreeNode Map(MemberInfo member)
         {
-            var rootNode = new MemberTreeNode(this.Registry, member);
+            var rootNode = new MemberTreeNode(member);
             var type = ReflectionUtils.GetMemberType(member);
 
             foreach (var property in type.GetProperties(Binding))
                 if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) rootNode.Children.Add(new MemberTreeNode(this.Registry, property));
+                    if (IsNative(property.PropertyType)) rootNode.Children.Add(new MemberTreeNode(property));
                     else rootNode.Children.Add(Map(property));
 
             foreach (var field in type.GetFields(Binding))
                 if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) rootNode.Children.Add(new MemberTreeNode(this.Registry, field));
+                    if (IsNative(field.FieldType)) rootNode.Children.Add(new MemberTreeNode(field));
                     else rootNode.Children.Add(Map(field));
 
             return rootNode;
@@ -78,7 +78,7 @@ namespace SharpOrm.Builder
             return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
-        internal IEnumerable<ColumnTree> GetFields()
+        internal IEnumerable<ColumnTreeInfo> GetFields()
         {
             List<MemberInfo> root = new List<MemberInfo>();
 
@@ -86,7 +86,7 @@ namespace SharpOrm.Builder
             {
                 root.Add(child.Member);
 
-                foreach (var result in child.BuildTree(root))
+                foreach (var result in child.BuildTree(root, Registry))
                     yield return result;
 
                 root.RemoveAt(root.Count - 1);

@@ -88,7 +88,7 @@ namespace UnityTest
         {
             var info = new TableInfo(typeof(Order));
             var obj = new Order { Id = 1 };
-            Assert.IsNotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase)));
+            Assert.IsNotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
         }
 
         [TestMethod]
@@ -96,7 +96,7 @@ namespace UnityTest
         {
             var info = new TableInfo(typeof(Order));
             var obj = new Order { Id = 1 };
-            Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.CurrentCultureIgnoreCase)));
+            Assert.IsNull(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
         }
 
         [TestMethod]

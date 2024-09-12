@@ -3,6 +3,8 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
+using System;
+using System.Data;
 using UnityTest.Utils;
 
 namespace UnityTest.SqlServerTests
@@ -54,6 +56,40 @@ namespace UnityTest.SqlServerTests
 
             using var qSelect2 = new Query(TABLE);
             Assert.AreEqual(0, qSelect2.Count());
+        }
+
+        [TestMethod]
+        public void TransactionType()
+        {
+            ConnectionCreator.Default = Creator;
+            using (var manager = new ConnectionManager())
+                Assert.IsNull(manager.Transaction);
+
+            using (var manager = new ConnectionManager(true))
+                Assert.IsNotNull(manager.Transaction);
+
+            using (var manager = new ConnectionManager(IsolationLevel.Serializable))
+            {
+                Assert.IsNotNull(manager.Transaction);
+                Assert.AreEqual(IsolationLevel.Serializable, manager.Transaction.IsolationLevel);
+                Assert.AreEqual("Serializable", manager.ExecuteScalar<string>(GetTransactionLevelExp()));
+            }
+        }
+
+        private static SqlExpression GetTransactionLevelExp()
+        {
+            return (SqlExpression)@"
+                    SELECT CASE transaction_isolation_level
+                        WHEN 0 THEN 'Unspecified'
+                        WHEN 1 THEN 'Read Uncommitted'
+                        WHEN 2 THEN 'Read Committed'
+                        WHEN 3 THEN 'Repeatable Read'
+                        WHEN 4 THEN 'Serializable'
+                        WHEN 5 THEN 'Snapshot'
+                        ELSE 'Unknown'
+                    END AS IsolationLevelDescription
+                    FROM sys.dm_exec_sessions
+                    WHERE session_id = @@SPID";
         }
 
         [TestMethod]

@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
+﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -30,9 +29,7 @@ namespace SharpOrm.Builder
 
         internal bool IsManualMap { get; }
 
-        internal ColumnTree[] ColumnTrees { get; }
-
-        internal TableInfo(Type type, TranslationRegistry registry, string name, IEnumerable<ColumnTree> trees)
+        internal TableInfo(Type type, TranslationRegistry registry, string name, IEnumerable<ColumnTreeInfo> columns)
         {
             this.IsManualMap = true;
 
@@ -40,8 +37,7 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.Name = name;
 
-            this.ColumnTrees = trees.ToArray();
-            this.Columns = this.ColumnTrees.Select(x => x.Column).ToArray();
+            this.Columns = columns.ToArray();
         }
 
         /// <summary>
@@ -75,7 +71,7 @@ namespace SharpOrm.Builder
 
         public IEnumerable<ColumnInfo> GetColumns<T>(Expression<ColumnExpression<T>>[] calls, bool except)
         {
-            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
+            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
 
             if (except) this.Columns.Where(x => !props.Contains(x.PropName));
             return this.Columns.Where(x => props.Contains(x.PropName));
@@ -104,7 +100,7 @@ namespace SharpOrm.Builder
             }
 
             foreach (var column in this.Columns)
-                if (columns.Any(x => x.Equals(column.Name, StringComparison.CurrentCultureIgnoreCase)))
+                if (columns.ContainsIgnoreCase(column.Name))
                     column.Validate(owner);
         }
 
@@ -141,7 +137,7 @@ namespace SharpOrm.Builder
         /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
-            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) is ColumnInfo col))
+            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))
                 throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
 
             return col.Get(owner);
@@ -158,15 +154,17 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            foreach (var column in this.Columns)
+            for (int i = 0; i < this.Columns.Length; i++)
             {
-                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
+                var column = this.Columns[i];
+
+                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.OrdinalIgnoreCase)) != needContains)
                     continue;
 
-                if (column.IsForeignKey)
+                if (column.ForeignInfo != null)
                 {
                     if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                        yield return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
                     continue;
                 }
 
@@ -183,13 +181,13 @@ namespace SharpOrm.Builder
 
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
         {
             object obj = column.Get(owner);
-            if (!readForeignKey || !column.Type.IsClass || !column.IsForeignKey || TranslationUtils.IsNull(obj))
+            if (!readForeignKey || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
             if (obj is null)

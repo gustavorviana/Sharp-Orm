@@ -1,6 +1,9 @@
 ﻿using SharpOrm.Builder;
 using System;
+using System.Data;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Connection
 {
@@ -84,11 +87,36 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
+        /// Creates an instance using the default manager settings.
+        /// </summary>
+        public ConnectionManager(IsolationLevel transactionIsolationLevel) : this(ConnectionCreator.Default, transactionIsolationLevel)
+        {
+        }
+
+        /// <summary>
         /// Creates an instance using a <see cref="ConnectionCreator"/>.
         /// </summary>
         /// <param name="creator"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConnectionManager(ConnectionCreator creator, bool openTransaction = false)
+        public ConnectionManager(ConnectionCreator creator) : this(creator, false)
+        {
+        }
+
+        /// <summary>
+        /// Creates an instance using a <see cref="ConnectionCreator"/>.
+        /// </summary>
+        /// <param name="creator"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ConnectionManager(ConnectionCreator creator, bool openTransaction) : this(creator, openTransaction ? IsolationLevel.Unspecified : (IsolationLevel?)null)
+        {
+        }
+
+        /// <summary>
+        /// Creates an instance using a <see cref="ConnectionCreator"/>.
+        /// </summary>
+        /// <param name="creator"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ConnectionManager(ConnectionCreator creator, IsolationLevel? transactionIsolationLevel)
         {
             this.creator = creator ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator);
             this.CommandTimeout = creator.Config.CommandTimeout;
@@ -96,20 +124,20 @@ namespace SharpOrm.Connection
             this.Config = creator.Config;
 
             this.Connection.Disposed += DisposeByConnection;
-            this.management = GetManagement(creator, openTransaction);
-            if (!openTransaction)
+            this.management = GetManagement(creator, transactionIsolationLevel);
+            if (!(transactionIsolationLevel is IsolationLevel isolationLevel))
                 return;
 
-            this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction();
+            this.Transaction = this.Connection.OpenIfNeeded().BeginTransaction(isolationLevel);
             this.isMyTransaction = true;
         }
 
-        private static ConnectionManagement GetManagement(ConnectionCreator creator, bool openTransaction)
+        private static ConnectionManagement GetManagement(ConnectionCreator creator, IsolationLevel? transactionIsolationLevel = null)
         {
             if (creator.Management == ConnectionManagement.LeaveOpen)
                 return ConnectionManagement.LeaveOpen;
 
-            return openTransaction ? ConnectionManagement.CloseOnDispose : creator.Management;
+            return transactionIsolationLevel != null ? ConnectionManagement.CloseOnDispose : creator.Management;
         }
 
         private ConnectionManager(ConnectionCreator creator, DbTransaction transaction)
@@ -221,13 +249,23 @@ namespace SharpOrm.Connection
         /// <remarks>The commit will be automatically performed when calling <see cref="Dispose()"/> unless a <see cref="Commit"/> or <see cref="Rollback"/> has been called before.</remarks>
         public ConnectionManager BeginTransaction()
         {
+            return this.BeginTransaction(IsolationLevel.Unspecified);
+        }
+
+
+        /// <summary>
+        /// Create a new ConnectionManager with a transaction from the existing connection (if the instance loads a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it).
+        /// </summary>
+        /// <remarks>The commit will be automatically performed when calling <see cref="Dispose()"/> unless a <see cref="Commit"/> or <see cref="Rollback"/> has been called before.</remarks>
+        public ConnectionManager BeginTransaction(IsolationLevel isolationLevel)
+        {
             if (this.Transaction != null)
                 throw new InvalidOperationException("There is already an open transaction.");
 
             if (this.creator != null)
                 return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction()).CopyOptionsFrom(this, false);
 
-            return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction()).CopyOptionsFrom(this);
+            return new ConnectionManager(Config, this.Connection.OpenIfNeeded().BeginTransaction(isolationLevel)).CopyOptionsFrom(this);
         }
 
         private ConnectionManager CopyOptionsFrom(ConnectionManager manager, bool copyManagement = true)
@@ -247,6 +285,18 @@ namespace SharpOrm.Connection
                 return;
 
             this.Connection.Open();
+            try { this.Connection.Close(); } catch { }
+        }
+
+        /// <summary>
+        /// Check if it is possible to connect to the database.
+        /// </summary>
+        public async Task CheckConnectionAsync(CancellationToken token)
+        {
+            if (this.Connection.State == System.Data.ConnectionState.Open)
+                return;
+
+            await this.Connection.OpenAsync(token);
             try { this.Connection.Close(); } catch { }
         }
 
@@ -307,6 +357,7 @@ namespace SharpOrm.Connection
             try
             {
                 call(manager);
+                manager.Commit();
             }
             catch
             {

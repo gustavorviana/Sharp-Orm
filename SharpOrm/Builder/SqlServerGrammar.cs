@@ -86,6 +86,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount(Column column)
         {
+            if (!this.Config.UseOldPagination && column != null && (this.Query.Distinct != column.IsAll()))
+            {
+                this.builder.Add("SELECT ");
+                this.WriteCountColumn(column);
+                this.WriteSelectFrom(true);
+                return;
+            }
+
             bool isOldOrDistinct = this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
             if (isOldOrDistinct)
                 this.builder.Add("SELECT COUNT(*) FROM (");
@@ -111,31 +119,25 @@ namespace SharpOrm.Builder
         {
             base.ConfigureInsert(cells, false);
 
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
+            if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
                 this.builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
         private void WriteSelect(bool configureWhereParams, Column countColumn)
         {
-            bool isCount = countColumn != null;
             this.builder.Add("SELECT");
 
-            if (this.Query.Distinct && !this.Info.IsCount() && countColumn == null)
+            if (this.Query.Distinct && countColumn == null)
                 this.builder.Add(" DISTINCT");
 
             if (!HasOffset && !this.Info.IsCount())
                 this.AddLimit();
 
             this.builder.Add(' ');
-
-            if (isCount)
-                this.WriteCountColumn(countColumn);
-            else
-                this.WriteSelectColumns();
-
+            this.WriteSelectColumns();
             this.WriteSelectFrom(configureWhereParams);
 
-            if (isCount)
+            if (countColumn != null)
                 return;
 
             this.ApplyOrderBy();

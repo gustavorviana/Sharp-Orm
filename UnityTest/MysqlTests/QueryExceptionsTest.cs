@@ -36,8 +36,8 @@ namespace UnityTest.MysqlTests
         {
             using var q = NewQuery();
 
-            Assert.ThrowsException<DatabaseException>(() => q.Where("column", "", "value"));
-            Assert.ThrowsException<NullReferenceException>(() => q.Where("column", null, "value"));
+            Assert.ThrowsException<ArgumentNullException>(() => q.Where("column", "", "value"));
+            Assert.ThrowsException<ArgumentNullException>(() => q.Where("column", null, "value"));
             Assert.ThrowsException<DatabaseException>(() => q.Where("column", "None", "value"));
         }
     }

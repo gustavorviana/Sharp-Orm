@@ -90,6 +90,8 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>The created object instance.</returns>
         public object CreateInstance(DbDataReader reader)
         {
+            if (type.IsArray) return null;
+
             try
             {
                 if (objParams == null) return Activator.CreateInstance(type);

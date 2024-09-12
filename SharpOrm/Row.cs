@@ -121,9 +121,8 @@ namespace SharpOrm
         /// <returns>The cell with the specified column name.</returns>
         public Cell GetCell(string column)
         {
-            column = column.ToUpper();
             foreach (var cell in this.Cells)
-                if (cell.Name.ToUpper() == column)
+                if (cell.Name.Equals(column, StringComparison.OrdinalIgnoreCase))
                     return cell;
 
             return null;

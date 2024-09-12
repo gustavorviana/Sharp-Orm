@@ -1,7 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
-using System.Linq;
 using System.Linq.Expressions;
 using UnityTest.Models;
 
@@ -29,9 +27,9 @@ namespace UnityTest
             Assert.AreEqual(typeof(Address), columns[1].ValueType);
         }
 
-        private static LambdaColumn[] ToColumn(Expression<ColumnExpression<Order>> check)
+        private static MemberInfoColumn[] ToColumn(Expression<ColumnExpression<Order>> check)
         {
-            return new ColumnExpressionVisitor().VisitColumn(check).ToArray();
+            return ExpressionUtils<Order>.GetColumnPath(check).ToArray();
         }
     }
 }
