@@ -30,17 +30,17 @@ namespace SharpOrm.DataTranslation.Reader
             return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, reader);
         }
 
-        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, table.Columns, registry, reader)
+        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, (IEnumerable<ColumnTreeInfo>)table.Columns, registry, reader)
         {
 
         }
 
-        private MappedManualObj(Type type, IEnumerable<ColumnInfo> columns, TranslationRegistry registry, DbDataReader reader)
+        private MappedManualObj(Type type, IEnumerable<ColumnTreeInfo> columns, TranslationRegistry registry, DbDataReader reader)
         {
             root = new InstanceMap(type);
             this.registry = registry;
 
-            foreach (var column in columns.OfType<ColumnTreeInfo>())
+            foreach (var column in columns)
                 this.Map(column, reader);
         }
 
@@ -51,13 +51,13 @@ namespace SharpOrm.DataTranslation.Reader
 
         private InstanceMap BuildInstanceTree(ColumnTreeInfo field)
         {
-            if (string.IsNullOrWhiteSpace(field.ParentPah)) return this.root;
-            if (this.objPath.TryGetValue(field.ParentPah, out var parent)) return parent;
+            if (string.IsNullOrWhiteSpace(field.ParentPath)) return this.root;
+            if (this.objPath.TryGetValue(field.ParentPath, out var parent)) return parent;
 
             parent = this.root;
 
             StringBuilder nameBuilder = new StringBuilder();
-            for (int i = 0; i < field.Path.Length - 1; i++)
+            for (int i = 0; i < field.Path.Length; i++)
             {
                 if (nameBuilder.Length > 0)
                     nameBuilder.Append('.');
@@ -73,7 +73,7 @@ namespace SharpOrm.DataTranslation.Reader
         {
             if (this.objPath.TryGetValue(fullName, out var map)) return map;
 
-            map = new InstanceMap(parent, member) { Index = index };
+            map = new InstanceMap(parent, member);
             this.objPath[fullName] = map;
             return map;
         }
@@ -93,7 +93,7 @@ namespace SharpOrm.DataTranslation.Reader
         {
             this.root.CreateInstance();
 
-            foreach (var item in objPath.Values.OrderBy(x => x.Index))
+            foreach (var item in objPath.Values)
                 item.CreateInstance();
         }
 
@@ -123,7 +123,6 @@ namespace SharpOrm.DataTranslation.Reader
             private readonly InstanceMap parent;
 
             public object Instance { get; private set; }
-            public int Index { get; set; }
             public Type Type { get; }
 
             public InstanceMap(Type type)

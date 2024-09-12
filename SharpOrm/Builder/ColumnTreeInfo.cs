@@ -12,20 +12,20 @@ namespace SharpOrm.Builder
         internal new MemberInfo column => base.column;
 
         internal MemberInfo[] Path { get; }
-        internal string ParentPah { get; }
+        internal string ParentPath { get; }
 
         internal ColumnTreeInfo(List<MemberInfo> path, IColumnInfo map, TranslationRegistry registry) : base(path.Last(), map, registry)
         {
-            this.Path = path.ToArray();//path.Take(path.Count - 1).ToArray();
-            this.ParentPah = GetParentPath();
+            this.Path = path.Take(path.Count - 1).ToArray();
+            this.ParentPath = GetParentPath();
         }
 
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder(this.Type.FullName);
-            builder.Append(' ').Append(this.ParentPah);
+            builder.Append(' ').Append(this.ParentPath);
 
-            if (!string.IsNullOrEmpty(this.ParentPah))
+            if (!string.IsNullOrEmpty(this.ParentPath))
                 builder.Append('.');
 
             return builder.Append(this.Path[this.Path.Length - 1].Name).ToString();
@@ -53,7 +53,7 @@ namespace SharpOrm.Builder
 
         private object GetValidOwner(object rootOwner)
         {
-            for (int i = 0; i < this.Path.Length - 1; i++)
+            for (int i = 0; i < this.Path.Length; i++)
                 if ((rootOwner = ReflectionUtils.GetMemberValue(this.Path[i], rootOwner)) == null)
                     return null;
 
