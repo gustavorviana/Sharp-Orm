@@ -41,8 +41,8 @@ namespace UnityTest
             var tm = new TableMap<MyClass>(new TranslationRegistry());
             var table = tm.Build();
 
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "MyLevelName"));
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Id"));
+            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Level2_Level3_MyLevelName"));
+            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Id"));
             Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Date"));
             Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Prop1"));
 
@@ -81,7 +81,7 @@ namespace UnityTest
 
             var instance = new MyClass();
 
-            table.GetColumns("MyLevelName").Set(instance, "My custom level name");
+            table.GetColumns("Level1_Level2_Level3_MyLevelName").Set(instance, "My custom level name");
             Assert.AreEqual("My custom level name", instance.Level1.Level2.Level3.MyLevelName);
         }
     }

@@ -57,7 +57,11 @@ namespace SharpOrm.Builder
         private ColumnTreeInfo Build(List<MemberInfo> path, TranslationRegistry registry)
         {
             this.GetColumn().builded = true;
-            return new ColumnTreeInfo(path, this.GetColumn(), registry);
+
+            if (string.IsNullOrEmpty(this.columnInfo._name))
+                this.columnInfo._name = ReflectionUtils.ToPath(path, '_');
+
+            return new ColumnTreeInfo(path, this.columnInfo, registry);
         }
     }
 }

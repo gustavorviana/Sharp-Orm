@@ -17,7 +17,7 @@ namespace SharpOrm.Builder
         internal ColumnTreeInfo(List<MemberInfo> path, IColumnInfo map, TranslationRegistry registry) : base(path.Last(), map, registry)
         {
             this.Path = path.Take(path.Count - 1).ToArray();
-            this.ParentPath = GetParentPath();
+            this.ParentPath = ReflectionUtils.ToPath(path, limit: path.Count - 1);
         }
 
         public override string ToString()
@@ -29,18 +29,6 @@ namespace SharpOrm.Builder
                 builder.Append('.');
 
             return builder.Append(this.Path[this.Path.Length - 1].Name).ToString();
-        }
-
-        private string GetParentPath()
-        {
-            if (this.Path.Length == 0) return string.Empty;
-
-            StringBuilder b = new StringBuilder(this.Path[0].Name);
-
-            for (int i = 1; i < this.Path.Length - 1; i++)
-                b.Append('.').Append(this.Path[i].Name);
-
-            return b.ToString();
         }
 
         public override object GetRaw(object owner)

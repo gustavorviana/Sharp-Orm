@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Reflection;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -19,6 +20,19 @@ namespace SharpOrm.Builder
         public static bool IsDynamic(Type type)
         {
             return type == typeof(object) || type == typeof(ExpandoObject);
+        }
+
+        public static string ToPath(IList<MemberInfo> path, char pathChar = '.', int? limit = null)
+        {
+            if (path.Count == 0) return string.Empty;
+
+            StringBuilder b = new StringBuilder(path[0].Name);
+            int count = limit ?? path.Count;
+
+            for (int i = 1; i < count; i++)
+                b.Append(pathChar).Append(path[i].Name);
+
+            return b.ToString();
         }
 
         public static object GetMemberValue(MemberInfo member, object owner)
