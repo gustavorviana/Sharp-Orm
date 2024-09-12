@@ -192,9 +192,27 @@ namespace SharpOrm.DataTranslation
             return table;
         }
 
-        internal TableInfo GetTable(Type type)
+        /// <summary>
+        /// Retrieves the name of the table.
+        /// </summary>
+        /// <param name="type">The type that should be used to retrieve the name.</param>
+        /// <returns></returns>
+        public string GetTableName(Type type)
         {
+            if (GetManualMap(type) is TableInfo table) return table.Name;
+            return TableInfo.GetNameOf(type);
+        }
+
+        /// <summary>
+        /// Retrieves an instance of TableInfo.
+        /// </summary>
+        /// <param name="type">Type that should be represented by TableInfo.</param>
+        /// <returns></returns>
+        public TableInfo GetTable(Type type)
+        {
+#pragma warning disable CS0618 // O tipo ou membro é obsoleto
             return GetManualMap(type) ?? new TableInfo(type, this);
+#pragma warning restore CS0618 // O tipo ou membro é obsoleto
         }
 
         internal TableInfo GetManualMap(Type type)

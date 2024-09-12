@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,7 +83,7 @@ namespace SharpOrm
         /// <param name="readFk">Whether to read the foreign key. Default is false.</param>
         /// <returns>A <see cref="Row"/> representing the parsed object.</returns>
         /// <exception cref="ArgumentNullException">Thrown if the object is null or <see cref="DBNull"/>.</exception>
-        public static Row Parse(object obj, bool readPk = true, bool readFk = false)
+        public static Row Parse(object obj, bool readPk = true, bool readFk = false, TranslationRegistry registry = null)
         {
             return Parse(obj, obj.GetType(), readPk, readFk);
         }
@@ -96,12 +97,13 @@ namespace SharpOrm
         /// <param name="readFk">Whether to read the foreign key. Default is false.</param>
         /// <returns>A <see cref="Row"/> representing the parsed object.</returns>
         /// <exception cref="ArgumentNullException">Thrown if the object is null or <see cref="DBNull"/>.</exception>
-        public static Row Parse(object obj, Type type, bool readPk = true, bool readFk = false)
+        public static Row Parse(object obj, Type type, bool readPk = true, bool readFk = false, TranslationRegistry registry = null)
         {
             if (obj is null || obj is DBNull) throw new ArgumentNullException(nameof(obj));
             if (obj is Row row) return row;
 
-            return new Row(new TableInfo(type).GetObjCells(obj, readPk, readFk).ToArray());
+            if (registry == null) registry = TranslationRegistry.Default;
+            return new Row(registry.GetTable(type).GetObjCells(obj, readPk, readFk).ToArray());
         }
 
         /// <summary>

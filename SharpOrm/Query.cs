@@ -22,6 +22,7 @@ namespace SharpOrm
         /// <summary>
         /// Table name in the database.
         /// </summary>
+        [Obsolete("This property will be removed in version 3.x.")]
         public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo { get; }
         private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
@@ -36,7 +37,7 @@ namespace SharpOrm
         /// <summary>
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
-        public Query() : this(new DbName(TableName), ConnectionCreator.Default)
+        public Query() : this(new DbName(GetDbName()), ConnectionCreator.Default)
         {
         }
 
@@ -44,7 +45,7 @@ namespace SharpOrm
         /// Creates a new instance of <see cref="Query"/>.
         /// </summary>
         /// <param name="creator">Connection manager to be used.</param>
-        public Query(ConnectionCreator creator) : this(new DbName(TableName, null), creator)
+        public Query(ConnectionCreator creator) : this(new DbName(GetDbName(creator.Config?.Translation), null), creator)
         {
         }
 
@@ -52,7 +53,7 @@ namespace SharpOrm
         /// Creates a new instance of <see cref="Query"/>.
         /// </summary>
         /// <param name="manager">Connection manager to be used.</param>
-        public Query(ConnectionManager manager) : this(new DbName(TableName, null), manager)
+        public Query(ConnectionManager manager) : this(new DbName(GetDbName(manager.Config?.Translation), null), manager)
         {
         }
 
@@ -60,7 +61,7 @@ namespace SharpOrm
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
         /// <param name="alias">Alias for the table.</param>
-        public Query(string alias) : this(new DbName(TableName, alias))
+        public Query(string alias) : this(new DbName(GetDbName(), alias))
         {
         }
 
@@ -69,7 +70,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="alias">Alias for the table.</param>
         /// <param name="creator">Connection manager to be used.</param>
-        public Query(string alias, ConnectionCreator creator) : this(new DbName(TableName, alias), creator)
+        public Query(string alias, ConnectionCreator creator) : this(new DbName(GetDbName(), alias), creator)
         {
 
         }
@@ -79,7 +80,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="alias">Alias for the table.</param>
         /// <param name="manager">Connection manager to be used.</param>
-        public Query(string alias, ConnectionManager manager) : this(new DbName(TableName, alias), manager)
+        public Query(string alias, ConnectionManager manager) : this(new DbName(GetDbName(manager.Config?.Translation), alias), manager)
         {
         }
 
@@ -118,6 +119,12 @@ namespace SharpOrm
             this.ReturnsInsetionId = !TableInfo.IsManualMap && TableInfo.GetPrimaryKeys().Length > 0;
         }
 
+        private static string GetDbName(TranslationRegistry registry = null)
+        {
+            if (registry == null) registry = TranslationRegistry.Default;
+
+            return registry.GetTableName(typeof(T));
+        }
         #endregion
 
         #region OrderBy

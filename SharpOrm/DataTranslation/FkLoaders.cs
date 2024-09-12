@@ -28,7 +28,7 @@ namespace SharpOrm.DataTranslation
             this.fkToLoad = fkToLoad;
         }
 
-        public void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
+        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
         {
             if (fkValue is null || fkValue is DBNull)
                 return;
@@ -36,7 +36,7 @@ namespace SharpOrm.DataTranslation
             if (fkToLoad.FirstOrDefault(f => f.IsSame(column)) is MemberInfoColumn lCol)
                 AddFkColumn(lCol, owner, fkValue, column);
             else if (Manager.Config.LoadForeign)
-                column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(column, fkValue));
+                column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(translator, column, fkValue));
         }
 
         /// <summary>

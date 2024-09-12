@@ -73,7 +73,9 @@ namespace SharpOrm.Builder
 
         public static DbTable Create<T>(bool temporary, TranslationRegistry registry = null, ConnectionManager manager = null)
         {
-            var table = new TableInfo(typeof(T), registry ?? TranslationRegistry.Default);
+            if (registry == null) registry = TranslationRegistry.Default;
+
+            var table = registry.GetTable(typeof(T));
             var cols = new TableColumnCollection();
             cols.AddColumns(table.Columns);
 

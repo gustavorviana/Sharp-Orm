@@ -81,7 +81,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
-            foreach (var column in new TableInfo(this.Type, registry).Columns)
+            foreach (var column in registry.GetTable(this.Type).Columns)
                if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
                 else if (column.Type != this.Type) childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
@@ -160,7 +160,7 @@ namespace SharpOrm.DataTranslation.Reader
         {
             foreach (var column in fkColumns)
                 if (column.Index == index)
-                    enqueueable.EnqueueForeign(instance, value, column.Column);
+                    enqueueable.EnqueueForeign(instance, registry, value, column.Column);
         }
 
         private class MappedColumn

@@ -44,22 +44,24 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
         /// <param name="type">The type representing the table.</param>s
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
         public TableInfo(Type type) : this(type, TranslationRegistry.Default)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
+        /// Initializes a new instance of the TableInfo class with the specified translation registry and type.
         /// </summary>
-        /// <param name="config">The translation configuration.</param>
+        /// <param name="registry">The translation registry.</param>
         /// <param name="type">The type representing the table.</param>
-        public TableInfo(Type type, TranslationRegistry config)
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
+        public TableInfo(Type type, TranslationRegistry registry)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
 
             this.Type = type;
-            this.registry = config;
+            this.registry = registry;
             this.Name = GetNameOf(type);
             this.Columns = this.GetColumns().ToArray();
         }
@@ -193,7 +195,7 @@ namespace SharpOrm.Builder
             if (obj is null)
                 return null;
 
-            return new TableInfo(column.Type, this.registry).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return registry.GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
@@ -202,7 +204,7 @@ namespace SharpOrm.Builder
             if (type == typeof(Row))
                 return null;
 
-            var table = new TableInfo(type);
+            var table = this.registry.GetTable(type);
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
@@ -221,6 +223,7 @@ namespace SharpOrm.Builder
             return string.Format("{0}: {1}", this.Name, this.Type);
         }
 
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTableName(Type)\". This constructor will be removed in version 3.x.")]
         public static string GetNameOf(Type type)
         {
             if (!(GetValidType(type).GetCustomAttribute<TableAttribute>(false) is TableAttribute table) || string.IsNullOrEmpty(table.Name))
