@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
     public class ColumnInfo : IEquatable<ColumnInfo>, IColumnInfo
     {
         #region Properties
-        protected readonly MemberInfo column;
+        protected internal readonly MemberInfo column;
         public ValidationAttribute[] Validations { get; }
 
         /// <summary>

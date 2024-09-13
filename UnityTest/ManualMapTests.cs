@@ -81,8 +81,23 @@ namespace UnityTest
 
             var instance = new MyClass();
 
-            table.GetColumns("Level1_Level2_Level3_MyLevelName").Set(instance, "My custom level name");
+            table.GetColumn("Level1_Level2_Level3_MyLevelName").Set(instance, "My custom level name");
             Assert.AreEqual("My custom level name", instance.Level1.Level2.Level3.MyLevelName);
+        }
+
+        [TestMethod]
+        public void FindColumnByNameTest()
+        {
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<MyClass>(reg);
+            tm.Property(x => x.Date, "BeginDate");
+            tm.Build();
+
+            var colLevel = Column.FromExp<MyClass>(x => x.Level1.Level2.Level3.MyLevelName, reg);
+            Assert.AreEqual("Level1_Level2_Level3_MyLevelName", colLevel.Name);
+
+            var colDate = Column.FromExp<MyClass>(x => x.Date, reg);
+            Assert.AreEqual("BeginDate", colDate.Name);
         }
     }
 }
