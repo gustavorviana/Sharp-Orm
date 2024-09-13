@@ -26,8 +26,10 @@ namespace SharpOrm.Connection
         public event EventHandler Disposed;
 
         /// <summary>
-        /// Type of connection management.
+        /// Gets or sets the type of connection management. 
+        /// Throws an <see cref="InvalidOperationException"/> if an attempt is made to alter the connection management while a transaction is active.
         /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to change the connection management while a transaction is in use.</exception>
         public ConnectionManagement Management
         {
             get => this.management;
@@ -41,23 +43,28 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Database transaction.
+        /// Gets the current database transaction, if one is active.
         /// </summary>
         public DbTransaction Transaction { get; }
+
         /// <summary>
-        /// Connection to the database.
+        /// Gets the connection to the database.
         /// </summary>
         public DbConnection Connection { get; }
+
         /// <summary>
-        /// Configuration used for the connection.
+        /// Gets the configuration used for the connection.
         /// </summary>
         public QueryConfig Config { get; private set; }
+
         /// <summary>
-        /// Maximum time the command should wait before throwing a timeout.
+        /// Gets or sets the maximum time, in seconds, the command should wait before throwing a timeout. The default is 30 seconds.
         /// </summary>
         public int CommandTimeout { get; set; } = 30;
+
         /// <summary>
-        /// It will be true if there is no transaction and the connection status is not closed.
+        /// Indicates whether the connection can be closed. 
+        /// Returns true if there is no active transaction and the connection is not closed, and false otherwise.
         /// </summary>
         public bool CanClose
         {
@@ -80,42 +87,47 @@ namespace SharpOrm.Connection
 
         #region Constructors
         /// <summary>
-        /// Creates an instance using the default manager settings.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the default <see cref="ConnectionCreator"/>.
+        /// Optionally opens a transaction.
         /// </summary>
+        /// <param name="openTransaction">Indicates whether a transaction should be opened. Default is false.</param>
         public ConnectionManager(bool openTransaction = false) : this(ConnectionCreator.Default, openTransaction)
         {
         }
 
         /// <summary>
-        /// Creates an instance using the default manager settings.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the default manager settings and the specified transaction isolation level.
         /// </summary>
+        /// <param name="transactionIsolationLevel">The isolation level for the transaction.</param>
         public ConnectionManager(IsolationLevel transactionIsolationLevel) : this(ConnectionCreator.Default, transactionIsolationLevel)
         {
         }
 
         /// <summary>
-        /// Creates an instance using a <see cref="ConnectionCreator"/>.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the specified <see cref="ConnectionCreator"/>.
         /// </summary>
-        /// <param name="creator"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="creator">The <see cref="ConnectionCreator"/> responsible for creating database connections.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the creator is null.</exception>
         public ConnectionManager(ConnectionCreator creator) : this(creator, false)
         {
         }
 
         /// <summary>
-        /// Creates an instance using a <see cref="ConnectionCreator"/>.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the specified <see cref="ConnectionCreator"/> and optionally opens a transaction.
         /// </summary>
-        /// <param name="creator"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="creator">The <see cref="ConnectionCreator"/> responsible for creating database connections.</param>
+        /// <param name="openTransaction">Indicates whether a transaction should be opened. Default is false.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the creator is null.</exception>
         public ConnectionManager(ConnectionCreator creator, bool openTransaction) : this(creator, openTransaction ? IsolationLevel.Unspecified : (IsolationLevel?)null)
         {
         }
 
         /// <summary>
-        /// Creates an instance using a <see cref="ConnectionCreator"/>.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the specified <see cref="ConnectionCreator"/> and transaction isolation level.
         /// </summary>
-        /// <param name="creator"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="creator">The <see cref="ConnectionCreator"/> responsible for creating database connections.</param>
+        /// <param name="transactionIsolationLevel">The isolation level for the transaction, or null if no transaction is to be opened.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the creator is null.</exception>
         public ConnectionManager(ConnectionCreator creator, IsolationLevel? transactionIsolationLevel)
         {
             this.creator = creator ?? throw new ArgumentNullException(nameof(creator), Messages.MissingCreator);
@@ -153,11 +165,12 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Creates an instance using a transaction.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the specified transaction.
         /// </summary>
-        /// <param name="transaction"></param>
-        /// <remarks>In this case, <see cref="this.Management"/> won'type be considered for managing the logic; the original manager will remain open until it's manually closed.</remarks>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="config">The configuration used for the connection.</param>
+        /// <param name="transaction">The <see cref="DbTransaction"/> to be used for this connection manager.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the transaction is null.</exception>
+        /// <remarks>In this case, <see cref="this.Management"/> will not be considered for managing the connection; the original connection will remain open until manually closed.</remarks>
         public ConnectionManager(QueryConfig config, DbTransaction transaction) : this(config, transaction?.Connection)
         {
             this.Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
@@ -165,10 +178,11 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Creates an instance using a manager.
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class using the specified connection.
         /// </summary>
-        /// <param name="connection"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="config">The configuration used for the connection.</param>
+        /// <param name="connection">The <see cref="DbConnection"/> to be used for this connection manager.</param>
+        /// <exception cref="ArgumentNullException">Thrown if the connection is null.</exception>
         public ConnectionManager(QueryConfig config, DbConnection connection)
         {
             this.Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -190,7 +204,7 @@ namespace SharpOrm.Connection
         #endregion
 
         /// <summary>
-        /// Attempt to close the connection using the reason "Operation completed".
+        /// Attempts to close the connection using the reason "Operation completed".
         /// </summary>
         public void CloseByEndOperation()
         {
@@ -199,7 +213,7 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Attempt to close the connection using the reason "The child is releasing its resources.".
+        /// Attempts to close the connection using the reason "The child is releasing its resources".
         /// </summary>
         public void CloseByDisposeChild()
         {
@@ -208,11 +222,11 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Creates a clone of the current ConnectionManager instance with optional parameters to listen for disposal events and clone the configuration.
+        /// Creates a clone of the current <see cref="ConnectionManager"/> instance with optional parameters to listen for disposal events and clone the configuration.
         /// </summary>
-        /// <param name="listenDispose">A boolean indicating whether to listen for disposal events. Default is true.</param>
-        /// <param name="cloneConfig">A boolean indicating whether to clone the configuration. Default is false.</param>
-        /// <returns>A new ConnectionManager instance with the specified cloning options.</returns>
+        /// <param name="listenDispose">Indicates whether to listen for disposal events. Default is true.</param>
+        /// <param name="cloneConfig">Indicates whether to clone the configuration. Default is false.</param>
+        /// <returns>A new <see cref="ConnectionManager"/> instance with the specified cloning options.</returns>
         public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false)
         {
             var clone = this.InternalClone();
@@ -244,19 +258,28 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Create a new ConnectionManager with a transaction from the existing connection (if the instance loads a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it).
+        /// Creates a new <see cref="ConnectionManager"/> with a transaction from the existing connection. 
+        /// If the instance uses a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it.
         /// </summary>
-        /// <remarks>The commit will be automatically performed when calling <see cref="Dispose()"/> unless a <see cref="Commit"/> or <see cref="Rollback"/> has been called before.</remarks>
+        /// <remarks>
+        /// The transaction will automatically commit when calling <see cref="Dispose"/>, unless <see cref="Commit"/> or <see cref="Rollback"/> has been called before.
+        /// </remarks>
+        /// <returns>A new <see cref="ConnectionManager"/> instance with an active transaction.</returns>
         public ConnectionManager BeginTransaction()
         {
             return this.BeginTransaction(IsolationLevel.Unspecified);
         }
 
-
         /// <summary>
-        /// Create a new ConnectionManager with a transaction from the existing connection (if the instance loads a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it).
+        /// Creates a new <see cref="ConnectionManager"/> with a transaction from the existing connection, using the specified isolation level.
+        /// If the instance uses a <see cref="ConnectionCreator"/>, a new connection will be retrieved from it.
         /// </summary>
-        /// <remarks>The commit will be automatically performed when calling <see cref="Dispose()"/> unless a <see cref="Commit"/> or <see cref="Rollback"/> has been called before.</remarks>
+        /// <param name="isolationLevel">The isolation level to be used for the transaction.</param>
+        /// <remarks>
+        /// The transaction will automatically commit when calling <see cref="Dispose"/>, unless <see cref="Commit"/> or <see cref="Rollback"/> has been called before.
+        /// </remarks>
+        /// <returns>A new <see cref="ConnectionManager"/> instance with an active transaction.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if there is already an open transaction.</exception>
         public ConnectionManager BeginTransaction(IsolationLevel isolationLevel)
         {
             if (this.Transaction != null)
@@ -277,7 +300,7 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Check if it is possible to connect to the database.
+        /// Checks if it is possible to connect to the database by attempting to open and then close the connection.
         /// </summary>
         public void CheckConnection()
         {
@@ -289,8 +312,10 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Check if it is possible to connect to the database.
+        /// Asynchronously checks if it is possible to connect to the database by attempting to open and then close the connection.
         /// </summary>
+        /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
         public async Task CheckConnectionAsync(CancellationToken token)
         {
             if (this.Connection.State == System.Data.ConnectionState.Open)
@@ -345,8 +370,10 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Executes a database transaction.
+        /// Executes a database transaction using the default <see cref="ConnectionCreator"/>.
         /// </summary>
+        /// <param name="call">The action to be executed within the transaction, which takes a <see cref="ConnectionManager"/> as a parameter.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the default <see cref="ConnectionCreator.Default"/> is not set.</exception>
         public static void ExecuteTransaction(TransactionAction call)
         {
             if (!(ConnectionCreator.Default is ConnectionCreator creator))
@@ -371,8 +398,11 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Executes a database transaction and returns a value.
+        /// Executes a database transaction and returns a value of type <typeparamref name="T"/>.
         /// </summary>
+        /// <typeparam name="T">The type of the value to be returned.</typeparam>
+        /// <param name="func">The function to be executed within the transaction, which takes a <see cref="ConnectionManager"/> as a parameter and returns a value of type <typeparamref name="T"/>.</param>
+        /// <returns>The value of type <typeparamref name="T"/> returned by the function after the transaction is executed.</returns>
         public static T ExecuteTransaction<T>(TransactionAction<T> func)
         {
             T value = default;
@@ -387,6 +417,9 @@ namespace SharpOrm.Connection
             Dispose(disposing: false);
         }
 
+        /// <summary>
+        /// Disposes the current instance and releases unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (this.disposed) return;

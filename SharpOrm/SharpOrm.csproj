@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0;net8.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>2.1.0</AssemblyVersion>
-		<FileVersion>2.1.0</FileVersion>
-		<VersionPrefix>2.1.0</VersionPrefix>
+		<AssemblyVersion>2.2.0</AssemblyVersion>
+		<FileVersion>2.2.0</FileVersion>
+		<VersionPrefix>2.2.0</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -21,7 +21,7 @@
 		<PackageTags>Db;Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Connection;Management</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Addition of support for checks, groupings, and orderings using lambda, addition of validation when inserting or updating an item, improvements in query creation, and addition of extensions for the connection manager.
+			Support for transaction types and addition of methods for ConnectionManager.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
