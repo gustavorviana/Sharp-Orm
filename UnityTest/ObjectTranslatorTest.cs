@@ -283,6 +283,27 @@ namespace UnityTest
         }
 
         [TestMethod]
+        public void GetArrayParentCells()
+        {
+            var order = new Order
+            {
+                Id = 1,
+                ArrayItems = new OrderItem[]
+                {
+                    new() { Id = 1 },
+                    new() { Id = 2 }
+                }
+            };
+
+            var table = new TableInfo(typeof(Order));
+            var cells = table.GetObjCells(order, true, true).ToArray();
+            Assert.IsNotNull(cells);
+            Assert.AreEqual(1, cells.Length);
+            Assert.AreEqual("Id", cells[0].Name);
+            Assert.AreEqual(1, cells[0].Value);
+        }
+
+        [TestMethod]
         public void LoadAdvancedObject()
         {
             Connection.QueryReaders.Add("SELECT * FROM `RootAdvancedObject` LIMIT 1", GetAdvancedObjectReader);
