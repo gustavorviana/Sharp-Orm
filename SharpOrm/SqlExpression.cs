@@ -114,6 +114,11 @@ namespace SharpOrm
             return new SqlExpression(string.Concat(sql));
         }
 
+        protected internal virtual string GetParamName(int index)
+        {
+            return string.Concat("@p", index);
+        }
+
         public static explicit operator SqlExpression(StringBuilder builder)
         {
             return new SqlExpression(builder.ToString());

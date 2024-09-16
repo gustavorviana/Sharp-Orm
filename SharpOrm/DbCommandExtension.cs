@@ -108,19 +108,14 @@ namespace SharpOrm
             command.Parameters.Clear();
 
             for (int i = 0; i < expression.Parameters.Length; i++)
-                command.AddParam(GetParamName(i + 1), expression.Parameters[i]);
+                command.AddParam(expression.GetParamName(i + 1), expression.Parameters[i]);
 
             return command;
         }
 
         internal static string DecodeExpressionString(SqlExpression expression)
         {
-            return expression.ToString().Replace('?', GetParamName);
-        }
-
-        internal static string GetParamName(int index)
-        {
-            return string.Concat("@p", index);
+            return expression.ToString().Replace('?', expression.GetParamName);
         }
     }
 }
