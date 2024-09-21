@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -135,13 +136,29 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Retrieves a column that represents the last field or property of the expression.
+        /// Retrieves a column that represents the last field or property of the expression (manually mapped objects not included).
         /// </summary>
         /// <param name="columnExpression"></param>
         /// <returns></returns>
         public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression)
         {
             return ExpressionUtils<T>.GetColumn(columnExpression);
+        }
+
+        /// <summary>
+        /// Retrieves a column that represents the last field or property of the expression, including manually mapped objects.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="columnExpression"></param>
+        /// <param name="registry"></param>
+        /// <returns></returns>
+        public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression, TranslationRegistry registry)
+        {
+            var member = ExpressionUtils<T>.GetColumnMember(columnExpression, out var rootType);
+            if (registry.GetTable(rootType) is TableInfo table)
+                return new MemberInfoColumn(member, table.GetColumn(member).Name);
+
+            return new MemberInfoColumn(member);
         }
 
         internal string GetCountColumn()

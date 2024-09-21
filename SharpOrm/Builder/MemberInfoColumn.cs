@@ -12,11 +12,16 @@ namespace SharpOrm.Builder
         public Type DeclaringType => member.DeclaringType;
         public Type ValueType { get; }
 
-        internal MemberInfoColumn(MemberInfo member)
+        internal MemberInfoColumn(MemberInfo member) : this(member, ColumnInfo.GetName(member))
         {
-            this.ValueType = ReflectionUtils.GetMemberValueType(member);
-            this.Name = ColumnInfo.GetName(member);
+
+        }
+
+        internal MemberInfoColumn(MemberInfo member, string name)
+        {
+            this.ValueType = ReflectionUtils.GetMemberType(member);
             this.member = member;
+            this.Name = name;
         }
 
         public bool Equals(MemberInfoColumn other)

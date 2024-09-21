@@ -48,39 +48,41 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="type">The type of the object to create.</param>
         /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
-        /// <param name="prefix">The prefix for column names.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
-        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null, string prefix = "")
+        public static IMappedObject Create(DbDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
-            if (enqueueable == null)
-                enqueueable = new ObjIdFkQueue();
-
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(reader, registry);
 
-            return new MappedObject(type, registry, enqueueable).Map(registry, reader, prefix);
+            if (registry.GetManualMap(type) is TableInfo table)
+                return new MappedManualObj(table, registry, reader);
+
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue()).Map(registry, reader, "");
         }
 
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
         {
-            Type = type;
+            this.Type = type;
             this.registry = registry;
             this.enqueueable = enqueueable;
         }
 
         private MappedObject Map(TranslationRegistry registry, DbDataReader reader, string prefix)
         {
+            if (this.Type == typeof(Row))
+                return this;
+
             if (!Type.IsArray)
                 objectActivator = new ObjectActivator(Type, reader, registry);
 
             if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
                 prefix += '_';
 
-            foreach (var column in TableInfo.GetColumns(Type, registry))
-                if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
+            foreach (var column in registry.GetTable(this.Type).Columns)
+               if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
                 else if (column.Type != this.Type) childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }.Map(registry, reader, prefix + column.Name));
 
@@ -158,7 +160,7 @@ namespace SharpOrm.DataTranslation.Reader
         {
             foreach (var column in fkColumns)
                 if (column.Index == index)
-                    enqueueable.EnqueueForeign(instance, value, column.Column);
+                    enqueueable.EnqueueForeign(instance, registry, value, column.Column);
         }
 
         private class MappedColumn

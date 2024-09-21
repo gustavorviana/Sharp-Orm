@@ -109,7 +109,7 @@ namespace SharpOrm.Builder
         /// <param name="calls">The columns to exclude.</param>
         public void AddColumnsExcept<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
-            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, true).Select(MapColumn));
+            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, true).Select(MapColumn));
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace SharpOrm.Builder
         /// <param name="calls">The columns to include.</param>
         public void AddColumns<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
-            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, false).Select(MapColumn));
+            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, false).Select(MapColumn));
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace SharpOrm.Builder
         /// <param name="registry">The translation registry.</param>
         public void AddColumns<T>(TranslationRegistry registry)
         {
-            var cols = TableInfo.GetColumns(typeof(T), registry).ToArray();
+            var cols = registry.GetTable(typeof(T)).Columns;
             this.AddRange(cols.Select(MapColumn));
 
             foreach (var pkCol in cols.Where(x => x.Key))

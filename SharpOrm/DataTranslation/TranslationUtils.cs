@@ -23,11 +23,8 @@ namespace SharpOrm.DataTranslation
 
         public static bool IsNative(Type type, bool ignoreBuffer)
         {
-            if (type is null)
-                return true;
-
-            if (Nullable.GetUnderlyingType(type) is Type nType)
-                type = nType;
+            if (type is null) return true;
+            if (Nullable.GetUnderlyingType(type) is Type nType) type = nType;
 
             return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || IsNumeric(type) || !ignoreBuffer && IsBuffer(type);
         }

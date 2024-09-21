@@ -12,11 +12,18 @@ namespace SharpOrm.Builder
     {
         public static Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
         {
-            var member = GetValueMemberPath(columnExpression).First();
+            return new MemberInfoColumn(GetColumnMember(columnExpression, out _));
+        }
+
+        public static MemberInfo GetColumnMember(Expression<ColumnExpression<T>> columnExpression, out Type rootClass)
+        {
+            var paths = GetValueMemberPath(columnExpression);
+            rootClass = paths.Last().DeclaringType;
+            var member = paths.First();
             if (member.IsDefined(typeof(NotMappedAttribute)))
                 throw new InvalidOperationException($"It is not possible to retrieve the column {member.DeclaringType.FullName}.{member.Name}, it was defined as unmapped.");
 
-            return new MemberInfoColumn(member);
+            return member;
         }
 
         public static List<MemberInfoColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)
@@ -34,7 +41,7 @@ namespace SharpOrm.Builder
 
         private static void ValidateMemberType(MemberInfo member)
         {
-            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberValueType(member), false))
+            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
                 return;
 
             string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
