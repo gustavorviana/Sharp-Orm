@@ -33,9 +33,17 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the <see cref="Grammar"/> class.
         /// </summary>
         /// <param name="query">The query.</param>
-        protected Grammar(Query query)
+        protected Grammar(Query query) : this(query, new QueryBuilder(query))
         {
-            this.builder = new QueryBuilder(query);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grammar"/> class.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        protected Grammar(Query query, QueryBuilder builder)
+        {
+            this.builder = builder;
             this.Query = query;
         }
 
@@ -445,6 +453,32 @@ namespace SharpOrm.Builder
         protected string ApplyTableColumnConfig(string name)
         {
             return this.Info.Config.ApplyNomenclature(name);
+        }
+
+        protected void ThrowJoinNotSupported()
+        {
+            if (this.Info.Joins.Count > 0)
+                throw new NotSupportedException("Join is not supported in this operation.");
+        }
+
+        protected void ThrowOrderNotSupported()
+        {
+            if (this.Info.Orders.Length > 0)
+                throw new NotSupportedException("Order is not supported in this operation.");
+        }
+
+        protected void ThrowPaginationNotSupported()
+        {
+            if (this.Query.Limit > 0)
+                throw new NotSupportedException("Limit is not supported in this operation.");
+
+            ThrowOffsetNotSupported();
+        }
+
+        protected void ThrowOffsetNotSupported()
+        {
+            if (this.Query.Offset is int val && val != 0)
+                throw new NotSupportedException("Offset is not supported in this operation.");
         }
     }
 }

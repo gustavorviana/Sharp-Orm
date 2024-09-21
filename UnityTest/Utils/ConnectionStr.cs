@@ -11,6 +11,8 @@ namespace UnityTest.Utils
         public static string Mysql => GetFromFile("../MysqlConnection.txt", "Persist Security Info=False;server=localhost;database=SharpOrm;uid=root;pwd=root");
         public static string SqlServer => GetFromFile("../SqlServerConnection.txt", @"Data Source=localhost;Initial Catalog=SharpOrm;Integrated Security=True;");
 
+        public static string Fb => GetFromFile("../FbConnection.txt", @"User=SYSDBA;Password=masterkey;Database=SharpOrm.fdb;DataSource=localhost;Port=3050");
+
         public static string GetFromFile(string filePath, string connectionString)
         {
             if (cached.TryGetValue(filePath, out var result))

@@ -11,7 +11,7 @@ namespace SharpOrm
     /// </summary>
     public class SqlExpression : IEquatable<SqlExpression>
     {
-        private readonly string value;
+        protected readonly string value;
         /// <summary>
         /// Gets the parameters used in the SQL values.
         /// </summary>
@@ -23,6 +23,15 @@ namespace SharpOrm
         protected SqlExpression()
         {
 
+        }
+
+        protected SqlExpression(string value, object[] parameters, bool validate)
+        {
+            if (validate && value.Count(c => c == '?') != parameters.Length)
+                throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
+
+            this.value = value;
+            this.Parameters = parameters;
         }
 
         /// <summary>
@@ -112,6 +121,11 @@ namespace SharpOrm
         internal static SqlExpression Make(params string[] sql)
         {
             return new SqlExpression(string.Concat(sql));
+        }
+
+        protected internal virtual string GetScriptParamName(int index)
+        {
+            return this.GetParamName(index);
         }
 
         protected internal virtual string GetParamName(int index)

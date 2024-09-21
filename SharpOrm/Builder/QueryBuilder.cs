@@ -402,7 +402,7 @@ namespace SharpOrm.Builder
             if (this.hasMemberColumn)
                 return ToSafeExpression();
 
-            return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
+            return this.InternalGetExpression(this.query.ToString(), this.parameters.ToArray());
         }
 
         private SqlExpression ToSafeExpression()
@@ -414,7 +414,12 @@ namespace SharpOrm.Builder
                  else builder.Append('?');
              });
 
-            return new SqlExpression(builder.ToString(), this.parameters.Where(x => !(x is MemberInfoColumn)).ToArray());
+            return this.InternalGetExpression(builder.ToString(), this.parameters.Where(x => !(x is MemberInfoColumn)).ToArray());
+        }
+
+        protected virtual SqlExpression InternalGetExpression(string query, object[] @params)
+        {
+            return new SqlExpression(query, @params);
         }
 
         /// <summary>

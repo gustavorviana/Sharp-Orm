@@ -17,3 +17,4 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("947c331c-dc5d-4d64-b86c-a540ae0840c0")]
 [assembly: InternalsVisibleTo("UnityTest")]
+[assembly: InternalsVisibleTo("SharpOrm.Fb")]

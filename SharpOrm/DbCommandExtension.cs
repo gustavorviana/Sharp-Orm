@@ -115,7 +115,7 @@ namespace SharpOrm
 
         internal static string DecodeExpressionString(SqlExpression expression)
         {
-            return expression.ToString().Replace('?', expression.GetParamName);
+            return expression.ToString().Replace('?', expression.GetScriptParamName);
         }
     }
 }
