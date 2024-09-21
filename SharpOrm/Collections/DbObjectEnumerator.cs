@@ -113,7 +113,7 @@ namespace SharpOrm.Collections
                 return;
 
             this._disposed = true;
-            this.reader.Dispose();
+            this.reader?.Dispose();
             this.Disposed?.Invoke(this, EventArgs.Empty);
         }
 

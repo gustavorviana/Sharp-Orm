@@ -63,7 +63,7 @@ namespace SharpOrm.DataTranslation
                 return Convert.ToBoolean(value);
 
             if (expectedType.IsEnum)
-                return Enum.ToObject(expectedType, value);
+                return this.ParseEnum(value, expectedType);
 
             if (expectedType == typeof(Guid))
                 return value is Guid guid ? guid : Guid.Parse((string)value);
@@ -78,6 +78,25 @@ namespace SharpOrm.DataTranslation
                 return dateTranslation.FromSqlValue(value, expectedType);
 
             return value;
+        }
+
+        private object ParseEnum(object value, Type expectedType)
+        {
+            if (value is string strVal)
+                if (!IsNumericString(strVal)) return Enum.Parse(expectedType, strVal);
+                else value = int.Parse(strVal);
+
+            return Enum.ToObject(expectedType, value);
+        }
+
+        private static bool IsNumericString(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            for (int i = 0; i < value.Length; i++)
+                if (!char.IsNumber(value[i])) return false;
+
+            return true;
         }
 
         /// <summary>

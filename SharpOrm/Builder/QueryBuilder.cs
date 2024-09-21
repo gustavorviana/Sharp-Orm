@@ -15,6 +15,7 @@ namespace SharpOrm.Builder
     public class QueryBuilder : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+        private bool hasMemberColumn = false;
         internal readonly StringBuilder query = new StringBuilder();
         /// <summary>
         /// A list of parameters for the SQL query.
@@ -35,6 +36,15 @@ namespace SharpOrm.Builder
         /// Gets the parameters.
         /// </summary>
         public ReadOnlyCollection<object> Parameters { get; }
+
+        /// <summary>
+        /// Create an instance of <see cref="QueryBuilder"/> using the query configuration using <see cref="Connection.ConnectionCreator.Default"/> config.
+        /// </summary>
+        /// <param name="query"></param>
+        public QueryBuilder(string tableFullName = "") : this(Connection.ConnectionCreator.Default?.Config, DbName.FromPossibleEmptyName(tableFullName))
+        {
+
+        }
 
         /// <summary>
         /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryBase"/>.
@@ -59,7 +69,7 @@ namespace SharpOrm.Builder
         /// Create an instance of <see cref="QueryBuilder"/> using the query configuration from a <see cref="QueryInfo"/>.
         /// </summary>
         /// <param name="info"></param>
-        public QueryBuilder(QueryInfo info) : this(info.ToReadOnly())
+        public QueryBuilder(QueryBaseInfo info) : this(info.ToReadOnly())
         {
         }
 
@@ -129,11 +139,7 @@ namespace SharpOrm.Builder
             if (query.Count(c => c == '?') != parameters.Length)
                 throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
 
-            this.query.AppendReplaced(query, '?', count =>
-            {
-                this.AddParameter(parameters[count - 1], true);
-                return null;
-            });
+            this.query.AppendAndReplace(query, '?', count => this.AddParameter(parameters[count - 1], true));
 
             return this;
         }
@@ -169,10 +175,16 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="val">The value of the parameter to be added.</param>
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        public QueryBuilder AddParameter(object val, bool allowAlias = true)
+        public QueryBuilder AddParameter(object val, bool allowAlias = true, bool forceWriteColumn = false)
         {
             if (val is SqlExpression exp)
                 return this.Add(exp, allowAlias);
+
+            if (!forceWriteColumn && val is MemberInfoColumn)
+            {
+                this.hasMemberColumn = true;
+                return this.InternalAddParam(val);
+            }
 
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
@@ -344,7 +356,7 @@ namespace SharpOrm.Builder
         {
             var @enum = enumerable.GetEnumerator();
             if (!@enum.MoveNext())
-                throw new InvalidOperationException(Messages.CannotUseEmptyCollection);
+                return this.Add("1!=1");
 
             this.Add('(');
             this.AddParameter(@enum.Current, allowAlias);
@@ -389,7 +401,22 @@ namespace SharpOrm.Builder
         /// <param name="info">The query information.</param>
         public SqlExpression ToExpression()
         {
+            if (this.hasMemberColumn)
+                return ToSafeExpression();
+
             return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
+        }
+
+        private SqlExpression ToSafeExpression()
+        {
+            var builder = new StringBuilder();
+            builder.AppendAndReplace(this.query.ToString(), '?', count =>
+             {
+                 if (this.Parameters[count - 1] is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
+                 else builder.Append('?');
+             });
+
+            return new SqlExpression(builder.ToString(), this.parameters.Where(x => !(x is MemberInfoColumn)).ToArray());
         }
 
         /// <summary>

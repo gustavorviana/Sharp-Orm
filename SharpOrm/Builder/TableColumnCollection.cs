@@ -1,9 +1,9 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
+﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -109,7 +109,7 @@ namespace SharpOrm.Builder
         /// <param name="calls">The columns to exclude.</param>
         public void AddColumnsExcept<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
-            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, true).Select(MapColumn));
+            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, true).Select(MapColumn));
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace SharpOrm.Builder
         /// <param name="calls">The columns to include.</param>
         public void AddColumns<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
-            this.AddRange(TableInfo.GetColumns(typeof(T), registry, calls, false).Select(MapColumn));
+            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, false).Select(MapColumn));
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace SharpOrm.Builder
         /// <param name="registry">The translation registry.</param>
         public void AddColumns<T>(TranslationRegistry registry)
         {
-            var cols = TableInfo.GetColumns(typeof(T), registry).ToArray();
+            var cols = registry.GetTable(typeof(T)).Columns;
             this.AddRange(cols.Select(MapColumn));
 
             foreach (var pkCol in cols.Where(x => x.Key))
@@ -206,10 +206,15 @@ namespace SharpOrm.Builder
         /// <returns>The mapped data column.</returns>
         private static DataColumn MapColumn(ColumnInfo item)
         {
-            return new DataColumn(item.Name, item.Type)
+            var dataCol = new DataColumn(item.Name, item.Type)
             {
                 AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key
             };
+
+            if (item.GetAttribute<ColumnAttribute>()?.TypeName is string typeName && typeName.Length > 0)
+                dataCol.ExtendedProperties[nameof(ColumnAttribute.TypeName)] = typeName;
+
+            return dataCol;
         }
 
         /// <summary>
@@ -291,7 +296,7 @@ namespace SharpOrm.Builder
         public int IndexOf(string columnName)
         {
             for (int i = 0; i < this.columns.Count; i++)
-                if (this.columns[i].ColumnName == columnName)
+                if (this.columns[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;

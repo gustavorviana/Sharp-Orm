@@ -30,6 +30,81 @@ namespace UnityTest.MysqlTests
         }
 
         [TestMethod]
+        public void OrderByLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.OrderBy(x => x.Name);
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` ORDER BY `Name` Asc", sqlExpression);
+        }
+
+        [TestMethod]
+        public void OrderByLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.OrderBy(x => x.Name);
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` ORDER BY `TestTable`.`Name` Asc", sqlExpression);
+        }
+
+        [TestMethod]
+        public void GroupByLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.GroupBy(x => x.Name);
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` GROUP BY `Name`", sqlExpression);
+        }
+
+        [TestMethod]
+        public void WhereLambdaTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.Where(x => x.Name, "Test");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` WHERE `Name` = @p1", sqlExpression);
+        }
+
+        [TestMethod]
+        public void WhereLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.Where(x => x.Name, "Test");
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` WHERE `TestTable`.`Name` = @p1", sqlExpression);
+        }
+
+        [TestMethod]
+        public void GroupByLambdaWithJoinTest()
+        {
+            ConnectionCreator.Default = this.Creator;
+            using var query = new Query<TestTable>();
+            query.GroupBy(x => x.Name);
+            query.Join("X", "X.Id", "TestTable.Id");
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            TestAssert.AreDecoded("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` GROUP BY `TestTable`.`Name`", sqlExpression);
+        }
+
+        [TestMethod]
         public void BasicSelect()
         {
             ConnectionCreator.Default = this.Creator;
@@ -887,6 +962,34 @@ namespace UnityTest.MysqlTests
             var g = config.NewGrammar(query);
             var sqlExpression = g.Select();
             TestAssert.AreDecoded("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = @p1 AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", sqlExpression);
+        }
+
+        [TestMethod]
+        public void SelectWhereLikeIn()
+        {
+            using var query = new Query(TABLE, Creator);
+            query.Where("Test", true).WhereLikeIn("Column", "%Name1%", "Name 2%", "%Name 3");
+
+
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            var expectedExp = new SqlExpression("SELECT * FROM `TestTable` WHERE `Test` = 1 AND (Column LIKE ? OR LIKE ? OR LIKE ?)", "%Name1%", "Name 2%", "%Name 3");
+            TestAssert.AreEqual(expectedExp, sqlExpression);
+        }
+
+        [TestMethod]
+        public void SelectWhereNotLikeIn()
+        {
+            using var query = new Query(TABLE, Creator);
+            query.Where("Test", true).WhereNotLikeIn("Column", "%Name1%", "Name 2%", "%Name 3");
+
+
+            var g = new MysqlGrammar(query);
+
+            var sqlExpression = g.Select();
+            var expectedExp = new SqlExpression("SELECT * FROM `TestTable` WHERE `Test` = 1 AND NOT (Column LIKE ? OR LIKE ? OR LIKE ?)", "%Name1%", "Name 2%", "%Name 3");
+            TestAssert.AreEqual(expectedExp, sqlExpression);
         }
     }
 }

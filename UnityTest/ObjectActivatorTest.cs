@@ -1,10 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SharpOrm;
+using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Data.Common;
 using System.Drawing;
+using System.Linq;
 using UnityTest.Models;
 using UnityTest.Utils;
 using UnityTest.Utils.Mock;
@@ -131,6 +133,29 @@ namespace UnityTest
             {
                 this.Id = id;
             }
+        }
+
+        public class MyClass
+        {
+            public Level1 Level1 { get; set; }
+            public DateTime Date { get; set; }
+            public string Prop1 { get; set; }
+        }
+
+        public class Level1
+        {
+            public Level2 Level2 { get; set; }
+            public int Id { get; set; }
+        }
+
+        public class Level2
+        {
+            public Level3 Level3 { get; set; }
+        }
+
+        public class Level3
+        {
+            public string MyLevelName { get; set; }
         }
     }
 }

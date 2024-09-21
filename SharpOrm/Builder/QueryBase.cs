@@ -8,19 +8,14 @@ namespace SharpOrm.Builder
     /// <summary>
     /// SQL clause creator. Provides methods to build SQL SELECT, INSERT, UPDATE and DELETE queries. Allows defining WHERE, ORDER BY, GROUP BY, JOIN and other clauses.
     /// </summary>
-    public class QueryBase : IDisposable
+    public class QueryBase
     {
         #region Fields\Const
         internal const string AND = "AND";
         internal const string OR = "OR";
 
-        private bool _disposed = false;
-        protected internal QueryInfo Info { get; }
+        protected internal QueryBaseInfo Info { get; }
 
-        /// <summary>
-        /// Gets a value indicating whether the object has been disposed.
-        /// </summary>
-        public bool Disposed => this._disposed;
         private static string[] AvailableOperations { get; } = {
             "=",
             ">",
@@ -31,12 +26,12 @@ namespace SharpOrm.Builder
             "!=",
             "!>",
             "!<",
-            "like",
-            "in",
-            "not in",
-            "not like",
-            "is",
-            "is not"
+            "LIKE",
+            "IN",
+            "NOT IN",
+            "NOT LIKE",
+            "IS",
+            "IS NOT"
         };
         #endregion
 
@@ -49,6 +44,11 @@ namespace SharpOrm.Builder
             this.Info = new QueryInfo(config, table);
         }
 
+        protected QueryBase(QueryInfo info)
+        {
+            this.Info = info;
+        }
+
         #region Where
 
         /// <summary>
@@ -59,6 +59,13 @@ namespace SharpOrm.Builder
         public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
             return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
+        }
+
+        public QueryBase Where(QueryBuilder builder)
+        {
+            this.WriteWhereType(AND);
+            this.Info.Where.Add(builder);
+            return this;
         }
 
         /// <summary>
@@ -79,7 +86,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase Where(string column, object value)
+        public QueryBase Where(object column, object value)
         {
             return this.Where(column, value is null ? "IS" : "=", value);
         }
@@ -90,7 +97,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase WhereNot(string column, object value)
+        public QueryBase WhereNot(object column, object value)
         {
             return this.Where(column, value is null ? "IS NOT" : "!=", value);
         }
@@ -116,11 +123,11 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Adds a clause to "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
         /// </summary>
-        /// <param name="column">Column to check.</param>
-        /// <param name="operation">Clause operator.</param>
-        /// <param name="value">Value to check.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public QueryBase Where(string column, string operation, object value)
+        public QueryBase Where(object column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, AND);
         }
@@ -239,13 +246,20 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        public QueryBase OrWhere(QueryBuilder builder)
+        {
+            this.WriteWhereType(OR);
+            this.Info.Where.Add(builder);
+            return this;
+        }
+
         /// <summary>
         /// Add a clausule (column=value) to the "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
         /// </summary>
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase OrWhere(string column, object value)
+        public QueryBase OrWhere(object column, object value)
         {
             return this.OrWhere(column, value is null ? "IS" : "=", value);
         }
@@ -256,7 +270,7 @@ namespace SharpOrm.Builder
         /// <param name="column">Column to compare</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public QueryBase OrWhereNot(string column, object value)
+        public QueryBase OrWhereNot(object column, object value)
         {
             return this.OrWhere(column, value is null ? "IS NOT" : "!=", value);
         }
@@ -280,13 +294,13 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Adds a clause to "WHERE" (If there are any previous clauses, "OR" is entered before the new clause).
+        /// Adds an OR WHERE clause with a specified operation and value.
         /// </summary>
-        /// <param name="column">Column to check.</param>
-        /// <param name="operation">Clause operator.</param>
-        /// <param name="value">Value to check.</param>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public QueryBase OrWhere(string column, string operation, object value)
+        public QueryBase OrWhere(object column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, OR);
         }
@@ -469,7 +483,8 @@ namespace SharpOrm.Builder
         /// <param name="operation"></param>
         internal protected static void CheckIsAvailableOperation(string operation)
         {
-            if (!AvailableOperations.Contains(operation.ToLower()))
+            if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
+            if (!AvailableOperations.ContainsIgnoreCase(operation))
                 throw new DatabaseException("Invalid SQL operation: " + operation);
         }
 
@@ -482,6 +497,9 @@ namespace SharpOrm.Builder
         {
             if (column is string strColumn)
                 return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
+
+            if (column is MemberInfoColumn memberColumn)
+                return this.Info.Where.AddParameter(memberColumn);
 
             if (column is ISqlExpressible iExp)
                 column = iExp.ToSafeExpression(this.Info.ToReadOnly(), true);
@@ -519,37 +537,6 @@ namespace SharpOrm.Builder
                 this.Info.Where.Add(' ').Add(type).Add(' ');
 
             return this.Info.Where;
-        }
-
-        #endregion
-
-        #region IDisposed
-
-        ~QueryBase()
-        {
-            this.Dispose(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (this._disposed)
-                return;
-
-            this._disposed = true;
-        }
-
-        /// <summary>
-        /// Releases all resources used by the object.
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
-        public void Dispose()
-        {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
-
-            this.Dispose(true);
-
-            GC.SuppressFinalize(this);
         }
 
         #endregion

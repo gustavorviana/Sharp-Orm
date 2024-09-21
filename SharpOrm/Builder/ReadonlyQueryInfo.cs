@@ -1,4 +1,6 @@
-﻿namespace SharpOrm.Builder
+﻿using System;
+
+namespace SharpOrm.Builder
 {
     internal class ReadonlyQueryInfo : IReadonlyQueryInfo
     {
@@ -12,7 +14,7 @@
 
         public ReadonlyQueryInfo(QueryConfig config, DbName tableName)
         {
-            this.Config = config;
+            this.Config = config ?? throw new ArgumentNullException("The query configuration cannot be null.");
             this.TableName = tableName;
         }
     }

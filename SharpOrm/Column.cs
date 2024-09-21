@@ -1,6 +1,8 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace SharpOrm
@@ -28,7 +30,7 @@ namespace SharpOrm
             get
             {
                 if (this.isCount == null)
-                    this.isCount = this.expression?.ToString()?.ToLower() is string exp && exp.StartsWith("count(") && exp.EndsWith(")");
+                    this.isCount = this.expression?.ToString() is string exp && exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) && exp.EndsWith(")");
 
                 return this.isCount.Value;
             }
@@ -37,7 +39,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
-        public static Column All => new Column(new SqlExpression("*"));
+        public static Column All => (Column)"*";
         #endregion
 
         /// <summary>
@@ -131,6 +133,32 @@ namespace SharpOrm
         public static explicit operator Column(string rawColumn)
         {
             return new Column(new SqlExpression(rawColumn));
+        }
+
+        /// <summary>
+        /// Retrieves a column that represents the last field or property of the expression (manually mapped objects not included).
+        /// </summary>
+        /// <param name="columnExpression"></param>
+        /// <returns></returns>
+        public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression)
+        {
+            return ExpressionUtils<T>.GetColumn(columnExpression);
+        }
+
+        /// <summary>
+        /// Retrieves a column that represents the last field or property of the expression, including manually mapped objects.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="columnExpression"></param>
+        /// <param name="registry"></param>
+        /// <returns></returns>
+        public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression, TranslationRegistry registry)
+        {
+            var member = ExpressionUtils<T>.GetColumnMember(columnExpression, out var rootType);
+            if (registry.GetTable(rootType) is TableInfo table)
+                return new MemberInfoColumn(member, table.GetColumn(member).Name);
+
+            return new MemberInfoColumn(member);
         }
 
         internal string GetCountColumn()

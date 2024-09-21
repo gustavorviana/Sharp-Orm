@@ -16,27 +16,27 @@ namespace SharpOrm.DataTranslation
         #region Fields/Props
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly CancellationToken token;
-        private readonly LambdaColumn[] fkToLoad;
+        private readonly MemberInfoColumn[] fkToLoad;
 
         public ConnectionManager Manager { get; }
         #endregion
 
-        public FkLoaders(ConnectionManager manager, LambdaColumn[] fkToLoad, CancellationToken token)
+        public FkLoaders(ConnectionManager manager, MemberInfoColumn[] fkToLoad, CancellationToken token)
         {
             this.token = token;
             Manager = manager;
             this.fkToLoad = fkToLoad;
         }
 
-        public void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
+        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
         {
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            if (fkToLoad.FirstOrDefault(f => f.IsSame(column)) is LambdaColumn lCol)
+            if (fkToLoad.FirstOrDefault(f => f.IsSame(column)) is MemberInfoColumn lCol)
                 AddFkColumn(lCol, owner, fkValue, column);
             else if (Manager.Config.LoadForeign)
-                column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(column, fkValue));
+                column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(translator, column, fkValue));
         }
 
         /// <summary>
@@ -55,8 +55,8 @@ namespace SharpOrm.DataTranslation
 
         private object GetValueFor(ForeignInfo info)
         {
-            if (info is HasManyInfo manyInfo)
-                return GetCollectionValueFor(manyInfo);
+            if (ReflectionUtils.IsCollection(info.Type))
+                return GetCollectionValueFor(info);
 
             using (var query = CreateQuery(info))
             {
@@ -67,7 +67,7 @@ namespace SharpOrm.DataTranslation
             }
         }
 
-        private object GetCollectionValueFor(HasManyInfo info)
+        private object GetCollectionValueFor(ForeignInfo info)
         {
             using (var query = CreateQuery(info))
             {
@@ -87,7 +87,7 @@ namespace SharpOrm.DataTranslation
         private Query CreateQuery(ForeignInfo info)
         {
             var query = CreateQuery(info.TableName);
-            query.Where(info is HasManyInfo many ? many.LocalKey : "Id", info.ForeignKey);
+            query.Where(info.LocalKey ?? "Id", info.ForeignKey);
             return query;
         }
 
@@ -102,14 +102,11 @@ namespace SharpOrm.DataTranslation
             return new DbObjectEnumerator(reader, mapped, token);
         }
 
-        private void AddFkColumn(LambdaColumn lCol, object owner, object fkValue, ColumnInfo column)
+        private void AddFkColumn(MemberInfoColumn lCol, object owner, object fkValue, ColumnInfo column)
         {
             var info = foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
             if (info == null)
-            {
-                info = column.HasManyInfo != null ? new HasManyInfo(lCol, fkValue, column.HasManyInfo.LocalKey) : new ForeignInfo(lCol, fkValue);
-                foreignKeyToLoad.Enqueue(info);
-            }
+                foreignKeyToLoad.Enqueue(info = new ForeignInfo(lCol, fkValue, column.ForeignInfo.LocalKey));
 
             info.AddFkColumn(owner, column);
         }

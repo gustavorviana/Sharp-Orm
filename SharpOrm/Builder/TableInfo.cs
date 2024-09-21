@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
+﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +14,6 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private readonly ConcurrentDictionary<Type, TableInfo> cachedTables = new ConcurrentDictionary<Type, TableInfo>();
         private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         private readonly TranslationRegistry registry;
 
@@ -32,29 +30,44 @@ namespace SharpOrm.Builder
         public string SoftDeleteColumn { get; }
 
         public bool CanSoftDelete => !(this.SoftDeleteColumn is null);
+        
+        internal bool IsManualMap { get; }
 
-        /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
-        /// </summary>
-        /// <param name="type">The type representing the table.</param>s
-        public TableInfo(Type type) : this(type, TranslationRegistry.Default)
+        internal TableInfo(Type type, TranslationRegistry registry, string name, IEnumerable<ColumnTreeInfo> columns)
         {
+            this.IsManualMap = true;
+
+            this.registry = registry;
+            this.Type = type;
+            this.Name = name;
+
+            this.Columns = columns.ToArray();
         }
 
         /// <summary>
         /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
         /// </summary>
-        /// <param name="config">The translation configuration.</param>
+        /// <param name="type">The type representing the table.</param>s
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
+        public TableInfo(Type type) : this(type, TranslationRegistry.Default)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the TableInfo class with the specified translation registry and type.
+        /// </summary>
+        /// <param name="registry">The translation registry.</param>
         /// <param name="type">The type representing the table.</param>
-        public TableInfo(Type type, TranslationRegistry config)
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
+        public TableInfo(Type type, TranslationRegistry registry)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
 
             this.Type = type;
-            this.registry = config;
+            this.registry = registry;
             this.Name = GetNameOf(type);
-            this.Columns = GetColumns(Type, registry).ToArray();
+            this.Columns = this.GetColumns().ToArray();
             this.SoftDeleteColumn = type.GetCustomAttribute<SoftDeleteAttribute>()?.ColumnName;
         }
 
@@ -63,24 +76,21 @@ namespace SharpOrm.Builder
             return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
         }
 
-        public static IEnumerable<ColumnInfo> GetColumns<T>(Type type, TranslationRegistry registry, Expression<ColumnExpression<T>>[] calls, bool except)
+        public IEnumerable<ColumnInfo> GetColumns<T>(Expression<ColumnExpression<T>>[] calls, bool except)
         {
-            var props = PropertyExpressionVisitor.VisitProperties(calls).ToArray();
-            var columns = TableInfo.GetColumns(typeof(T), registry);
+            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
 
-            if (except) columns.Where(x => !props.Contains(x.PropName));
-            return columns.Where(x => props.Contains(x.PropName));
+            if (except) this.Columns.Where(x => !props.Contains(x.PropName));
+            return this.Columns.Where(x => props.Contains(x.PropName));
         }
 
-        public static IEnumerable<ColumnInfo> GetColumns(Type type, TranslationRegistry registry)
+        private IEnumerable<ColumnInfo> GetColumns()
         {
-            foreach (var prop in type.GetProperties(propertiesFlags))
-                if (prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null)
-                    yield return new ColumnInfo(registry, prop);
+            foreach (var prop in this.Type.GetProperties(propertiesFlags).Where(ColumnInfo.CanWork))
+                yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in type.GetFields(propertiesFlags))
-                if (!field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null)
-                    yield return new ColumnInfo(registry, field);
+            foreach (var field in this.Type.GetFields(propertiesFlags).Where(ColumnInfo.CanWork))
+                yield return new ColumnInfo(registry, field);
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace SharpOrm.Builder
             }
 
             foreach (var column in this.Columns)
-                if (columns.Any(x => x.Equals(column.Name, StringComparison.CurrentCultureIgnoreCase)))
+                if (columns.ContainsIgnoreCase(column.Name))
                     column.Validate(owner);
         }
 
@@ -134,7 +144,7 @@ namespace SharpOrm.Builder
         /// <exception cref="KeyNotFoundException"></exception>
         public object GetValue(object owner, string name)
         {
-            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) is ColumnInfo col))
+            if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))
                 throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
 
             return col.Get(owner);
@@ -151,15 +161,17 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            foreach (var column in this.Columns)
+            for (int i = 0; i < this.Columns.Length; i++)
             {
-                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.CurrentCultureIgnoreCase)) != needContains)
+                var column = this.Columns[i];
+
+                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.OrdinalIgnoreCase)) != needContains)
                     continue;
 
-                if (column.IsForeignKey)
+                if (column.ForeignInfo != null)
                 {
                     if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                        yield return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
                     continue;
                 }
 
@@ -176,24 +188,28 @@ namespace SharpOrm.Builder
 
         private bool CanLoadForeignColumn(ColumnInfo column)
         {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignKey, StringComparison.CurrentCultureIgnoreCase));
+            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
 
         private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
         {
             object obj = column.Get(owner);
-            if (!readForeignKey || !column.Type.IsClass || !column.IsForeignKey || TranslationUtils.IsNull(obj))
+            if (!readForeignKey || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
             if (obj is null)
                 return null;
 
-            return new TableInfo(column.Type, this.registry).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return registry.GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
         {
-            var table = this.Get(GetValidType(fkColumn.Type));
+            var type = GetValidType(fkColumn.Type);
+            if (type == typeof(Row))
+                return null;
+
+            var table = this.registry.GetTable(type);
             var pkColumn = table.Columns.First(c => c.Key);
 
             if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
@@ -212,6 +228,7 @@ namespace SharpOrm.Builder
             return string.Format("{0}: {1}", this.Name, this.Type);
         }
 
+        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTableName(Type)\". This constructor will be removed in version 3.x.")]
         public static string GetNameOf(Type type)
         {
             if (!(GetValidType(type).GetCustomAttribute<TableAttribute>(false) is TableAttribute table) || string.IsNullOrEmpty(table.Name))
@@ -228,17 +245,14 @@ namespace SharpOrm.Builder
             return ReflectionUtils.IsCollection(type) ? ReflectionUtils.GetGenericArg(type) : type;
         }
 
-        /// <summary>
-        /// Retrieve the object's table by checking the cache list.
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns>The table info for the specified type.</returns>
-        private TableInfo Get(Type type)
+        public ColumnInfo GetColumn(string name)
         {
-            if (type == typeof(Row))
-                return null;
+            return this.Columns.FirstOrDefault(c => c.Name == name);
+        }
 
-            return cachedTables.GetOrAdd(type, _type => new TableInfo(_type));
+        internal ColumnInfo GetColumn(MemberInfo member)
+        {
+            return this.Columns.FirstOrDefault(c => c.column == member);
         }
     }
 }

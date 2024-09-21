@@ -77,6 +77,14 @@ namespace SharpOrm.Builder
             this.Alias = GetAlias(splits);
         }
 
+        internal static DbName FromPossibleEmptyName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return new DbName("", "", false);
+
+            return new DbName(name);
+        }
+
         /// <summary>
         /// Tries to retrieve the alias of the object.
         /// </summary>

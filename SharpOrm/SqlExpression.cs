@@ -30,6 +30,15 @@ namespace SharpOrm
         /// </summary>
         /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
         /// <param name="parameters">The parameters used in the SQL values.</param>
+        public SqlExpression(StringBuilder value, ICollection<object> parameters) : this(value, parameters.ToArray())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
         public SqlExpression(StringBuilder value, params object[] parameters)
         {
             if (value.Count('?') != parameters.Length)
@@ -37,6 +46,15 @@ namespace SharpOrm
 
             this.value = value.ToString();
             this.Parameters = parameters;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
+        public SqlExpression(string value, ICollection<object> parameters) : this(value, parameters.ToArray())
+        {
         }
 
         /// <summary>
@@ -94,6 +112,11 @@ namespace SharpOrm
         internal static SqlExpression Make(params string[] sql)
         {
             return new SqlExpression(string.Concat(sql));
+        }
+
+        protected internal virtual string GetParamName(int index)
+        {
+            return string.Concat("@p", index);
         }
 
         public static explicit operator SqlExpression(StringBuilder builder)

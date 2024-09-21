@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharpOrm.Builder;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -7,9 +9,10 @@ namespace SharpOrm.DataTranslation
     /// <summary>
     /// Class responsible for translating data between the database and code.
     /// </summary>
-    public class TranslationRegistry
+    public class TranslationRegistry : IEquatable<TranslationRegistry>, ICloneable
     {
         private static TranslationRegistry _default = new TranslationRegistry();
+        private readonly List<TableInfo> manualMapped = new List<TableInfo>();
 
         public static TranslationRegistry Default
         {
@@ -173,6 +176,102 @@ namespace SharpOrm.DataTranslation
         public DateTime ConvertDate(DateTime value, bool toSql)
         {
             return (DateTime)(toSql ? native.ToSqlValue(value, typeof(DateTime)) : native.FromSqlValue(value, typeof(DateTime)));
+        }
+
+        internal TableInfo AddTableMap<T>(TableMap<T> map)
+        {
+            var type = typeof(T);
+            if (manualMapped.Any(x => x.Type == type))
+                throw new InvalidOperationException("The type has already been mapped.");
+
+            if (string.IsNullOrEmpty(map.Name))
+                throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
+
+            var table = new TableInfo(type, map.Registry, map.Name, map.GetFields());
+            manualMapped.Add(table);
+            return table;
+        }
+
+        /// <summary>
+        /// Retrieves the name of the table.
+        /// </summary>
+        /// <param name="type">The type that should be used to retrieve the name.</param>
+        /// <returns></returns>
+        public string GetTableName(Type type)
+        {
+            if (GetManualMap(type) is TableInfo table) return table.Name;
+            return TableInfo.GetNameOf(type);
+        }
+
+        /// <summary>
+        /// Retrieves an instance of TableInfo.
+        /// </summary>
+        /// <param name="type">Type that should be represented by TableInfo.</param>
+        /// <returns></returns>
+        public TableInfo GetTable(Type type)
+        {
+#pragma warning disable CS0618 // O tipo ou membro é obsoleto
+            return GetManualMap(type) ?? new TableInfo(type, this);
+#pragma warning restore CS0618 // O tipo ou membro é obsoleto
+        }
+
+        internal TableInfo GetManualMap(Type type)
+        {
+            return manualMapped.FirstOrDefault(x => x.Type == type);
+        }
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as TranslationRegistry);
+        }
+
+        public bool Equals(TranslationRegistry other)
+        {
+            return !(other is null) &&
+                   EqualityComparer<NativeSqlTranslation>.Default.Equals(native, other.native) &&
+                   EqualityComparer<ISqlTranslation[]>.Default.Equals(Translators, other.Translators) &&
+                   GuidFormat == other.GuidFormat &&
+                   EqualityComparer<TimeZoneInfo>.Default.Equals(DbTimeZone, other.DbTimeZone) &&
+                   EqualityComparer<TimeZoneInfo>.Default.Equals(TimeZone, other.TimeZone);
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 836003443;
+            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(native);
+            hashCode = hashCode * -1521134295 + EqualityComparer<ISqlTranslation[]>.Default.GetHashCode(Translators);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(GuidFormat);
+            hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(DbTimeZone);
+            hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(TimeZone);
+            return hashCode;
+        }
+
+        public static bool operator ==(TranslationRegistry left, TranslationRegistry right)
+        {
+            return EqualityComparer<TranslationRegistry>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(TranslationRegistry left, TranslationRegistry right)
+        {
+            return !(left == right);
+        }
+
+        #endregion
+
+        object ICloneable.Clone() => this.Clone();
+
+        public TranslationRegistry Clone()
+        {
+
+            return new TranslationRegistry
+            {
+                DbTimeZone = DbTimeZone,
+                GuidFormat = GuidFormat,
+                TimeZone = TimeZone,
+                Translators = Translators
+            };
         }
     }
 }

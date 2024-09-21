@@ -56,7 +56,7 @@ namespace SharpOrm
         internal static bool ContainsIgnoreCase(this IEnumerable<string> values, string toCompare)
         {
             foreach (var value in values)
-                if (value.Equals(toCompare, StringComparison.CurrentCultureIgnoreCase))
+                if (value.Equals(toCompare, StringComparison.OrdinalIgnoreCase))
                     return true;
 
             return false;

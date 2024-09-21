@@ -73,7 +73,7 @@ namespace SharpOrm.Builder
             this.builder.Add("VALUES ");
             this.AppendInsertCells(cells);
 
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
+            if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
                 this.builder.Add("; SELECT LAST_INSERT_ID();");
         }
 
@@ -227,7 +227,7 @@ namespace SharpOrm.Builder
             else this.builder.Add(this.Info.Where);
         }
 
-        protected void WriteWhereContent(QueryInfo info)
+        protected void WriteWhereContent(QueryBaseInfo info)
         {
             this.builder.AddAndReplace(
                 info.Where.ToString(),

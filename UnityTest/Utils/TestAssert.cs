@@ -75,7 +75,7 @@ namespace UnityTest.Utils
         public static void AreValidParam(DbCommand cmd, int index, object value)
         {
             var param = cmd.Parameters[index];
-            Assert.AreEqual(DbCommandExtension.GetParamName(index + 1), param.ParameterName);
+            Assert.AreEqual(string.Concat("@p", index + 1), param.ParameterName);
 
             if (value == null || value is DBNull) Assert.IsTrue(param.Value is DBNull);
             else Assert.AreEqual(value, param.Value);

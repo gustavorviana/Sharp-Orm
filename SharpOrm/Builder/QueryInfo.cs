@@ -6,15 +6,8 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents the information for building a SQL query.
     /// </summary>
-    public class QueryInfo
+    public class QueryInfo : QueryBaseInfo
     {
-        private IReadonlyQueryInfo _queryInfo;
-
-        /// <summary>
-        /// Gets the WHERE clause builder.
-        /// </summary>
-        public QueryBuilder Where { get; }
-
         /// <summary>
         /// Gets the HAVING clause builder.
         /// </summary>
@@ -41,38 +34,13 @@ namespace SharpOrm.Builder
         public Column[] Select { get; set; } = new Column[] { Column.All };
 
         /// <summary>
-        /// Gets the query configuration.
-        /// </summary>
-        public QueryConfig Config { get; }
-
-        /// <summary>
-        /// Gets the database table name.
-        /// </summary>
-        public DbName TableName { get; }
-
-        /// <summary>
-        /// Gets the table name.
-        /// </summary>
-        public string From => this.TableName.Name;
-
-        /// <summary>
-        /// Gets the table alias.
-        /// </summary>
-        public string Alias => this.TableName.Alias;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="QueryInfo"/> class with the specified configuration and table name.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="table">The table name.</param>
         /// <exception cref="ArgumentNullException">Thrown when the configuration or table name is null.</exception>
-        public QueryInfo(QueryConfig config, DbName table)
+        public QueryInfo(QueryConfig config, DbName table) : base(config, table)
         {
-            this.Config = config ?? throw new ArgumentNullException(nameof(config));
-            this._queryInfo = new ReadonlyQueryInfo(config, table);
-            this.TableName = table;
-
-            this.Where = new QueryBuilder(this.ToReadOnly());
             this.Having = new QueryBuilder(this.ToReadOnly());
         }
 
@@ -95,15 +63,6 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
-        /// Converts the query information to a read-only format.
-        /// </summary>
-        /// <returns>The read-only query information.</returns>
-        public IReadonlyQueryInfo ToReadOnly()
-        {
-            return this._queryInfo;
-        }
-
-        /// <summary>
         /// Determines whether the query is a count query.
         /// </summary>
         /// <returns>True if the query is a count query; otherwise, false.</returns>
@@ -112,8 +71,8 @@ namespace SharpOrm.Builder
             if (this.Select.Length != 1)
                 return false;
 
-            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString().ToLower();
-            return select.StartsWith("count(");
+            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString();
+            return select.StartsWith("count(", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

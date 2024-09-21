@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0;net8.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>2.0.0.0</AssemblyVersion>
-		<FileVersion>2.0.0.0</FileVersion>
-		<VersionPrefix>2.0.00</VersionPrefix>
+		<AssemblyVersion>2.3.0</AssemblyVersion>
+		<FileVersion>2.3.0</FileVersion>
+		<VersionPrefix>2.3.0</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -17,11 +17,11 @@
 		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<Company />
-		<Description>Sharp Orm is a library that simplifies the creation of database query.</Description>
-		<PackageTags>Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Db</PackageTags>
+		<Description>Sharp Orm is a library that assists in database query creation and database connection management.</Description>
+		<PackageTags>Db;Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Connection;Management</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Introduction of features for table creation, bulk update/delete, and validation of model properties/fields; redesign of connection management, improvements in object reading, and removal of obsolete code.
+			Dynamic class mapping.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>

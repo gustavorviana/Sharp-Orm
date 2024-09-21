@@ -2,7 +2,7 @@
 
 namespace SharpOrm.DataTranslation
 {
-    internal class NumericTranslation : ISqlTranslation
+    public class NumericTranslation : ISqlTranslation
     {
         public bool CanWork(Type type) => TranslationUtils.IsNumeric(type) || type == typeof(string);
 

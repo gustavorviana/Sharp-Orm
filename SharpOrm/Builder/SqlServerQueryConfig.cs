@@ -57,8 +57,9 @@ namespace SharpOrm.Builder
         {
             StringBuilder builder = new StringBuilder(value.Length + 2).Append(StrDelimitor);
 
-            foreach (var c in value)
+            for (int i = 0; i < value.Length; i++)
             {
+                var c = value[i];
                 if (c == StrDelimitor) builder.Append(StrDelimitor);
                 builder.Append(c);
             }

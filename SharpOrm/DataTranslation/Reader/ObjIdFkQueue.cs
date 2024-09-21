@@ -6,17 +6,17 @@ namespace SharpOrm.DataTranslation.Reader
 {
     internal class ObjIdFkQueue : IFkQueue
     {
-        public void EnqueueForeign(object owner, object fkValue, ColumnInfo column)
+        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
         {
             if (fkValue is DBNull || fkValue is null)
                 return;
 
-            column.SetRaw(owner, MakeObjWithId(column, fkValue));
+            column.SetRaw(owner, MakeObjWithId(translator, column, fkValue));
         }
 
-        public static object MakeObjWithId(ColumnInfo column, object fkValue)
+        public static object MakeObjWithId(TranslationRegistry translator, ColumnInfo column, object fkValue)
         {
-            var fkTable = new TableInfo(column.Type);
+            var fkTable = translator.GetTable(column.Type);
             object value = fkTable.CreateInstance();
             fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, fkValue);
             return value;
