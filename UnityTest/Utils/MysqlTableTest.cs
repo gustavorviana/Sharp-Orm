@@ -39,12 +39,13 @@ namespace UnityTest.Utils
 
         protected void InsertRows(int count)
         {
+            using var q = NewQuery();
+            q.Delete();
             Row[] rows = new Row[count];
 
             for (int i = 1; i <= count; i++)
                 rows[i - 1] = NewRow(i, $"User {i}");
 
-            using var q = NewQuery();
             q.BulkInsert(rows);
         }
 
