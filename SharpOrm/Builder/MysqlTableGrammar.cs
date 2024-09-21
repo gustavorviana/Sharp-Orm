@@ -101,6 +101,9 @@ namespace SharpOrm.Builder
             if (this.GetCustomColumnTypeMap(column) is ColumnTypeMap map)
                 return map.GetTypeString(column);
 
+            if (GetExpectedColumnType(column) is string typeColumn)
+                return typeColumn;
+
             var dataType = column.DataType;
             if (dataType == typeof(int))
                 return "INT";
@@ -142,7 +145,7 @@ namespace SharpOrm.Builder
                 return "BLOB";
 
             if (dataType == typeof(Guid))
-                return string.Concat("VARCHAR(", this.GetGuidSize(), ")");
+                return string.Concat("CHAR(", this.GetGuidSize(), ")");
 
             throw new ArgumentException($"Unsupported data type: {dataType.Name}");
         }

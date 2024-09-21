@@ -59,8 +59,10 @@ namespace SharpOrm.Builder
             if (this.GetCustomColumnTypeMap(column) is ColumnTypeMap map)
                 return map.GetTypeString(column);
 
-            var dataType = column.DataType;
+            if (GetExpectedColumnType(column) is string typeColumn)
+                return typeColumn;
 
+            var dataType = column.DataType;
             if (dataType == typeof(long))
                 return "NUMERIC";
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -205,10 +206,15 @@ namespace SharpOrm.Builder
         /// <returns>The mapped data column.</returns>
         private static DataColumn MapColumn(ColumnInfo item)
         {
-            return new DataColumn(item.Name, item.Type)
+            var dataCol = new DataColumn(item.Name, item.Type)
             {
                 AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key
             };
+
+            if (item.GetAttribute<ColumnAttribute>()?.TypeName is string typeName && typeName.Length > 0)
+                dataCol.ExtendedProperties[nameof(ColumnAttribute.TypeName)] = typeName;
+
+            return dataCol;
         }
 
         /// <summary>

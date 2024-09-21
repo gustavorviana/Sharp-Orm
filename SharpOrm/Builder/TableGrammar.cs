@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -192,6 +193,13 @@ namespace SharpOrm.Builder
                 case "P": return 38;
                 default: return 68;
             }
+        }
+
+        protected string GetExpectedColumnType(DataColumn column)
+        {
+            return column.ExtendedProperties.ContainsKey(nameof(ColumnAttribute.TypeName)) ?
+                column.ExtendedProperties[nameof(ColumnAttribute.TypeName)] as string :
+                null;
         }
     }
 }
