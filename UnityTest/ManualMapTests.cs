@@ -99,5 +99,78 @@ namespace UnityTest
             var colDate = Column.FromExp<MyClass>(x => x.Date, reg);
             Assert.AreEqual("BeginDate", colDate.Name);
         }
+
+        [TestMethod]
+        public void QueryReadTest()
+        {
+            var id = 1;
+            var id2 = 2;
+            var name = "My Name";
+            var nick = "My Nick";
+            var record_created = DateTime.Now;
+            var number = 123;
+            var custom_id = Guid.NewGuid().ToString();
+            var custom_status = Status.Success;
+
+            Connection.QueryReaders.Add("SELECT * FROM `DynamicMappedTable` LIMIT 1",
+                () => new MockDataReader(
+                    new Cell("Id", id), 
+                    new Cell("id2", id2), 
+                    new Cell("name", name), 
+                    new Cell("nick", nick),
+                    new Cell("record_created", record_created),
+                    new Cell("number", number),
+                    new Cell("custom_id", custom_id),
+                    new Cell("custom_status", custom_status))
+            );
+
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<DynamicMappedTable>(reg);
+            tm.Property(x => x.User.Name, "name");
+            tm.Property(x => x.User.Nick, "nick");
+            tm.Property(x => x.CreatedAt, "record_created");
+            tm.Build();
+
+            var mockConfig = Config.Clone();
+            mockConfig.Translation = reg;
+
+            using var q = new Query<DynamicMappedTable>(GetConnectionManager(mockConfig));
+            var actual = q.FirstOrDefault();
+
+            Assert.IsNotNull(actual);
+            Assert.AreEqual(id, actual.Id);
+            Assert.AreEqual(id2, actual.Id2);
+            Assert.AreEqual(record_created, actual.CreatedAt);
+            Assert.AreEqual(number, actual.Number);
+
+            Assert.AreEqual(name, actual.User.Name);
+            Assert.AreEqual(nick, actual.User.Nick);
+
+            Assert.AreEqual(Guid.Parse(custom_id), actual.Custom.Id);
+            Assert.AreEqual(custom_status, actual.Custom.Status);
+        }
+
+        private class DynamicMappedTable
+        {
+            public int Id { get; set; }
+            public int Id2 { get; set; }
+            public DateTime? CreatedAt { get; set; }
+            public decimal Number { get; set; }
+
+            public UserInfo User { get; set; }
+            public Custom Custom { get; set; }
+        }
+
+        private class UserInfo
+        {
+            public string Name { get; set; }
+            public string Nick { get; set; }
+        }
+
+        private class Custom
+        {
+            public Guid? Id { get; set; }
+            public Status Status { get; set; }
+        }
     }
 }
