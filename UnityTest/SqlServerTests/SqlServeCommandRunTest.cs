@@ -27,7 +27,7 @@ namespace UnityTest.SqlServerTests
             Assert.AreEqual(Id, row[ID]);
             Assert.AreEqual(Name, row[NAME]);
         }
-
+        
         [TestMethod]
         public void MultipleSelectCount()
         {
@@ -51,6 +51,23 @@ namespace UnityTest.SqlServerTests
             q.Distinct = true;
             q.Select(NAME);
             var r = q.Paginate(5, 1);
+
+            Assert.IsNotNull(r);
+            Assert.AreEqual(4, r.Count);
+            Assert.AreEqual(4, r.Total);
+        }
+
+        [TestMethod]
+        public void PaginateDistinctColumn()
+        {
+            InsertRows(4);
+
+            using var q = new Query<TestTable>(Creator);
+            q.Insert(NewRow(6, "User 1").Cells);
+            q.OrderBy(NAME);
+            q.Distinct = true;
+            q.Select(NAME);
+            var r = q.Paginate(5, 1, (Column)"COUNT(DISTINCT name)");
 
             Assert.IsNotNull(r);
             Assert.AreEqual(4, r.Count);

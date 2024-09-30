@@ -167,12 +167,23 @@ namespace SharpOrm
                 return "*";
 
             string exp = this.expression?.ToString();
-            return this.IsCount ? exp.Substring(6, exp.Length - 2) : this.Name;
+            return this.IsCount ? exp.Substring(6, exp.Length - 8) : this.Name;
         }
 
         internal bool IsAll()
         {
             return (this.expression?.ToString() ?? this.Name).EndsWith("*");
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder("Column(");
+
+            if (this.expression != null) builder.Append(this.expression.ToString());
+            else if (string.IsNullOrEmpty(this.Alias)) builder.Append(this.Name);
+            else builder.AppendFormat("{0} AS {1}", this.Name.Trim(), this.Alias.Trim());
+
+            return builder.Append(")").ToString();
         }
 
         #region IEquatable

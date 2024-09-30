@@ -94,14 +94,9 @@ namespace SharpOrm.Builder
                 return;
             }
 
-            bool isOldOrDistinct = this.Config.UseOldPagination || (column == null || column == Column.All) && this.Query.Distinct;
-            if (isOldOrDistinct)
-                this.builder.Add("SELECT COUNT(*) FROM (");
-
+            this.builder.Add("SELECT COUNT(*) FROM (");
             this.ConfigureSelect(true, column);
-
-            if (isOldOrDistinct)
-                this.builder.Add(") AS [count]");
+            this.builder.Add(") AS [count]");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -127,7 +122,7 @@ namespace SharpOrm.Builder
         {
             this.builder.Add("SELECT");
 
-            if (this.Query.Distinct && countColumn == null)
+            if (this.Query.Distinct)
                 this.builder.Add(" DISTINCT");
 
             if (!HasOffset && !this.Info.IsCount())
@@ -197,6 +192,8 @@ namespace SharpOrm.Builder
 
         private QueryBuilder WriteCountColumn(Column column)
         {
+            if (column.IsCount) return this.builder.AddExpression(column);
+
             string countCol = column?.GetCountColumn();
             if (string.IsNullOrEmpty(countCol))
                 throw new NotSupportedException("The name of a column or '*' must be entered for counting.");

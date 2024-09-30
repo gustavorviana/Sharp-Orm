@@ -96,7 +96,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount(Column column)
         {
-            bool safeDistinct = (column == null || column == Column.All) && this.Query.Distinct;
+            bool safeDistinct = (column == null || column.IsAll()) && this.Query.Distinct;
 
             if (safeDistinct)
                 this.builder.Add("SELECT COUNT(*) FROM (");
@@ -104,7 +104,7 @@ namespace SharpOrm.Builder
             this.ConfigureSelect(true, safeDistinct ? null : column);
 
             if (safeDistinct)
-                this.builder.Add(") `count`");
+                this.builder.Add(") ").Add(this.Info.Config.ApplyNomenclature("count"));
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -115,18 +115,21 @@ namespace SharpOrm.Builder
         private void ConfigureSelect(bool configureWhereParams, Column countColumn)
         {
             bool isCount = countColumn != null;
+            bool isCustomCount = countColumn != null && countColumn.IsCount;
+
             this.builder.Add("SELECT ");
 
-            if (isCount)
+            if (isCount && !isCustomCount)
                 this.builder.Add("COUNT(");
 
-            if (this.Query.Distinct)
+            if (this.Query.Distinct && !isCustomCount)
                 this.builder.Add("DISTINCT ");
 
             if (isCount)
             {
                 WriteSelect(countColumn);
-                this.builder.Add(')');
+                if (!isCustomCount)
+                    this.builder.Add(')');
             }
             else
             {

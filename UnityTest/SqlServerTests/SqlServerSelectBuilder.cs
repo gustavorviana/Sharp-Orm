@@ -203,6 +203,44 @@ namespace UnityTest.SqlServerTests
         }
 
         [TestMethod]
+        public void CountAllDistinct()
+        {
+            using var query = new Query(TABLE, GetConnectionManager());
+            query.Distinct = true;
+            var g = NewConfig.NewGrammar(query);
+
+            var sqlExpression = g.Count();
+            TestAssert.AreDecoded("SELECT COUNT(*) FROM (SELECT DISTINCT * FROM [TestTable]) AS [count]", sqlExpression);
+        }
+
+        [TestMethod]
+        public void CountAllOfTableDistinct()
+        {
+            using var query = new Query(TABLE + " t", GetConnectionManager());
+            query.Select("t.*").Distinct = true;
+            var g = NewConfig.NewGrammar(query);
+
+            var sqlExpression = g.Count();
+            TestAssert.AreDecoded("SELECT COUNT(*) FROM (SELECT DISTINCT [t].* FROM [TestTable] [t]) AS [count]", sqlExpression);
+        }
+
+        [TestMethod]
+        public void PaginateDistinctColumn()
+        {
+            InsertRows(4);
+
+            using var query = new Query<TestTable>(Creator);
+            query.Insert(NewRow(6, "User 1").Cells);
+            query.OrderBy(NAME);
+            query.Distinct = true;
+            query.Select(NAME);
+
+            var g = NewConfig.NewGrammar(query);
+            var sqlExpression = g.Count((Column)"COUNT(DISTINCT name)");
+            TestAssert.AreDecoded("SELECT COUNT(DISTINCT name) FROM [TestTable]", sqlExpression);
+        }
+
+        [TestMethod]
         public void SelectGroupByPaginateInnerJoin()
         {
             using var query = NewQuery("Customer", "", OldConfig);
