@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
+    <ProjectReference Include="..\TestBase\BaseTest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

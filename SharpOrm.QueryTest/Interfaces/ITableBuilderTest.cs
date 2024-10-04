@@ -1,4 +1,4 @@
-﻿namespace SharpOrm.QueryTest.Interfaces
+﻿namespace QueryTest.Interfaces
 {
     public interface ITableBuilderTest
     {

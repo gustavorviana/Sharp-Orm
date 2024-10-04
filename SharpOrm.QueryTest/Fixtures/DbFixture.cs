@@ -1,23 +1,15 @@
-﻿using SharpOrm.Connection;
+﻿using BaseTest.Fixtures;
+using BaseTest.Mock;
+using SharpOrm.Builder;
+using SharpOrm.Connection;
 
-namespace SharpOrm.QueryTest.Fixtures
+namespace QueryTest.Fixtures
 {
-    public abstract class DbFixture
+    public class DbFixture<Cnf> : DbFixtureBase where Cnf : QueryConfig, new()
     {
-        public ConnectionCreator Creator { get; }
-        public ConnectionManager Manager { get; }
-
-        public DbFixture()
+        protected override ConnectionCreator MakeConnectionCreator()
         {
-            Creator = MakeConnectionCreator();
-            Manager = MakeManager();
+            return new MultipleConnectionCreator<MockConnection>(new Cnf(), null);
         }
-
-        protected virtual ConnectionManager MakeManager()
-        {
-            return new ConnectionManager(Creator);
-        }
-
-        protected abstract ConnectionCreator MakeConnectionCreator();
     }
 }

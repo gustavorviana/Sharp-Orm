@@ -1,6 +1,6 @@
 using Xunit.Abstractions;
 
-namespace SharpOrm.QueryTest.Utils
+namespace BaseTest.Utils
 {
     public class TestBase(ITestOutputHelper output) : IDisposable
     {

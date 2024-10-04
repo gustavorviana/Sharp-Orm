@@ -1,16 +1,17 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
-using SharpOrm.QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using Xunit.Abstractions;
+using SharpOrm;
 
-namespace SharpOrm.QueryTest.Utils
+namespace BaseTest.Utils
 {
     public abstract class DbTestBase : TestBase
     {
         #region Fields/Properties
         private readonly HashSet<string> tablesToReset = [];
-        private readonly DbFixture connection;
+        private readonly DbFixtureBase connection;
 
         protected ConnectionManager Manager => connection.Manager;
         public ConnectionCreator Creator => connection.Creator;
@@ -19,7 +20,7 @@ namespace SharpOrm.QueryTest.Utils
         protected virtual bool ResetTablesOnEnd { get; set; }
         #endregion
 
-        public DbTestBase(ITestOutputHelper output, DbFixture connection) : base(output)
+        public DbTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output)
         {
             ConnectionCreator.Default = connection.Creator;
             this.connection = connection;

@@ -1,4 +1,4 @@
-﻿namespace SharpOrm.QueryTest.Interfaces
+﻿namespace QueryTest.Interfaces
 {
     public interface ISelectBuilderTests
     {
@@ -115,7 +115,6 @@
         void BasicSqlExpressionSelect();
         void NonDecimalSqlExpressionSelect();
         void DecimalSqlExpressionSelect();
-        void DeleteWithNoLock();
         void SelectWithEscapeStrings();
     }
 }
