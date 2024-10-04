@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // Nos projetos no estilo SDK como este, vários atributos de assembly que sempre eram
@@ -15,6 +14,5 @@ using System.Runtime.InteropServices;
 
 // O GUID a seguir será destinado à ID de typelib se este projeto for exposto ao COM.
 
-[assembly: Guid("947c331c-dc5d-4d64-b86c-a540ae0840c0")]
-[assembly: InternalsVisibleTo("UnityTest")]
-[assembly: InternalsVisibleTo("QueryTest")]
+[assembly: Guid("297eb700-6134-41e8-9668-88b74d55df39")]
+[assembly: CollectionBehavior(CollectionBehavior.CollectionPerClass, DisableTestParallelization = true)]

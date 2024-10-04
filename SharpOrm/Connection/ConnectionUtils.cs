@@ -205,7 +205,7 @@ namespace SharpOrm.Connection
         {
             var param = command.CreateParameter();
             param.ParameterName = name;
-            param.Value = value;
+            param.Value = value ?? DBNull.Value;
             command.Parameters.Add(param);
 
             return param;

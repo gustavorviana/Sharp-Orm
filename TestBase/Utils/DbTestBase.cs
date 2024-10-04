@@ -26,13 +26,13 @@ namespace BaseTest.Utils
             this.connection = connection;
         }
 
-        protected Query Query(string table, string alias = "", QueryConfig? config = null)
+        protected Query NewQuery(string table, string alias = "", QueryConfig? config = null)
         {
             tablesToReset.Add(table);
             return new Query(new DbName(table, alias), GetManager(config));
         }
 
-        protected Query<T> Query<T>(string alias = "", QueryConfig? config = null)
+        protected Query<T> NewQuery<T>(string alias = "", QueryConfig? config = null)
         {
             tablesToReset.Add(TranslationRegistry.Default.GetTable(typeof(T)).Name);
             return new Query<T>(alias, GetManager(config));

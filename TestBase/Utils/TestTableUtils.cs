@@ -2,19 +2,19 @@
 
 namespace BaseTest.Utils
 {
-    internal static class TestTableUtils
+    public static class TestTableUtils
     {
-        internal const string TABLE = "TestTable";
+        public const string TABLE = "TestTable";
 
-        internal const string ID = "id";
-        internal const string NAME = "name";
-        internal const string NICK = "nick";
-        internal const string CREATEDAT = "record_created";
-        internal const string NUMBER = "number";
-        internal const string GUIDID = "custom_id";
-        internal const string STATUS = "custom_status";
+        public const string ID = "id";
+        public const string NAME = "name";
+        public const string NICK = "nick";
+        public const string CREATEDAT = "record_created";
+        public const string NUMBER = "number";
+        public const string GUIDID = "custom_id";
+        public const string STATUS = "custom_status";
 
-        internal static Row NewRow(int id, string name)
+        public static Row NewRow(int id, string name)
         {
             return new Row(
                 new Cell(ID, id),
@@ -25,7 +25,7 @@ namespace BaseTest.Utils
             );
         }
 
-        internal static Row[] GenRows(int count)
+        public static Row[] GenRows(int count)
         {
             Row[] rows = new Row[count];
 
