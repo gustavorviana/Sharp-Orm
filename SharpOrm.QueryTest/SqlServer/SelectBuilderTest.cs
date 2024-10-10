@@ -186,7 +186,7 @@ namespace QueryTest.SqlServer
                 .Where("t2.Column", "Value");
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal(
+            QueryAssert.EqualDecoded(
                 "SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @p1",
                 ["Value"],
                 sqlExpression
@@ -202,7 +202,7 @@ namespace QueryTest.SqlServer
                 .Where("t2.Column", "Value");
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal(
+            QueryAssert.EqualDecoded(
                 "SELECT COUNT(*) FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[IdTable] = [TestTable].[Id] WHERE [t2].[Column] = @p1",
                 ["Value"],
                 sqlExpression
@@ -212,7 +212,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void DeleteWithNoLock()
         {
-            using var query = new Query(new DbName(TestTableUtils.TABLE, "T"), this.Creator);
+            using var query = new Query(new DbName(TestTableUtils.TABLE, "T"));
             query.EnableNoLock();
 
             QueryAssert.Equal("DELETE [T] FROM [TestTable] [T] WITH (NOLOCK)", query.Grammar().Delete());
@@ -226,9 +226,26 @@ namespace QueryTest.SqlServer
             query.Offset = 1;
             query.OrderBy(OrderBy.Asc, "Id");
 
-            var g = new SqlServerGrammar(query);
             var sqlExpression = query.Grammar().Count();
             QueryAssert.Equal("SELECT COUNT(*) FROM [TestTable]", sqlExpression);
+        }
+
+        [Fact]
+        public void SelectGroupByColumnName()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GroupBy("Col1", "Col2");
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] GROUP BY [Col1], [Col2]", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectHavingColumn()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GroupBy("Col1", "Col2").Having(q => q.Where("Col1", true));
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] GROUP BY [Col1], [Col2] HAVING [Col1] = 1", query.Grammar().Select());
         }
     }
 }

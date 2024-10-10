@@ -44,10 +44,10 @@ namespace QueryTest.Utils
 
         public static void Equal(string expected, SqlExpression actual)
         {
-            Assert.Equal(expected, DbCommandExtension.DecodeExpressionString(actual));
+            Assert.Equal(expected, actual.ToString());
         }
 
-        public static void Equal(string expectedSql, object[] expectedValues, SqlExpression exp)
+        public static void EqualDecoded(string expectedSql, object[] expectedValues, SqlExpression exp)
         {
             using var command = new SqlCommand();
             command.SetExpression(exp);
