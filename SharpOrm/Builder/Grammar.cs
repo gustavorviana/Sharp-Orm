@@ -220,11 +220,22 @@ namespace SharpOrm.Builder
                 .Add(' ')
                 .Add(this.TryGetTableAlias(this.Query));
 
-            if (!(this.Query.deleteJoins?.Any() ?? false))
+            if (!this.IsMultipleTablesDeleteWithJoin())
                 return;
 
             foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
                 this.builder.Add(", ").Add(this.TryGetTableAlias(join));
+        }
+
+        protected void ThrowDeleteJoinsNotSupported()
+        {
+            if (this.IsMultipleTablesDeleteWithJoin())
+                throw new NotSupportedException("Delete operations on multiple tables with JOINs are not supported in SQL Server. Please execute separate DELETE statements for each table.");
+        }
+
+        protected bool IsMultipleTablesDeleteWithJoin()
+        {
+            return this.Query.deleteJoins?.Any() ?? false;
         }
 
         /// <summary>

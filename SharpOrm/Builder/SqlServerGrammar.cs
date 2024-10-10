@@ -22,11 +22,14 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
+            this.ThrowDeleteJoinsNotSupported();
             this.ThrowOffsetNotSupported();
             this.builder.Add("DELETE");
-
             this.AddLimit();
-            this.ApplyDeleteJoins();
+
+            if (this.Query.IsNoLock() || this.Query.Info.Joins.Any())
+                this.builder.Add(' ').Add(this.TryGetTableAlias(this.Query));
+
             this.builder.Add(" FROM ").Add(this.GetTableName(true));
 
             if (this.Query.IsNoLock())
@@ -53,11 +56,6 @@ namespace SharpOrm.Builder
             this.builder.Add(" ON ");
 
             this.WriteWhereContent(join.Info);
-        }
-
-        protected override bool CanApplyDeleteJoins()
-        {
-            return base.CanApplyDeleteJoins() || this.Query.IsNoLock();
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)

@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class SqlServerEscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqlServerQueryConfig { EscapeStrings = true })
+    public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqlServerQueryConfig { EscapeStrings = true })
     {
         [Fact]
         public void SelectWithEscapeStrings()

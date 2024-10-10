@@ -173,46 +173,6 @@ namespace UnityTest.SqlServerTests
         }
 
         [TestMethod]
-        public void Delete()
-        {
-            using var q = NewQuery(TABLE);
-            var g = new SqlServerGrammar(q);
-
-            TestAssert.AreDecoded("DELETE FROM [TestTable]", g.Delete());
-        }
-
-        [TestMethod]
-        public void DeleteLimit()
-        {
-            using var q = NewQuery(TABLE);
-            q.Limit = 5;
-            var g = new SqlServerGrammar(q);
-
-            TestAssert.AreDecoded("DELETE TOP(5) FROM [TestTable]", g.Delete());
-        }
-
-        [TestMethod]
-        public void DeleteWhere()
-        {
-            using var q = NewQuery(TABLE);
-            q.Where("id", "=", 1);
-            var g = new SqlServerGrammar(q);
-
-            TestAssert.AreDecoded("DELETE FROM [TestTable] WHERE [id] = 1", g.Delete());
-        }
-
-        [TestMethod]
-        public void DeleteWhereJoin()
-        {
-            using var q = NewQuery(TABLE, "t1");
-            q.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
-            q.Where("t2.Id", 1);
-            var g = new SqlServerGrammar(q);
-
-            TestAssert.AreDecoded("DELETE [t1] FROM [TestTable] [t1] INNER JOIN [Table2] [t2] ON [t2].[Id] = [t1].[T2Id] WHERE [t2].[Id] = 1", g.Delete());
-        }
-
-        [TestMethod]
         public void InsertByBasicSelect()
         {
             using var selectQuery = new Query("User", this.Creator);

@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class OldSqlServerSelectBuilderTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqlServerQueryConfig { UseOldPagination = true })
+    public class OldSelectBuilderTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqlServerQueryConfig { UseOldPagination = true })
     {
 
         [Fact]

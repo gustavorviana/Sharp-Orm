@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class SqlServerSelectBuilderTest(ITestOutputHelper output, DbFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqlServerQueryConfig>>
+    public class SelectBuilderTest(ITestOutputHelper output, DbFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqlServerQueryConfig>>
     {
         [Fact]
         public void FixColumnName()
