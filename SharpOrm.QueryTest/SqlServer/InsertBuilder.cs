@@ -14,7 +14,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void BulkInsert()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
             var expression = query.Grammar().BulkInsert(
                 [
                     NewRow(1, "T1"),
@@ -39,7 +39,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void Insert()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
 
             query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
@@ -54,10 +54,10 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertByBasicSelect()
         {
-            using var selectQuery = NewQuery("User");
+            using var selectQuery = new Query("User");
             selectQuery.Select(new Column("Id"), (Column)"1").Where("id", 1);
 
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().InsertQuery(selectQuery, ["UserId", "Status"]);
             QueryAssert.Equal("INSERT INTO [TestTable] ([UserId], [Status]) SELECT [Id], 1 FROM [User] WHERE [id] = 1", sqlExpression);
@@ -66,7 +66,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertExtendedClass()
         {
-            using var q = NewQuery(TestTableUtils.TABLE);
+            using var q = new Query(TestTableUtils.TABLE);
             var g = new SqlServerGrammar(q);
             var table = new ExtendedTestTable
             {
@@ -95,7 +95,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertWithoutId()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
 
             query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
             query.ReturnsInsetionId = false;
@@ -111,7 +111,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertWIthRaw()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().Insert([new Cell(TestTableUtils.ID, (SqlExpression)"1")]);
             QueryAssert.Equal("INSERT INTO [TestTable] ([id]) VALUES (1); SELECT SCOPE_IDENTITY();", sqlExpression);

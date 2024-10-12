@@ -7,11 +7,10 @@ using SharpOrm;
 
 namespace BaseTest.Utils
 {
-    public abstract class DbTestBase : TestBase
+    public abstract class DbTestBase : QueryTestBase
     {
         #region Fields/Properties
         private readonly HashSet<string> tablesToReset = [];
-        private readonly DbFixtureBase connection;
 
         protected ConnectionManager Manager => connection.Manager;
         public ConnectionCreator Creator => connection.Creator;
@@ -20,10 +19,8 @@ namespace BaseTest.Utils
         protected virtual bool ResetTablesOnEnd { get; set; }
         #endregion
 
-        public DbTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output)
+        public DbTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
         {
-            ConnectionCreator.Default = connection.Creator;
-            this.connection = connection;
         }
 
         protected Query NewQuery(string table, string alias = "", QueryConfig? config = null)
@@ -65,10 +62,10 @@ namespace BaseTest.Utils
 
         protected override void Dispose(bool disposing)
         {
-            ConnectionCreator.Default = null;
-
             if (ResetTablesOnEnd)
                 ClearTables([.. tablesToReset]);
+
+            base.Dispose(disposing);
         }
     }
 }

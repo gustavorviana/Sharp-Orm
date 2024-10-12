@@ -6,7 +6,7 @@ using BaseTest.Utils;
 
 namespace QueryTest.Utils
 {
-    public class DbGrammarTestBase : DbTestBase
+    public class DbGrammarTestBase : QueryTestBase
     {
         public DbGrammarTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
         {

@@ -14,7 +14,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void Update()
         {
-            using var q = NewQuery(TestTableUtils.TABLE);
+            using var q = new Query(TestTableUtils.TABLE);
             var g = new SqlServerGrammar(q);
 
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
@@ -26,7 +26,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void UpdateByColumn()
         {
-            using var q = NewQuery(TestTableUtils.TABLE);
+            using var q = new Query(TestTableUtils.TABLE);
             var g = new MysqlGrammar(q);
             q.Where("id", "=", 1);
 
@@ -37,7 +37,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void UpdateCaseValue()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
             const string CaseMsg = "Without alias";
             const string ElseMsg = "With alias";
 
@@ -58,14 +58,14 @@ namespace QueryTest.SqlServer
         [Fact]
         public void UpdateNoColumns()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
             Assert.Throws<InvalidOperationException>(() => query.Grammar().Update([]));
         }
 
         [Fact]
         public void UpdateWhere()
         {
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
             query.Where("id", "=", 1);
 
             var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
@@ -81,7 +81,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void UpdateWhereJoin()
         {
-            using var query = NewQuery(TestTableUtils.TABLE, "t1");
+            using var query = new Query(TestTableUtils.TABLE + " t1");
             query.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
             query.Where("t2.Id", 1);
 

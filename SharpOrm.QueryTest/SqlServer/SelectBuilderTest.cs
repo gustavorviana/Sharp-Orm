@@ -221,7 +221,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void CountOffset()
         {
-            using var query = new Query(TestTableUtils.TABLE, Creator);
+            using var query = new Query(TestTableUtils.TABLE);
             query.Limit = 10;
             query.Offset = 1;
             query.OrderBy(OrderBy.Asc, "Id");

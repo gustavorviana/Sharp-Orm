@@ -2,66 +2,18 @@
 {
     public interface ISelectBuilderTests
     {
-        // Count Operations
-        void CountAllDistinct();
-        void CountAllOfTableDistinct();
-        void PaginateDistinctColumn();
-        void CountSelect();
-        void CountJoinSelect();
-        void CountDistinctSelect();
-        void CountWhereSelect();
-        void CountDistinctSelect2();
-        void CountDistinctSelect3();
-        void CountSelectJoin();
-        void CountOffset();
-        void CountNewSelectJoin();
-
-        // Distinct Operations
-        void SelectWithDistinct();
-        void SelectWithOffsetLimitDistinct();
-
-        // Group By Operations
-        void GroupByLambdaTest();
-        void GroupByLambdaWithJoinTest();
-        void SelectGroupByColumnName();
-        void SelectGroupByPaginate();
-        void SelectWhereGroupByPaginate();
-        void SelectHaving();
-        void SelectHavingColumn();
-        void SelectGroupByColumnObj();
-
-        // Join Operations
-        void OrderByLambdaWithJoinTest();
-        void SelectJoinWithWhere();
-        void SelectInnerJoin();
-        void SelectLeftJoin();
-        void SelectJoin();
-        void SelectGroupByPaginateInnerJoin();
-
-        // Where Operations
-        void WhereLambdaTest();
-        void WhereLambdaWithJoinTest();
-        void WhereBool();
-        void WhereBetween();
-        void WhereNotBetween();
-        void WhereExistsExpression();
-        void WhereNotExistsExpression();
-        void WhereExistsQuery();
-        void WhereNotExistsQuery();
-        void WhereIn();
-        void WhereInEmpty();
-        void WhereNotIn();
-        void WhereInColumn();
-        void WhereInExpression();
-        void WhereNotInExpression();
-        void WhereInList();
-        void WhereNotInList();
-        void WhereNotInColumn();
-        void SelectWhereNot();
-        void SelectWhereNotNull();
-        void SelectWhereNull();
-        void SelectWhereIn();
-        void SelectWhereInQuery();
+        // Métodos de Select
+        void Select();
+        void Select2();
+        void SelectCase();
+        void SelectCase2();
+        void SelectColumnsName();
+        void SelectColumn();
+        void SelectRawColumn();
+        void SelectLimit();
+        void SelectOffsetLimit();
+        void SelectDistinct();
+        void SelectLimitWhere();
         void SelectWhereCallbackQuery();
         void SelectMultipleWhere();
         void SelectWhereOr();
@@ -74,47 +26,63 @@
         void SelectWhereRawValue();
         void SelectWhereCallback();
         void SelectWhereSubCallback();
+        void SelectInnerJoin();
+        void SelectLeftJoin();
+        void SelectJoinWhere();
+        void SelectGroupByColumnName();
+        void SelectHavingColumn();
+        void SelectGroupByColumnObj();
+        void SelectOrderBy();
+        void SelectOrderByAlias();
         void SelectWhereLikeIn();
         void SelectWhereNotLikeIn();
+        void SelectHaving();
 
-        // Order By Operations
-        void OrderByLambdaTest();
-        void SelectAndOrderBy();
-        void SelectOrderBy();
-        void SelectOrderByWithAlias();
+        void SelectOrderByLambdaTest();
+        void SelectOrderByLambdaWithJoinTest();
+        void SelectGroupByLambdaTest();
+        void SelectGroupByLambdaWithJoinTest();
+        void SelectWhereBool();
+        void SelectWhereBetween();
+        void SelectWhereNotBetween();
+        void SelectWhereExistsExpression();
+        void SelectWhereNotExistsExpression();
+        void SelectWhereExistsQuery();
+        void SelectWhereNotExistsQuery();
+        void SelectWhereIn();
+        void SelectWhereInEmpty();
+        void SelectWhereNotIn();
+        void SelectWhereInColumn();
+        void SelectWhereInExpression();
+        void SelectWhereNotInExpression();
+        void SelectWhereInList();
+        void SelectWhereNotInList();
+        void SelectWhereNotInColumn();
+        void SelectWhereNot();
+        void SelectWhereNotNull();
+        void SelectWhereNull();
+        void SelectSqlExpression();
+        void SelectNonDecimalSqlExpression();
+        void SelectDecimalSqlExpression();
 
-        // Pagination / Offset Operations
-        void SelectOffset();
-        void SelectOffsetWhere();
-        void NewSelectOffset();
-        void NewSelectOffsetLimit();
-        void SelectWithOffsetLimit();
-        void SelectAndPaginate();
-        void SelectWhereAndPaginate();
-        void SelectLimitWhere();
-        void SelectLimit();
+        //Count
+        void Count();
+        void CountJoin();
+        void CountDistinct();
+        void CountDistinctColumn();
+        void CountWhere();
+        void CountDistinct2();
+        void CountDistinct3();
+        void CountAllDistinct();
+        void CountAllOfTableDistinct();
+        void CountOffset();
 
-        // Basic Select Operations
-        void BasicSelect();
-        void Basic2Select();
-        void Select();
-        void SelectColumnsName();
-        void SelectColumn();
-        void SelectRawColumn();
-        void SelectCase();
-        void SelectCase2();
-        void SelectWithLimit();
-        void SelectBasicWhere();
-        void SelectExpression();
-        void SelectExpressionOr();
-
-        // Miscellaneous / Advanced Cases
+        // Cases
         void ColumnCase();
         void CaseEmptyCase();
         void ColumnCaseExpression();
-        void BasicSqlExpressionSelect();
-        void NonDecimalSqlExpressionSelect();
-        void DecimalSqlExpressionSelect();
-        void SelectWithEscapeStrings();
+
+        // Others
+        void FixColumnName();
     }
 }

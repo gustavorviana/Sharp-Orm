@@ -1,5 +1,6 @@
 ﻿using BaseTest.Utils;
 using QueryTest.Utils;
+using SharpOrm;
 using SharpOrm.Builder;
 using Xunit.Abstractions;
 
@@ -11,7 +12,7 @@ namespace QueryTest.SqlServer
         public void SelectWithEscapeStrings()
         {
             var today = DateTime.Today;
-            using var query = NewQuery(TestTableUtils.TABLE);
+            using var query = new Query(TestTableUtils.TABLE);
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
             var sqlExpression = query.Grammar().Select();
