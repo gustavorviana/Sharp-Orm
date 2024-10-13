@@ -1148,7 +1148,7 @@ namespace SharpOrm
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()))).reader;
+            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()), this.Token)).reader;
         }
 
         /// <summary>
@@ -1332,15 +1332,25 @@ namespace SharpOrm
 
         private class OpenReader : IDisposable
         {
+            private bool _disposed;
             private readonly DbCommand command;
             public readonly DbDataReader reader;
-            private bool _disposed;
+            private readonly CancellationTokenRegistration token;
 
-            public OpenReader(DbCommand command)
+            public OpenReader(DbCommand command, CancellationToken token)
             {
                 this.command = command;
+                token.Register(this.CancelCommand);
                 this.reader = command.ExecuteReader();
             }
+
+            private void CancelCommand()
+            {
+                try { this.token.Dispose(); } catch { }
+                try { this.command.Cancel(); } catch { }
+            }
+
+            #region IDisposable
 
             public void Dispose()
             {
@@ -1362,13 +1372,16 @@ namespace SharpOrm
                     return;
 
                 this._disposed = true;
+                this.CancelCommand();
 
                 if (!disposing)
                     return;
 
-                try { ((IDisposable)this.reader).Dispose(); } catch { }
+                try { this.reader.Dispose(); } catch { }
                 try { this.command.Dispose(); } catch { }
             }
+            
+            #endregion
         }
     }
 }
