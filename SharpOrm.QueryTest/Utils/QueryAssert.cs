@@ -53,7 +53,7 @@ namespace QueryTest.Utils
             command.SetExpression(exp);
 
             Assert.Equal(expectedSql, command.CommandText);
-            Assert.Equal(expectedValues.Length, command.Parameters.Count);
+            Assert.True(expectedValues.Length == command.Parameters.Count, $"Expected quantity of SQL parameters {expectedValues.Length}, current {command.Parameters.Count}.");
             var dbParams = command.Parameters.OfType<DbParameter>().ToArray();
 
             for (int i = 0; i < dbParams.Length; i++)

@@ -14,7 +14,7 @@
         void SelectOffsetLimit();
         void SelectDistinct();
         void SelectLimitWhere();
-        void SelectWhereCallbackQuery();
+        void SelectIsolatedWhere();
         void SelectMultipleWhere();
         void SelectWhereOr();
         void SelectWhereColumnsEquals();
@@ -24,7 +24,7 @@
         void SelectWhereEndsWith();
         void SelectWhereRawColumn();
         void SelectWhereRawValue();
-        void SelectWhereCallback();
+        void SelectIsolatedWhereAndCommonWhere();
         void SelectWhereSubCallback();
         void SelectInnerJoin();
         void SelectLeftJoin();
