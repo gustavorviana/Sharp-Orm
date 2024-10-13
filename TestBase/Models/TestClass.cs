@@ -1,13 +1,12 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BaseTest.Models
 {
-    internal class TestClass
+    public class TestClass
     {
         [Key]
         public int MyId { get; set; }
-        public string MyName { get; set; }
+        public string? MyName { get; set; }
         public DateTime MyDate { get; set; }
         public TimeSpan MyTime { get; set; }
         public byte MyByte { get; set; }

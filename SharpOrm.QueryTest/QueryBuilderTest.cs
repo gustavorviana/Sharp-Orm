@@ -1,41 +1,38 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
-using System;
-using UnityTest.Utils;
 
-namespace UnityTest.MysqlTests
+namespace QueryTest
 {
-    [TestClass]
-    public class QueryBuilderTest : BaseTest
+    public class QueryBuilderTest() : DbGrammarTestBase(new SqlServerQueryConfig())
     {
         private static readonly QueryInfo info = new(new MysqlQueryConfig(), new("Example"));
 
-        [TestMethod]
+        [Fact]
         public void AddRaw()
         {
-            AssertQuery(GetQuery().Add("SELECT * FROM `Example`"), "SELECT * FROM `Example`");
+            AssertQuery(GetQuery().Add("SELECT * FROM [Example]"), "SELECT * FROM [Example]");
         }
 
-        [TestMethod]
+        [Fact]
         public void AddExpression()
         {
             AssertQuery(GetQuery().Add(new SqlExpression("Col = ?", 1)), "Col = 1");
         }
 
-        [TestMethod]
+        [Fact]
         public void AddExpressionArgs()
         {
             AssertQuery(GetQuery().Add(new SqlExpression("Col IN (?,?,?,?)", 1, "2", false, true)), "Col IN (1,?,0,1)", "2");
         }
 
-        [TestMethod]
+        [Fact]
         public void AddExpressionColArgs()
         {
             AssertQuery(GetQuery().Add(new SqlExpression("Col = ?", new Column("Col2"))), "Col = `Col2`");
         }
 
-        [TestMethod]
+        [Fact]
         public void AddExpressionAsArgs()
         {
             DateTime now = DateTime.Now;
@@ -45,7 +42,7 @@ namespace UnityTest.MysqlTests
             AssertQuery(GetQuery().Add(new SqlExpression("Col IN (?)", exp3)), "Col IN (1,2,1,0,?,150.1,?)", now, "Text");
         }
 
-        [TestMethod]
+        [Fact]
         public void AddExpressionObjArgs()
         {
             DateTime now = DateTime.Now;
@@ -56,8 +53,8 @@ namespace UnityTest.MysqlTests
         private static void AssertQuery(QueryBuilder actual, string expectedSql, params object[] expectedArgs)
         {
             var exp = actual.ToExpression(null);
-            Assert.AreEqual(expectedSql, exp.ToString());
-            CollectionAssert.AreEqual(exp.Parameters, expectedArgs);
+            Assert.Equal(expectedSql, exp.ToString());
+            Assert.Equal(exp.Parameters, expectedArgs);
         }
 
         private static QueryBuilder GetQuery()

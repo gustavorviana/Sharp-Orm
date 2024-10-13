@@ -1,23 +1,21 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm.Builder;
+﻿using SharpOrm.Builder;
 using System.ComponentModel.DataAnnotations;
 
 namespace UnityTest
 {
-    [TestClass]
     public class ValidationTest
     {
-        [TestMethod]
+        [Fact]
         public void RequiredTest()
         {
             Validate(new ValidableClass { Id = 1 });
-            Assert.ThrowsException<ValidationException>(() => Validate(new ValidableClass()));
+            Assert.Throws<ValidationException>(() => Validate(new ValidableClass()));
         }
 
-        [TestMethod]
+        [Fact]
         public void RangeTest()
         {
-            Assert.ThrowsException<ValidationException>(() => Validate(new ValidableClass { Id = 11 }));
+            Assert.Throws<ValidationException>(() => Validate(new ValidableClass { Id = 11 }));
         }
 
         private static void Validate<T>(T value)

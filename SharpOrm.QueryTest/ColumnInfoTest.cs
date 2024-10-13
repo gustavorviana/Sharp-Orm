@@ -1,28 +1,23 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BaseTest.Models;
 using SharpOrm.Builder;
-using System;
-using System.IO;
-using System.Linq;
-using UnityTest.Models;
 
 namespace UnityTest
 {
-    [TestClass]
     public class ColumnInfoTest
     {
         private static readonly TableInfo info = new(typeof(TestClass));
 
-        [TestMethod]
+        [Fact]
         public void GetValue()
         {
             var table = new TestClass { MyGuid = Guid.Empty };
             var col = info.Columns.Where(c => c.Name == nameof(table.MyGuid)).First();
 
-            Assert.AreEqual(table.MyGuid, col.GetRaw(table));
-            Assert.AreEqual(table.MyGuid.ToString(), col.Get(table));
+            Assert.Equal(table.MyGuid, col.GetRaw(table));
+            Assert.Equal(table.MyGuid.ToString(), col.Get(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetRawGuidValue()
         {
             var id = Guid.NewGuid();
@@ -30,10 +25,10 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(table.MyGuid)).First();
 
             col.SetRaw(table, id);
-            Assert.AreEqual(id, col.GetRaw(table));
+            Assert.Equal(id, col.GetRaw(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetGuidStringValue()
         {
             var id = Guid.NewGuid();
@@ -41,10 +36,10 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(table.MyGuid)).First();
 
             col.Set(table, id.ToString());
-            Assert.AreEqual(id, col.GetRaw(table));
+            Assert.Equal(id, col.GetRaw(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetGuidValue()
         {
             var id = Guid.NewGuid();
@@ -52,10 +47,10 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(table.MyGuid)).First();
 
             col.Set(table, id);
-            Assert.AreEqual(id, col.GetRaw(table));
+            Assert.Equal(id, col.GetRaw(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetDateTime()
         {
             var now = DateTime.Now;
@@ -63,10 +58,10 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(table.MyDate)).First();
 
             col.Set(table, now);
-            Assert.AreEqual(now, col.GetRaw(table));
+            Assert.Equal(now, col.GetRaw(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetTimeByDate()
         {
             var now = DateTime.Now;
@@ -74,10 +69,10 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(table.MyTime)).First();
 
             col.Set(table, now);
-            Assert.AreEqual(now.TimeOfDay, col.GetRaw(table));
+            Assert.Equal(now.TimeOfDay, col.GetRaw(table));
         }
 
-        [TestMethod]
+        [Fact]
         public void SetByteArray()
         {
             var buffer = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -87,13 +82,13 @@ namespace UnityTest
             var col = info.Columns.Where(c => c.Name == nameof(_class.bytes)).First();
 
             col.Set(_class, buffer);
-            Assert.AreEqual(buffer, _class.bytes);
+            Assert.Equal(buffer, _class.bytes);
         }
 
-        [TestMethod]
+        [Fact]
         public void SetStream()
         {
-            using var ms = new MemoryStream(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+            using var ms = new MemoryStream([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
             var info = new TableInfo(typeof(BinaryClass));
             var _class = new BinaryClass();
@@ -103,10 +98,10 @@ namespace UnityTest
 
             bytesCol.Set(_class, ms.ToArray());
             streamCol.Set(_class, ms.ToArray());
-            CollectionAssert.AreEqual(ms.ToArray(), _class.bytes);
+            Assert.Equal(ms.ToArray(), _class.bytes);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetByteArray()
         {
             var buffer = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -118,8 +113,8 @@ namespace UnityTest
 
             bytesCol.Set(_class, buffer);
             streamCol.Set(_class, buffer);
-            CollectionAssert.AreEqual(buffer, bytesCol.Get(_class) as byte[]);
-            CollectionAssert.AreEqual(buffer, streamCol.Get(_class) as byte[]);
+            Assert.Equal(buffer, bytesCol.Get(_class) as byte[]);
+            Assert.Equal(buffer, streamCol.Get(_class) as byte[]);
         }
 
         private class BinaryClass

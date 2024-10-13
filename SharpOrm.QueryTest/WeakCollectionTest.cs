@@ -1,50 +1,48 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm.Collections;
+﻿using SharpOrm.Collections;
 using System;
 using System.ComponentModel;
 
 namespace UnityTest
 {
-    [TestClass]
     public class WeakCollectionTest
     {
-        [TestMethod]
+        [Fact]
         public void AddAndRemoveItemTest()
         {
             var collection = new WeakComponentsRef<Component>();
             var component = new Component();
 
             collection.Add(component);
-            Assert.AreEqual(1, collection.Count);
-            Assert.AreEqual(0, collection.IndexOf(component));
+            Assert.Single(collection);
+            Assert.Equal(0, collection.IndexOf(component));
 
             collection.Remove(component);
-            Assert.AreEqual(0, collection.Count);
-            Assert.AreEqual(-1, collection.IndexOf(component));
+            Assert.Empty(collection);
+            Assert.Equal(-1, collection.IndexOf(component));
         }
 
-        [TestMethod]
+        [Fact]
         public void ClearTest()
         {
             var collection = new WeakComponentsRef<Component> { new(), new() };
-            Assert.AreEqual(2, collection.Count);
+            Assert.Equal(2, collection.Count);
 
             collection.Clear();
-            Assert.AreEqual(0, collection.Count);
+            Assert.Empty(collection);
         }
 
-        [TestMethod]
+        [Fact]
         public void DisposedEventHandlerTest()
         {
             var component = new Component();
             var collection = new WeakComponentsRef<Component> { component };
-            Assert.AreEqual(1, collection.Count);
+            Assert.Single(collection);
 
             component.Dispose();
-            Assert.AreEqual(0, collection.Count);
+            Assert.Empty(collection);
         }
 
-        [TestMethod]
+        [Fact]
         public void RemoveNotAliveTest()
         {
             var collection = new WeakComponentsRef<Component>();
@@ -56,10 +54,10 @@ namespace UnityTest
             GC.WaitForPendingFinalizers();
 
             collection.RemoveNotAlive();
-            Assert.AreEqual(collection.AliveCount, collection.Count);
+            Assert.Equal(collection.AliveCount, collection.Count);
         }
 
-        [TestMethod]
+        [Fact]
         public void RemoveNotAliveOnAddTest()
         {
             var collection = new WeakComponentsRef<Component>();
@@ -71,7 +69,7 @@ namespace UnityTest
             GC.WaitForPendingFinalizers();
 
             collection.Add(new());
-            Assert.AreEqual(collection.AliveCount, collection.Count);
+            Assert.Equal(collection.AliveCount, collection.Count);
         }
     }
 }

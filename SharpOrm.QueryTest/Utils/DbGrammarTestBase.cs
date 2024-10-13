@@ -18,6 +18,11 @@ namespace QueryTest.Utils
 
         }
 
+        public DbGrammarTestBase(QueryConfig config) : base(null, new DbFixture(config))
+        {
+
+        }
+
         protected TableGrammar GetTableGrammar(TableSchema schema)
         {
             return this.Config.NewTableGrammar(schema);

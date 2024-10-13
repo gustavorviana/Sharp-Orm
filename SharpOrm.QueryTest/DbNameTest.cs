@@ -1,41 +1,38 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SharpOrm.Builder;
-using System;
+﻿using SharpOrm.Builder;
+
 namespace UnityTest
 {
-    [TestClass]
     public class DbNameTest
     {
 
-        [TestMethod]
+        [Fact]
         public void InvalidNameTest()
         {
-            Assert.ThrowsException<InvalidOperationException>(() => new DbName("My Name", ""));
-            Assert.ThrowsException<InvalidOperationException>(() => new DbName("Invalid(name)", ""));
+            Assert.Throws<InvalidOperationException>(() => new DbName("My Name", ""));
+            Assert.Throws<InvalidOperationException>(() => new DbName("Invalid(name)", ""));
             _ = new DbName("Schema.Table");
             _ = new DbName("#TempTable");
         }
 
-        [TestMethod]
+        [Fact]
         public void InvalidAliasTest()
         {
-            Assert.ThrowsException<InvalidOperationException>(() => new DbName("Table", "'My.Alias'"));
-            Assert.ThrowsException<InvalidOperationException>(() => new DbName("Table", "\"MyAlias\""));
+            Assert.Throws<InvalidOperationException>(() => new DbName("Table", "'My.Alias'"));
+            Assert.Throws<InvalidOperationException>(() => new DbName("Table", "\"MyAlias\""));
         }
 
-        [TestMethod]
+        [Fact]
         public void BypassInvalidNameTest()
         {
             _ = new DbName("My Name", "", false);
             _ = new DbName("Invalid(name)", "", false);
         }
 
-        [TestMethod]
+        [Fact]
         public void BypassInvalidAliasTest()
         {
             _ = new DbName("Table", "My.Alias", false);
             _ = new DbName("Table", "#MyAlias", false);
         }
-
     }
 }
