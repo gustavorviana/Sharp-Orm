@@ -281,6 +281,28 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Turns the column object into a sql value.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <returns></returns>
+        public QueryBuilder AddColumn(object column)
+        {
+            if (column is string strColumn)
+                return this.Add(this.info.Config.ApplyNomenclature(strColumn));
+
+            if (column is MemberInfoColumn memberColumn)
+                return this.AddParameter(memberColumn);
+
+            if (column is ISqlExpressible iExp)
+                column = iExp.ToSafeExpression(this.info, true);
+
+            if (column is SqlExpression exp)
+                return this.Add(exp);
+
+            throw new NotSupportedException("The column type is not supported.");
+        }
+
+        /// <summary>
         /// Adds raw text to the query.
         /// </summary>
         /// <param name="raw">The raw text to be added to the query.</param>

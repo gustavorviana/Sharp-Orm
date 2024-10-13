@@ -43,7 +43,7 @@ namespace QueryTest.Mysql
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("id");
 
-            QueryAssert.Equal("DELETE FROM `TestTable` ORDER BY `id` Asc", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM `TestTable` ORDER BY `id` ASC", query.Grammar().Delete());
         }
 
         [Fact]

@@ -38,7 +38,7 @@ namespace QueryTest.Utils
 
         public static void Equal(SqlExpression expected, SqlExpression actual)
         {
-            Assert.True(expected.ToString() == actual.ToString(), "The SQL expressions do not match.");
+            Assert.Equal(expected.ToString(), actual.ToString());
             Assert.True(expected.Parameters.SequenceEqual(actual.Parameters), "The arguments of the expression do not match.");
         }
 

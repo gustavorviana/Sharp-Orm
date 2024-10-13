@@ -1,4 +1,5 @@
 ﻿using BaseTest.Fixtures;
+using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
@@ -8,7 +9,8 @@ namespace BaseTest.Utils
     public abstract class QueryTestBase : TestBase
     {
         protected readonly DbFixtureBase connection;
-        protected virtual TranslationRegistry Translation => this.connection.Creator.Config.Translation;
+        protected virtual QueryConfig Config => this.connection.Creator.Config;
+        protected virtual TranslationRegistry Translation => this.Config.Translation;
 
         public QueryTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output)
         {

@@ -33,6 +33,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
+            this.ThrowNotSupportedOperations();
             base.ConfigureInsert(cells, false);
 
             if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
@@ -41,17 +42,15 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            if (this.Info.Joins.Count > 0)
-                throw new NotSupportedException("SQLite does not support DELETE with JOIN.");
-
+            this.ThrowNotSupportedOperations();
             this.ValidateAlias();
+
             base.ConfigureDelete();
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
-            if (this.Info.Joins.Count > 0)
-                throw new NotSupportedException("SQLite does not support UPDATE with JOIN.");
+            this.ThrowNotSupportedOperations();
 
             this.ValidateAlias();
             base.ConfigureUpdate(cells);
@@ -61,6 +60,24 @@ namespace SharpOrm.Builder
         {
             if (!string.IsNullOrEmpty(this.Info.TableName.Alias))
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
+        }
+
+        private void ThrowNotSupportedOperations()
+        {
+            if (this.Query.Limit > 0)
+                throw new NotSupportedException("SQLite does not support `Limit` with `DELETE`.");
+
+            if (this.Query.Offset > 0)
+                throw new NotSupportedException("SQLite does not support `Offset` with `DELETE`.");
+
+            if (this.Info.Joins.Count > 0)
+                throw new NotSupportedException("SQLite does not support `Joins` with `DELETE`.");
+
+            if (!this.Info.Having.Empty)
+                throw new NotSupportedException("SQLite does not support `Having` with `DELETE`.");
+
+            if (this.Info.Orders.Length > 0)
+                throw new NotSupportedException("SQLite does not support `Orders` with `DELETE`.");
         }
     }
 }

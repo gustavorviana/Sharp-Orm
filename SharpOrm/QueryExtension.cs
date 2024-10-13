@@ -449,10 +449,10 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(likeOptions));
 
             QueryBuilder builder = new QueryBuilder(qBase);
-            builder.Add('(').Add(column).Add(" LIKE ").AddParameter(likeOptions[0]);
+            builder.Add('(').AddColumn(column).Add(" LIKE ").AddParameter(likeOptions[0]);
 
             for (int i = 1; i < likeOptions.Length; i++)
-                builder.Add(" OR LIKE ").AddParameter(likeOptions[i]);
+                builder.Add(" OR ").AddColumn(column).Add(" LIKE ").AddParameter(likeOptions[i]);
 
             builder.Add(')');
             qBase.Info.Where.Add(builder);

@@ -38,7 +38,7 @@ namespace QueryTest.SqlServer
         {
             using var query = new Query(TestTableUtils.TABLE).OrderBy("Id");
 
-            QueryAssert.Equal("SELECT * FROM [TestTable] ORDER BY [Id] Asc", query.Grammar().Select());
+            QueryAssert.Equal("SELECT * FROM [TestTable] ORDER BY [Id] ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace QueryTest.SqlServer
             query.Where("Id", 1);
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] ASC OFFSET 1 ROWS", sqlExpression);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace QueryTest.SqlServer
             query.Limit = 10;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] ASC OFFSET 1 ROWS FETCH NEXT 10 ROWS ONLY", sqlExpression);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace QueryTest.SqlServer
             query.Where("Id", 1);
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT TOP(1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] Asc", sqlExpression);
+            QueryAssert.Equal("SELECT TOP(1) * FROM [TestTable] WHERE [Id] = 1 ORDER BY [Id] ASC", sqlExpression);
         }
 
         [Fact]

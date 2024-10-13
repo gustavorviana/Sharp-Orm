@@ -16,7 +16,7 @@ namespace QueryTest.SqlServer
             query.OrderBy("Id").Offset = 1;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable]) [TestTable] WHERE [grammar_rownum] > 1", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] ASC) AS [grammar_rownum], * FROM [TestTable]) [TestTable] WHERE [grammar_rownum] > 1", sqlExpression);
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace QueryTest.SqlServer
             query.Where("Id", 1);
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Asc) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = 1) [TestTable] WHERE [grammar_rownum] > 1", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] ASC) AS [grammar_rownum], * FROM [TestTable] WHERE [Id] = 1) [TestTable] WHERE [grammar_rownum] > 1", sqlExpression);
         }
 
 
@@ -40,7 +40,7 @@ namespace QueryTest.SqlServer
             query.Limit = 10;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] [table]) [table] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] DESC) AS [grammar_rownum], [Id], [Name] FROM [TestTable] [table]) [table] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace QueryTest.SqlServer
             query.Where("id", 1);
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] Desc) AS [grammar_rownum], [Id], [Name] FROM [TestTable] WHERE [id] = 1) [TestTable] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [Id] DESC) AS [grammar_rownum], [Id], [Name] FROM [TestTable] WHERE [id] = 1) [TestTable] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace QueryTest.SqlServer
             query.Limit = 10;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] ASC) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace QueryTest.SqlServer
             query.Limit = 10;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] ASC) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace QueryTest.SqlServer
             query.Limit = 10;
 
             var sqlExpression = query.Grammar().Select();
-            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] Asc) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
+            QueryAssert.Equal("SELECT * FROM (SELECT ROW_NUMBER() OVER(ORDER BY [State] ASC) AS [grammar_rownum], State, COUNT([State]) as [Count] FROM [Customer] INNER JOIN [User] ON [User].[Id] = [Customer].[UserId] WHERE [Id] != 10 GROUP BY [State]) [Customer] WHERE [grammar_rownum] BETWEEN 2 AND 11", sqlExpression);
         }
 
     }

@@ -304,7 +304,7 @@ namespace SharpOrm.Builder
 
             this.WriteColumn(order.Column);
             this.builder.Add(' ');
-            this.builder.Add(order.Order);
+            this.builder.Add(order.Order.ToString().ToUpper());
         }
 
         /// <summary>
