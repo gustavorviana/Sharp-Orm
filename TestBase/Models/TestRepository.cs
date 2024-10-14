@@ -4,7 +4,7 @@ using System.Data.Common;
 
 namespace BaseTest.Models
 {
-    internal class TestRepository : DbRepository
+    public class TestRepository : DbRepository
     {
         protected override ConnectionCreator Creator { get; }
         public TestRepository(ConnectionCreator creator) : base(false)
@@ -12,12 +12,12 @@ namespace BaseTest.Models
             this.Creator = creator;
         }
 
-        public DbTransaction GetTransaction()
+        public DbTransaction? GetTransaction()
         {
             return this.Transaction?.Transaction;
         }
 
-        public DbConnection GetConnection()
+        public DbConnection? GetConnection()
         {
             return this.GetManager()?.Connection;
         }

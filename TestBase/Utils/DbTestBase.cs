@@ -14,10 +14,13 @@ namespace BaseTest.Utils
 
         protected ConnectionManager Manager => connection.Manager;
         public ConnectionCreator Creator => connection.Creator;
-        public QueryConfig Config => connection.Creator.Config;
 
         protected virtual bool ResetTablesOnEnd { get; set; }
         #endregion
+
+        public DbTestBase(DbFixtureBase connection) : base(connection)
+        {
+        }
 
         public DbTestBase(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
         {

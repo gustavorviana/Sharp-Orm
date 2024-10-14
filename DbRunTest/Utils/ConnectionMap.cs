@@ -1,9 +1,10 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using BaseTest.Mock;
+using Microsoft.Data.Sqlite;
 using MySql.Data.MySqlClient;
 using SharpOrm.Builder;
 using System.Data.SqlClient;
 
-namespace DbRunTest
+namespace DbRunTest.Utils
 {
     internal static class ConnectionMap
     {
@@ -12,6 +13,7 @@ namespace DbRunTest
 
         private static readonly Dictionary<Type, ConnMapInfo> map = new()
         {
+            { typeof(MockConnection), new ConnMapInfo(new SqlServerQueryConfig(), "") },
             { typeof(SqlConnection), new ConnMapInfo(new SqlServerQueryConfig(), GetFromFile("../SqlServerConnection.txt", @"Data Source=localhost;Initial Catalog=SharpOrm;Integrated Security=True;")) },
             { typeof(MySqlConnection), new ConnMapInfo(new MysqlQueryConfig(), GetFromFile("../MysqlConnection.txt", "Persist Security Info=False;server=localhost;database=SharpOrm;uid=root;pwd=root")) },
             { typeof(SqliteConnection), new ConnMapInfo(new SqliteQueryConfig(), SqliteConnStr) }
@@ -20,6 +22,8 @@ namespace DbRunTest
         public static ConnMapInfo Get(Type dbType)
         {
             var config = map[dbType];
+
+            if (dbType == typeof(MockConnection)) return config;
 
             if (string.IsNullOrEmpty(config.ConnString))
                 throw new Exception("The Connection.txt file must contain the connection string.");
