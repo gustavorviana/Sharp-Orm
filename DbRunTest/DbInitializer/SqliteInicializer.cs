@@ -6,7 +6,7 @@ namespace DbRunTest.DbInitializer
     {
         public override void InitDb(ConnectionManager manager)
         {
-
+            ExecuteScriptFile(manager, "Sqlite.sql");
         }
 
         public override void ResetDb(ConnectionManager manager)

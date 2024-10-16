@@ -49,7 +49,11 @@ namespace DbRunTest.BaseTests
 
             Assert.Single(rows);
             Assert.Equal(expectedCols, GetTableColumns(table.DbName, Manager));
-            Assert.Equal(expectedRows.Cells, rows[0].Cells);
+
+            var cells = rows[0].Cells;
+            Assert.True(((long)expectedRows.Cells[0]).Equals((long)cells[0]));
+            Assert.Equal(expectedRows.Cells[1], cells[1]);
+            Assert.Equal(expectedRows.Cells[2], cells[2]);
         }
 
         [Fact]
