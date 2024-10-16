@@ -4,7 +4,6 @@ using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using SharpOrm.Errors;
 using System.Data.Common;
-using System.Data.SqlClient;
 
 namespace UnityTest
 {

@@ -90,11 +90,11 @@ namespace QueryTest.Sqlite
         public void CreateTableMultiplePk()
         {
             var cols = new TableColumnCollection();
-            cols.AddPk("Id").AutoIncrement = true;
+            cols.AddPk("Id");
             cols.AddPk("Id2");
 
             var grammar = this.GetTableGrammar(new TableSchema("MyTable", cols));
-            var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Id2\" INTEGER NOT NULL,PRIMARY KEY (\"Id2\",\"Id\" AUTOINCREMENT))");
+            var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Id2\" INTEGER NOT NULL,PRIMARY KEY (\"Id\",\"Id2\"))");
 
             Assert.Equal(expected, grammar.Create());
         }

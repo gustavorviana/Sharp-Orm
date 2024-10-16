@@ -32,6 +32,9 @@ namespace SharpOrm.Builder
             if (this.Schema.BasedQuery != null)
                 return this.CreateBased();
 
+            if (this.GetPrimaryKeys().Length > 1 && this.Schema.Columns.Count(x => x.AutoIncrement) > 0)
+                throw new InvalidOperationException("It is not possible to have more than one primary key column when there is an AUTOINCREMENT column.");
+
             var query = this.GetCreateTableQuery()
                  .Add('(')
                  .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
