@@ -2,7 +2,7 @@
 using SharpOrm.Builder;
 using SharpOrm.Operators;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class OperatorsTest
     {

@@ -34,3 +34,10 @@ CREATE TABLE [TestTable] (
       [custom_id] VARCHAR(36) NOT NULL,
       [custom_status] INT NOT NULL
 );
+
+DROP TABLE IF EXISTS [Files];
+CREATE TABLE Files (
+    Id INT NOT NULL IDENTITY(1,1),
+    bin VARBINARY(MAX),
+    PRIMARY KEY (Id)
+);

@@ -1,7 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System.ComponentModel.DataAnnotations;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class ValidationTest
     {

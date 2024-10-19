@@ -1,8 +1,7 @@
 ﻿using SharpOrm.Collections;
-using System;
 using System.ComponentModel;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class WeakCollectionTest
     {

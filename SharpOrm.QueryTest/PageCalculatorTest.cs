@@ -1,6 +1,6 @@
 ﻿using SharpOrm;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class PageCalculatorTest
     {

@@ -1,6 +1,6 @@
 ﻿using SharpOrm.Builder;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class DbNameTest
     {

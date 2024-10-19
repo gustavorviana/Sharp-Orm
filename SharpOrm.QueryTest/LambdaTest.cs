@@ -2,7 +2,7 @@
 using SharpOrm.Builder;
 using System.Linq.Expressions;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class LambdaTest
     {

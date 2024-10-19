@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.Mysql
 {
-    public class MySqlTableTest(ITestOutputHelper output, UnsafeDbFixture<MySqlConnection> connection) : DbTableTest<MySqlConnection>(output, connection)
+    public class MySqlBlob(ITestOutputHelper output, DbFixture<MySqlConnection> connection) : DbBlobTest<MySqlConnection>(output, connection)
     {
     }
 }

@@ -1,7 +1,7 @@
 ﻿using BaseTest.Models;
 using SharpOrm.Builder;
 
-namespace UnityTest
+namespace QueryTest
 {
     public class ColumnInfoTest
     {

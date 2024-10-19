@@ -5,7 +5,7 @@ using DbRunTest.Fixtures;
 using SharpOrm.Errors;
 using System.Data.Common;
 
-namespace UnityTest
+namespace DbRunTest
 {
     public class DbRepositoryTest() : DbTestBase(new DbFixture<MockConnection>())
     {

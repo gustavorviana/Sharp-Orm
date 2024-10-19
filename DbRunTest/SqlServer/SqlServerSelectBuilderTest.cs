@@ -3,7 +3,7 @@ using DbRunTest.Fixtures;
 using System.Data.SqlClient;
 using Xunit.Abstractions;
 
-namespace QueryTest.SqlServer
+namespace DbRunTest.SqlServer
 {
     public class SqlServerSelectBuilderTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : DbTestBase(output, connection), IClassFixture<DbFixture<SqlConnection>>
     {

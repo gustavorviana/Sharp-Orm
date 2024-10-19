@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS `orders`;
 DROP TABLE IF EXISTS `customers`;
 DROP TABLE IF EXISTS `address`;
 DROP TABLE IF EXISTS `TestTable`;
+DROP TABLE IF EXISTS `Files`;
 
 CREATE TABLE IF NOT EXISTS `address` (
   `id` INT PRIMARY KEY,
@@ -35,4 +36,9 @@ CREATE TABLE IF NOT EXISTS `TestTable` (
   `number` DECIMAL(13, 2) NOT NULL,
   `custom_id` VARCHAR(36) NULL,
   `custom_status` INT NOT NULL
-)
+);
+
+CREATE TABLE IF NOT EXISTS `Files` (
+    `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `bin` BLOB
+);
