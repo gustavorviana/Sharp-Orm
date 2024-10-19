@@ -1,10 +1,11 @@
 ﻿using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryBuilderTest() : DbGrammarTestBase(new SqlServerQueryConfig())
+    public class QueryBuilderTest(ITestOutputHelper? output) : MockTest(output)
     {
         private static readonly QueryInfo info = new(new MysqlQueryConfig(), new("Example"));
 

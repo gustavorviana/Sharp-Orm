@@ -8,20 +8,20 @@ namespace BaseTest.Utils
 {
     public abstract class QueryTestBase : TestBase
     {
-        protected readonly DbFixtureBase connection;
-        protected virtual QueryConfig Config => this.connection.Creator.Config;
+        protected readonly DbFixtureBase fixture;
+        protected virtual QueryConfig Config => this.fixture.Creator.Config;
         protected virtual TranslationRegistry Translation => this.Config.Translation;
 
         public QueryTestBase(DbFixtureBase connection) : base(null)
         {
             ConnectionCreator.Default = connection.Creator;
-            this.connection = connection;
+            this.fixture = connection;
         }
 
         public QueryTestBase(ITestOutputHelper? output, DbFixtureBase connection) : base(output)
         {
             ConnectionCreator.Default = connection.Creator;
-            this.connection = connection;
+            this.fixture = connection;
         }
 
         protected override void Dispose(bool disposing)

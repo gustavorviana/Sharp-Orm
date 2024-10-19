@@ -1,21 +1,18 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BaseTest.Mock;
+using BaseTest.Models;
+using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
-using System;
-using System.Linq;
-using UnityTest.Models;
-using UnityTest.Utils;
-using UnityTest.Utils.Mock;
-using static UnityTest.ObjectActivatorTest;
+using Xunit.Abstractions;
+using static QueryTest.ObjectActivatorTest;
 
-namespace UnityTest
+namespace QueryTest
 {
-    [TestClass]
-    public class ManualMapTests : MockTest
+    public class ManualMapTests(ITestOutputHelper? output) : MockTest(output)
     {
-        [TestMethod]
+        [Fact]
         public void ManualPropMapTest()
         {
             var reader = new MockDataReader(new Cell("TestName", "Prop1 Name"), new Cell("MyId", 1), new Cell("Lvl3Name", "My Custom Name"), new Cell("Date", DateTime.Today));
@@ -29,27 +26,27 @@ namespace UnityTest
             var m = MappedManualObj.FromMap(tm, reader);
             var instance = (MyClass)m.Read(reader);
 
-            Assert.AreEqual(1, instance.Level1.Id);
-            Assert.AreEqual("Prop1 Name", instance.Prop1);
-            Assert.AreEqual(DateTime.Today, instance.Date);
-            Assert.AreEqual("My Custom Name", instance.Level1.Level2.Level3.MyLevelName);
+            Assert.Equal(1, instance.Level1.Id);
+            Assert.Equal("Prop1 Name", instance.Prop1);
+            Assert.Equal(DateTime.Today, instance.Date);
+            Assert.Equal("My Custom Name", instance.Level1.Level2.Level3.MyLevelName);
         }
 
-        [TestMethod]
+        [Fact]
         public void AutoMapTest()
         {
             var tm = new TableMap<MyClass>(new TranslationRegistry());
             var table = tm.Build();
 
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Level2_Level3_MyLevelName"));
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Id"));
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Date"));
-            Assert.IsNotNull(table.Columns.FirstOrDefault(x => x.Name == "Prop1"));
+            Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Level2_Level3_MyLevelName"));
+            Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Id"));
+            Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Date"));
+            Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Prop1"));
 
-            Assert.ThrowsException<InvalidOperationException>(() => tm.Property(x => x.Prop1, "CustomName"));
+            Assert.Throws<InvalidOperationException>(() => tm.Property(x => x.Prop1, "CustomName"));
         }
 
-        [TestMethod]
+        [Fact]
         public void ReadComplexObjectTest()
         {
             var tm = new TableMap<MyClass>(new TranslationRegistry());
@@ -69,11 +66,11 @@ namespace UnityTest
             };
 
             var cells = table.GetObjCells(instance, true, false).ToArray();
-            Assert.IsFalse(cells.Any(c => c.Name == nameof(TestClass.MyId)));
-            Assert.AreEqual(4, cells.Length);
+            Assert.False(cells.Any(c => c.Name == nameof(TestClass.MyId)));
+            Assert.Equal(4, cells.Length);
         }
 
-        [TestMethod]
+        [Fact]
         public void SetComplexObjectTest()
         {
             var tm = new TableMap<MyClass>(new TranslationRegistry());
@@ -82,10 +79,10 @@ namespace UnityTest
             var instance = new MyClass();
 
             table.GetColumn("Level1_Level2_Level3_MyLevelName").Set(instance, "My custom level name");
-            Assert.AreEqual("My custom level name", instance.Level1.Level2.Level3.MyLevelName);
+            Assert.Equal("My custom level name", instance.Level1.Level2.Level3.MyLevelName);
         }
 
-        [TestMethod]
+        [Fact]
         public void FindColumnByNameTest()
         {
             var reg = new TranslationRegistry();
@@ -94,13 +91,13 @@ namespace UnityTest
             tm.Build();
 
             var colLevel = Column.FromExp<MyClass>(x => x.Level1.Level2.Level3.MyLevelName, reg);
-            Assert.AreEqual("Level1_Level2_Level3_MyLevelName", colLevel.Name);
+            Assert.Equal("Level1_Level2_Level3_MyLevelName", colLevel.Name);
 
             var colDate = Column.FromExp<MyClass>(x => x.Date, reg);
-            Assert.AreEqual("BeginDate", colDate.Name);
+            Assert.Equal("BeginDate", colDate.Name);
         }
 
-        [TestMethod]
+        [Fact]
         public void QueryReadTest()
         {
             var id = 1;
@@ -112,7 +109,7 @@ namespace UnityTest
             var custom_id = Guid.NewGuid().ToString();
             var custom_status = Status.Success;
 
-            Connection.QueryReaders.Add("SELECT * FROM `DynamicMappedTable` LIMIT 1",
+            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [DynamicMappedTable]",
                 () => new MockDataReader(
                     new Cell("Id", id), 
                     new Cell("id2", id2), 
@@ -134,20 +131,20 @@ namespace UnityTest
             var mockConfig = Config.Clone();
             mockConfig.Translation = reg;
 
-            using var q = new Query<DynamicMappedTable>(GetConnectionManager(mockConfig));
+            using var q = new Query<DynamicMappedTable>(GetManager(mockConfig));
             var actual = q.FirstOrDefault();
 
-            Assert.IsNotNull(actual);
-            Assert.AreEqual(id, actual.Id);
-            Assert.AreEqual(id2, actual.Id2);
-            Assert.AreEqual(record_created, actual.CreatedAt);
-            Assert.AreEqual(number, actual.Number);
+            Assert.NotNull(actual);
+            Assert.Equal(id, actual.Id);
+            Assert.Equal(id2, actual.Id2);
+            Assert.Equal(record_created, actual.CreatedAt);
+            Assert.Equal(number, actual.Number);
 
-            Assert.AreEqual(name, actual.User.Name);
-            Assert.AreEqual(nick, actual.User.Nick);
+            Assert.Equal(name, actual.User.Name);
+            Assert.Equal(nick, actual.User.Nick);
 
-            Assert.AreEqual(Guid.Parse(custom_id), actual.Custom.Id);
-            Assert.AreEqual(custom_status, actual.Custom.Status);
+            Assert.Equal(Guid.Parse(custom_id), actual.Custom.Id);
+            Assert.Equal(custom_status, actual.Custom.Status);
         }
 
         private class DynamicMappedTable

@@ -77,12 +77,15 @@ namespace SharpOrm.DataTranslation
             if (value is null || value is DBNull)
                 return DBNull.Value;
 
-            Type type = value?.GetType();
+            return ToSql(value, value.GetType());
+        }
 
-            if (GetFor(type) is ISqlTranslation conversor)
-                return conversor.ToSqlValue(value, type);
+        internal object ToSql(object value, Type expectedType)
+        {
+            if (GetFor(expectedType) is ISqlTranslation conversor)
+                return conversor.ToSqlValue(value, expectedType);
 
-            throw new NotSupportedException($"Type \"{type.FullName}\" is not supported");
+            throw new NotSupportedException($"Type \"{expectedType.FullName}\" is not supported");
         }
 
         /// <summary>

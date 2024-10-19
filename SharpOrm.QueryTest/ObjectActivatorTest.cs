@@ -1,89 +1,85 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using BaseTest.Mock;
+using BaseTest.Models;
+using QueryTest.Utils;
 using SharpOrm;
-using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
-using System;
 using System.Data.Common;
 using System.Drawing;
-using System.Linq;
-using UnityTest.Models;
-using UnityTest.Utils;
-using UnityTest.Utils.Mock;
+using Xunit.Abstractions;
 
-namespace UnityTest
+namespace QueryTest
 {
-    [TestClass]
-    public class ObjectActivatorTest : MockTest
+    public class ObjectActivatorTest(ITestOutputHelper? output) : MockTest(output)
     {
-        [TestMethod]
+        [Fact]
         public void InstanceClassInstanceTest()
         {
             var reader = new MockDataReader();
-            Assert.IsNotNull(CreateInstance<Customer>(reader));
+            Assert.NotNull(CreateInstance<Customer>(reader));
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceInvalidClassTest()
         {
             var reader = new MockDataReader();
-            Assert.ThrowsException<NotSupportedException>(() => CreateInstance<InvalidClassConstructor>(reader));
+            Assert.Throws<NotSupportedException>(() => CreateInstance<InvalidClassConstructor>(reader));
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceRecordInstanceTest()
         {
             var reader = new MockDataReader(new Cell("firstName", "My First Name"), new Cell("lastName", "My Last Name"));
             var instance = CreateInstance<Person>(reader);
 
-            Assert.AreEqual("My First Name", instance.FirstName);
-            Assert.AreEqual("My Last Name", instance.LastName);
+            Assert.Equal("My First Name", instance.FirstName);
+            Assert.Equal("My Last Name", instance.LastName);
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceInvalidRecordInstanceTest()
         {
             var reader = new MockDataReader(new Cell("firstName", "My First Name"));
-            Assert.ThrowsException<NotSupportedException>(() => CreateInstance<Person>(reader));
+            Assert.Throws<NotSupportedException>(() => CreateInstance<Person>(reader));
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceStructTest()
         {
             var reader = new MockDataReader(new Cell("x", 1), new Cell("y", 2));
             var instance = CreateInstance<Point>(reader);
 
-            Assert.AreEqual(1, instance.X);
-            Assert.AreEqual(2, instance.Y);
+            Assert.Equal(1, instance.X);
+            Assert.Equal(2, instance.Y);
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceMultipleRecordConstructorsTest()
         {
             var reader = new MockDataReader(new Cell("firstName", "My First Name"), new Cell("lastName", "My Last Name"), new Cell("Age", 30));
             var instance = CreateInstance<Person2>(reader);
 
-            Assert.AreEqual("My First Name", instance.FirstName);
-            Assert.AreEqual("My Last Name", instance.LastName);
-            Assert.AreEqual(30, instance.Age);
+            Assert.Equal("My First Name", instance.FirstName);
+            Assert.Equal("My Last Name", instance.LastName);
+            Assert.Equal(30, instance.Age);
 
             reader = new MockDataReader(new Cell("firstName", "My First Name"), new Cell("lastName", "My Last Name"));
             instance = CreateInstance<Person2>(reader);
 
-            Assert.AreEqual("My First Name", instance.FirstName);
-            Assert.AreEqual("My Last Name", instance.LastName);
-            Assert.AreEqual(20, instance.Age);
+            Assert.Equal("My First Name", instance.FirstName);
+            Assert.Equal("My Last Name", instance.LastName);
+            Assert.Equal(20, instance.Age);
         }
 
-        [TestMethod]
+        [Fact]
         public void InstanceIgnoringConstructorTest()
         {
             var reader = new MockDataReader(new Cell("firstName", "My First Name"), new Cell("lastName", "My Last Name"), new Cell("Status", "Active"));
             var instance = CreateInstance<Info>(reader);
 
-            Assert.AreEqual("My First Name", instance.FirstName);
-            Assert.AreEqual("My Last Name", instance.LastName);
-            Assert.IsNull(instance.Status);
+            Assert.Equal("My First Name", instance.FirstName);
+            Assert.Equal("My Last Name", instance.LastName);
+            Assert.Null(instance.Status);
         }
 
         private static T CreateInstance<T>(DbDataReader reader)
@@ -108,6 +104,7 @@ namespace UnityTest
         {
             public string FirstName { get; }
             public string LastName { get; }
+            public string Status { get; init; }
 
             [QueryIgnore]
             public Info(string firstName, string lastName, string status) : this(firstName, lastName)
@@ -121,8 +118,6 @@ namespace UnityTest
                 this.LastName = lastName;
                 this.Status = null;
             }
-
-            public string Status { get; init; }
         }
 
         private class InvalidClassConstructor

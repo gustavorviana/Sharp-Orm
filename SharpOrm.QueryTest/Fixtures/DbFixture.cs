@@ -9,7 +9,7 @@ namespace QueryTest.Fixtures
     {
         protected override ConnectionCreator MakeConnectionCreator()
         {
-            return new MultipleConnectionCreator<MockConnection>(config, null);
+            return new SingleConnectionCreator<MockConnection>(config, null);
         }
     }
 
@@ -17,7 +17,7 @@ namespace QueryTest.Fixtures
     {
         protected override ConnectionCreator MakeConnectionCreator()
         {
-            return new MultipleConnectionCreator<MockConnection>(new Cnf(), null);
+            return new SingleConnectionCreator<MockConnection>(new Cnf(), null);
         }
     }
 }

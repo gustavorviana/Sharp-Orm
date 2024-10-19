@@ -12,8 +12,8 @@ namespace BaseTest.Utils
         #region Fields/Properties
         private readonly HashSet<string> tablesToReset = [];
 
-        protected ConnectionManager Manager => connection.Manager;
-        public ConnectionCreator Creator => connection.Creator;
+        protected ConnectionManager Manager => fixture.Manager;
+        public ConnectionCreator Creator => fixture.Creator;
 
         protected virtual bool ResetTablesOnEnd { get; set; }
         #endregion

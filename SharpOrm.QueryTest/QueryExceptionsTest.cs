@@ -1,13 +1,13 @@
 ﻿using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
-using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
+using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryExceptionsTest() : DbGrammarTestBase(new SqlServerQueryConfig())
+    public class QueryExceptionsTest(ITestOutputHelper? output) : MockTest(output)
     {
         [Fact]
         public void OnCreateQueryWithNull()
@@ -19,13 +19,13 @@ namespace QueryTest
         [Fact]
         public void OnQueryNullTable()
         {
-            Assert.Throws<ArgumentNullException>(() => new Query(null, connection.Creator));
+            Assert.Throws<ArgumentNullException>(() => new Query(null, fixture.Creator));
         }
 
         [Fact]
         public void OnQueryNullConfig()
         {
-            using var con = connection.Creator.GetConnection();
+            using var con = fixture.Creator.GetConnection();
             Assert.Throws<ArgumentNullException>(() => new Query("SomeTable", new ConnectionManager(null, con)));
         }
 
