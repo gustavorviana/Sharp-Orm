@@ -5,6 +5,7 @@ using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
@@ -82,7 +83,7 @@ namespace QueryTest.Sqlite
 
             QueryAssert.EqualDecoded(
                 "INSERT INTO \"TestTable\" (\"Id\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\") VALUES (1, @p1, NULL, @p2, 2.1, @p3, 1); SELECT last_insert_rowid();",
-                [table.Name, table.CreatedAt?.ToString("s")!, table.CustomId?.ToString()!],
+                [table.Name, table.CreatedAt?.ToString(DateTranslation.Format)!, table.CustomId?.ToString()!],
                 query.Grammar().Insert(Row.Parse(table, typeof(TestTable), true, false).Cells)
             );
         }

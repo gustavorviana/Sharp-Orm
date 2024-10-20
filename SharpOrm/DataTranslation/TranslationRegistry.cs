@@ -170,17 +170,6 @@ namespace SharpOrm.DataTranslation
             return null;
         }
 
-        /// <summary>
-        /// Converts the date to the local timezone or the database timezone.
-        /// </summary>
-        /// <param name="value">The date that should be converted.</param>
-        /// <param name="toSql">True to convert to the database timezone; False to convert to the code's timezone.</param>
-        /// <returns></returns>
-        public DateTime ConvertDate(DateTime value, bool toSql)
-        {
-            return (DateTime)(toSql ? native.ToSqlValue(value, typeof(DateTime)) : native.FromSqlValue(value, typeof(DateTime)));
-        }
-
         internal TableInfo AddTableMap<T>(TableMap<T> map)
         {
             var type = typeof(T);

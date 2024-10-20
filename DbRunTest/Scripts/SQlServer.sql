@@ -26,13 +26,14 @@ CREATE TABLE [Orders] (
 
 DROP TABLE IF EXISTS [TestTable];
 CREATE TABLE [TestTable] (
-      [id] INT NOT NULL PRIMARY KEY,
-      [name] VARCHAR(256) NOT NULL,
-      [nick] VARCHAR(256) NULL,
-      [record_created] DATETIME DEFAULT GETDATE(),
-      [number] DECIMAL(13, 2) NOT NULL,
-      [custom_id] VARCHAR(36) NOT NULL,
-      [custom_status] INT NOT NULL
+    [id] INT NOT NULL PRIMARY KEY,
+    [id2] INT NULL,
+    [name] VARCHAR(256) NOT NULL,
+    [nick] VARCHAR(256) NULL,
+    [record_created] datetimeoffset(7) DEFAULT GETDATE(),
+    [number] DECIMAL(13, 2) NOT NULL,
+    [custom_id] VARCHAR(36) NULL,
+    [custom_status] INT NOT NULL
 );
 
 DROP TABLE IF EXISTS [Files];

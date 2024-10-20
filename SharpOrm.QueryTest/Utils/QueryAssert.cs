@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 
 namespace QueryTest.Utils
 {
-    internal static class QueryAssert
+    public static class QueryAssert
     {
         #region Obsoletes
         [Obsolete("This is an override of Object.Equals(). Call Assert.Equals() instead.", true)]
@@ -23,18 +23,6 @@ namespace QueryTest.Utils
             throw new InvalidOperationException("Assert.ReferenceEquals should not be used");
         }
         #endregion
-
-        public static void EqualDate(DateTime expected, object actual, string message)
-        {
-            Assert.IsType<DateTime>(actual);
-            EqualDate(expected, (DateTime)actual, message);
-        }
-
-        public static void EqualDate(DateTime expected, DateTime actual, string message)
-        {
-            Assert.Equal(expected.Date, actual.Date);
-            Assert.True(decimal.Truncate((decimal)expected.TimeOfDay.TotalSeconds) == decimal.Truncate((decimal)actual.TimeOfDay.TotalSeconds), message);
-        }
 
         public static void Equal(SqlExpression expected, SqlExpression actual)
         {

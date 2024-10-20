@@ -1,5 +1,6 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
+using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -89,8 +90,8 @@ namespace QueryTest
             var now = DateTime.Now;
             var utcNow = DateTime.UtcNow;
 
-            QueryAssert.EqualDate(now, registry.FromSql(TimeZoneInfo.ConvertTimeToUtc(now), typeof(DateTime)), "DateTime.Now failed.");
-            QueryAssert.EqualDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.Local), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+            TestAssert.EqualDate(now, registry.FromSql(TimeZoneInfo.ConvertTimeToUtc(now), typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.EqualDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.Local), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
         }
 
         [Fact]
@@ -100,8 +101,8 @@ namespace QueryTest
             var now = DateTime.Now;
             var utcNow = DateTime.UtcNow;
 
-            QueryAssert.EqualDate(now, registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
-            QueryAssert.EqualDate(utcNow, registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+            TestAssert.EqualDate(now, registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.EqualDate(utcNow, registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
         }
 
         [Fact]
@@ -111,8 +112,8 @@ namespace QueryTest
             var now = DateTime.Now;
             var utcNow = DateTime.UtcNow;
 
-            QueryAssert.EqualDate(TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, registry.TimeZone), registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
-            QueryAssert.EqualDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, registry.TimeZone), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+            TestAssert.EqualDate(TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, registry.TimeZone), registry.FromSql(now, typeof(DateTime)), "DateTime.Now failed.");
+            TestAssert.EqualDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, registry.TimeZone), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
         }
 
         [Fact]
@@ -122,8 +123,8 @@ namespace QueryTest
             var now = DateTime.Now;
             var utcNow = DateTime.UtcNow;
 
-            QueryAssert.EqualDate(TimeZoneInfo.ConvertTimeToUtc(now), registry.ToSql(now), "DateTime.Now failed.");
-            QueryAssert.EqualDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
+            TestAssert.EqualDate(TimeZoneInfo.ConvertTimeToUtc(now), registry.ToSql(now), "DateTime.Now failed.");
+            TestAssert.EqualDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
         }
 
         [Fact]
@@ -133,8 +134,8 @@ namespace QueryTest
             var now = DateTime.Now;
             var utcNow = DateTime.UtcNow;
 
-            QueryAssert.EqualDate(now, registry.ToSql(now), "DateTime.Now failed.");
-            QueryAssert.EqualDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
+            TestAssert.EqualDate(now, registry.ToSql(now), "DateTime.Now failed.");
+            TestAssert.EqualDate(utcNow, registry.ToSql(utcNow), "DateTime.UtcNow failed.");
         }
 
         [Fact]

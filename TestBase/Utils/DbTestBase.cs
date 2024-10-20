@@ -9,14 +9,8 @@ namespace BaseTest.Utils
 {
     public abstract class DbTestBase : QueryTestBase
     {
-        #region Fields/Properties
-        private readonly HashSet<string> tablesToReset = [];
-
         protected ConnectionManager Manager => fixture.Manager;
         public ConnectionCreator Creator => fixture.Creator;
-
-        protected virtual bool ResetTablesOnEnd { get; set; }
-        #endregion
 
         public DbTestBase(DbFixtureBase connection) : base(connection)
         {
@@ -28,14 +22,32 @@ namespace BaseTest.Utils
 
         protected Query NewQuery(string table, string alias = "", QueryConfig? config = null)
         {
-            tablesToReset.Add(table);
+            OnUseTable(table);
             return new Query(new DbName(table, alias), GetManager(config));
         }
 
         protected Query<T> NewQuery<T>(string alias = "", QueryConfig? config = null)
         {
-            tablesToReset.Add(TranslationRegistry.Default.GetTable(typeof(T)).Name);
+            OnUseTable(TranslationRegistry.Default.GetTable(typeof(T)).Name);
             return new Query<T>(alias, GetManager(config));
+        }
+
+
+        protected Query NewQuery(ConnectionManager manager, string table, string alias = "")
+        {
+            OnUseTable(table);
+            return new Query(new DbName(table, alias), manager);
+        }
+
+        protected Query<T> NewQuery<T>(ConnectionManager manager, string alias = "")
+        {
+            OnUseTable(TranslationRegistry.Default.GetTable(typeof(T)).Name);
+            return new Query<T>(alias, manager);
+        }
+
+        protected virtual void OnUseTable(string name)
+        {
+
         }
 
         protected ConnectionManager GetManager(QueryConfig? config = null)
@@ -46,29 +58,6 @@ namespace BaseTest.Utils
         protected ConnectionManager NewConnectionManager(QueryConfig? config = null)
         {
             return new ConnectionManager(config ?? Config, Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
-        }
-
-        protected void ClearTables(params string[] tables)
-        {
-            foreach (var table in tables)
-            {
-                try
-                {
-                    using var query = new Query(table, Manager);
-                    query.Delete();
-                }
-                catch
-                {
-                }
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (ResetTablesOnEnd)
-                ClearTables([.. tablesToReset]);
-
-            base.Dispose(disposing);
         }
     }
 }

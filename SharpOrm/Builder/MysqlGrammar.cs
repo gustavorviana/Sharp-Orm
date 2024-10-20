@@ -11,6 +11,18 @@ namespace SharpOrm.Builder
     {
         public MysqlGrammar(Query query) : base(query)
         {
+            this.builder.paramInterceptor += (original) =>
+            {
+                if (original is DateTimeOffset offset)
+                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo());
+
+                return original;
+            };
+        }
+
+        private TimeZoneInfo GetTimeZoneInfo()
+        {
+            return this.Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames)

@@ -8,7 +8,7 @@ namespace SharpOrm.DataTranslation
         #region Fields\Properties
         private TimeZoneInfo _dbTimeZone = TimeZoneInfo.Local;
         private TimeZoneInfo _codeTimeZone = TimeZoneInfo.Local;
-        public string Format { get; set; } = "yyyy-MM-dd HH:mm:ss";
+        internal const string Format = "yyyy-MM-dd HH:mm:ss";
 
         /// <summary>
         /// Timezone in which dates should be stored in the database.
@@ -39,6 +39,9 @@ namespace SharpOrm.DataTranslation
             if (expectedType == typeof(FreezedDate))
                 throw new NotSupportedException();
 
+            if (expectedType == typeof(DateTimeOffset))
+                return this.LoadDateTimeOffset(value);
+
             if (expectedType == typeof(DateTime))
                 return ParseDateTimeFromDb(value);
 
@@ -64,6 +67,21 @@ namespace SharpOrm.DataTranslation
 
             return value;
         }
+
+        private DateTimeOffset? LoadDateTimeOffset(object value)
+        {
+            if (value is DateTimeOffset offset)
+                return offset;
+
+            if (value is DateTime date)
+                return new DateTimeOffset(date, DbTimeZone.BaseUtcOffset);
+
+            if (value is string str && DateTimeOffset.TryParse(str, out var strOffset))
+                return strOffset;
+
+            return null;
+        }
+
         #endregion
 
         #region FromDb
@@ -97,7 +115,11 @@ namespace SharpOrm.DataTranslation
         private object ParseDateTimeFromDb(object obj)
         {
             if (obj is DateTimeOffset offset)
-                return TimeZoneInfo.ConvertTimeFromUtc(offset.UtcDateTime, CodeTimeZone);
+            {
+                if (DbTimeZone.Equals(CodeTimeZone)) return offset.DateTime;
+
+                return TimeZoneInfo.ConvertTime(offset.UtcDateTime, CodeTimeZone);
+            }
 
             if (obj is DateTime date)
                 return ConvertDate(DbTimeZone, CodeTimeZone, date);

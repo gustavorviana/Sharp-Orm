@@ -1,4 +1,5 @@
-﻿using SharpOrm;
+﻿using BaseTest.Models;
+using SharpOrm;
 
 namespace BaseTest.Utils
 {
@@ -14,14 +15,14 @@ namespace BaseTest.Utils
         public const string GUIDID = "custom_id";
         public const string STATUS = "custom_status";
 
-        public static Row NewRow(int id, string name)
+        public static Row NewRow(int? id, string name, int number = 0, Guid? guid = null)
         {
             return new Row(
                 new Cell(ID, id),
                 new Cell(NAME, name),
-                new Cell(NUMBER, id),
-                new Cell(GUIDID, Guid.NewGuid().ToString()),
-                new Cell(STATUS, 1)
+                new Cell(NUMBER, number),
+                new Cell(GUIDID, (guid ?? Guid.NewGuid()).ToString()),
+                new Cell(STATUS, Status.Unknow)
             );
         }
 

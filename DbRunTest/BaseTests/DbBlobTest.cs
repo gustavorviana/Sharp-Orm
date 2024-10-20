@@ -7,12 +7,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests
 {
-    public abstract class DbBlobTest<T> : DbTestBase, IClassFixture<DbFixture<T>> where T : DbConnection, new()
+    public abstract class DbBlobTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DbTestBase(output, connection), IClassFixture<DbFixture<T>> where T : DbConnection, new()
     {
-        public DbBlobTest(ITestOutputHelper output, DbFixture<T> connection) : base(output, connection)
-        {
-        }
-
         [Fact]
         public void InsertBytesTest()
         {

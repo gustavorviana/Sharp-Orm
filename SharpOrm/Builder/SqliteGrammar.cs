@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using System;
 using System.Collections.Generic;
 
 namespace SharpOrm.Builder
@@ -17,18 +18,18 @@ namespace SharpOrm.Builder
             this.builder.paramInterceptor += (original) =>
             {
                 if (original is DateTime date)
-                    return date.ToString("s");
+                    return date.ToString(DateTranslation.Format);
 
                 if (original is DateTimeOffset offset)
-                    return ToDateTime(offset).ToString("s");
+                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo()).ToString(DateTranslation.Format);
 
                 return original;
             };
         }
 
-        private DateTime ToDateTime(DateTimeOffset offset)
+        private TimeZoneInfo GetTimeZoneInfo()
         {
-            return this.Info.Config.Translation.ConvertDate(offset.UtcDateTime, true);
+            return this.Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
