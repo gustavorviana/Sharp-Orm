@@ -1335,7 +1335,7 @@ namespace SharpOrm
             private bool _disposed;
             private readonly DbCommand command;
             public readonly DbDataReader reader;
-            private readonly CancellationTokenRegistration token;
+            private CancellationTokenRegistration token;
 
             public OpenReader(DbCommand command, CancellationToken token)
             {
@@ -1346,7 +1346,7 @@ namespace SharpOrm
 
             private void CancelCommand()
             {
-                try { this.token.Dispose(); } catch { }
+                SafeDispose(this.token);
                 try { this.command.Cancel(); } catch { }
             }
 
@@ -1357,8 +1357,18 @@ namespace SharpOrm
                 if (this._disposed)
                     return;
 
+                this.CancelCommand();
+
+                SafeDispose(this.reader);
+                SafeDispose(this.command);
+
                 this.Dispose(true);
                 GC.SuppressFinalize(this);
+            }
+
+            private static void SafeDispose(IDisposable disposable)
+            {
+                if (disposable != null) try { disposable.Dispose(); } catch { }
             }
 
             ~OpenReader()
@@ -1380,7 +1390,7 @@ namespace SharpOrm
                 try { this.reader.Dispose(); } catch { }
                 try { this.command.Dispose(); } catch { }
             }
-            
+
             #endregion
         }
     }
