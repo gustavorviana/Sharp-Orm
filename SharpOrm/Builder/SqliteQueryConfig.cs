@@ -57,9 +57,9 @@ namespace SharpOrm.Builder
             return build.Append('\'').ToString();
         }
 
-        public override QueryConfig Clone()
+        public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new SqliteQueryConfig(this.OnlySafeModifications);
+            var clone = new SqliteQueryConfig(safeOperations ?? this.OnlySafeModifications);
             this.CopyTo(clone);
             return clone;
         }

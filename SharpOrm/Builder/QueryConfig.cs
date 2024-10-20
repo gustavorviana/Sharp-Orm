@@ -108,7 +108,7 @@ namespace SharpOrm.Builder
         /// Creates a copy of the current <see cref="QueryConfig"/> instance.
         /// </summary>
         /// <returns>A new instance of <see cref="QueryConfig"/> that is a copy of the current instance.</returns>
-        public abstract QueryConfig Clone();
+        public abstract QueryConfig Clone(bool? safeOperations = null);
 
         /// <summary>
         /// Copies the properties of the current <see cref="QueryConfig"/> instance to the target instance.

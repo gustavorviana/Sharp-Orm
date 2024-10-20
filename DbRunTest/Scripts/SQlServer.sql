@@ -31,7 +31,7 @@ CREATE TABLE [TestTable] (
     [name] VARCHAR(256) NOT NULL,
     [nick] VARCHAR(256) NULL,
     [record_created] datetimeoffset(7) DEFAULT GETDATE(),
-    [number] DECIMAL(13, 2) NOT NULL,
+    [number] INT NOT NULL,
     [custom_id] VARCHAR(36) NULL,
     [custom_status] INT NOT NULL
 );

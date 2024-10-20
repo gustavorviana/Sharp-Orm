@@ -96,7 +96,7 @@ namespace DbRunTest.BaseTests.Dml
             Row[] rows = new Row[count];
 
             for (int i = 1; i <= count; i++)
-                rows[i - 1] = TestTableUtils.NewRow(i, $"User {i}");
+                rows[i - 1] = TestTableUtils.NewRow(i, $"User {i}", i);
 
             q.BulkInsert(rows);
         }

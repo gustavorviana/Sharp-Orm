@@ -3,7 +3,6 @@ using DbRunTest.DbInitializer;
 using Microsoft.Data.Sqlite;
 using MySql.Data.MySqlClient;
 using SharpOrm.Builder;
-using SharpOrm.Connection;
 using System.Data.SqlClient;
 
 namespace DbRunTest.Utils

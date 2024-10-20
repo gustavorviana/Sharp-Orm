@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `TestTable` (
   `name` VARCHAR(256) NOT NULL,
   `nick` VARCHAR(256) NULL,
   `record_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `number` DECIMAL(13, 2) NOT NULL,
+  `number` INT NOT NULL,
   `custom_id` VARCHAR(36) NULL,
   `custom_status` INT NOT NULL
 );

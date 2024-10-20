@@ -96,9 +96,9 @@ namespace SharpOrm.Builder
         /// Clones the current configuration.
         /// </summary>
         /// <returns>A clone of the current configuration.</returns>
-        public override QueryConfig Clone()
+        public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new MysqlQueryConfig(this.OnlySafeModifications);
+            var clone = new MysqlQueryConfig(safeOperations ?? this.OnlySafeModifications);
             this.CopyTo(clone);
             return clone;
         }

@@ -227,7 +227,7 @@ namespace SharpOrm.Connection
         /// <param name="listenDispose">Indicates whether to listen for disposal events. Default is true.</param>
         /// <param name="cloneConfig">Indicates whether to clone the configuration. Default is false.</param>
         /// <returns>A new <see cref="ConnectionManager"/> instance with the specified cloning options.</returns>
-        public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false)
+        public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false, bool? safeOperations = null)
         {
             var clone = this.InternalClone();
 
@@ -235,7 +235,7 @@ namespace SharpOrm.Connection
                 this.Disposed += (sender, e) => this.Dispose();
 
             if (cloneConfig)
-                clone.Config = this.Config.Clone();
+                clone.Config = this.Config.Clone(safeOperations);
 
             return clone;
         }
