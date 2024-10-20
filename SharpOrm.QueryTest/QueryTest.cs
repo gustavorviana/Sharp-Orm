@@ -12,15 +12,30 @@ namespace QueryTest
         [Fact]
         public void OrderBy()
         {
-            var q = new Query("table");
-            q.OrderBy(SharpOrm.OrderBy.None, "Col1");
-            Assert.Empty(q.Info.Orders);
+            var query = new Query("table");
+            query.OrderBy(SharpOrm.OrderBy.None, "Col1");
+            Assert.Empty(query.Info.Orders);
 
-            q.OrderBy(SharpOrm.OrderBy.Asc, "Col2");
-            Assert.Single(q.Info.Orders);
+            query.OrderBy(SharpOrm.OrderBy.Asc, "Col2");
+            Assert.Single(query.Info.Orders);
 
-            q.OrderBy(SharpOrm.OrderBy.Desc, "3");
-            Assert.Single(q.Info.Orders);
+            query.OrderBy(SharpOrm.OrderBy.Desc, "3");
+            Assert.Single(query.Info.Orders);
+        }
+
+        [Fact]
+        public void WhereQuery()
+        {
+            var query = new Query("table");
+            var toWhereQuery = Query.ReadOnly("ToWhereQuery");
+
+            Assert.Throws<InvalidOperationException>(() => query.Where("Column", toWhereQuery));
+
+            toWhereQuery.Select("Column");
+            Assert.Throws<InvalidOperationException>(() => query.Where("Column", toWhereQuery));
+
+            toWhereQuery.Limit = 1;
+            query.Where("Column", toWhereQuery);
         }
 
         [Fact]
