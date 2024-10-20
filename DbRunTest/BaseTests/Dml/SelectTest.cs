@@ -5,6 +5,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using System.Data.Common;
+using System.Xml.Linq;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
@@ -251,6 +252,69 @@ namespace DbRunTest.BaseTests.Dml
             var names = q.ExecuteArrayScalar<string>();
             Assert.Equal(5, names.Length);
         }
+
+
+        [Fact]
+        public void SelectJoin()
+        {
+            ConfigureInitialCustomerAndOrder();
+            using var qOrder = new Query<Order>(this.Creator);
+
+            qOrder.Join<Customer>("c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
+            qOrder.Where("c.name", "Ronaldo");
+            Assert.NotNull(qOrder.FirstOrDefault());
+        }
+
+        [Fact]
+        public void Paginate()
+        {
+            InsertRows(30);
+
+            using var q = new Query<TestTable>("p", Creator);
+            q.Select("p.*");
+            q.OrderBy("Id");
+            var r = q.Paginate(5, 1);
+
+            Assert.NotNull(r);
+            Assert.Equal(5, r.Count);
+            Assert.Equal(30, r.Total);
+            Assert.Equal(1, r.CurrentPage);
+        }
+
+        [Fact]
+        public void PaginateDistinctColumn()
+        {
+            InsertRows(4);
+
+            using var q = new Query<TestTable>(Creator);
+            q.Insert(TestTableUtils.NewRow(6, "User 1").Cells);
+            q.OrderBy(TestTableUtils.NAME);
+            q.Distinct = true;
+            q.Select(TestTableUtils.NAME);
+            var r = q.Paginate(5, 1, (Column)"COUNT(DISTINCT name)");
+
+            Assert.NotNull(r);
+            Assert.Equal(4, r.Count);
+            Assert.Equal(4, r.Total);
+        }
+
+        [Fact]
+        public void PaginateDistinct()
+        {
+            InsertRows(4);
+
+            using var q = new Query<TestTable>(Creator);
+            q.Insert(TestTableUtils.NewRow(6, "User 1").Cells);
+            q.OrderBy(TestTableUtils.NAME);
+            q.Distinct = true;
+            q.Select(TestTableUtils.NAME);
+            var r = q.Paginate(5, 1);
+
+            Assert.NotNull(r);
+            Assert.Equal(4, r.Count);
+            Assert.Equal(4, r.Total);
+        }
+
 
         [Fact]
         public virtual void PaginateWithForeign()

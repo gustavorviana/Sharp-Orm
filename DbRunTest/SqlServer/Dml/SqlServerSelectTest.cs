@@ -24,5 +24,12 @@ namespace DbRunTest.SqlServer.Dml
 
             Assert.NotNull(orders[0].Customer.Address);
         }
+
+        [Fact]
+        public void PaginateWithoutOrderby()
+        {
+            using var q = new Query<TestTable>(Creator);
+            Assert.Throws<InvalidOperationException>(() => q.Paginate(1, 2));
+        }
     }
 }
