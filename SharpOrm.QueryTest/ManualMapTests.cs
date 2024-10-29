@@ -1,6 +1,6 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
-using QueryTest.Utils;
+using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
@@ -10,7 +10,7 @@ using static QueryTest.ObjectActivatorTest;
 
 namespace QueryTest
 {
-    public class ManualMapTests(ITestOutputHelper? output) : MockTest(output)
+    public class ManualMapTests(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void ManualPropMapTest()

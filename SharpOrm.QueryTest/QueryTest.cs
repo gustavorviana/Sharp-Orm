@@ -1,5 +1,5 @@
 ﻿using BaseTest.Mock;
-using QueryTest.Utils;
+using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryTest(ITestOutputHelper? output) : MockTest(output)
+    public class QueryTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void OrderBy()

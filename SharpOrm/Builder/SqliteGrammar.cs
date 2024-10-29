@@ -34,7 +34,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
-            this.ThrowNotSupportedOperations();
+            this.ThrowNotSupportedOperations("INSERT");
             base.ConfigureInsert(cells, false);
 
             if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
@@ -43,7 +43,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            this.ThrowNotSupportedOperations();
+            this.ThrowNotSupportedOperations("DELETE");
             this.ValidateAlias();
 
             base.ConfigureDelete();
@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
-            this.ThrowNotSupportedOperations();
+            this.ThrowNotSupportedOperations("UPDATE");
 
             this.ValidateAlias();
             base.ConfigureUpdate(cells);
@@ -63,22 +63,22 @@ namespace SharpOrm.Builder
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
         }
 
-        private void ThrowNotSupportedOperations()
+        private void ThrowNotSupportedOperations(string operationName)
         {
             if (this.Query.Limit > 0)
-                throw new NotSupportedException("SQLite does not support `Limit` with `DELETE`.");
+                throw new NotSupportedException($"SQLite does not support `Limit` with `{operationName}`.");
 
             if (this.Query.Offset > 0)
-                throw new NotSupportedException("SQLite does not support `Offset` with `DELETE`.");
+                throw new NotSupportedException($"SQLite does not support `Offset` with `{operationName}`.");
 
             if (this.Info.Joins.Count > 0)
-                throw new NotSupportedException("SQLite does not support `Joins` with `DELETE`.");
+                throw new NotSupportedException($"SQLite does not support `Joins` with `{operationName}`.");
 
             if (!this.Info.Having.Empty)
-                throw new NotSupportedException("SQLite does not support `Having` with `DELETE`.");
+                throw new NotSupportedException($"SQLite does not support `Having` with `{operationName}`.");
 
             if (this.Info.Orders.Length > 0)
-                throw new NotSupportedException("SQLite does not support `Orders` with `DELETE`.");
+                throw new NotSupportedException($"SQLite does not support `Orders` with `{operationName}`.");
         }
     }
 }

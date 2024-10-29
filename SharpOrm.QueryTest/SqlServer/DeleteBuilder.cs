@@ -1,5 +1,5 @@
 ﻿using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class DeleteBuilder(ITestOutputHelper output, DbFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqlServerQueryConfig>>, IDeleteBuilderTest
+    public class DeleteBuilder(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>, IDeleteBuilderTest
     {
         [Fact]
         public void Delete()

@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class ObjectTranslatorTest(ITestOutputHelper? output) : MockTest(output)
+    public class ObjectTranslatorTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         private static readonly TableInfo table = new(typeof(TestClass), new TranslationRegistry());
 

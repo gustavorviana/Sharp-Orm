@@ -6,6 +6,7 @@ namespace BaseTest.Mock
 {
     public class MockDataReader : DbDataReader
     {
+        public MockCommand? command;
         private readonly Func<int, Row> rowsCall;
         public int ReadDelay { get; set; }
         public int Size { get; }
@@ -57,11 +58,12 @@ namespace BaseTest.Mock
 
         public override bool Read()
         {
+            this.WaitDelay();
+            if (command?.Cancelled == true) return false;
+
             if (currentIndex < this.Size - 1)
             {
                 currentIndex++;
-                this.WaitDelay();
-
                 this.currentRow = this.rowsCall(this.currentIndex);
 
                 return true;

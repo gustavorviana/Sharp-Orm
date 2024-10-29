@@ -1,6 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class SelectBuilderTest(ITestOutputHelper output, DbFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqlServerQueryConfig>>
+    public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
     {
         [Fact]
         public void FixColumnName()

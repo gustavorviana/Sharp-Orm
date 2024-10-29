@@ -1,6 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class SelectBuilderTest(ITestOutputHelper output, DbFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqliteQueryConfig>>, ISelectBuilderTests
+    public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, ISelectBuilderTests
     {
         [Fact]
         public void CaseEmptyCase()

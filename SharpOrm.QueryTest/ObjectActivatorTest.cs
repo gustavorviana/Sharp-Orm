@@ -1,6 +1,6 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
-using QueryTest.Utils;
+using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class ObjectActivatorTest(ITestOutputHelper? output) : MockTest(output)
+    public class ObjectActivatorTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void InstanceClassInstanceTest()

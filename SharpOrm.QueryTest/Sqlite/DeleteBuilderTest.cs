@@ -1,5 +1,5 @@
 ﻿using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class DeleteBuilderTest(ITestOutputHelper output, DbFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqliteQueryConfig>>, IDeleteBuilderTest
+    public class DeleteBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, IDeleteBuilderTest
     {
         [Fact]
         public void Delete()

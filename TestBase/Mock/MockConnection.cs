@@ -48,7 +48,7 @@ namespace BaseTest.Mock
 
         protected override DbCommand CreateDbCommand()
         {
-            return new MockCommand
+            var cmd = new MockCommand
             {
                 Connection = this,
                 OnExecuteNonQuery = OnExecuteNonQuery,
@@ -57,8 +57,12 @@ namespace BaseTest.Mock
                     var now = DateTime.Now;
                     try
                     {
-                        if (this.QueryReaders.TryGetValue(cmd.CommandText, out var reader))
-                            return reader();
+                        if (this.QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
+                        {
+                            var reader = readerCall();
+                            reader.command = cmd;
+                            return reader;
+                        }
                     }
                     finally
                     {
@@ -72,6 +76,8 @@ namespace BaseTest.Mock
                     return null!;
                 }
             };
+
+            return cmd;
         }
     }
 }

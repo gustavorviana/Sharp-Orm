@@ -1,6 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Mysql
 {
-    public class UpdateBuilderTest(ITestOutputHelper output, DbFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<MysqlQueryConfig>>, IUpdateBuilderTest
+    public class UpdateBuilderTest(ITestOutputHelper output, MockFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<MysqlQueryConfig>>, IUpdateBuilderTest
     {
         [Fact]
         public void Update()

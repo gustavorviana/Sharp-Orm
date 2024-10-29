@@ -1,4 +1,4 @@
-﻿using QueryTest.Fixtures;
+﻿using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Mysql
 {
-    public class TableBuilderTest(ITestOutputHelper output, DbFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<MysqlQueryConfig>>, ITableBuilderTest
+    public class TableBuilderTest(ITestOutputHelper output, MockFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<MysqlQueryConfig>>, ITableBuilderTest
     {
         [Fact]
         public void ExistsTableTest()

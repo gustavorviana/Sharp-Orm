@@ -1,4 +1,4 @@
-﻿using QueryTest.Fixtures;
+﻿using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class TableBuilderTest(ITestOutputHelper output, DbFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<SqliteQueryConfig>>, ITableBuilderTest
+    public class TableBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, ITableBuilderTest
     {
         [Fact]
         public void ExistsTableTest()

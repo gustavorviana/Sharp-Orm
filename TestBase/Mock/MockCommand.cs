@@ -7,6 +7,9 @@ namespace BaseTest.Mock
 {
     public class MockCommand : DbCommand
     {
+        private bool _cancelled = false;
+        public bool Cancelled => this._cancelled;
+
         [AllowNull]
         public Func<string, int> OnExecuteNonQuery;
         [AllowNull]
@@ -28,7 +31,7 @@ namespace BaseTest.Mock
 
         public override void Cancel()
         {
-
+            this._cancelled = true;
         }
 
         public override int ExecuteNonQuery()

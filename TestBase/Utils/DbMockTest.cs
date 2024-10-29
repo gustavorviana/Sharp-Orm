@@ -1,24 +1,28 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Mock;
-using BaseTest.Utils;
-using QueryTest.Fixtures;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
+using Xunit;
 using Xunit.Abstractions;
 
-namespace QueryTest.Utils
+namespace BaseTest.Utils
 {
-    public class MockTest : QueryTestBase
+    public class DbMockTest : QueryTestBase
     {
         protected MockConnection Connection => (MockConnection)this.fixture.Creator.GetConnection();
         protected ConnectionManager Manager => this.fixture.Manager;
 
-        public MockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
+        public DbMockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
         {
         }
 
-        public MockTest(ITestOutputHelper? output) : base(output, new DbFixture(new SqlServerQueryConfig()))
+        public DbMockTest(ITestOutputHelper? output) : base(output, new MockFixture(new SqlServerQueryConfig()))
+        {
+
+        }
+
+        public DbMockTest() : base(null, new MockFixture(new SqlServerQueryConfig()))
         {
 
         }

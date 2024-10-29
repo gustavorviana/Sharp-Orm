@@ -1,11 +1,10 @@
-﻿using BaseTest.Fixtures;
-using BaseTest.Mock;
+﻿using BaseTest.Mock;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 
-namespace QueryTest.Fixtures
+namespace BaseTest.Fixtures
 {
-    public class DbFixture(QueryConfig config) : DbFixtureBase
+    public class MockFixture(QueryConfig config) : DbFixtureBase
     {
         protected override ConnectionCreator MakeConnectionCreator()
         {
@@ -13,7 +12,7 @@ namespace QueryTest.Fixtures
         }
     }
 
-    public class DbFixture<Cnf> : DbFixtureBase where Cnf : QueryConfig, new()
+    public class MockFixture<Cnf> : DbFixtureBase where Cnf : QueryConfig, new()
     {
         protected override ConnectionCreator MakeConnectionCreator()
         {

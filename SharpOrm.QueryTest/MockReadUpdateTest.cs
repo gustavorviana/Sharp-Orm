@@ -1,6 +1,6 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
-using QueryTest.Utils;
+using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class MockReadUpdateTest(ITestOutputHelper? output) : MockTest(output)
+    public class MockReadUpdateTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void ReadWithCreateForeignIfNoDepth()

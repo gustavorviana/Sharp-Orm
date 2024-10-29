@@ -1,5 +1,5 @@
-﻿using BaseTest.Utils;
-using QueryTest.Fixtures;
+﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Mysql
 {
-    public class DeleteBuilderTest(ITestOutputHelper output, DbFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<DbFixture<MysqlQueryConfig>>, IDeleteBuilderTest
+    public class DeleteBuilderTest(ITestOutputHelper output, MockFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<MysqlQueryConfig>>, IDeleteBuilderTest
     {
         [Fact]
         public void Delete()

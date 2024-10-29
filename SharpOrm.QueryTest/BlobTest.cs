@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class BlobTest(ITestOutputHelper? output) : MockTest(output)
+    public class BlobTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         private readonly byte[] bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 

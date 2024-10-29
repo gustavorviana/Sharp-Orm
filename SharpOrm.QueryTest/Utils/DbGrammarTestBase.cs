@@ -1,7 +1,7 @@
 ﻿using SharpOrm.Builder;
 using BaseTest.Fixtures;
 using Xunit.Abstractions;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using BaseTest.Utils;
 
 namespace QueryTest.Utils
@@ -13,7 +13,7 @@ namespace QueryTest.Utils
 
         }
 
-        public DbGrammarTestBase(ITestOutputHelper output, QueryConfig config) : base(output, new DbFixture(config))
+        public DbGrammarTestBase(ITestOutputHelper output, QueryConfig config) : base(output, new MockFixture(config))
         {
 
         }

@@ -1,5 +1,5 @@
 ﻿using BaseTest.Utils;
-using QueryTest.Fixtures;
+using BaseTest.Fixtures;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqliteQueryConfig { EscapeStrings = true }), IClassFixture<DbFixture<SqliteQueryConfig>>
+    public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqliteQueryConfig { EscapeStrings = true }), IClassFixture<MockFixture<SqliteQueryConfig>>
     {
         [Fact]
         public void SelectWithEscapeStrings()

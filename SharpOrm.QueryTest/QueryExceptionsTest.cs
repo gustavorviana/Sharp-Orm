@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryExceptionsTest(ITestOutputHelper? output) : MockTest(output)
+    public class QueryExceptionsTest(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void OnCreateQueryWithNull()
