@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net6.0;net8.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>2.3.1</AssemblyVersion>
-		<FileVersion>2.3.1</FileVersion>
-		<VersionPrefix>2.3.1</VersionPrefix>
+		<AssemblyVersion>2.4.0</AssemblyVersion>
+		<FileVersion>2.4.0</FileVersion>
+		<VersionPrefix>2.4.0</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -21,7 +21,7 @@
 		<PackageTags>Db;Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Connection;Management</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Correction of count with distinct or SQL expression, correction of disposed object, support for connection management for extension methods, and other improvements.
+			Improvements in validations, date processing, addition of WhereIn, and bug fixes.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
