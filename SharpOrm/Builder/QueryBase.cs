@@ -130,8 +130,6 @@ namespace SharpOrm.Builder
         public QueryBase Where(object column, string operation, object value)
         {
             ValidateQueryValue(operation, ref value);
-
-
             return this.WriteWhere(column, operation, value, AND);
         }
 
@@ -142,15 +140,15 @@ namespace SharpOrm.Builder
             if (query.Info.Select.Length != 1 || query.Info.Select.First().IsAll())
                 throw new InvalidOperationException(Messages.MultipleColumnsException);
 
-            if (!IsLike(operation) && query.Limit != 1)
+            if (!IsIn(operation) && query.Limit != 1)
                 throw new InvalidOperationException(Messages.OneItemOnly);
 
             value = query.ToSqlExpression();
         }
 
-        private static bool IsLike(string operation)
+        private static bool IsIn(string operation)
         {
-            return operation.Equals("like", StringComparison.OrdinalIgnoreCase) || operation.Equals("not like", StringComparison.OrdinalIgnoreCase);
+            return operation.Equals("in", StringComparison.OrdinalIgnoreCase) || operation.Equals("not in", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

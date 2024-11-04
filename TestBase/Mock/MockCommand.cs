@@ -9,6 +9,7 @@ namespace BaseTest.Mock
     {
         private bool _cancelled = false;
         public bool Cancelled => this._cancelled;
+        public event EventHandler OnCancel;
 
         [AllowNull]
         public Func<string, int> OnExecuteNonQuery;
@@ -32,6 +33,7 @@ namespace BaseTest.Mock
         public override void Cancel()
         {
             this._cancelled = true;
+            this.OnCancel?.Invoke(this, EventArgs.Empty);
         }
 
         public override int ExecuteNonQuery()

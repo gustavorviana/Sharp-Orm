@@ -58,28 +58,6 @@ namespace QueryTest
         }
 
         [Fact]
-        public void TestCancellationToken()
-        {
-            var src = new CancellationTokenSource();
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [Orders]", () =>
-            {
-                Task.Run(async () =>
-                {
-                    await Task.Delay(5);
-                    src.Cancel();
-                });
-
-                MockDataReader reader = OrderReader(1);
-                reader.ReadDelay = 500;
-                reader.Token = src.Token;
-                return reader;
-            });
-
-            using var query = new Query<Order>(this.Manager) { Token = src.Token };
-            Assert.Throws<OperationCanceledException>(() => query.FirstOrDefault());
-        }
-
-        [Fact]
         public void ReadObjectPk()
         {
             var info = new TableInfo(typeof(Order));

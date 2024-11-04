@@ -39,6 +39,18 @@ namespace QueryTest
         }
 
         [Fact]
+        public void WhereInQuery()
+        {
+            var query = new Query("table");
+            var toWhereQuery = new Query("ToWhereQuery");
+
+            Assert.Throws<InvalidOperationException>(() => query.WhereIn("Column", toWhereQuery));
+
+            toWhereQuery.Select("Column");
+            query.WhereIn("Column", toWhereQuery);
+        }
+
+        [Fact]
         public void Clone()
         {
             var original = new Query("table alias")

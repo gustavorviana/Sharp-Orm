@@ -58,11 +58,7 @@ namespace BaseTest.Mock
                     try
                     {
                         if (this.QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
-                        {
-                            var reader = readerCall();
-                            reader.command = cmd;
-                            return reader;
-                        }
+                            return readerCall().SetCommand(cmd);
                     }
                     finally
                     {

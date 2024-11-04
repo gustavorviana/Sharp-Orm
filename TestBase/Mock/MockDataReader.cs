@@ -6,7 +6,8 @@ namespace BaseTest.Mock
 {
     public class MockDataReader : DbDataReader
     {
-        public MockCommand? command;
+        private MockCommand? command;
+        private readonly CancellationTokenSource tokenSrc = new();
         private readonly Func<int, Row> rowsCall;
         public int ReadDelay { get; set; }
         public int Size { get; }
@@ -27,7 +28,17 @@ namespace BaseTest.Mock
                 this.currentRow = this.rowsCall(0);
         }
 
-        public CancellationToken Token { get; set; }
+        public void Cancel()
+        {
+            this.tokenSrc.Cancel();
+        }
+
+        public MockDataReader SetCommand(MockCommand cmd)
+        {
+            this.command = cmd;
+            this.command.OnCancel += (sender, e) => this.Cancel();
+            return this;
+        }
 
         private Row? currentRow = null;
 
@@ -76,7 +87,7 @@ namespace BaseTest.Mock
             try
             {
                 if (this.ReadDelay > 0)
-                    Task.Delay(this.ReadDelay).Wait(this.Token);
+                    Task.Delay(this.ReadDelay).Wait(this.tokenSrc.Token);
             }
             catch (OperationCanceledException) { }
         }

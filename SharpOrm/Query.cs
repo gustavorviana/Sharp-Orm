@@ -167,9 +167,19 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columnNames">The column names by which the results should be grouped.</param>
         /// <returns></returns>
-        public Query GroupBy(params Expression<ColumnExpression<T>>[] columns)
+        public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
         {
-            return this.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+            return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+        }
+
+        /// <summary>
+        /// Select column of table by Column object.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
+        public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
+        {
+            return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
         #region AddForeign
