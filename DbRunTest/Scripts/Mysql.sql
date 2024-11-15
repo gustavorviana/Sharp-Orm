@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS `customers`;
 DROP TABLE IF EXISTS `address`;
 DROP TABLE IF EXISTS `TestTable`;
 DROP TABLE IF EXISTS `Files`;
+DROP TABLE IF EXISTS `DateTimeInfo`;
 
 CREATE TABLE IF NOT EXISTS `address` (
   `id` INT PRIMARY KEY,
@@ -41,4 +42,12 @@ CREATE TABLE IF NOT EXISTS `TestTable` (
 CREATE TABLE IF NOT EXISTS `Files` (
     `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     `bin` BLOB
+);
+
+CREATE TABLE `DateTimeInfo` (
+    `MyId` INT PRIMARY KEY,
+    `DateTime` DATETIME NOT NULL,
+    `TimeSpan` TIME NOT NULL,
+    `DateOnly` DATE NOT NULL,
+    `TimeOnly` TIME NOT NULL
 );

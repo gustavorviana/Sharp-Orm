@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS [Orders];
 DROP TABLE IF EXISTS [Customers];
 DROP TABLE IF EXISTS [Address];
+
 CREATE TABLE [Address] (
   [id] INT PRIMARY KEY,
   [name] VARCHAR(50),
@@ -41,4 +42,13 @@ CREATE TABLE Files (
     Id INT NOT NULL IDENTITY(1,1),
     bin VARBINARY(MAX),
     PRIMARY KEY (Id)
+);
+
+DROP TABLE IF EXISTS [DateTimeInfo];
+CREATE TABLE [DateTimeInfo] (
+    [MyId] INT PRIMARY KEY,
+    [DateTime] DATETIME NOT NULL,
+    [TimeSpan] TIME NOT NULL,
+    [DateOnly] DATE NOT NULL,
+    [TimeOnly] TIME NOT NULL
 );

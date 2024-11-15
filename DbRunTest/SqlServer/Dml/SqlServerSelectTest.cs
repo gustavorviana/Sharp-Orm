@@ -1,7 +1,5 @@
-﻿using BaseTest.Models;
-using DbRunTest.BaseTests.Dml;
+﻿using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
-using SharpOrm;
 using System.Data.SqlClient;
 using Xunit.Abstractions;
 

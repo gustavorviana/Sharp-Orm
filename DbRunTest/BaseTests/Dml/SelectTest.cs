@@ -15,12 +15,25 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void SelectDateTime()
         {
-            using var query = NewQuery<TestTable>();
+            using var query = NewQuery<DateTimeInfo>();
+            var expectedDate = DateTime.Now.RemoveMiliseconds();
+            DateTimeInfo expected = new()
+            {
+                MyId = 1,
+                DateTime = expectedDate,
+                TimeSpan = expectedDate.TimeOfDay,
+                DateOnly = DateOnly.FromDateTime(expectedDate),
+                TimeOnly = TimeOnly.FromDateTime(expectedDate),
+            };
 
-            var date = DateTime.Now.RemoveMiliseconds();
-            query.Insert(new Cell("Id", 1), new Cell("Name", ""), new Cell("record_created", date), new Cell("number", 0), new Cell("custom_status", 0));
-            DateTime dbDate = query.Select("record_created").ExecuteScalar<DateTime>();
-            TestAssert.EqualDate(date, dbDate, "Time insert fail");
+            query.Insert(expected);
+
+            var current = query.FirstOrDefault();
+
+            TestAssert.EqualDate(expected.DateTime, current.DateTime, "Time insert fail");
+            TestAssert.EqualTime(expected.TimeSpan, current.TimeSpan, "Time insert fail");
+            Assert.Equal(expected.DateOnly, current.DateOnly);
+            Assert.Equal(expected.TimeOnly, current.TimeOnly);
         }
 
         [Fact]
@@ -252,7 +265,6 @@ namespace DbRunTest.BaseTests.Dml
             var names = q.ExecuteArrayScalar<string>();
             Assert.Equal(5, names.Length);
         }
-
 
         [Fact]
         public void SelectJoin()
