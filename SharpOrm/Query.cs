@@ -1167,6 +1167,7 @@ namespace SharpOrm
         /// <param name="tables">Names of the tables (or aliases if used) whose rows should be removed.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("This method will be removed in version 3.x.")]
         public Query JoinToDelete(params string[] tables)
         {
             if (tables == null || tables.Length == 0)

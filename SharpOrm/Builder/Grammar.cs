@@ -61,6 +61,11 @@ namespace SharpOrm.Builder
             return this.Info.Select.FirstOrDefault();
         }
 
+        protected void SetParamInterceptor(Func<object, object> func)
+        {
+            this.builder.paramInterceptor = func;
+        }
+
         /// <summary>
         /// Performs a record count in the database based on the current Query object configuration.
         /// </summary>
@@ -456,6 +461,54 @@ namespace SharpOrm.Builder
         protected string ApplyTableColumnConfig(string name)
         {
             return this.Info.Config.ApplyNomenclature(name);
+        }
+
+        protected QueryBaseInfo GetInfo(QueryBase query)
+        {
+            return query.Info;
+        }
+
+        protected void WriteWhere(bool configureParameters)
+        {
+            if (this.Info.Where.Empty)
+                return;
+
+            this.builder.Add(" WHERE ");
+            if (configureParameters) this.WriteWhereContent(this.Info);
+            else this.builder.Add(this.Info.Where);
+        }
+
+        protected void WriteWhereContent(QueryBaseInfo info)
+        {
+            this.builder.AddAndReplace(
+                info.Where.ToString(),
+                '?',
+                (count) => this.builder.AddParameter(info.Where.Parameters[count - 1])
+            );
+        }
+
+        protected void ThrowOffsetNotSupported()
+        {
+            if (this.Query.Offset.HasValue && this.Query.Offset.Value > 0)
+                throw new NotSupportedException("Offset is not supported in this operation.");
+        }
+
+        protected void ThrowLimitNotSupported()
+        {
+            if (this.Query.Limit.HasValue && this.Query.Limit.Value > 0)
+                throw new NotSupportedException("Limit is not supported in this operation.");
+        }
+
+        protected void ThrowJoinNotSupported()
+        {
+            if (this.Query.Info.Joins.Count > 0)
+                throw new NotSupportedException("JOIN is not supported in this operation.");
+        }
+
+        protected void ThrowOrderNotSupported()
+        {
+            if (this.Query.Info.Orders.Length > 0)
+                throw new NotSupportedException("ORDER BY is not supported in this operation.");
         }
     }
 }

@@ -43,19 +43,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="value">The string to escape.</param>
         /// <returns>The escaped string.</returns>
-        public override string EscapeString(string value)
-        {
-            StringBuilder build = new StringBuilder(value.Length + 2);
-            build.Append('\'');
-            for (int i = 0; i < value.Length; i++)
-            {
-                var c = value[i];
-                if (c == '\'') build.Append(c);
-
-                build.Append(c);
-            }
-            return build.Append('\'').ToString();
-        }
+        public override string EscapeString(string value) => BasicEscapeString(value, '\'');
 
         public override QueryConfig Clone(bool? safeOperations = null)
         {

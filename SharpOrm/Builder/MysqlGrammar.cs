@@ -231,30 +231,5 @@ namespace SharpOrm.Builder
 
             this.WriteWhereContent(join.Info);
         }
-
-        protected void WriteWhere(bool configureParameters)
-        {
-            if (this.Info.Where.Empty)
-                return;
-
-            this.builder.Add(" WHERE ");
-            if (configureParameters) this.WriteWhereContent(this.Info);
-            else this.builder.Add(this.Info.Where);
-        }
-
-        protected void WriteWhereContent(QueryBaseInfo info)
-        {
-            this.builder.AddAndReplace(
-                info.Where.ToString(),
-                '?',
-                (count) => this.builder.AddParameter(info.Where.Parameters[count - 1])
-            );
-        }
-
-        protected void ThrowOffsetNotSupported()
-        {
-            if (this.Query.Offset is int val && val != 0)
-                throw new NotSupportedException("Offset is not supported in this operation.");
-        }
     }
 }
