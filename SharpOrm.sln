@@ -5,11 +5,11 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpOrm", "SharpOrm\SharpOrm.csproj", "{F6B2481A-6E38-4B1B-B6A5-956B995EFE99}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryTest", "SharpOrm.QueryTest\QueryTest.csproj", "{EFDF029F-AA90-4089-9973-0974B10FC1CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueryTest", "QueryTest\QueryTest.csproj", "{EFDF029F-AA90-4089-9973-0974B10FC1CA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{91D160EC-8E83-4769-A524-46D128B611EB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaseTest", "TestBase\BaseTest.csproj", "{B09407FB-E451-499F-A79E-F001FDA86E38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaseTest", "BaseTest\BaseTest.csproj", "{B09407FB-E451-499F-A79E-F001FDA86E38}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbRunTest", "DbRunTest\DbRunTest.csproj", "{4D0A5874-9D0F-42BF-84EF-61AA11877141}"
 EndProject

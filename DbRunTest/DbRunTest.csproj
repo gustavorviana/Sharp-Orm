@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
-    <ProjectReference Include="..\TestBase\BaseTest.csproj" />
+    <ProjectReference Include="..\BaseTest\BaseTest.csproj" />
   </ItemGroup>
 
   <ItemGroup>
