@@ -129,7 +129,26 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(object column, string operation, object value)
         {
+            ValidateQueryValue(operation, ref value);
             return this.WriteWhere(column, operation, value, AND);
+        }
+
+        private static void ValidateQueryValue(string operation, ref object value)
+        {
+            if (!(value is Query query)) return;
+
+            if (query.Info.Select.Length != 1 || query.Info.Select.First().IsAll())
+                throw new InvalidOperationException(Messages.MultipleColumnsException);
+
+            if (!IsIn(operation) && query.Limit != 1)
+                throw new InvalidOperationException(Messages.OneItemOnly);
+
+            value = query.ToSqlExpression();
+        }
+
+        private static bool IsIn(string operation)
+        {
+            return operation.Equals("in", StringComparison.OrdinalIgnoreCase) || operation.Equals("not in", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -462,7 +481,7 @@ namespace SharpOrm.Builder
                 return this;
             }
 
-            this.ParseColumn(column);
+            this.Info.Where.AddColumn(column);
             this.Info.Where.Add().Add(operation).Add();
 
             bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
@@ -486,28 +505,6 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
             if (!AvailableOperations.ContainsIgnoreCase(operation))
                 throw new DatabaseException("Invalid SQL operation: " + operation);
-        }
-
-        /// <summary>
-        /// Turns the column object into a sql value.
-        /// </summary>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        protected QueryBuilder ParseColumn(object column)
-        {
-            if (column is string strColumn)
-                return this.Info.Where.Add(this.Info.Config.ApplyNomenclature(strColumn));
-
-            if (column is MemberInfoColumn memberColumn)
-                return this.Info.Where.AddParameter(memberColumn);
-
-            if (column is ISqlExpressible iExp)
-                column = iExp.ToSafeExpression(this.Info.ToReadOnly(), true);
-
-            if (column is SqlExpression exp)
-                return this.Info.Where.Add(exp);
-
-            throw new NotSupportedException("The column type is not supported.");
         }
 
         /// <summary>

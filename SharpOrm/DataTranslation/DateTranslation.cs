@@ -8,7 +8,7 @@ namespace SharpOrm.DataTranslation
         #region Fields\Properties
         private TimeZoneInfo _dbTimeZone = TimeZoneInfo.Local;
         private TimeZoneInfo _codeTimeZone = TimeZoneInfo.Local;
-        public string Format { get; set; } = "yyyy-MM-dd HH:mm:ss";
+        internal const string Format = "yyyy-MM-dd HH:mm:ss";
 
         /// <summary>
         /// Timezone in which dates should be stored in the database.
@@ -32,18 +32,34 @@ namespace SharpOrm.DataTranslation
         #endregion
 
         #region ISqlTranslation
-        public bool CanWork(Type type) => type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(string) || type == typeof(FreezedDate);
+        public bool CanWork(Type type) => type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(string) || type == typeof(FreezedDate)
+#if NET5_0_OR_GREATER
+|| type == typeof(DateOnly) || type == typeof(TimeOnly)
+#endif
+            ;
 
         public object FromSqlValue(object value, Type expectedType)
         {
             if (expectedType == typeof(FreezedDate))
-                throw new NotSupportedException();
+                if (value is DateTime freezedDate) return new FreezedDate(freezedDate);
+                else throw new NotSupportedException();
+
+            if (expectedType == typeof(DateTimeOffset))
+                return this.LoadDateTimeOffset(value);
 
             if (expectedType == typeof(DateTime))
                 return ParseDateTimeFromDb(value);
 
             if (expectedType == typeof(TimeSpan))
                 return ParseTimespanFromDb(value);
+
+#if NET5_0_OR_GREATER
+            if (expectedType == typeof(DateOnly))
+                return ParseDateOnly(value);
+
+            if (expectedType == typeof(TimeOnly))
+                return ParseTimeOnly(value);
+#endif
 
             return value;
         }
@@ -52,6 +68,14 @@ namespace SharpOrm.DataTranslation
         {
             if (value is FreezedDate fDate)
                 return fDate.Value;
+
+#if NET5_0_OR_GREATER
+            if (value is DateOnly dateOnly)
+                return dateOnly.ToDateTime(TimeOnly.MinValue);
+
+            if (value is TimeOnly timeOnly)
+                return timeOnly.ToTimeSpan();
+#endif
 
             if (value is DateTime date)
                 return DateToDb(date, type);
@@ -64,6 +88,21 @@ namespace SharpOrm.DataTranslation
 
             return value;
         }
+
+        private DateTimeOffset? LoadDateTimeOffset(object value)
+        {
+            if (value is DateTimeOffset offset)
+                return offset;
+
+            if (value is DateTime date)
+                return new DateTimeOffset(date, DbTimeZone.BaseUtcOffset);
+
+            if (value is string str && DateTimeOffset.TryParse(str, out var strOffset))
+                return strOffset;
+
+            return null;
+        }
+
         #endregion
 
         #region FromDb
@@ -83,21 +122,23 @@ namespace SharpOrm.DataTranslation
 
         private object ParseTimespanFromDb(object obj)
         {
+            if (obj is TimeSpan timeSpan) return timeSpan;
+            if (obj is DateTime dateTime) return dateTime.TimeOfDay;
+            if (obj is DateTimeOffset dateTimeOffset) return dateTimeOffset.TimeOfDay;
+#if NET5_0_OR_GREATER
+            if (obj is TimeOnly timeOnly) return timeOnly.ToTimeSpan(); 
+#endif
+
             if (obj is string strTime && TimeSpan.TryParse(strTime, out var time))
                 return time;
 
-            obj = ParseDateTimeFromDb(obj);
-
-            if (obj is DateTime date)
-                return date.TimeOfDay;
-
-            return obj;
+            throw new NotSupportedException($"\"({obj?.GetType()}){obj}\" cannot be converted to {typeof(TimeSpan).FullName}.");
         }
 
         private object ParseDateTimeFromDb(object obj)
         {
             if (obj is DateTimeOffset offset)
-                return TimeZoneInfo.ConvertTimeFromUtc(offset.UtcDateTime, CodeTimeZone);
+                return LoadOffsetFromDb(offset);
 
             if (obj is DateTime date)
                 return ConvertDate(DbTimeZone, CodeTimeZone, date);
@@ -114,6 +155,57 @@ namespace SharpOrm.DataTranslation
                 return ConvertDate(DbTimeZone, CodeTimeZone, date);
 
             return null;
+        }
+
+#if NET5_0_OR_GREATER
+        private object ParseDateOnly(object value)
+        {
+            if (value?.GetType() == typeof(DateOnly))
+                return value;
+
+            if (value is DateTime dateTime)
+                return DateOnly.FromDateTime(dateTime);
+
+            if (value is DateTimeOffset dateOffset)
+                return DateOnly.FromDateTime(LoadOffsetFromDb(dateOffset));
+
+            if (value is string strDate)
+            {
+                if (strDate.Contains(' '))
+                    strDate = strDate.Substring(0, strDate.IndexOf(' '));
+
+                return DateOnly.TryParse(strDate, out var result) ? result : DateOnly.MinValue;
+            }
+
+            return value;
+        }
+
+        private object ParseTimeOnly(object value)
+        {
+            if (value?.GetType() == typeof(TimeOnly))
+                return value;
+
+            if (value is TimeSpan time)
+                return TimeOnly.FromTimeSpan(time);
+
+            if (value is DateTime dateTime)
+                return TimeOnly.FromDateTime(dateTime);
+
+            if (value is DateTimeOffset dateOffset)
+                return TimeOnly.FromDateTime(LoadOffsetFromDb(dateOffset));
+
+            if (value is string strTime)
+                return TimeOnly.TryParse(strTime, out var result) ? result : TimeOnly.MinValue;
+
+            return value;
+        }
+#endif
+
+        private DateTime LoadOffsetFromDb(DateTimeOffset offset)
+        {
+            if (DbTimeZone.Equals(CodeTimeZone)) return offset.DateTime;
+
+            return TimeZoneInfo.ConvertTime(offset.UtcDateTime, CodeTimeZone);
         }
         #endregion
 

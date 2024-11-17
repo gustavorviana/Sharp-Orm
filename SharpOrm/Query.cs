@@ -176,9 +176,19 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columnNames">The column names by which the results should be grouped.</param>
         /// <returns></returns>
-        public Query GroupBy(params Expression<ColumnExpression<T>>[] columns)
+        public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
         {
-            return this.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+            return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+        }
+
+        /// <summary>
+        /// Select column of table by Column object.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
+        public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
+        {
+            return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
         #region AddForeign
@@ -1205,7 +1215,7 @@ namespace SharpOrm
             if (this.lastOpenReader is OpenReader last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()))).reader;
+            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()), this.Token)).reader;
         }
 
         /// <summary>
@@ -1214,6 +1224,7 @@ namespace SharpOrm
         /// <param name="tables">Names of the tables (or aliases if used) whose rows should be removed.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("This method will be removed in version 3.x.")]
         public Query JoinToDelete(params string[] tables)
         {
             if (tables == null || tables.Length == 0)
@@ -1389,23 +1400,43 @@ namespace SharpOrm
 
         private class OpenReader : IDisposable
         {
+            private bool _disposed;
             private readonly DbCommand command;
             public readonly DbDataReader reader;
-            private bool _disposed;
+            private CancellationTokenRegistration token;
 
-            public OpenReader(DbCommand command)
+            public OpenReader(DbCommand command, CancellationToken token)
             {
                 this.command = command;
+                token.Register(this.CancelCommand);
                 this.reader = command.ExecuteReader();
             }
+
+            private void CancelCommand()
+            {
+                SafeDispose(this.token);
+                try { this.command.Cancel(); } catch { }
+            }
+
+            #region IDisposable
 
             public void Dispose()
             {
                 if (this._disposed)
                     return;
 
+                this.CancelCommand();
+
+                SafeDispose(this.reader);
+                SafeDispose(this.command);
+
                 this.Dispose(true);
                 GC.SuppressFinalize(this);
+            }
+
+            private static void SafeDispose(IDisposable disposable)
+            {
+                if (disposable != null) try { disposable.Dispose(); } catch { }
             }
 
             ~OpenReader()
@@ -1419,13 +1450,16 @@ namespace SharpOrm
                     return;
 
                 this._disposed = true;
+                this.CancelCommand();
 
                 if (!disposing)
                     return;
 
-                try { ((IDisposable)this.reader).Dispose(); } catch { }
+                try { this.reader.Dispose(); } catch { }
                 try { this.command.Dispose(); } catch { }
             }
+
+            #endregion
         }
     }
 }

@@ -77,12 +77,15 @@ namespace SharpOrm.DataTranslation
             if (value is null || value is DBNull)
                 return DBNull.Value;
 
-            Type type = value?.GetType();
+            return ToSql(value, value.GetType());
+        }
 
-            if (GetFor(type) is ISqlTranslation conversor)
-                return conversor.ToSqlValue(value, type);
+        internal object ToSql(object value, Type expectedType)
+        {
+            if (GetFor(expectedType) is ISqlTranslation conversor)
+                return conversor.ToSqlValue(value, expectedType);
 
-            throw new NotSupportedException($"Type \"{type.FullName}\" is not supported");
+            throw new NotSupportedException($"Type \"{expectedType.FullName}\" is not supported");
         }
 
         /// <summary>
@@ -165,17 +168,6 @@ namespace SharpOrm.DataTranslation
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
 
             return null;
-        }
-
-        /// <summary>
-        /// Converts the date to the local timezone or the database timezone.
-        /// </summary>
-        /// <param name="value">The date that should be converted.</param>
-        /// <param name="toSql">True to convert to the database timezone; False to convert to the code's timezone.</param>
-        /// <returns></returns>
-        public DateTime ConvertDate(DateTime value, bool toSql)
-        {
-            return (DateTime)(toSql ? native.ToSqlValue(value, typeof(DateTime)) : native.FromSqlValue(value, typeof(DateTime)));
         }
 
         internal TableInfo AddTableMap<T>(TableMap<T> map)

@@ -138,6 +138,16 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        public static QueryBase WhereIn(this QueryBase qBase, object column, Query query)
+        {
+            return qBase.Where(column, "IN", query);
+        }
+
+        /// <summary>
         /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
@@ -350,6 +360,16 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the items specified in the values.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "IN" comparison on.</param>
+        public static QueryBase OrWhereIn(this QueryBase qBase, object column, Query query)
+        {
+            return qBase.OrWhere(column, "IN", query);
+        }
+
+        /// <summary>
         /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is among the items specified in the values.
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
@@ -449,10 +469,10 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(likeOptions));
 
             QueryBuilder builder = new QueryBuilder(qBase);
-            builder.Add('(').Add(column).Add(" LIKE ").AddParameter(likeOptions[0]);
+            builder.Add('(').AddColumn(column).Add(" LIKE ").AddParameter(likeOptions[0]);
 
             for (int i = 1; i < likeOptions.Length; i++)
-                builder.Add(" OR LIKE ").AddParameter(likeOptions[i]);
+                builder.Add(" OR ").AddColumn(column).Add(" LIKE ").AddParameter(likeOptions[i]);
 
             builder.Add(')');
             qBase.Info.Where.Add(builder);

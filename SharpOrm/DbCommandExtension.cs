@@ -17,7 +17,7 @@ namespace SharpOrm
         /// <typeparam name="T">Type to be converted.</typeparam>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        public static IEnumerable<T> ExecuteEnumerable<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default, ConnectionManagement management = ConnectionManagement.LeaveOpen)
+        public static IEnumerable<T> ExecuteEnumerable<T>(this DbCommand cmd, TranslationRegistry registry = null, CancellationToken token = default, ConnectionManagement management = ConnectionManagement.CloseOnEndOperation)
         {
             return new DbCommandEnumerable<T>(cmd, registry, management, token);
         }
@@ -50,7 +50,7 @@ namespace SharpOrm
         /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
+        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen)
         {
             ISqlTranslation translation = (translationRegistry ?? TranslationRegistry.Default).GetFor(typeof(T));
             Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
@@ -59,6 +59,13 @@ namespace SharpOrm
                 while (reader.Read())
                     if (reader.IsDBNull(0)) yield return default;
                     else yield return (T)translation.FromSqlValue(reader.GetValue(0), expectedType);
+
+            if (CanClose(management)) cmd.Connection.Close();
+        }
+
+        internal static bool CanClose(ConnectionManagement management)
+        {
+            return management != ConnectionManagement.LeaveOpen && management != ConnectionManagement.CloseOnManagerDispose;
         }
 
         /// <summary>

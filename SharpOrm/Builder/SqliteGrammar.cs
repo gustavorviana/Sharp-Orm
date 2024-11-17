@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using System;
 using System.Collections.Generic;
 
 namespace SharpOrm.Builder
@@ -17,22 +18,23 @@ namespace SharpOrm.Builder
             this.builder.paramInterceptor += (original) =>
             {
                 if (original is DateTime date)
-                    return date.ToString("s");
+                    return date.ToString(DateTranslation.Format);
 
                 if (original is DateTimeOffset offset)
-                    return ToDateTime(offset).ToString("s");
+                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo()).ToString(DateTranslation.Format);
 
                 return original;
             };
         }
 
-        private DateTime ToDateTime(DateTimeOffset offset)
+        private TimeZoneInfo GetTimeZoneInfo()
         {
-            return this.Info.Config.Translation.ConvertDate(offset.UtcDateTime, true);
+            return this.Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
+            this.ThrowNotSupportedOperations("INSERT");
             base.ConfigureInsert(cells, false);
 
             if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
@@ -41,17 +43,15 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            if (this.Info.Joins.Count > 0)
-                throw new NotSupportedException("SQLite does not support DELETE with JOIN.");
-
+            this.ThrowNotSupportedOperations("DELETE");
             this.ValidateAlias();
+
             base.ConfigureDelete();
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
-            if (this.Info.Joins.Count > 0)
-                throw new NotSupportedException("SQLite does not support UPDATE with JOIN.");
+            this.ThrowNotSupportedOperations("UPDATE");
 
             this.ValidateAlias();
             base.ConfigureUpdate(cells);
@@ -61,6 +61,24 @@ namespace SharpOrm.Builder
         {
             if (!string.IsNullOrEmpty(this.Info.TableName.Alias))
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
+        }
+
+        private void ThrowNotSupportedOperations(string operationName)
+        {
+            if (this.Query.Limit > 0)
+                throw new NotSupportedException($"SQLite does not support `Limit` with `{operationName}`.");
+
+            if (this.Query.Offset > 0)
+                throw new NotSupportedException($"SQLite does not support `Offset` with `{operationName}`.");
+
+            if (this.Info.Joins.Count > 0)
+                throw new NotSupportedException($"SQLite does not support `Joins` with `{operationName}`.");
+
+            if (!this.Info.Having.Empty)
+                throw new NotSupportedException($"SQLite does not support `Having` with `{operationName}`.");
+
+            if (this.Info.Orders.Length > 0)
+                throw new NotSupportedException($"SQLite does not support `Orders` with `{operationName}`.");
         }
     }
 }

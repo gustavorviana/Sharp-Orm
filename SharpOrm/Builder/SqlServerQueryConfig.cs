@@ -53,23 +53,11 @@ namespace SharpOrm.Builder
             return $@"Data Source=localhost;Initial Catalog={initialCatalog};Integrated Security=True";
         }
 
-        public override string EscapeString(string value)
+        public override string EscapeString(string value) => BasicEscapeString(value, StrDelimitor);
+
+        public override QueryConfig Clone(bool? safeOperations = null)
         {
-            StringBuilder builder = new StringBuilder(value.Length + 2).Append(StrDelimitor);
-
-            for (int i = 0; i < value.Length; i++)
-            {
-                var c = value[i];
-                if (c == StrDelimitor) builder.Append(StrDelimitor);
-                builder.Append(c);
-            }
-
-            return builder.Append(StrDelimitor).ToString();
-        }
-
-        public override QueryConfig Clone()
-        {
-            var clone = new SqlServerQueryConfig(this.OnlySafeModifications);
+            var clone = new SqlServerQueryConfig(safeOperations ?? this.OnlySafeModifications);
             this.CopyTo(clone);
             return clone;
         }

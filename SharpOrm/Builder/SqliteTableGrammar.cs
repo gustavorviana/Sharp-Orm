@@ -21,7 +21,7 @@ namespace SharpOrm.Builder
 
         protected override DbName LoadName()
         {
-            if (this.Schema.Temporary)
+            if (this.Schema.Temporary && !this.Schema.Name.StartsWith("temp_"))
                 return new DbName(string.Concat("temp_", this.Schema.Name), "");
 
             return new DbName(this.Schema.Name, "");
@@ -31,6 +31,9 @@ namespace SharpOrm.Builder
         {
             if (this.Schema.BasedQuery != null)
                 return this.CreateBased();
+
+            if (this.GetPrimaryKeys().Length > 1 && this.Schema.Columns.Count(x => x.AutoIncrement) > 0)
+                throw new InvalidOperationException("It is not possible to have more than one primary key column when there is an AUTOINCREMENT column.");
 
             var query = this.GetCreateTableQuery()
                  .Add('(')

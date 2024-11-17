@@ -76,20 +76,11 @@ namespace SharpOrm.Collections
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator
         {
-            if (this.management != ConnectionManagement.CloseOnEndOperation)
-            {
-                if (this.DisposeCommand)
-                    try { this.command.Dispose(); } catch { }
-
-                return instance;
-            }
-
             instance.Disposed += (sender, e) =>
             {
                 try
                 {
-                    if (this.command.Transaction == null && this.command.Connection.IsOpen())
-                        this.command.Connection.Close();
+                    if (this.CanClose()) this.command.Connection.Close();
                 }
                 catch
                 { }
@@ -99,6 +90,11 @@ namespace SharpOrm.Collections
             };
 
             return instance;
+        }
+
+        private bool CanClose()
+        {
+            return this.command.Transaction == null && this.command.Connection.IsOpen() && (this.management == ConnectionManagement.CloseOnEndOperation || this.management == ConnectionManagement.CloseOnDispose);
         }
     }
 }

@@ -27,7 +27,7 @@ namespace SharpOrm.Builder
             throw new NotImplementedException();
         }
 
-        public override QueryConfig Clone()
+        public override QueryConfig Clone(bool? safeOperations = null)
         {
             return new ReadonlyQueryConfig();
         }

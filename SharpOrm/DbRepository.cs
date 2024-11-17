@@ -322,8 +322,19 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         protected IEnumerable<T> ExecuteArrayScalar<T>(string query, params object[] args)
         {
-            using (var cmd = this.CreateCommand(query, args))
-                return cmd.ExecuteArrayScalar<T>(this.Creator.Config.Translation);
+            return this.CreateCommand(query, args).ExecuteArrayScalar<T>(this.Creator.Config.Translation, this.Creator.Management);
+        }
+
+        /// <summary>
+        /// Executes the provided SQL query and returns an enumerable collection of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of objects to be returned. Must have a parameterless constructor.</typeparam>
+        /// <param name="sql">The SQL query to execute.</param>
+        /// <param name="args">An array of parameters to be applied to the SQL query.</param>
+        /// <returns>An enumerable collection of objects of type <typeparamref name="T"/>.</returns>
+        protected IEnumerable<T> ExecuteEnumerable<T>(string sql, params object[] args) 
+        {
+            return CreateCommand(sql, args).ExecuteEnumerable<T>(null, this.Token, this.Creator.Management);
         }
 
         /// <summary>

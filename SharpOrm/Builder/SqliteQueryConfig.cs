@@ -1,4 +1,6 @@
-﻿namespace SharpOrm.Builder
+﻿using System.Text;
+
+namespace SharpOrm.Builder
 {
     public class SqliteQueryConfig : QueryConfig
     {
@@ -36,11 +38,16 @@
             return new SqliteTableGrammar(this, schema);
         }
 
-        public override string EscapeString(string value) => MysqlQueryConfig.Escape(value);
+        /// <summary>
+        /// Escapes a string for use in a MySQL query.
+        /// </summary>
+        /// <param name="value">The string to escape.</param>
+        /// <returns>The escaped string.</returns>
+        public override string EscapeString(string value) => BasicEscapeString(value, '\'');
 
-        public override QueryConfig Clone()
+        public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new SqliteQueryConfig(this.OnlySafeModifications);
+            var clone = new SqliteQueryConfig(safeOperations ?? this.OnlySafeModifications);
             this.CopyTo(clone);
             return clone;
         }

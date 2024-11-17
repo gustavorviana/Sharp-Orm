@@ -21,7 +21,8 @@ namespace SharpOrm.Builder
 
         protected override DbName LoadName()
         {
-            if (this.Schema.Name.StartsWith("#"))
+            bool isTempName = this.Schema.Name.StartsWith("#");
+            if (isTempName && !this.Schema.Temporary)
                 throw new InvalidOperationException("The table name cannot start with '#'.");
 
             if (this.Schema.Name.EndsWith("_"))
@@ -35,6 +36,8 @@ namespace SharpOrm.Builder
 
             if (Schema.Name.Length > 115)
                 throw new InvalidOperationException("The table name must contain up to 115 characters.");
+
+            if (isTempName) return new DbName(this.Schema.Name, "", false);
 
             return new DbName(string.Concat("#", this.Schema.Name), "");
         }

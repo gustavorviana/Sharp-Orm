@@ -1,6 +1,7 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Reflection;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -75,7 +76,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public abstract string ApplyNomenclature(string name);
+        public virtual string ApplyNomenclature(string name) => name;
 
         /// <summary>
         /// Creates a new grammar object.
@@ -108,7 +109,7 @@ namespace SharpOrm.Builder
         /// Creates a copy of the current <see cref="QueryConfig"/> instance.
         /// </summary>
         /// <returns>A new instance of <see cref="QueryConfig"/> that is a copy of the current instance.</returns>
-        public abstract QueryConfig Clone();
+        public abstract QueryConfig Clone(bool? safeOperations = null);
 
         /// <summary>
         /// Copies the properties of the current <see cref="QueryConfig"/> instance to the target instance.
@@ -121,6 +122,20 @@ namespace SharpOrm.Builder
             foreach (var prop in this.GetType().GetProperties(flags))
                 if (prop.CanRead && prop.CanWrite)
                     ReflectionUtils.CopyPropTo(this, target, prop);
+        }
+
+        protected static string BasicEscapeString(string value, char escapeChar)
+        {
+            StringBuilder builder = new StringBuilder(value.Length + 2).Append(escapeChar);
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                var c = value[i];
+                if (c == escapeChar) builder.Append(escapeChar);
+                builder.Append(c);
+            }
+
+            return builder.Append(escapeChar).ToString();
         }
     }
 }

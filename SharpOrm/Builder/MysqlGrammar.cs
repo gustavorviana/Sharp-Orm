@@ -11,6 +11,18 @@ namespace SharpOrm.Builder
     {
         public MysqlGrammar(Query query) : base(query)
         {
+            this.builder.paramInterceptor += (original) =>
+            {
+                if (original is DateTimeOffset offset)
+                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo());
+
+                return original;
+            };
+        }
+
+        private TimeZoneInfo GetTimeZoneInfo()
+        {
+            return this.Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames)
@@ -96,7 +108,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount(Column column)
         {
-            bool safeDistinct = (column == null || column == Column.All) && this.Query.Distinct;
+            bool safeDistinct = (column == null || column.IsAll()) && this.Query.Distinct;
 
             if (safeDistinct)
                 this.builder.Add("SELECT COUNT(*) FROM (");
@@ -104,7 +116,7 @@ namespace SharpOrm.Builder
             this.ConfigureSelect(true, safeDistinct ? null : column);
 
             if (safeDistinct)
-                this.builder.Add(") `count`");
+                this.builder.Add(") ").Add(this.Info.Config.ApplyNomenclature("count"));
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
@@ -115,18 +127,21 @@ namespace SharpOrm.Builder
         private void ConfigureSelect(bool configureWhereParams, Column countColumn)
         {
             bool isCount = countColumn != null;
+            bool isCustomCount = countColumn != null && countColumn.IsCount;
+
             this.builder.Add("SELECT ");
 
-            if (isCount)
+            if (isCount && !isCustomCount)
                 this.builder.Add("COUNT(");
 
-            if (this.Query.Distinct)
+            if (this.Query.Distinct && !isCustomCount)
                 this.builder.Add("DISTINCT ");
 
             if (isCount)
             {
                 WriteSelect(countColumn);
-                this.builder.Add(')');
+                if (!isCustomCount)
+                    this.builder.Add(')');
             }
             else
             {
@@ -215,31 +230,6 @@ namespace SharpOrm.Builder
                 .Add(" ON ");
 
             this.WriteWhereContent(join.Info);
-        }
-
-        protected void WriteWhere(bool configureParameters)
-        {
-            if (this.Info.Where.Empty)
-                return;
-
-            this.builder.Add(" WHERE ");
-            if (configureParameters) this.WriteWhereContent(this.Info);
-            else this.builder.Add(this.Info.Where);
-        }
-
-        protected void WriteWhereContent(QueryBaseInfo info)
-        {
-            this.builder.AddAndReplace(
-                info.Where.ToString(),
-                '?',
-                (count) => this.builder.AddParameter(info.Where.Parameters[count - 1])
-            );
-        }
-
-        protected void ThrowOffsetNotSupported()
-        {
-            if (this.Query.Offset is int val && val != 0)
-                throw new NotSupportedException("Offset is not supported in this operation.");
         }
     }
 }

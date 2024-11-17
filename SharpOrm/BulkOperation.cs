@@ -37,8 +37,9 @@ namespace SharpOrm
             if (manager.Management == ConnectionManagement.CloseOnManagerDispose && escapeString == manager.Config.EscapeStrings)
                 return manager;
 
-            manager = manager.Clone(cloneConfig: true);
+            manager = manager.Clone(cloneConfig: true, safeOperations: false);
             manager.Config.EscapeStrings = escapeString;
+
             manager.Management = ConnectionManagement.CloseOnManagerDispose;
 
             return manager;
