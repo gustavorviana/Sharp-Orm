@@ -11,6 +11,18 @@ namespace QueryTest.Sqlite
 {
     public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, ISelectBuilderTests
     {
+        [Theory]
+        [InlineData(TrashVisibility.With, "")]
+        [InlineData(TrashVisibility.Ignore, " WHERE \"deleted\" = 0")]
+        [InlineData(TrashVisibility.Only, " WHERE \"deleted\" = 1")]
+        public void SelectSoftDeleted(TrashVisibility visibility, string expectedWhere)
+        {
+            using var query = new Query<SoftDeleteAddress> { TrashVisibility = visibility };
+
+            var result = query.Grammar().Select();
+            QueryAssert.Equal($"SELECT * FROM \"SoftDeleteAddress\"{expectedWhere}", result);
+        }
+
         [Fact]
         public void CaseEmptyCase()
         {

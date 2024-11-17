@@ -8,10 +8,11 @@ namespace SharpOrm
     public class SoftDeleteAttribute : Attribute
     {
         public string ColumnName { get; }
+        public string DateColumnName { get; set; }
 
-        public SoftDeleteAttribute(string columnName)
+        public SoftDeleteAttribute(string columnName = "deleted")
         {
-            this.ColumnName = string.IsNullOrEmpty(columnName) ? "deleted_at" : columnName;
+            this.ColumnName = string.IsNullOrEmpty(columnName) ? "deleted" : columnName;
         }
     }
 }

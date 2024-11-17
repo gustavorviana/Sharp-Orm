@@ -32,10 +32,13 @@ namespace SharpOrm
         /// </summary>
         public bool ValidateModelOnSave { get; set; }
 
-        public TrashedItems TrashedItems
+        /// <summary>
+        /// Gets or sets the visibility of items marked as deleted.
+        /// </summary>
+        public TrashVisibility TrashVisibility
         {
-            get => this.Info.Where.TrashedItens;
-            set => this.Info.Where.SetTrashedVisibility(value, TableInfo);
+            get => this.Info.Where.TrashVisibiliy;
+            set => this.Info.Where.SetTrashVisibility(value, TableInfo);
         }
 
         #region Query
@@ -119,8 +122,8 @@ namespace SharpOrm
             this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
             this.ApplyValidations();
 
-            if (TableInfo.CanSoftDelete)
-                this.TrashedItems = TrashedItems.Ignore;
+            if (TableInfo.SoftDelete != null)
+                this.TrashVisibility = TrashVisibility.Ignore;
         }
 
         private void ApplyValidations()
@@ -484,10 +487,10 @@ namespace SharpOrm
         /// <returns>Number of deleted rows.</returns>
         public int Delete(bool force)
         {
-            if (force || !TableInfo.CanSoftDelete)
+            if (force || TableInfo.SoftDelete == null)
                 return base.Delete();
 
-            return ForceTrashType(TrashedItems.Ignore, () => this.Update(new Cell(TableInfo.SoftDeleteColumn, DateTime.Now)));
+            return ForceTrashType(TrashVisibility.Ignore, () => this.Update(this.GetSoftDeleteColumns(true)));
         }
 
         /// <summary>
@@ -497,26 +500,37 @@ namespace SharpOrm
         /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
         public int Restore()
         {
-            if (!TableInfo.CanSoftDelete)
+            if (TableInfo.SoftDelete == null)
                 throw new NotSupportedException("The class does not support restore, only those with SoftDeleteAttribute do.");
 
-            return ForceTrashType(TrashedItems.Only, () => this.Update(new Cell(TableInfo.SoftDeleteColumn, null)));
+            return ForceTrashType(TrashVisibility.Only, () => this.Update(this.GetSoftDeleteColumns(false)));
         }
 
-        private int ForceTrashType(TrashedItems trash, Func<int> call)
+        private Cell[] GetSoftDeleteColumns(bool deleted)
         {
-            if (!TableInfo.CanSoftDelete || this.Info.Where.TrashedItens == trash)
+            var cells = new Cell[string.IsNullOrEmpty(TableInfo.SoftDelete.DateColumnName) ? 1 : 2];
+
+            cells[0] = new Cell(TableInfo.SoftDelete.ColumnName, deleted);
+            if (cells.Length == 2)
+                cells[1] = new Cell(TableInfo.SoftDelete.DateColumnName, deleted ? DateTime.UtcNow : (DateTime?)null);
+
+            return cells;
+        }
+
+        private int ForceTrashType(TrashVisibility trash, Func<int> call)
+        {
+            if (TableInfo.SoftDelete == null || this.Info.Where.TrashVisibiliy == trash)
                 return call();
 
-            var last = this.Info.Where.TrashedItens;
+            var last = this.Info.Where.TrashVisibiliy;
             try
             {
-                this.Info.Where.SetTrashedVisibility(trash, TableInfo);
+                this.Info.Where.SetTrashVisibility(trash, TableInfo);
                 return call();
             }
             finally
             {
-                this.Info.Where.SetTrashedVisibility(last, TableInfo);
+                this.Info.Where.SetTrashVisibility(last, TableInfo);
             }
         }
 
@@ -605,7 +619,7 @@ namespace SharpOrm
             Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
 
             if (withWhere) query.Info.LoadFrom(this.Info);
-            else if (TableInfo.CanSoftDelete) query.Info.Where.SetTrashedVisibility(this.TrashedItems, TableInfo);
+            else if (TableInfo.SoftDelete != null) query.Info.Where.SetTrashVisibility(this.TrashVisibility, TableInfo);
 
             this.OnClone(query);
 
