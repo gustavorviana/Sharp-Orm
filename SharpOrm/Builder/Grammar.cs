@@ -194,6 +194,8 @@ namespace SharpOrm.Builder
             return this.BuildExpression(() => this.ConfigureUpdate(cells));
         }
 
+
+
         /// <summary>
         /// This method is used to configure an SQL UPDATE statement with the given cell array.
         /// </summary>
@@ -230,6 +232,63 @@ namespace SharpOrm.Builder
 
             foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
                 this.builder.Add(", ").Add(this.TryGetTableAlias(join));
+        }
+
+        public SqlExpression SoftDelete(SoftDeleteAttribute softDelete)
+        {
+            return this.BuildSoftDeleteExpression(this.ConfigureSoftDelete, softDelete, true);
+        }
+
+        protected virtual void ConfigureSoftDelete(SoftDeleteAttribute softDelete)
+        {
+            if (softDelete == null)
+                throw new NotSupportedException("SotDelete is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
+
+            this.ConfigureUpdate(this.GetSoftDeleteColumns(softDelete, true));
+        }
+
+        public SqlExpression RestoreSoftDeleted(SoftDeleteAttribute softDelete)
+        {
+            return this.BuildSoftDeleteExpression(this.ConfigureRestoreSoftDelete, softDelete, false);
+        }
+
+        protected virtual void ConfigureRestoreSoftDelete(SoftDeleteAttribute softDelete)
+        {
+            if (softDelete == null)
+                throw new NotSupportedException("Restore is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
+
+            this.ConfigureUpdate(this.GetSoftDeleteColumns(softDelete, false));
+        }
+
+        private SqlExpression BuildSoftDeleteExpression(Action<SoftDeleteAttribute> builderAction, SoftDeleteAttribute softDelete, bool isDelete)
+        {
+            return this.BuildExpression(() =>
+            {
+                var originalSoftDelete = this.Query.Info.Where.softDelete;
+                var originalVisibility = this.Query.Info.Where.TrashVisibiliy;
+                try
+                {
+                    this.Query.Info.Where.TrashVisibiliy = isDelete ? TrashVisibility.Except : TrashVisibility.Only;
+                    this.Query.Info.Where.softDelete = softDelete;
+                    builderAction(softDelete);
+                }
+                finally
+                {
+                    this.Query.Info.Where.softDelete = originalSoftDelete;
+                    this.Query.Info.Where.TrashVisibiliy = originalVisibility;
+                }
+            });
+        }
+
+        private Cell[] GetSoftDeleteColumns(SoftDeleteAttribute softDelete, bool deleted)
+        {
+            var cells = new Cell[string.IsNullOrEmpty(softDelete.DateColumnName) ? 1 : 2];
+
+            cells[0] = new Cell(softDelete.ColumnName, deleted);
+            if (cells.Length == 2)
+                cells[1] = new Cell(softDelete.DateColumnName, deleted ? DateTime.UtcNow : (DateTime?)null);
+
+            return cells;
         }
 
         protected void ThrowDeleteJoinsNotSupported()

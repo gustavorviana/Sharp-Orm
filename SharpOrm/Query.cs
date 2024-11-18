@@ -123,7 +123,7 @@ namespace SharpOrm
             this.ApplyValidations();
 
             if (TableInfo.SoftDelete != null)
-                this.TrashVisibility = TrashVisibility.Ignore;
+                this.TrashVisibility = TrashVisibility.Except;
         }
 
         private void ApplyValidations()
@@ -490,7 +490,7 @@ namespace SharpOrm
             if (force || TableInfo.SoftDelete == null)
                 return base.Delete();
 
-            return ForceTrashType(TrashVisibility.Ignore, () => this.Update(this.GetSoftDeleteColumns(true)));
+            return this.ExecuteAndGetAffected(this.GetGrammar().SoftDelete(this.TableInfo.SoftDelete));
         }
 
         /// <summary>
@@ -500,21 +500,7 @@ namespace SharpOrm
         /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
         public int Restore()
         {
-            if (TableInfo.SoftDelete == null)
-                throw new NotSupportedException("The class does not support restore, only those with SoftDeleteAttribute do.");
-
-            return ForceTrashType(TrashVisibility.Only, () => this.Update(this.GetSoftDeleteColumns(false)));
-        }
-
-        private Cell[] GetSoftDeleteColumns(bool deleted)
-        {
-            var cells = new Cell[string.IsNullOrEmpty(TableInfo.SoftDelete.DateColumnName) ? 1 : 2];
-
-            cells[0] = new Cell(TableInfo.SoftDelete.ColumnName, deleted);
-            if (cells.Length == 2)
-                cells[1] = new Cell(TableInfo.SoftDelete.DateColumnName, deleted ? DateTime.UtcNow : (DateTime?)null);
-
-            return cells;
+            return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
         }
 
         private int ForceTrashType(TrashVisibility trash, Func<int> call)

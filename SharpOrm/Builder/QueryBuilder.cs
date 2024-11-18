@@ -23,7 +23,7 @@ namespace SharpOrm.Builder
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
-        private SoftDeleteAttribute softDelete = null;
+        internal SoftDeleteAttribute softDelete = null;
         internal TrashVisibility TrashVisibiliy { get; set; } = TrashVisibility.With;
         internal Func<object, object> paramInterceptor;
 
@@ -463,7 +463,7 @@ namespace SharpOrm.Builder
             return sb.Append(" AND (").Append(content).Append(')').ToString();
         }
 
-        public void SetTrashVisibility(TrashVisibility visibility, TableInfo table)
+        internal void SetTrashVisibility(TrashVisibility visibility, TableInfo table)
         {
             if (visibility != TrashVisibility.With && table.SoftDelete == null)
                 throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");

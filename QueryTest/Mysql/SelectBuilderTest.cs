@@ -13,14 +13,13 @@ namespace QueryTest.Mysql
     {
         [Theory]
         [InlineData(TrashVisibility.With, "")]
-        [InlineData(TrashVisibility.Ignore, " WHERE `deleted` = 0")]
+        [InlineData(TrashVisibility.Except, " WHERE `deleted` = 0")]
         [InlineData(TrashVisibility.Only, " WHERE `deleted` = 1")]
         public void SelectSoftDeleted(TrashVisibility visibility, string expectedWhere)
         {
-            using var query = new Query<SoftDeleteAddress> { TrashVisibility = visibility };
+            using var query = new Query<SoftDeleteDateAddress> { TrashVisibility = visibility };
 
-            var result = query.Grammar().Select();
-            QueryAssert.Equal($"SELECT * FROM `SoftDeleteAddress`{expectedWhere}", result);
+            QueryAssert.Equal($"SELECT * FROM `SoftDeleteDateAddress`{expectedWhere}", query.Grammar().Select());
         }
 
         [Fact]

@@ -3,9 +3,9 @@
     public enum TrashVisibility
     {
         /// <summary>
-        /// Ignore the values that have been marked as removed.
+        /// Except the values that have been marked as removed.
         /// </summary>
-        Ignore,
+        Except,
         /// <summary>
         /// Includes the values that have been marked as removed.
         /// </summary>
