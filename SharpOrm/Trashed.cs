@@ -1,6 +1,6 @@
 ﻿namespace SharpOrm
 {
-    public enum TrashVisibility
+    public enum Trashed
     {
         /// <summary>
         /// Except the values that have been marked as removed.

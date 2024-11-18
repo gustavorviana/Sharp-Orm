@@ -11,6 +11,18 @@ namespace QueryTest.SqlServer
 {
     public class UpdateBuilder(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>, IUpdateBuilderTest
     {
+        [Theory]
+        [InlineData(Trashed.With, "")]
+        [InlineData(Trashed.Except, " WHERE [deleted] = 0")]
+        [InlineData(Trashed.Only, " WHERE [deleted] = 1")]
+        public void UpdateSoftDeleted(Trashed visibility, string expectedWhere)
+        {
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
+            Cell[] cells = [new Cell("Name", "My Name"), new Cell("Street", "My Street")];
+
+            QueryAssert.Equal($"UPDATE [SoftDeleteDateAddress] SET [Name] = ?, [Street] = ?{expectedWhere}", query.Grammar().Update(cells));
+        }
+
         [Fact]
         public void Update()
         {
@@ -93,7 +105,7 @@ namespace QueryTest.SqlServer
                     "UPDATE [t1] SET [name] = ?, [alias] = ?, [value] = NULL, [status] = 1 FROM [TestTable] [t1] INNER JOIN [Table2] [t2] ON [t2].[Id] = [t1].[T2Id] WHERE [t2].[Id] = 1",
                     "MyTestName",
                     "Test"
-                ), 
+                ),
                 sqlExpression
             );
         }

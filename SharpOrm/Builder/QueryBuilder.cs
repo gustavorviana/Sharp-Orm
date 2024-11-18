@@ -24,13 +24,13 @@ namespace SharpOrm.Builder
         private readonly IReadonlyQueryInfo info;
 
         internal SoftDeleteAttribute softDelete = null;
-        internal TrashVisibility TrashVisibiliy { get; set; } = TrashVisibility.With;
+        internal Trashed Trashed { get; set; } = Trashed.With;
         internal Func<object, object> paramInterceptor;
 
         /// <summary>
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
-        public bool Empty => this.query.Length == 0 && this.TrashVisibiliy == TrashVisibility.With;
+        public bool Empty => this.query.Length == 0 && this.Trashed == Trashed.With;
 
         /// <summary>
         /// Gets the parameters.
@@ -447,14 +447,14 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return this.TrashVisibiliy == TrashVisibility.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
+            return this.Trashed == Trashed.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
         }
 
         private string ApplyTrashedFilter(string content)
         {
             StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
 
-            if (this.TrashVisibiliy == TrashVisibility.Only) sb.Append(" = 1");
+            if (this.Trashed == Trashed.Only) sb.Append(" = 1");
             else sb.Append(" = 0");
 
             if (content.Length == 0)
@@ -463,12 +463,12 @@ namespace SharpOrm.Builder
             return sb.Append(" AND (").Append(content).Append(')').ToString();
         }
 
-        internal void SetTrashVisibility(TrashVisibility visibility, TableInfo table)
+        internal void SetTrash(Trashed visibility, TableInfo table)
         {
-            if (visibility != TrashVisibility.With && table.SoftDelete == null)
+            if (visibility != Trashed.With && table.SoftDelete == null)
                 throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");
 
-            this.TrashVisibiliy = visibility;
+            this.Trashed = visibility;
             this.softDelete = table.SoftDelete;
         }
 
@@ -483,7 +483,7 @@ namespace SharpOrm.Builder
         internal void ApplyTrashedVisibility(QueryBuilder query)
         {
             query.softDelete = this.softDelete;
-            query.TrashVisibiliy = this.TrashVisibiliy;
+            query.Trashed = this.Trashed;
         }
 
         #region IDisposable

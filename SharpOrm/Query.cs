@@ -35,10 +35,10 @@ namespace SharpOrm
         /// <summary>
         /// Gets or sets the visibility of items marked as deleted.
         /// </summary>
-        public TrashVisibility TrashVisibility
+        public Trashed Trashed
         {
-            get => this.Info.Where.TrashVisibiliy;
-            set => this.Info.Where.SetTrashVisibility(value, TableInfo);
+            get => this.Info.Where.Trashed;
+            set => this.Info.Where.SetTrash(value, TableInfo);
         }
 
         #region Query
@@ -123,7 +123,7 @@ namespace SharpOrm
             this.ApplyValidations();
 
             if (TableInfo.SoftDelete != null)
-                this.TrashVisibility = TrashVisibility.Except;
+                this.Trashed = Trashed.Except;
         }
 
         private void ApplyValidations()
@@ -503,20 +503,20 @@ namespace SharpOrm
             return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
         }
 
-        private int ForceTrashType(TrashVisibility trash, Func<int> call)
+        private int ForceTrashType(Trashed trash, Func<int> call)
         {
-            if (TableInfo.SoftDelete == null || this.Info.Where.TrashVisibiliy == trash)
+            if (TableInfo.SoftDelete == null || this.Info.Where.Trashed == trash)
                 return call();
 
-            var last = this.Info.Where.TrashVisibiliy;
+            var last = this.Info.Where.Trashed;
             try
             {
-                this.Info.Where.SetTrashVisibility(trash, TableInfo);
+                this.Info.Where.SetTrash(trash, TableInfo);
                 return call();
             }
             finally
             {
-                this.Info.Where.SetTrashVisibility(last, TableInfo);
+                this.Info.Where.SetTrash(last, TableInfo);
             }
         }
 
@@ -605,7 +605,7 @@ namespace SharpOrm
             Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
 
             if (withWhere) query.Info.LoadFrom(this.Info);
-            else if (TableInfo.SoftDelete != null) query.Info.Where.SetTrashVisibility(this.TrashVisibility, TableInfo);
+            else if (TableInfo.SoftDelete != null) query.Info.Where.SetTrash(this.Trashed, TableInfo);
 
             this.OnClone(query);
 

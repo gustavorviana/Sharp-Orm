@@ -11,12 +11,12 @@ namespace QueryTest.SqlServer
     public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
     {
         [Theory]
-        [InlineData(TrashVisibility.With, "")]
-        [InlineData(TrashVisibility.Except, " WHERE [deleted] = 0")]
-        [InlineData(TrashVisibility.Only, " WHERE [deleted] = 1")]
-        public void SelectSoftDeleted(TrashVisibility visibility, string expectedWhere)
+        [InlineData(Trashed.With, "")]
+        [InlineData(Trashed.Except, " WHERE [deleted] = 0")]
+        [InlineData(Trashed.Only, " WHERE [deleted] = 1")]
+        public void SelectSoftDeleted(Trashed visibility, string expectedWhere)
         {
-            using var query = new Query<SoftDeleteDateAddress> { TrashVisibility = visibility };
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
 
             QueryAssert.Equal($"SELECT * FROM [SoftDeleteDateAddress]{expectedWhere}", query.Grammar().Select());
         }

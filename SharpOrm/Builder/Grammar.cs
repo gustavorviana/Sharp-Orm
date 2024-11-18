@@ -265,17 +265,17 @@ namespace SharpOrm.Builder
             return this.BuildExpression(() =>
             {
                 var originalSoftDelete = this.Query.Info.Where.softDelete;
-                var originalVisibility = this.Query.Info.Where.TrashVisibiliy;
+                var originalTrashed = this.Query.Info.Where.Trashed;
                 try
                 {
-                    this.Query.Info.Where.TrashVisibiliy = isDelete ? TrashVisibility.Except : TrashVisibility.Only;
+                    this.Query.Info.Where.Trashed = isDelete ? Trashed.Except : Trashed.Only;
                     this.Query.Info.Where.softDelete = softDelete;
                     builderAction(softDelete);
                 }
                 finally
                 {
                     this.Query.Info.Where.softDelete = originalSoftDelete;
-                    this.Query.Info.Where.TrashVisibiliy = originalVisibility;
+                    this.Query.Info.Where.Trashed = originalTrashed;
                 }
             });
         }
