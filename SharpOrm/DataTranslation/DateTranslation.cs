@@ -33,7 +33,7 @@ namespace SharpOrm.DataTranslation
 
         #region ISqlTranslation
         public bool CanWork(Type type) => type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(TimeSpan) || type == typeof(string) || type == typeof(FreezedDate)
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
 || type == typeof(DateOnly) || type == typeof(TimeOnly)
 #endif
             ;
@@ -53,7 +53,7 @@ namespace SharpOrm.DataTranslation
             if (expectedType == typeof(TimeSpan))
                 return ParseTimespanFromDb(value);
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             if (expectedType == typeof(DateOnly))
                 return ParseDateOnly(value);
 
@@ -69,7 +69,7 @@ namespace SharpOrm.DataTranslation
             if (value is FreezedDate fDate)
                 return fDate.Value;
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             if (value is DateOnly dateOnly)
                 return dateOnly.ToDateTime(TimeOnly.MinValue);
 
@@ -125,8 +125,8 @@ namespace SharpOrm.DataTranslation
             if (obj is TimeSpan timeSpan) return timeSpan;
             if (obj is DateTime dateTime) return dateTime.TimeOfDay;
             if (obj is DateTimeOffset dateTimeOffset) return dateTimeOffset.TimeOfDay;
-#if NET5_0_OR_GREATER
-            if (obj is TimeOnly timeOnly) return timeOnly.ToTimeSpan(); 
+#if NET6_0_OR_GREATER
+            if (obj is TimeOnly timeOnly) return timeOnly.ToTimeSpan();
 #endif
 
             if (obj is string strTime && TimeSpan.TryParse(strTime, out var time))
@@ -157,7 +157,7 @@ namespace SharpOrm.DataTranslation
             return null;
         }
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private object ParseDateOnly(object value)
         {
             if (value?.GetType() == typeof(DateOnly))

@@ -19,7 +19,7 @@ namespace SharpOrm.DataTranslation
             typeof(Guid),
             typeof(TimeSpan),
             typeof(DateTimeOffset)
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             ,typeof(DateOnly)
             ,typeof(TimeOnly)
 #endif
