@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
@@ -25,17 +26,17 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
         #endregion
 
-        public static MappedManualObj FromMap<T>(TableMap<T> map, DbDataReader reader)
+        public static MappedManualObj FromMap<T>(TableMap<T> map, IDataReader reader)
         {
             return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, reader);
         }
 
-        internal MappedManualObj(TableInfo table, TranslationRegistry registry, DbDataReader reader) : this(table.Type, (IEnumerable<ColumnTreeInfo>)table.Columns, registry, reader)
+        internal MappedManualObj(TableInfo table, TranslationRegistry registry, IDataReader reader) : this(table.Type, (IEnumerable<ColumnTreeInfo>)table.Columns, registry, reader)
         {
 
         }
 
-        private MappedManualObj(Type type, IEnumerable<ColumnTreeInfo> columns, TranslationRegistry registry, DbDataReader reader)
+        private MappedManualObj(Type type, IEnumerable<ColumnTreeInfo> columns, TranslationRegistry registry, IDataReader reader)
         {
             root = new InstanceMap(type);
             this.registry = registry;
@@ -44,7 +45,7 @@ namespace SharpOrm.DataTranslation.Reader
                 this.Map(column, reader);
         }
 
-        private void Map(ColumnTreeInfo column, DbDataReader reader)
+        private void Map(ColumnTreeInfo column, IDataReader reader)
         {
             this.columns.Add(new MappedColumn(this.BuildInstanceTree(column), column, reader.GetIndexOf(column.Name)));
         }
@@ -78,7 +79,7 @@ namespace SharpOrm.DataTranslation.Reader
             return map;
         }
 
-        public object Read(DbDataReader reader)
+        public object Read(IDataReader reader)
         {
             this.CreateInstance();
 

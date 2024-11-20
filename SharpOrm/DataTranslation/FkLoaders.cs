@@ -71,16 +71,12 @@ namespace SharpOrm.DataTranslation
         {
             using (var query = CreateQuery(info))
             {
-                IList collection = ReflectionUtils.CreateList(info.Type);
+                var runtime = new RuntimeList(info.Type);
 
                 using (var @enum = CreateEnumerator(info, query.ExecuteReader()))
-                    while (@enum.MoveNext())
-                        collection.Add(@enum.Current);
+                    runtime.AddAll(@enum);
 
-                if (info.Type.IsArray)
-                    return ReflectionUtils.ToArray(info.Type.GetElementType(), collection);
-
-                return collection;
+                return runtime.ToCollection(info.Type);
             }
         }
 

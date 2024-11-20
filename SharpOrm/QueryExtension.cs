@@ -855,7 +855,7 @@ namespace SharpOrm
         /// <param name="reader">The data reader to retrieve the column index from.</param>
         /// <param name="name">The name of the column to find the index of.</param>
         /// <returns>The index of the specified column, or -1 if the column is not found.</returns>
-        public static int GetIndexOf(this DbDataReader reader, string name)
+        public static int GetIndexOf(this IDataReader reader, string name)
         {
             for (int i = 0; i < reader.FieldCount; i++)
                 if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))

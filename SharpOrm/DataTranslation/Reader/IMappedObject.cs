@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+﻿using System.Data;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -12,6 +12,6 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <param name="reader">The database data reader.</param>
         /// <returns>The mapped object.</returns>
-        object Read(DbDataReader reader);
+        object Read(IDataReader reader);
     }
 }

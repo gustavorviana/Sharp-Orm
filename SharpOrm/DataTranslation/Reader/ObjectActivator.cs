@@ -1,6 +1,6 @@
 ﻿using SharpOrm;
 using System;
-using System.Data.Common;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 
@@ -21,7 +21,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="type">The type of the object to be activated.</param>
         /// <param name="reader">The data reader used to retrieve the object's data.</param>
         /// <exception cref="NotSupportedException">Thrown if the type is abstract or no suitable constructor is found.</exception>
-        public ObjectActivator(Type type, DbDataReader reader, TranslationRegistry registry)
+        public ObjectActivator(Type type, IDataReader reader, TranslationRegistry registry)
         {
             if (type.IsAbstract) throw new NotSupportedException("It's not possible to instantiate an abstract type.");
 
@@ -42,7 +42,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="reader">The data reader used to match constructor parameters.</param>
         /// <param name="paramsIndex">Array of parameter indexes.</param>
         /// <returns>The matched constructor, or null if none found.</returns>
-        private ParamInfo[] GetParams(DbDataReader reader, TranslationRegistry registry)
+        private ParamInfo[] GetParams(IDataReader reader, TranslationRegistry registry)
         {
             var constructors = type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
 
@@ -63,7 +63,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="parameter">The parameter info to locate.</param>
         /// <param name="reader">The data reader used to find the parameter index.</param>
         /// <returns>The index of the parameter in the data reader, or -1 if not found.</returns>
-        private static ParamInfo FindParamOnDb(ParameterInfo parameter, DbDataReader reader, TranslationRegistry registry)
+        private static ParamInfo FindParamOnDb(ParameterInfo parameter, IDataReader reader, TranslationRegistry registry)
         {
             try
             {
@@ -88,7 +88,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <param name="reader">The data reader containing the object's data.</param>
         /// <returns>The created object instance.</returns>
-        public object CreateInstance(DbDataReader reader)
+        public object CreateInstance(IDataReader reader)
         {
             if (type.IsArray) return null;
 
@@ -109,7 +109,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <param name="reader">The data reader containing the object's data.</param>
         /// <returns>An array of values for the constructor parameters.</returns>
-        private object[] GetValues(DbDataReader reader)
+        private object[] GetValues(IDataReader reader)
         {
             if (objParams == null)
 #if NET45
@@ -145,7 +145,7 @@ namespace SharpOrm.DataTranslation.Reader
                 this.translation = translation;
             }
 
-            public object GetValue(DbDataReader reader)
+            public object GetValue(IDataReader reader)
             {
                 return translation.FromSqlValue(reader[index], expectedType);
             }

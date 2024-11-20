@@ -13,7 +13,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Row ReadRow(this DbDataReader reader, TranslationRegistry translation = null)
+        public static Row ReadRow(this IDataReader reader, TranslationRegistry translation = null)
         {
             if (translation == null)
                 translation = TranslationRegistry.Default;
@@ -32,7 +32,7 @@ namespace SharpOrm
         /// <param name="reader"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static Cell GetCell(this DbDataReader reader, TranslationRegistry translation, int index)
+        public static Cell GetCell(this IDataReader reader, TranslationRegistry translation, int index)
         {
             if (index < 0 || index > reader.FieldCount)
                 throw new ArgumentOutOfRangeException();

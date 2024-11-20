@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Dynamic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -58,28 +60,9 @@ namespace SharpOrm.Builder
                 array[lastSize + i] = items[i];
         }
 
-        public static Array ToArray(Type type, ICollection collection)
-        {
-            Array array = Array.CreateInstance(type, collection.Count);
-            collection.CopyTo(array, 0);
-            return array;
-        }
-
         public static bool IsCollection(Type type)
         {
-            if (type.IsArray)
-                return true;
-
-            if (!type.IsGenericType)
-                return false;
-
-            type = type.GetGenericTypeDefinition();
-            return type == typeof(IList<>) || type == typeof(List<>) || type == typeof(IList);
-        }
-
-        public static IList CreateList(Type type)
-        {
-            return (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(GetGenericArg(type)));
+            return RuntimeList.IsCollection(type);
         }
 
         public static Type GetGenericArg(Type type)

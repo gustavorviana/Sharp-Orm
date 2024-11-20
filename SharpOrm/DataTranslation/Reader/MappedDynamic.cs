@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Dynamic;
 
@@ -17,7 +18,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <param name="reader">The database reader.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
-        public MappedDynamic(DbDataReader reader, TranslationRegistry registry = null)
+        public MappedDynamic(IDataReader reader, TranslationRegistry registry = null)
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
@@ -32,7 +33,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="reader">The database reader.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>A dynamic object containing the mapped data.</returns>
-        public static dynamic Read(DbDataReader reader, TranslationRegistry registry = null)
+        public static dynamic Read(IDataReader reader, TranslationRegistry registry = null)
         {
             return new MappedDynamic(reader, registry).Read(reader);
         }
@@ -42,7 +43,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <param name="reader">The database reader.</param>
         /// <returns>A dynamic object containing the mapped data.</returns>
-        public dynamic Read(DbDataReader reader)
+        public dynamic Read(IDataReader reader)
         {
             var dObject = (IDictionary<string, object>)new ExpandoObject();
 
@@ -63,7 +64,7 @@ namespace SharpOrm.DataTranslation.Reader
                 translation = registry.GetFor(type);
             }
 
-            public object Parse(DbDataReader reader, int index)
+            public object Parse(IDataReader reader, int index)
             {
                 if (translation == null)
                     return reader[index];
