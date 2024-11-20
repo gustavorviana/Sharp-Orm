@@ -6,6 +6,11 @@ namespace BaseTest.Mock
 {
     public class MockConnection : DbConnection
     {
+        /// <summary>
+        /// Return true to signal handled
+        /// </summary>
+        public Func<string, MockDataReader?> OnQueryFallback = null!;
+
         public readonly Dictionary<string, Func<MockDataReader>> QueryReaders = [];
         private ConnectionState state = ConnectionState.Closed;
         [AllowNull]
@@ -46,6 +51,11 @@ namespace BaseTest.Mock
             return new MockTransaction(this);
         }
 
+        public void Reset()
+        {
+            this.OnQueryFallback = null!;
+        }
+
         protected override DbCommand CreateDbCommand()
         {
             var cmd = new MockCommand
@@ -64,6 +74,9 @@ namespace BaseTest.Mock
                     {
                         System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
                     }
+
+                    if (OnQueryFallback != null && OnQueryFallback(cmd.CommandText) is MockDataReader reader)
+                        return reader;
 
                     if (ThrowIfNoQuery)
                         throw new Exception("Required query not found: " + cmd.CommandText);

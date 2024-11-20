@@ -17,12 +17,12 @@ namespace BaseTest.Utils
         {
         }
 
-        public DbMockTest(ITestOutputHelper? output) : base(output, new MockFixture(new SqlServerQueryConfig()))
+        public DbMockTest(ITestOutputHelper? output) : base(output, new MockFixture(new SqlServerQueryConfig(false)))
         {
 
         }
 
-        public DbMockTest() : base(null, new MockFixture(new SqlServerQueryConfig()))
+        public DbMockTest() : base(null, new MockFixture(new SqlServerQueryConfig(false)))
         {
 
         }

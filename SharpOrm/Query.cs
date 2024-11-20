@@ -505,7 +505,7 @@ namespace SharpOrm
 
         private int ForceTrashType(Trashed trash, Func<int> call)
         {
-            if (TableInfo.SoftDelete == null || this.Info.Where.Trashed == trash)
+            if (this.IsTrashedType(trash))
                 return call();
 
             var last = this.Info.Where.Trashed;
@@ -518,6 +518,14 @@ namespace SharpOrm
             {
                 this.Info.Where.SetTrash(last, TableInfo);
             }
+        }
+
+        private bool IsTrashedType(Trashed trashed)
+        {
+            if (this.TableInfo.SoftDelete == null)
+                return trashed == Trashed.With;
+
+            return this.Trashed == trashed;
         }
 
         #region Where
