@@ -134,9 +134,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        public Query OrderBy(params Expression<ColumnExpression<T>>[] columns)
+        public Query<T> OrderBy(params Expression<ColumnExpression<T>>[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Asc, columns);
+            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Asc, columns);
         }
 
         /// <summary>
@@ -144,9 +144,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        public Query OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
+        public Query<T> OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Desc, columns);
+            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Desc, columns);
         }
 
         /// <summary>
@@ -155,9 +155,9 @@ namespace SharpOrm
         /// <param name="order">Field ordering.</param>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        public Query OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
+        public Query<T> OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
         {
-            return this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+            return (Query<T>)this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
         #endregion
@@ -172,6 +172,8 @@ namespace SharpOrm
             return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
+        #region Select
+
         /// <summary>
         /// Select column of table by Column object.
         /// </summary>
@@ -181,6 +183,28 @@ namespace SharpOrm
         {
             return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
+
+        /// <summary>
+        /// Select keys of table by table.
+        /// </summary>
+        /// <param name="columnNames"></param>
+        /// <returns></returns>
+        public new Query<T> Select(params string[] columnNames)
+        {
+            return (Query<T>)base.Select(columnNames);
+        }
+
+        /// <summary>
+        /// Select column of table by Column object.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
+        public new Query<T> Select(params Column[] columns)
+        {
+            return (Query<T>)base.Select(columns);
+        }
+
+        #endregion
 
         #region AddForeign
 
@@ -447,20 +471,176 @@ namespace SharpOrm
         }
 
         #region Join
-        public Query Join<C>(string alias, string column1, string column2)
+
+        public Query<T> Join<C>(string alias, string column1, string column2)
         {
-            return this.Join<C>(alias, q => q.WhereColumn(column1, column2));
+            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, column2));
         }
 
-        public Query Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
+        public Query<T> Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
-            return this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
+            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
         }
 
-        public Query Join<C>(string alias, QueryCallback callback, string type = "INNER")
+        public Query<T> Join<C>(string alias, QueryCallback callback, string type = "INNER")
         {
-            return base.Join(DbName.Of<C>(alias), callback, type); ;
+            return (Query<T>)base.Join(DbName.Of<C>(alias), callback, type); ;
         }
+
+        /// <summary>
+        /// Perform a INNER JOIN between this query and another table.
+        /// </summary>
+        public new Query<T> Join(string table, string column1, string column2)
+        {
+            return (Query<T>)base.Join(table, column1, column2);
+        }
+
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="column1">The name of the column from the current table to be used in the tables.</param>
+        /// <param name="operation">SQL operation to be used for comparing the columns.</param>
+        /// <param name="column2">The name of the column from the specified table to be used in the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
+        public new Query<T> Join(string table, string column1, string operation, string column2, string type = "INNER")
+        {
+            return (Query<T>)base.Join(table, column1, operation, column2, type);
+        }
+
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="grammarOptions">Options of the grammar for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
+        public new Query<T> Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        {
+            return (Query<T>)base.Join(table, callback, type, grammarOptions);
+        }
+
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
+        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER")
+        {
+            return (Query<T>)base.Join(table, callback, type);
+        }
+
+        /// <summary>
+        /// Perform a JOIN between this query and another table.
+        /// </summary>
+        /// <param name="table">The name of the table to which you want to tables.</param>
+        /// <param name="callback">Callback used to build the comparison for the tables.</param>
+        /// <param name="grammarOptions">Options of the grammar for the tables.</param>
+        /// <param name="type">Type of tables between the tables.</param>
+        /// <returns></returns>
+        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        {
+            return (Query<T>)base.Join(table, callback, type, grammarOptions);
+        }
+
+        #endregion
+
+        #region GroupBy
+
+        /// <summary>
+        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// </summary>
+        /// <param name="columnNames">The column names by which the results should be grouped.</param>
+        /// <returns></returns>
+        public new Query<T> GroupBy(params string[] columnNames)
+        {
+            return (Query<T>)base.GroupBy(columnNames);
+        }
+
+        /// <summary>
+        /// Group the results of the query by the specified criteria.
+        /// </summary>
+        /// <param name="columns">The columns by which the results should be grouped.</param>
+        /// <returns></returns>
+        public new Query<T> GroupBy(params Column[] columns)
+        {
+            return (Query<T>)base.GroupBy(columns);
+        }
+
+        #endregion
+
+        #region Having
+
+        /// <summary>
+        /// Add a HAVING clause to the query based on a callback.
+        /// </summary>
+        /// <param name="callback">The callback that defines the conditions of the HAVING clause.</param>
+        /// <returns></returns>
+        public new Query<T> Having(QueryCallback callback)
+        {
+            return (Query<T>)base.Having(callback);
+        }
+
+        #endregion
+
+        #region OrderBy
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public new Query<T> OrderBy(params string[] columns)
+        {
+            return (Query<T>)base.OrderBy(columns);
+        }
+
+        /// <summary>
+        /// Applies descending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public new Query<T> OrderByDesc(params string[] columns)
+        {
+            return (Query<T>)base.OrderByDesc(columns);
+        }
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public new Query<T> OrderBy(OrderBy order, params string[] columns)
+        {
+            return (Query<T>)base.OrderBy(order, columns);
+        }
+
+        /// <summary>
+        /// Applies sorting to the query.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public new Query<T> OrderBy(OrderBy order, params Column[] columns)
+        {
+            return (Query<T>)base.OrderBy(order, columns);
+        }
+
+        /// <summary>
+        /// Applies sorting to the query.
+        /// </summary>
+        /// <param name="orders"></param>
+        /// <returns></returns>
+        public new Query<T> OrderBy(params ColumnOrder[] orders)
+        {
+            return (Query<T>)base.OrderBy(orders);
+        }
+
         #endregion
 
         #region Where
