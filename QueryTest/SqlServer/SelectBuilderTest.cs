@@ -10,19 +10,25 @@ namespace QueryTest.SqlServer
 {
     public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
     {
-        [Fact]
-        public void FixColumnName()
+        [Theory]
+        [InlineData(Trashed.With, "")]
+        [InlineData(Trashed.Except, " WHERE [deleted] = 0")]
+        [InlineData(Trashed.Only, " WHERE [deleted] = 1")]
+        public void SelectSoftDeleted(Trashed visibility, string expectedWhere)
         {
-            var config = new SqlServerQueryConfig(false);
-            string basic = config.ApplyNomenclature("colName");
-            string withTable = config.ApplyNomenclature("table.colName");
-            string all = config.ApplyNomenclature("*");
-            string allWithTable = config.ApplyNomenclature("table.*");
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
 
-            Assert.Equal("[colName]", basic);
-            Assert.Equal("[table].[colName]", withTable);
-            Assert.Equal("*", all);
-            Assert.Equal("[table].*", allWithTable);
+            QueryAssert.Equal($"SELECT * FROM [SoftDeleteDateAddress]{expectedWhere}", query.Grammar().Select());
+        }
+
+        [Theory]
+        [InlineData("colName", "[colName]")]
+        [InlineData("table.colName", "[table].[colName]")]
+        [InlineData("*", "*")]
+        [InlineData("table.*", "[table].*")]
+        public void FixColumnName(string raw, string expected)
+        {
+            Assert.Equal(expected, this.Config.ApplyNomenclature(raw));
         }
 
         [Fact]

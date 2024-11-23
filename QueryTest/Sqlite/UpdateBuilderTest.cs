@@ -11,6 +11,18 @@ namespace QueryTest.Sqlite
 {
     public class UpdateBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, IUpdateBuilderTest
     {
+        [Theory]
+        [InlineData(Trashed.With, "")]
+        [InlineData(Trashed.Except, " WHERE \"deleted\" = 0")]
+        [InlineData(Trashed.Only, " WHERE \"deleted\" = 1")]
+        public void UpdateSoftDeleted(Trashed visibility, string expectedWhere)
+        {
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
+            Cell[] cells = [new Cell("Name", "My Name"), new Cell("Street", "My Street")];
+
+            QueryAssert.Equal($"UPDATE \"SoftDeleteDateAddress\" SET \"Name\" = ?, \"Street\" = ?{expectedWhere}", query.Grammar().Update(cells));
+        }
+
         [Fact]
         public void Update()
         {

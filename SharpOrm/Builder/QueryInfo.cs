@@ -54,7 +54,7 @@ namespace SharpOrm.Builder
             this.Where.Clear();
             this.Having.Clear();
 
-            this.Where.Add(info.Where);
+            info.Where.ApplyTo(this.Where);
             this.Having.Add(info.Having);
             this.Joins.AddRange(info.Joins);
             this.Select = (Column[])info.Select.Clone();

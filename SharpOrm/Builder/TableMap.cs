@@ -17,6 +17,8 @@ namespace SharpOrm.Builder
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
         private TableInfo table;
 
+        internal SoftDeleteAttribute softDelete { get; set; }
+
         private string _name;
         /// <summary>
         /// Gets or sets the name of the table. 
@@ -76,6 +78,12 @@ namespace SharpOrm.Builder
                     else rootNode.Children.Add(Map(field));
 
             return rootNode;
+        }
+
+        public TableMap<T> SoftDelete(string column, string dateColumn = null)
+        {
+            this.softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
+            return this;
         }
 
         /// <summary>

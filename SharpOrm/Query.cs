@@ -32,6 +32,15 @@ namespace SharpOrm
         /// </summary>
         public bool ValidateModelOnSave { get; set; }
 
+        /// <summary>
+        /// Gets or sets the visibility of items marked as deleted.
+        /// </summary>
+        public Trashed Trashed
+        {
+            get => this.Info.Where.Trashed;
+            set => this.Info.Where.SetTrash(value, TableInfo);
+        }
+
         #region Query
 
         /// <summary>
@@ -112,6 +121,9 @@ namespace SharpOrm
             TableInfo = manager.Config.Translation.GetTable(typeof(T));
             this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
             this.ApplyValidations();
+
+            if (TableInfo.SoftDelete != null)
+                this.Trashed = Trashed.Except;
         }
 
         private void ApplyValidations()
@@ -639,6 +651,59 @@ namespace SharpOrm
 
         #endregion
 
+        public override int Delete()
+        {
+            return this.Delete(false);
+        }
+
+        /// <summary>
+        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
+        /// </summary>
+        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
+        /// <returns>Number of deleted rows.</returns>
+        public int Delete(bool force)
+        {
+            if (force || TableInfo.SoftDelete == null)
+                return base.Delete();
+
+            return this.ExecuteAndGetAffected(this.GetGrammar().SoftDelete(this.TableInfo.SoftDelete));
+        }
+
+        /// <summary>
+        /// Restore the values deleted using soft delete.
+        /// </summary>
+        /// <returns>Number of values restored.</returns>
+        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
+        public int Restore()
+        {
+            return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
+        }
+
+        private int ForceTrashType(Trashed trash, Func<int> call)
+        {
+            if (this.IsTrashedType(trash))
+                return call();
+
+            var last = this.Info.Where.Trashed;
+            try
+            {
+                this.Info.Where.SetTrash(trash, TableInfo);
+                return call();
+            }
+            finally
+            {
+                this.Info.Where.SetTrash(last, TableInfo);
+            }
+        }
+
+        private bool IsTrashedType(Trashed trashed)
+        {
+            if (this.TableInfo.SoftDelete == null)
+                return trashed == Trashed.With;
+
+            return this.Trashed == trashed;
+        }
+
         #region Where
 
         public Query<T> WhereNot(Expression<ColumnExpression<T>> columnExp, object value)
@@ -723,8 +788,8 @@ namespace SharpOrm
         {
             Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
 
-            if (withWhere)
-                query.Info.LoadFrom(this.Info);
+            if (withWhere) query.Info.LoadFrom(this.Info);
+            else if (TableInfo.SoftDelete != null) query.Info.Where.SetTrash(this.Trashed, TableInfo);
 
             this.OnClone(query);
 
@@ -1201,8 +1266,8 @@ namespace SharpOrm
         /// <summary>
         /// Removes rows from database
         /// </summary>
-        /// <returns></returns>
-        public int Delete()
+        /// <returns>Number of deleted rows.</returns>
+        public virtual int Delete()
         {
             this.ValidateReadonly();
             this.CheckIsSafeOperation();

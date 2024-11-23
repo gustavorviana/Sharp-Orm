@@ -11,6 +11,17 @@ namespace QueryTest.Mysql
 {
     public class SelectBuilderTest(ITestOutputHelper output, MockFixture<MysqlQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<MysqlQueryConfig>>, ISelectBuilderTests
     {
+        [Theory]
+        [InlineData(Trashed.With, "")]
+        [InlineData(Trashed.Except, " WHERE `deleted` = 0")]
+        [InlineData(Trashed.Only, " WHERE `deleted` = 1")]
+        public void SelectSoftDeleted(Trashed visibility, string expectedWhere)
+        {
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
+
+            QueryAssert.Equal($"SELECT * FROM `SoftDeleteDateAddress`{expectedWhere}", query.Grammar().Select());
+        }
+
         [Fact]
         public void CaseEmptyCase()
         {

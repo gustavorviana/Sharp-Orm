@@ -30,9 +30,11 @@ namespace SharpOrm.Builder
         /// </summary>
         public ColumnInfo[] Columns { get; }
 
+        public SoftDeleteAttribute SoftDelete { get; }
+
         internal bool IsManualMap { get; }
 
-        internal TableInfo(Type type, TranslationRegistry registry, string name, IEnumerable<ColumnTreeInfo> columns)
+        internal TableInfo(Type type, TranslationRegistry registry, string name, SoftDeleteAttribute softDelete, IEnumerable<ColumnTreeInfo> columns)
         {
             this.IsManualMap = true;
 
@@ -41,6 +43,7 @@ namespace SharpOrm.Builder
             this.Name = name;
 
             this.Columns = columns.ToArray();
+            this.SoftDelete = softDelete;
         }
 
         /// <summary>
@@ -67,6 +70,7 @@ namespace SharpOrm.Builder
             this.registry = registry;
             this.Name = GetNameOf(type);
             this.Columns = this.GetColumns().ToArray();
+            this.SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
         }
 
         public ColumnInfo[] GetPrimaryKeys()

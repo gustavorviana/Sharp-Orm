@@ -179,7 +179,7 @@ namespace SharpOrm.DataTranslation
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
 
-            var table = new TableInfo(type, map.Registry, map.Name, map.GetFields());
+            var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.GetFields());
             manualMapped.Add(table);
             return table;
         }

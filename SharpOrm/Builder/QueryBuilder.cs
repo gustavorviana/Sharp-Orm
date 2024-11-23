@@ -23,12 +23,14 @@ namespace SharpOrm.Builder
         protected readonly List<object> parameters = new List<object>();
         private readonly IReadonlyQueryInfo info;
 
+        internal SoftDeleteAttribute softDelete = null;
+        internal Trashed Trashed { get; set; } = Trashed.With;
         internal Func<object, object> paramInterceptor;
 
         /// <summary>
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
-        public bool Empty => this.query.Length == 0;
+        public bool Empty => this.query.Length == 0 && this.Trashed == Trashed.With;
 
         /// <summary>
         /// Gets the parameters.
@@ -424,7 +426,7 @@ namespace SharpOrm.Builder
             if (this.hasMemberColumn)
                 return ToSafeExpression();
 
-            return new SqlExpression(this.query.ToString(), this.parameters.ToArray());
+            return new SqlExpression(this.ToString(), this.parameters.ToArray());
         }
 
         private SqlExpression ToSafeExpression()
@@ -445,7 +447,43 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return query.ToString();
+            return this.Trashed == Trashed.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
+        }
+
+        private string ApplyTrashedFilter(string content)
+        {
+            StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
+
+            if (this.Trashed == Trashed.Only) sb.Append(" = 1");
+            else sb.Append(" = 0");
+
+            if (content.Length == 0)
+                return sb.ToString();
+
+            return sb.Append(" AND (").Append(content).Append(')').ToString();
+        }
+
+        internal void SetTrash(Trashed visibility, TableInfo table)
+        {
+            if (visibility != Trashed.With && table.SoftDelete == null)
+                throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");
+
+            this.Trashed = visibility;
+            this.softDelete = table.SoftDelete;
+        }
+
+        internal QueryBuilder ApplyTo(QueryBuilder query)
+        {
+            query.Add(this);
+            this.ApplyTrashedVisibility(query);
+
+            return query;
+        }
+
+        internal void ApplyTrashedVisibility(QueryBuilder query)
+        {
+            query.softDelete = this.softDelete;
+            query.Trashed = this.Trashed;
         }
 
         #region IDisposable
