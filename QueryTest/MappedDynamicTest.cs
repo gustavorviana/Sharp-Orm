@@ -20,11 +20,9 @@ namespace QueryTest
             var mapper = new MappedDynamic(reader);
 
             // Act
-
             dynamic result = mapper.Read(reader);
 
             // Assert
-
             Assert.IsType<ExpandoObject>(result);
             Assert.Equal(1, result.id);
             Assert.Equal(name, result.Name);

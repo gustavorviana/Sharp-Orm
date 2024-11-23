@@ -387,7 +387,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(params T[] objs)
         {
-            return base.BulkInsert(objs.Select(ValidateAndConvert));
+            return this.BulkInsert((IEnumerable<T>)objs);
         }
 
         /// <summary>
@@ -396,15 +396,14 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            return base.BulkInsert(objs.Select(ValidateAndConvert));
-        }
+            var reader = new ObjectReader(TableInfo)
+            {
+                ReadPk = true,
+                ReadFk = true,
+                Validate = this.ValidateModelOnSave
+            };
 
-        private Row ValidateAndConvert(T obj)
-        {
-            if (this.ValidateModelOnSave)
-                TableInfo.Validate(obj);
-
-            return TableInfo.GetRow(obj, true, this.Config.LoadForeign, true);
+            return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
         /// <summary>
@@ -464,10 +463,7 @@ namespace SharpOrm
 
         internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            if (this.ValidateModelOnSave)
-                TableInfo.Validate(obj, properties);
-
-            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, validate);
+            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, this.ValidateModelOnSave);
         }
 
         #region Join

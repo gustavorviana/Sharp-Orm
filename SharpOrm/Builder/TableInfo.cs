@@ -16,7 +16,9 @@ namespace SharpOrm.Builder
     public class TableInfo
     {
         private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
-        private readonly TranslationRegistry registry;
+        private readonly object _readLock = new object();
+        internal readonly TranslationRegistry registry;
+        private ObjectReader reader = null;
 
         public Type Type { get; }
         /// <summary>
@@ -128,7 +130,8 @@ namespace SharpOrm.Builder
             if (owner is Row row)
                 return row;
 
-            return new Row(this.GetObjCells(owner, readPk, readFk, validate: validate).ToArray());
+            lock (_readLock)
+                return this.GetConfiguredReader(readPk, readFk, null, false, validate).ReadRow(owner);
         }
 
         /// <summary>
@@ -157,83 +160,24 @@ namespace SharpOrm.Builder
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
         {
-            if (owner is IDictionary<string, object> dictionary)
-                return this.GetDictCells(dictionary, readPk, properties, needContains);
-
-            return this.InternalReadCell(owner, readPk, readFk, properties, needContains, validate);
+            lock (_readLock)
+                return this.GetConfiguredReader(readPk, readFk, properties, needContains, validate).ReadCells(owner);
         }
 
-        private IEnumerable<Cell> GetDictCells(IDictionary<string, object> owner, bool readPk, string[] properties, bool needContains)
+        private ObjectReader GetConfiguredReader(bool readPk, bool readFk, string[] properties, bool needContains, bool validate)
         {
-            foreach (var item in owner)
-            {
-                if (!(properties is null) && properties.Any(x => x.Equals(item.Key, StringComparison.OrdinalIgnoreCase)) != needContains)
-                    continue;
+            if (this.reader == null)
+                this.reader = new ObjectReader(this);
 
-                if ((item.Key.Equals("id", StringComparison.OrdinalIgnoreCase) && (!readPk || TranslationUtils.IsInvalidPk(item.Value))))
-                    continue;
+            this.reader.ReadPk = readPk;
+            this.reader.ReadFk = readFk;
 
-                yield return new Cell(item.Key, item.Value);
-            }
-        }
+            if (needContains) this.reader.ContainsProps(properties);
+            else this.reader.IgnoreProps(properties);
 
-        private IEnumerable<Cell> InternalReadCell(object owner, bool readPk, bool readFk, string[] properties, bool needContains, bool validate)
-        {
-            for (int i = 0; i < this.Columns.Length; i++)
-            {
-                var column = this.Columns[i];
+            this.reader.Validate = validate;
 
-                if (!(properties is null) && properties.Any(x => x.Equals(column.PropName, StringComparison.OrdinalIgnoreCase)) != needContains)
-                    continue;
-
-                if (column.ForeignInfo != null)
-                {
-                    if (readFk && CanLoadForeignColumn(column))
-                        yield return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
-                    continue;
-                }
-
-                object value = ProcessValue(column, owner, readFk);
-                if ((column.Key && (!readPk || TranslationUtils.IsInvalidPk(value))))
-                    continue;
-
-                if (validate)
-                    column.ValidateValue(value);
-
-                yield return new Cell(column.Name, value);
-            }
-        }
-
-        private bool CanLoadForeignColumn(ColumnInfo column)
-        {
-            return !this.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private object ProcessValue(ColumnInfo column, object owner, bool readForeignKey)
-        {
-            object obj = column.Get(owner);
-            if (!readForeignKey || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
-                return obj;
-
-            if (obj is null)
-                return null;
-
-            return registry.GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
-        }
-
-        private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
-        {
-            var type = GetValidType(fkColumn.Type);
-            if (type == typeof(Row))
-                return null;
-
-            var table = this.registry.GetTable(type);
-            var pkColumn = table.Columns.First(c => c.Key);
-
-            if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
-                return null;
-
-            return pkColumn.Get(fkInstance);
+            return this.reader;
         }
 
         public object CreateInstance()
