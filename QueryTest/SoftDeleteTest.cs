@@ -7,6 +7,19 @@ namespace QueryTest
     public class SoftDeleteTest : DbMockFallbackTest
     {
         [Theory]
+        [InlineData(Trashed.With, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        [InlineData(Trashed.Only, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        [InlineData(Trashed.Except, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        public void DeleteWithDate(Trashed trashed, string expected)
+        {
+            using var fallback = this.RegisterFallback();
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = trashed };
+            query.Delete();
+
+            Assert.Equal(expected, fallback.ToString());
+        }
+
+        [Theory]
         [InlineData(Trashed.With, "UPDATE [SoftDeleteAddress] SET [deleted] = 1 WHERE [deleted] = 0")]
         [InlineData(Trashed.Only, "UPDATE [SoftDeleteAddress] SET [deleted] = 1 WHERE [deleted] = 0")]
         [InlineData(Trashed.Except, "UPDATE [SoftDeleteAddress] SET [deleted] = 1 WHERE [deleted] = 0")]
