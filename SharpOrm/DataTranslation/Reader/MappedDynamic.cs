@@ -11,7 +11,7 @@ namespace SharpOrm.DataTranslation.Reader
     /// </summary>
     public class MappedDynamic : IMappedObject
     {
-        private readonly List<ObjConverter> converters = new List<ObjConverter>();
+        private readonly List<DbColumnReader> columns = new List<DbColumnReader>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MappedDynamic"/> class.
@@ -24,7 +24,7 @@ namespace SharpOrm.DataTranslation.Reader
                 registry = TranslationRegistry.Default;
 
             for (int i = 0; i < reader.FieldCount; i++)
-                converters.Add(new ObjConverter(registry, reader.GetFieldType(i)));
+                columns.Add(new DbColumnReader(registry, reader.GetName(i), reader.GetFieldType(i)));
         }
 
         /// <summary>
@@ -45,26 +45,33 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>A dynamic object containing the mapped data.</returns>
         public dynamic Read(IDataReader reader)
         {
-            var dObject = (IDictionary<string, object>)new ExpandoObject();
+            var dObject = new ExpandoObject();
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                dObject[reader.GetName(i)] = converters[i].Parse(reader, i);
+            for (int i = 0; i < columns.Count; i++)
+                this.columns[i].ReadTo(dObject, reader, i);
 
             return dObject;
         }
 
-        private class ObjConverter
+        private class DbColumnReader
         {
             private readonly ISqlTranslation translation;
+            private readonly string name;
             private readonly Type type;
 
-            public ObjConverter(TranslationRegistry registry, Type type)
+            public DbColumnReader(TranslationRegistry registry, string name, Type type)
             {
                 this.type = TranslationRegistry.GetValidTypeFor(type);
-                translation = registry.GetFor(type);
+                this.translation = registry.GetFor(type);
+                this.name = name;
             }
 
-            public object Parse(IDataReader reader, int index)
+            public void ReadTo(IDictionary<string, object> target, IDataReader reader, int index)
+            {
+                target[this.name] = this.Read(reader, index);
+            }
+
+            public object Read(IDataReader reader, int index)
             {
                 if (translation == null)
                     return reader[index];

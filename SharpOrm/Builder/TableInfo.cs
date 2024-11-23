@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Linq.Expressions;
@@ -155,6 +156,28 @@ namespace SharpOrm.Builder
         /// <param name="needContains">If true, only the columns with names in <paramref name="properties"/> will be returned; if false, only the properties not in the list will be returned.</param>
         /// <returns>An enumerable of cells.</returns>
         public IEnumerable<Cell> GetObjCells(object owner, bool readPk, bool readFk, string[] properties = null, bool needContains = true, bool validate = false)
+        {
+            if (owner is IDictionary<string, object> dictionary)
+                return this.GetDictCells(dictionary, readPk, properties, needContains);
+
+            return this.InternalReadCell(owner, readPk, readFk, properties, needContains, validate);
+        }
+
+        private IEnumerable<Cell> GetDictCells(IDictionary<string, object> owner, bool readPk, string[] properties, bool needContains)
+        {
+            foreach (var item in owner)
+            {
+                if (!(properties is null) && properties.Any(x => x.Equals(item.Key, StringComparison.OrdinalIgnoreCase)) != needContains)
+                    continue;
+
+                if ((item.Key.Equals("id", StringComparison.OrdinalIgnoreCase) && (!readPk || TranslationUtils.IsInvalidPk(item.Value))))
+                    continue;
+
+                yield return new Cell(item.Key, item.Value);
+            }
+        }
+
+        private IEnumerable<Cell> InternalReadCell(object owner, bool readPk, bool readFk, string[] properties, bool needContains, bool validate)
         {
             for (int i = 0; i < this.Columns.Length; i++)
             {
