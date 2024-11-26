@@ -43,12 +43,6 @@ namespace BaseTest.Utils
             return new MockDataReader(i => new Row(createCallback(i)), qtd);
         }
 
-        public static MockDataReader GetReader<T>(int qtd, Func<int, T> createCallback, bool loadForeign)
-        {
-            Type type = typeof(T);
-            return new MockDataReader(i => Row.Parse(createCallback(i), type, true, loadForeign), qtd);
-        }
-
         protected static MockConnection GetNonQueryCommand(string expected)
         {
             var conn = new MockConnection();

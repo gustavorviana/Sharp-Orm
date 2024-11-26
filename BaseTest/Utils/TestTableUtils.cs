@@ -1,4 +1,5 @@
 ﻿using BaseTest.Models;
+using Bogus;
 using SharpOrm;
 
 namespace BaseTest.Utils
@@ -26,14 +27,16 @@ namespace BaseTest.Utils
             );
         }
 
-        public static Row[] GenRows(int count)
+        public static Faker<TestTable> Faker()
         {
-            Row[] rows = new Row[count];
-
-            for (int i = 1; i <= count; i++)
-                rows[i - 1] = NewRow(i, $"User {i}");
-
-            return rows;
+            return new Faker<TestTable>()
+                .RuleFor(x => x.Id, f => f.IndexFaker + 1)
+                .RuleFor(x => x.Id2, f => f.IndexFaker)
+                .RuleFor(x => x.Name, f => f.Name.FullName())
+                .RuleFor(x => x.Nick, f => f.Name.Suffix())
+                .RuleFor(x => x.Number, f => f.Random.Number(0, int.MaxValue))
+                .RuleFor(x => x.CustomId, f => f.Random.Guid())
+                .RuleFor(x => x.CustomStatus, f => f.PickRandom<Status>());
         }
     }
 }

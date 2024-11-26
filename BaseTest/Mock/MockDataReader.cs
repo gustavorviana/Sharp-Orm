@@ -1,4 +1,5 @@
-﻿using SharpOrm;
+﻿using Bogus;
+using SharpOrm;
 using System.Collections;
 using System.Data.Common;
 
@@ -14,7 +15,7 @@ namespace BaseTest.Mock
 
         private int currentIndex = -1;
 
-        public MockDataReader(params Cell[] cells) : this(i => new Row(cells), 1)
+        public MockDataReader(params Cell[] cells) : this(i => cells.Length > 0 ? new Row(cells) : null!, cells.Length > 0 ? 1 : 0)
         {
 
         }
@@ -26,6 +27,11 @@ namespace BaseTest.Mock
 
             if (size > 0)
                 this.currentRow = this.rowsCall(0);
+        }
+
+        public static MockDataReader FromFaker<T>(Faker<T> faker, int items) where T : class
+        {
+            return new MockDataReader(i => Row.Parse(faker.Generate()), items);
         }
 
         public void Cancel()
