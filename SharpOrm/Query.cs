@@ -706,6 +706,78 @@ namespace SharpOrm
 
         #region Where
 
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column contains the value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to filter.</param>
+        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public Query<T> WhereContains(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereContains(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public Query<T> WhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereStartsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public Query<T> WhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereEndsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not contains the value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to filter.</param>
+        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public Query<T> WhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereNotContains(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public Query<T> WhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereNotStartsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public Query<T> WhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.WhereNotEndsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
         public Query<T> WhereNot(Expression<ColumnExpression<T>> columnExp, object value)
         {
             base.WhereNot(Column.FromExp(columnExp), value);
@@ -743,6 +815,78 @@ namespace SharpOrm
         }
 
         #region OR
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column contains the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public Query<T> OrWhereContains(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereContains(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public Query<T> OrWhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereStartsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public Query<T> OrWhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereEndsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not contains the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="value">The value to search for within the specified column.</param>
+        public Query<T> OrWhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereNotContains(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not starts with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="value">The value that the column should start with.</param>
+        public Query<T> OrWhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereNotStartsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column not ends with the specified value.
+        /// </summary>
+        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
+        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="value">The value that the column should end with.</param>
+        public Query<T> OrWhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            this.OrWhereNotEndsWith(Column.FromExp(columnExp), value);
+            return this;
+        }
 
         public Query<T> OrWhereNot(Expression<ColumnExpression<T>> columnExp, object value)
         {
