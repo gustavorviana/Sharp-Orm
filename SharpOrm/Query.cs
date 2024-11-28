@@ -394,7 +394,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(this.GetObjectReader(true).ReadCells(obj));
+            return this.Insert(this.GetObjectReader(true, true).ReadCells(obj));
         }
 
         /// <summary>
@@ -412,7 +412,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            var reader = this.GetObjectReader(true);
+            var reader = this.GetObjectReader(true, true);
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
@@ -426,7 +426,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.Update(this.GetObjectReader(false).ReadCells(obj));
+            return base.Update(this.GetObjectReader(false, false).ReadCells(obj));
         }
 
         /// <summary>
@@ -444,7 +444,7 @@ namespace SharpOrm
             if (calls.Length == 0)
                 throw new ArgumentNullException(nameof(calls));
 
-            return this.Update(this.GetObjectReader(false).Only(calls).ReadCells(obj));
+            return this.Update(this.GetObjectReader(false, false).Only(calls).ReadCells(obj));
         }
 
         /// <summary>
@@ -461,7 +461,7 @@ namespace SharpOrm
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var reader = this.GetObjectReader(false);
+            var reader = this.GetObjectReader(false, false);
             if (columns.Length > 0) reader.Only(columns);
 
             var toUpdate = reader.ReadCells(obj).ToArray();
@@ -945,7 +945,7 @@ namespace SharpOrm
             query._fkToLoad = (MemberInfoColumn[])this._fkToLoad.Clone();
         }
 
-        internal ObjectReader GetObjectReader(bool readPk)
+        internal ObjectReader GetObjectReader(bool readPk, bool isCreate)
         {
             if (_objReader == null)
             {
@@ -955,6 +955,7 @@ namespace SharpOrm
             }
 
             _objReader.IgnoreTimestamps = this.IgnoreTimestamps;
+            _objReader.IsCreate = isCreate;
             _objReader.ReadPk = readPk;
 
             return _objReader;

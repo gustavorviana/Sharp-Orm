@@ -9,7 +9,7 @@ namespace BaseTest.Mock
         /// <summary>
         /// Return true to signal handled
         /// </summary>
-        public Func<string, MockDataReader?> OnQueryFallback = null!;
+        public Func<MockCommand, MockDataReader?> OnQueryFallback = null!;
 
         public readonly Dictionary<string, Func<MockDataReader>> QueryReaders = [];
         private ConnectionState state = ConnectionState.Closed;
@@ -75,7 +75,7 @@ namespace BaseTest.Mock
                         System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
                     }
 
-                    if (OnQueryFallback != null && OnQueryFallback(cmd.CommandText) is MockDataReader reader)
+                    if (OnQueryFallback != null && OnQueryFallback(cmd) is MockDataReader reader)
                         return reader;
 
                     if (ThrowIfNoQuery)

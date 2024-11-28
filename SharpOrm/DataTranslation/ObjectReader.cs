@@ -32,10 +32,13 @@ namespace SharpOrm.DataTranslation
 
         public bool IgnoreTimestamps { get; set; }
 
+        public bool IsCreate { get; set; }
+
         public ObjectReader(TableInfo table)
         {
             this.table = table;
             this.hasUpdateColumn = !string.IsNullOrEmpty(table.Timestamp?.UpdatedAtColumn);
+            this.hasCreateColumn = !string.IsNullOrEmpty(table.Timestamp?.CreatedAtColumn);
         }
 
         public ObjectReader Only<T>(params Expression<ColumnExpression<T>>[] calls)
@@ -119,7 +122,10 @@ namespace SharpOrm.DataTranslation
                 if (cell != null) yield return cell;
             }
 
-            if (this.hasCreateColumn)
+            if (this.hasCreateColumn && this.IsCreate)
+                yield return new Cell(this.table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
+
+            if (this.hasUpdateColumn)
                 yield return new Cell(this.table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 

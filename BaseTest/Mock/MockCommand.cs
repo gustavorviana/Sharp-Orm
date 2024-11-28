@@ -57,9 +57,7 @@ namespace BaseTest.Mock
 
         protected override DbParameter CreateDbParameter()
         {
-            var param = new SqlParameter();
-            this.Parameters.Add(param);
-            return param;
+            return new SqlParameter();
         }
 
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)

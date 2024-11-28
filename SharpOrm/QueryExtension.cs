@@ -564,7 +564,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false).Except(calls).ReadCells(obj));
+            return query.Update(query.GetObjectReader(false, false).Except(calls).ReadCells(obj));
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false).Except(columns).ReadCells(obj));
+            return query.Update(query.GetObjectReader(false, false).Except(columns).ReadCells(obj));
         }
 
         /// <summary>
@@ -606,7 +606,7 @@ namespace SharpOrm
         /// <returns>An object of type R representing the result of the insertion.</returns>
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
-            return Insert<R>(query, query.GetObjectReader(true).ReadCells(obj));
+            return Insert<R>(query, query.GetObjectReader(true, true).ReadCells(obj));
         }
 
         /// <summary>

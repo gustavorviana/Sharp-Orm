@@ -1,5 +1,6 @@
 ﻿using BaseTest.Mock;
 using SharpOrm;
+using System.Data.Common;
 using System.Text;
 
 namespace BaseTest.Utils
@@ -11,7 +12,7 @@ namespace BaseTest.Utils
             return new QueryFallback(Connection, sql => new MockDataReader(cells));
         }
 
-        protected QueryFallback RegisterFallback(Func<string, MockDataReader> fallback)
+        protected QueryFallback RegisterFallback(Func<MockCommand, MockDataReader> fallback)
         {
             return new QueryFallback(Connection, fallback);
         }
@@ -20,34 +21,38 @@ namespace BaseTest.Utils
         {
             private readonly StringBuilder builder = new();
 
-            private readonly Func<string, MockDataReader> fallback;
+            private readonly Func<MockCommand, MockDataReader> fallback;
             private readonly MockConnection connection;
+            private readonly List<DbParameter> parameters = [];
 
-            internal QueryFallback(MockConnection connection, Func<string, MockDataReader>? fallback)
+            internal QueryFallback(MockConnection connection, Func<MockCommand, MockDataReader>? fallback)
             {
                 this.connection = connection;
 
                 connection.OnQueryFallback += (this.fallback = this.RegisterFallback(fallback));
             }
 
-            private Func<string, MockDataReader> RegisterFallback(Func<string, MockDataReader>? fallback)
+            private Func<MockCommand, MockDataReader> RegisterFallback(Func<MockCommand, MockDataReader>? fallback)
             {
-                if (fallback == null) return sql =>
+                if (fallback == null) return cmd =>
                 {
-                    this.builder.AppendLine(sql);
+                    this.parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
+                    this.builder.AppendLine(cmd.CommandText);
                     return new MockDataReader();
                 };
 
-                return sql =>
+                return cmd =>
                 {
-                    this.builder.AppendLine(sql);
-                    return fallback(sql);
+                    this.parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
+                    this.builder.AppendLine(cmd.CommandText);
+                    return fallback(cmd);
                 };
             }
 
             public void Clear()
             {
                 this.builder.Clear();
+                this.parameters.Clear();
             }
 
             public void Dispose()
@@ -55,6 +60,11 @@ namespace BaseTest.Utils
 #pragma warning disable CS8601 // Possível atribuição de referência nula.
                 connection.OnQueryFallback -= fallback;
 #pragma warning restore CS8601 // Possível atribuição de referência nula.
+            }
+
+            public DbParameter[] GetParameters()
+            {
+                return [.. this.parameters];
             }
 
             public override string ToString()
