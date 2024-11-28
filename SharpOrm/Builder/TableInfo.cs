@@ -32,12 +32,15 @@ namespace SharpOrm.Builder
 
         public SoftDeleteAttribute SoftDelete { get; }
 
+        public HasTimestampAttribute Timestamp { get; }
+
         internal bool IsManualMap { get; }
 
-        internal TableInfo(Type type, TranslationRegistry registry, string name, SoftDeleteAttribute softDelete, IEnumerable<ColumnTreeInfo> columns)
+        internal TableInfo(Type type, TranslationRegistry registry, string name, SoftDeleteAttribute softDelete, HasTimestampAttribute timestamp, IEnumerable<ColumnTreeInfo> columns)
         {
             this.IsManualMap = true;
 
+            this.Timestamp = timestamp;
             this.registry = registry;
             this.Type = type;
             this.Name = name;
@@ -71,6 +74,7 @@ namespace SharpOrm.Builder
             this.Name = GetNameOf(type);
             this.Columns = this.GetColumns().ToArray();
             this.SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
+            this.Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
@@ -176,8 +180,8 @@ namespace SharpOrm.Builder
             this.reader.ReadPk = readPk;
             this.reader.ReadFk = readFk;
 
-            if (needContains) this.reader.ContainsProps(properties);
-            else this.reader.IgnoreProps(properties);
+            if (needContains) this.reader.Only(properties);
+            else this.reader.Except(properties);
 
             this.reader.Validate = validate;
 

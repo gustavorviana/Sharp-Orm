@@ -3,13 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm.DataTranslation
 {
     public class ObjectReader
     {
         #region Fields
-        private string[] props =
+        private string[] columns =
 #if NET46_OR_GREATER || NET5_0_OR_GREATER 
                 Array.Empty<string>();
 #else
@@ -26,26 +27,49 @@ namespace SharpOrm.DataTranslation
 
         public bool Validate { get; set; }
 
+        private readonly bool hasUpdateColumn;
+        private readonly bool hasCreateColumn;
+
+        public bool IgnoreTimestamps { get; set; }
+
         public ObjectReader(TableInfo table)
         {
             this.table = table;
+            this.hasUpdateColumn = !string.IsNullOrEmpty(table.Timestamp?.UpdatedAtColumn);
         }
 
-        public ObjectReader ContainsProps(params string[] props)
+        public ObjectReader Only<T>(params Expression<ColumnExpression<T>>[] calls)
         {
             this.needContains = true;
-            return this.SetProps(props);
+            return this.SetProps(calls);
         }
 
-        public ObjectReader IgnoreProps(params string[] props)
+        public ObjectReader Only(params string[] columns)
+        {
+            this.needContains = true;
+            return this.SetColumns(columns);
+        }
+
+        public ObjectReader Except(params string[] columns)
         {
             this.needContains = false;
-            return this.SetProps(props);
+            return this.SetColumns(columns);
         }
 
-        private ObjectReader SetProps(string[] props)
+        public ObjectReader Except<T>(params Expression<ColumnExpression<T>>[] calls)
         {
-            this.props = props ??
+            this.needContains = false;
+            return this.SetProps(calls);
+        }
+
+        private ObjectReader SetProps<T>(Expression<ColumnExpression<T>>[] calls)
+        {
+            return this.SetColumns(calls.Select(ExpressionUtils<T>.GetPropName).ToArray());
+        }
+
+        private ObjectReader SetColumns(string[] columns)
+        {
+            this.columns = columns ??
 #if NET5_0_OR_GREATER
             Array.Empty<string>();
 #else
@@ -94,6 +118,9 @@ namespace SharpOrm.DataTranslation
                 var cell = this.GetCell(owner, table.Columns[i]);
                 if (cell != null) yield return cell;
             }
+
+            if (this.hasCreateColumn)
+                yield return new Cell(this.table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 
         private Cell GetCell(object owner, ColumnInfo column)
@@ -147,8 +174,18 @@ namespace SharpOrm.DataTranslation
 
         protected bool IsAllowedName(string name)
         {
-            return this.props.Length == 0 ||
-                this.props.Any(x => x.Equals(name, StringComparison.OrdinalIgnoreCase)) == this.needContains;
+            if (this.IsTimeStamps(name)) return false;
+
+            return this.columns.Length == 0 ||
+            this.columns.Any(x => x.Equals(name, StringComparison.OrdinalIgnoreCase)) == this.needContains;
+        }
+
+        private bool IsTimeStamps(string name)
+        {
+            if (this.IgnoreTimestamps) return false;
+
+            return (this.hasUpdateColumn && name.Equals(this.table.Timestamp.UpdatedAtColumn, StringComparison.OrdinalIgnoreCase)) ||
+                (this.hasCreateColumn && name.Equals(this.table.Timestamp.CreatedAtColumn, StringComparison.OrdinalIgnoreCase));
         }
 
         private bool CanReadFk(ColumnInfo column)

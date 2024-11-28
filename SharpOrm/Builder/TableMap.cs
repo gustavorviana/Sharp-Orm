@@ -18,6 +18,7 @@ namespace SharpOrm.Builder
         private TableInfo table;
 
         internal SoftDeleteAttribute softDelete { get; set; }
+        internal HasTimestampAttribute timestamp { get; set; }
 
         private string _name;
         /// <summary>
@@ -83,6 +84,12 @@ namespace SharpOrm.Builder
         public TableMap<T> SoftDelete(string column, string dateColumn = null)
         {
             this.softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
+            return this;
+        }
+
+        public TableMap<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
+        {
+            this.timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
             return this;
         }
 

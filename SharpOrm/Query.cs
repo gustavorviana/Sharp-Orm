@@ -19,6 +19,8 @@ namespace SharpOrm
     /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
     public class Query<T> : Query
     {
+        private ObjectReader _objReader;
+
         /// <summary>
         /// Table name in the database.
         /// </summary>
@@ -31,6 +33,8 @@ namespace SharpOrm
         /// If the model has one or more validations defined, they will be checked before saving or updating.
         /// </summary>
         public bool ValidateModelOnSave { get; set; }
+
+        public bool IgnoreTimestamps { get; set; }
 
         /// <summary>
         /// Gets or sets the visibility of items marked as deleted.
@@ -390,7 +394,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(this.GetCellsOf(obj, true, validate: true));
+            return this.Insert(this.GetObjectReader(true).ReadCells(obj));
         }
 
         /// <summary>
@@ -408,13 +412,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            var reader = new ObjectReader(TableInfo)
-            {
-                ReadPk = true,
-                ReadFk = true,
-                Validate = this.ValidateModelOnSave
-            };
-
+            var reader = this.GetObjectReader(true);
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
@@ -428,7 +426,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.Update(this.GetCellsOf(obj, false));
+            return base.Update(this.GetObjectReader(false).ReadCells(obj));
         }
 
         /// <summary>
@@ -446,8 +444,7 @@ namespace SharpOrm
             if (calls.Length == 0)
                 throw new ArgumentNullException(nameof(calls));
 
-            var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
-            return this.Update(this.GetCellsOf(obj, false, props));
+            return this.Update(this.GetObjectReader(false).Only(calls).ReadCells(obj));
         }
 
         /// <summary>
@@ -464,7 +461,10 @@ namespace SharpOrm
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var toUpdate = SqlExtension.GetCellsByName(this.GetCellsOf(obj, false, validate: true), columns).ToArray();
+            var reader = this.GetObjectReader(false);
+            if (columns.Length > 0) reader.Only(columns);
+
+            var toUpdate = reader.ReadCells(obj).ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException(Messages.ColumnsNotFound);
 
@@ -472,11 +472,6 @@ namespace SharpOrm
         }
 
         #endregion
-
-        internal IEnumerable<Cell> GetCellsOf(T obj, bool readPk, string[] properties = null, bool needContains = true, bool validate = false)
-        {
-            return TableInfo.GetObjCells(obj, readPk, this.Info.Config.LoadForeign, properties, needContains, this.ValidateModelOnSave);
-        }
 
         #region Join
 
@@ -948,6 +943,21 @@ namespace SharpOrm
                 return;
 
             query._fkToLoad = (MemberInfoColumn[])this._fkToLoad.Clone();
+        }
+
+        internal ObjectReader GetObjectReader(bool readPk)
+        {
+            if (_objReader == null)
+            {
+                _objReader = new ObjectReader(TableInfo);
+                _objReader.ReadFk = this.Info.Config.LoadForeign;
+                _objReader.Validate = true;
+            }
+
+            _objReader.IgnoreTimestamps = this.IgnoreTimestamps;
+            _objReader.ReadPk = readPk;
+
+            return _objReader;
         }
     }
 
