@@ -24,13 +24,13 @@ namespace SharpOrm.Builder
         private readonly IReadonlyQueryInfo info;
 
         internal SoftDeleteAttribute softDelete = null;
-        internal Trashed Trashed { get; set; } = Trashed.With;
+        public Trashed Trashed { get; internal set; } = Trashed.With;
         internal Func<object, object> paramInterceptor;
 
         /// <summary>
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
-        public bool Empty => this.query.Length == 0 && this.Trashed == Trashed.With;
+        public bool Empty => this.query.Length == 0;
 
         /// <summary>
         /// Gets the parameters.

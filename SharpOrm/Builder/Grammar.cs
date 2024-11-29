@@ -529,7 +529,7 @@ namespace SharpOrm.Builder
 
         protected void WriteWhere(bool configureParameters)
         {
-            if (this.Info.Where.Empty)
+            if (this.Info.Where.Empty && this.Info.Where.Trashed == Trashed.With)
                 return;
 
             this.builder.Add(" WHERE ");
