@@ -132,7 +132,7 @@ namespace SharpOrm
 
         private void ApplyValidations()
         {
-            this.ReturnsInsetionId = !TableInfo.IsManualMap && TableInfo.GetPrimaryKeys().Length > 0;
+            this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
         }
 
         private static string GetDbName(TranslationRegistry registry = null)
@@ -394,7 +394,12 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            return this.Insert(this.GetObjectReader(true, true).ReadCells(obj));
+            this.ValidateReadonly();
+
+            var reader = this.GetObjectReader(true, true);
+            var cells = reader.ReadCells(obj);
+            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells, this.ReturnsInsetionId && !reader.HasValidKey(obj)));
+            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
         /// <summary>
@@ -978,8 +983,6 @@ namespace SharpOrm
         /// </summary>
         public bool Disposed => this._disposed;
 
-        public bool InsertReturnId { get; set; } = true;
-
         /// <summary>
         /// Indicate whether the database should return only distinct items.
         /// </summary>
@@ -1372,7 +1375,7 @@ namespace SharpOrm
         {
             this.ValidateReadonly();
 
-            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells, this.InsertReturnId));
+            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
@@ -1571,7 +1574,7 @@ namespace SharpOrm
             return this;
         }
 
-        private void ValidateReadonly()
+        protected void ValidateReadonly()
         {
             if (this.Manager is null)
                 throw new InvalidOperationException("This query is read-only.");

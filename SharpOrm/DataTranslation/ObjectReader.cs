@@ -105,6 +105,15 @@ namespace SharpOrm.DataTranslation
         }
         #endregion
 
+        public bool HasValidKey(object owner)
+        {
+            foreach (var column in this.table.Columns)
+                if (column.Key && this.CanReadKey(ProcessValue(column, owner)))
+                    return true;
+
+            return false;
+        }
+
         #region ObjectReader
         public IEnumerable<Cell> ReadCells(object owner)
         {

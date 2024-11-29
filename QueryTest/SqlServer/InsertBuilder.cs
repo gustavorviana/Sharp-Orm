@@ -52,6 +52,21 @@ namespace QueryTest.SqlServer
         }
 
         [Fact]
+        public void InsertWithoutGenId()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
+
+            var expression = query.Grammar().Insert([new Cell(TestTableUtils.ID, 1), new Cell(TestTableUtils.NAME, "T1"), new Cell("value", null)], false);
+
+            QueryAssert.Equal(
+                new SqlExpression("INSERT INTO [TestTable] ([id], [name], [value]) VALUES (1, ?, NULL)", "T1"),
+                expression
+            );
+        }
+
+        [Fact]
         public void InsertByBasicSelect()
         {
             using var selectQuery = new Query("User");

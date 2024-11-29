@@ -85,7 +85,7 @@ namespace SharpOrm.Builder
             this.builder.Add("VALUES ");
             this.AppendInsertCells(cells);
 
-            if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
+            if (getGeneratedId && this.Query.ReturnsInsetionId)
                 this.builder.Add("; SELECT LAST_INSERT_ID();");
         }
 

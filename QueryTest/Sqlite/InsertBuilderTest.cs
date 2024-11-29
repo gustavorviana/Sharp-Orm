@@ -49,6 +49,26 @@ namespace QueryTest.Sqlite
         }
 
         [Fact]
+        public void InsertWithoutGenId()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
+
+            QueryAssert.EqualDecoded(
+                "INSERT INTO \"TestTable\" (\"id\", \"name\", \"value\") VALUES (1, @p1, NULL)",
+                ["T1"],
+                query.Grammar().Insert(
+                    [
+                        new Cell(TestTableUtils.ID, 1),
+                        new Cell(TestTableUtils.NAME, "T1"),
+                        new Cell("value", null)
+                    ],
+                    false
+                )
+            );
+        }
+
+        [Fact]
         public void InsertByBasicSelect()
         {
             using var selectQuery = new Query("User");

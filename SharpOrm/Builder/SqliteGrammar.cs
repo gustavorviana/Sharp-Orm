@@ -37,7 +37,7 @@ namespace SharpOrm.Builder
             this.ThrowNotSupportedOperations("INSERT");
             base.ConfigureInsert(cells, false);
 
-            if (this.Query.InsertReturnId && getGeneratedId && this.Query.ReturnsInsetionId)
+            if (getGeneratedId && this.Query.ReturnsInsetionId)
                 this.builder.Add("; SELECT last_insert_rowid();");
         }
 

@@ -15,7 +15,7 @@ namespace QueryTest
             using var query = new Query<AddressWithTimeStamp>();
             query.Insert(new AddressWithTimeStamp(1) { Name = "Test" });
 
-            Assert.Equal("INSERT INTO [AddressWithTimeStamp] ([Id], [Name], [Street], [CreatedAt], [UpdatedAt]) VALUES (1, @p1, NULL, @p2, @p3); SELECT SCOPE_IDENTITY();", fallback.ToString());
+            Assert.Equal("INSERT INTO [AddressWithTimeStamp] ([Id], [Name], [Street], [CreatedAt], [UpdatedAt]) VALUES (1, @p1, NULL, @p2, @p3)", fallback.ToString());
             var dbParams = fallback.GetParameters();
 
             Assert.IsType<DateTime>(dbParams[1].Value);
