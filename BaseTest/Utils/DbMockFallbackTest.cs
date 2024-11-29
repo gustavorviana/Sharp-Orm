@@ -1,12 +1,28 @@
-﻿using BaseTest.Mock;
+﻿using BaseTest.Fixtures;
+using BaseTest.Mock;
 using SharpOrm;
 using System.Data.Common;
 using System.Text;
+using Xunit.Abstractions;
 
 namespace BaseTest.Utils
 {
     public class DbMockFallbackTest : DbMockTest
     {
+        public DbMockFallbackTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
+        {
+        }
+
+        public DbMockFallbackTest(ITestOutputHelper? output) : base(output)
+        {
+
+        }
+
+        public DbMockFallbackTest() : base()
+        {
+
+        }
+
         protected QueryFallback RegisterFallback(params Cell[] cells)
         {
             return new QueryFallback(Connection, sql => new MockDataReader(cells));

@@ -397,9 +397,19 @@ namespace SharpOrm
             this.ValidateReadonly();
 
             var reader = this.GetObjectReader(true, true);
-            var cells = reader.ReadCells(obj);
-            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells, this.ReturnsInsetionId && !reader.HasValidKey(obj)));
-            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
+            object result = this.Insert(reader.ReadCells(obj), this.ReturnsInsetionId && !reader.HasValidKey(obj));
+            this.SetPrimaryKey(obj, result);
+            return TranslationUtils.TryNumeric(result);
+        }
+
+        private void SetPrimaryKey(T owner, object result)
+        {
+            if (!this.Config.ApplyGeneratedKey) return;
+
+            var keys = TableInfo.GetPrimaryKeys();
+            if (keys.Length > 1) return;
+
+            keys[0].Set(owner, result);
         }
 
         /// <summary>
@@ -1360,10 +1370,12 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(params Cell[] cells)
         {
+            this.ValidateReadonly();
+
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            return this.Insert((IEnumerable<Cell>)cells);
+            return TranslationUtils.TryNumeric(this.Insert(cells, true));
         }
 
         /// <summary>
@@ -1375,8 +1387,7 @@ namespace SharpOrm
         {
             this.ValidateReadonly();
 
-            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
-            return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
+            return TranslationUtils.TryNumeric(this.Insert(cells, true));
         }
 
         /// <summary>
@@ -1398,6 +1409,11 @@ namespace SharpOrm
         {
             this.ValidateReadonly();
             return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
+        }
+
+        internal object Insert(IEnumerable<Cell> cells, bool returnsInsetionId)
+        {
+            return this.ExecuteScalar(this.GetGrammar().Insert(cells, returnsInsetionId));
         }
 
         /// <summary>

@@ -158,9 +158,9 @@ namespace SharpOrm.Builder
         /// Inserts a new record into the database table with the specified cell values.
         /// </summary>
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
-        public SqlExpression Insert(IEnumerable<Cell> cells, bool getGeneratedId = true)
+        public SqlExpression Insert(IEnumerable<Cell> cells, bool returnsInsetionId = true)
         {
-            return this.BuildExpression(() => this.ConfigureInsert(cells, getGeneratedId));
+            return this.BuildExpression(() => this.ConfigureInsert(cells, returnsInsetionId));
         }
 
         /// <summary>

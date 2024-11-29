@@ -96,14 +96,7 @@ namespace QueryTest
         [Fact]
         public virtual void PaginateWithForeign()
         {
-            var fakerOrder = new Faker<Order>()
-                        .RuleFor(x => x.Id, f => f.IndexFaker + 1)
-                        .RuleFor(x => x.CustomerId, f => (uint)f.Random.Int(1, 10))
-                        .RuleFor(x => x.Product, f => f.Commerce.ProductName())
-                        .RuleFor(x => x.Quantity, f => f.Random.Int(0, 100))
-                        .RuleFor(x => x.Status, f => f.PickRandom("Ok", "Pending"));
-
-            var order = fakerOrder.Generate();
+            var order = Tables.Order.Faker().Generate();
 
             var fakeCustomer = new Faker<Customer>()
                 .RuleFor(x => x.Id, f => order.CustomerId)

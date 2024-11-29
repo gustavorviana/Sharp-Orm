@@ -68,6 +68,16 @@ namespace SharpOrm.DataTranslation
             return IsNumeric(value?.GetType()) && value.Equals(Activator.CreateInstance(value.GetType()));
         }
 
+        /// <summary>
+        /// Try parse object as number, 0 on fail.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int TryNumeric(object value)
+        {
+            return TranslationUtils.IsNumeric(value?.GetType()) ? Convert.ToInt32(value) : 0;
+        }
+
         public static bool IsNumeric(Type type)
         {
             return IsNumberWithoutDecimal(type) || IsNumberWithDecimal(type);

@@ -46,6 +46,13 @@ namespace SharpOrm.Builder
         public bool LoadForeign { get; set; }
 
         /// <summary>
+        /// Indicates whether the generated key from the SQL insert operation 
+        /// should be applied to the object that was inserted into the table.
+        /// (only for objects with a primary key).
+        /// </summary>
+        public bool ApplyGeneratedKey { get; set; } = true;
+
+        /// <summary>
         /// If true, parameters will be used; if false, strings will be manually escaped.
         /// </summary>
         /// <remarks>

@@ -1,5 +1,9 @@
 ﻿using BaseTest.Mock;
+using BaseTest.Models;
 using BaseTest.Utils;
+using Bogus;
+using Bogus.DataSets;
+using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
@@ -7,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryTest(ITestOutputHelper? output) : DbMockTest(output)
+    public class QueryTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
         public void OrderBy()
@@ -105,6 +109,44 @@ namespace QueryTest
 
             using var cmd = query.GetCommand(new SqlExpression(""));
             Assert.Equal(120, cmd.CommandTimeout);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void InsertSetObjIdTest(bool applyGeneratedKey)
+        {
+            var order = Tables.Order.Faker(false).Generate();
+            int id = new Random().Next(1, 150);
+
+            using (RegisterFallback(new Cell("Id", id)))
+            {
+                var manager = this.GetManager(this.Config.Clone());
+                manager.Config.ApplyGeneratedKey = applyGeneratedKey;
+
+                using var query = new Query<Order>(manager);
+
+                Assert.Equal(id, query.Insert(order));
+
+                if (applyGeneratedKey) Assert.Equal(id, order.Id);
+                else Assert.Equal(0, order.Id);
+            }
+        }
+
+        [Fact]
+        public void InsertWithNullResponse()
+        {
+            var order = Tables.Order.Faker(false).Generate();
+
+            using (RegisterFallback(new Cell("Id", DBNull.Value)))
+            {
+                var manager = this.GetManager(this.Config.Clone());
+                manager.Config.ApplyGeneratedKey = true;
+
+                using var query = new Query<Order>(manager);
+
+                Assert.Equal(0, query.Insert(order));
+            }
         }
     }
 }
