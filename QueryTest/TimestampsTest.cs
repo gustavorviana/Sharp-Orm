@@ -2,6 +2,7 @@
 using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 
 namespace QueryTest
 {
@@ -40,12 +41,13 @@ namespace QueryTest
         [Fact]
         public void MappedWithUpdatedOnlyInsert()
         {
-            var mapper = new TableMap<Address>(Translation);
+            var translation = new TranslationRegistry();
+            var mapper = new TableMap<Address>(translation);
             mapper.HasTimeStamps(null, "UpdatedAt");
             mapper.HasKey(x => x.Id).Build();
 
             using var fallback = RegisterFallback();
-            using var query = new Query<Address>();
+            using var query = new Query<Address>(GetManager(translation));
             query.Insert(new Address(1) { Name = "Test" });
 
             Assert.Equal("INSERT INTO [Address] ([Id], [Name], [Street], [UpdatedAt]) VALUES (1, @p1, NULL, @p2)", fallback.ToString());
@@ -57,12 +59,13 @@ namespace QueryTest
         [Fact]
         public void MappedWithCreateOnlyUpdate()
         {
-            var mapper = new TableMap<Address>(Translation);
+            var translation = new TranslationRegistry();
+            var mapper = new TableMap<Address>(translation);
             mapper.HasTimeStamps("CreatedAt", null);
             mapper.HasKey(x => x.Id).Build();
 
             using var fallback = RegisterFallback();
-            using var query = new Query<Address>();
+            using var query = new Query<Address>(GetManager(translation));
             query.Where(x => x.Id, 1);
             query.Update(new Address(1) { Name = "Test" });
 

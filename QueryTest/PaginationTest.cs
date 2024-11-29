@@ -96,37 +96,37 @@ namespace QueryTest
         [Fact]
         public virtual void PaginateWithForeign()
         {
-            var faker = new Faker<Order>()
+            var fakerOrder = new Faker<Order>()
                         .RuleFor(x => x.Id, f => f.IndexFaker + 1)
                         .RuleFor(x => x.CustomerId, f => (uint)f.Random.Int(1, 10))
                         .RuleFor(x => x.Product, f => f.Commerce.ProductName())
                         .RuleFor(x => x.Quantity, f => f.Random.Int(0, 100))
-                        .RuleFor(x => x.Status, f => f.PickRandom(new string[] { "Ok", "Pending" }));
+                        .RuleFor(x => x.Status, f => f.PickRandom("Ok", "Pending"));
 
-            var product = faker.Generate();
+            var order = fakerOrder.Generate();
+
+            var fakeCustomer = new Faker<Customer>()
+                .RuleFor(x => x.Id, f => order.CustomerId)
+                .RuleFor(x => x.Name, f => f.Person.FullName)
+                .RuleFor(x => x.Email, f => f.Internet.Email());
+
+            var customer = fakeCustomer.Generate();
 
             this.ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] WHERE [customer_id] = 2");
             this.Connection.QueryReaders["SELECT * FROM [Orders] WHERE [customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
-                () => new MockDataReader(i => Row.Parse(product), 1);
+                () => new MockDataReader(i => Row.Parse(order), 1);
+            this.Connection.QueryReaders["SELECT TOP(1) * FROM [Customers] WHERE [Id] = " + customer.Id] = () => new MockDataReader(i => Row.Parse(customer), 1);
 
             using var fallback = this.RegisterFallback();
             using var query = new Query<Order>();
-            query.AddForeign(o => o.Customer.Address).OrderBy("Id").Where("customer_id", 2);
-            try
-            {
-                using var pager = query.Paginate(2, 1);
+            query.AddForeign(o => o.Customer).OrderBy("Id").Where("customer_id", 2);
 
-                Assert.NotNull(pager[0].Customer);
-                Assert.Equal(pager[0].Customer, pager[1].Customer);
-                Assert.Equal(pager[0].CustomerId, pager[1].CustomerId);
-                Assert.Equal(pager[0].Customer.Id, pager[1].Customer.Id);
+            using var pager = query.Paginate(2, 1);
 
-                Assert.NotNull(pager[0].Customer.Address);
-            }
-            catch (Exception)
-            {
-
-            }
+            Assert.NotNull(pager[0].Customer);
+            Assert.Equivalent(pager[0].Customer, customer);
+            Assert.Equal(pager[0].CustomerId, order.CustomerId);
+            Assert.Equal(pager[0].Customer.Id, customer.Id);
         }
 
         private void ConfigureCount(int value, string query)

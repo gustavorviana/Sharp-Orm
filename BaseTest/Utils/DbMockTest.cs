@@ -3,6 +3,7 @@ using BaseTest.Mock;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -32,6 +33,13 @@ namespace BaseTest.Utils
             return new ConnectionManager(config, this.Connection);
         }
 
+        protected ConnectionManager GetManager(TranslationRegistry registry)
+        {
+            var config = this.Config.Clone();
+            config.Translation = registry;
+
+            return new ConnectionManager(config, this.Connection);
+        }
 
         public static MockDataReader GetReader(params Cell[] cells)
         {

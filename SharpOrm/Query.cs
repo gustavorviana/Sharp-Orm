@@ -1371,10 +1371,8 @@ namespace SharpOrm
         public int Insert(IEnumerable<Cell> cells)
         {
             this.ValidateReadonly();
-            if (!this.InsertReturnId)
-                return this.ExecuteAndGetAffected(this.GetGrammar().Insert(cells));
 
-            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells));
+            object result = this.ExecuteScalar(this.GetGrammar().Insert(cells, this.InsertReturnId));
             return TranslationUtils.IsNumeric(result?.GetType()) ? Convert.ToInt32(result) : 0;
         }
 
