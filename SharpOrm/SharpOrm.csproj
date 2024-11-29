@@ -21,7 +21,7 @@
 		<PackageTags>Db;Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Connection;Management</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Support for soft delete, improvements in dynamic usage, and various fixes.
+			Support for soft delete, timestamps on create and update rows, improvements in dynamic usage, and various fixes.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
