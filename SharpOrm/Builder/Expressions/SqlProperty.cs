@@ -8,13 +8,13 @@ using System.Xml.Linq;
 
 namespace SharpOrm.Builder.Expressions
 {
-    public class PropInfo
+    public class SqlProperty
     {
         private readonly SqlMemberInfo[] childs;
         public MemberInfo Member { get; }
         public string Alias { get; }
 
-        public PropInfo(MemberInfo member, SqlMemberInfo[] childs, string alias)
+        public SqlProperty(MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
             this.Member = member;
 

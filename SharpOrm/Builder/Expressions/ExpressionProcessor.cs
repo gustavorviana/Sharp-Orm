@@ -18,7 +18,7 @@ namespace SharpOrm.Builder.Expressions
             this.allowSubMembers = allowSubMembers;
         }
 
-        public IEnumerable<PropInfo> ParseNewExpression<T>(Expression<Func<T, object>> expression)
+        public IEnumerable<SqlProperty> ParseNewExpression<T>(Expression<Func<T, object>> expression)
         {
             if (expression.Body is NewExpression newExpression)
             {
@@ -31,12 +31,12 @@ namespace SharpOrm.Builder.Expressions
             }
         }
 
-        public PropInfo ParseExpression<T>(Expression<ColumnExpression<T>> expression)
+        public SqlProperty ParseExpression<T>(Expression<ColumnExpression<T>> expression)
         {
             return this.ParseExpression(expression.Body);
         }
 
-        private PropInfo ParseExpression(Expression expression, string memberName = null)
+        private SqlProperty ParseExpression(Expression expression, string memberName = null)
         {
             List<SqlMemberInfo> members;
             MemberInfo member;
@@ -48,13 +48,7 @@ namespace SharpOrm.Builder.Expressions
             else if (expression is MethodCallExpression methodCallExpression) members = GetFullPath(methodCallExpression, out member);
             else throw new NotSupportedException();
 
-            return new PropInfo(member, members.ToArray(), memberName);
-        }
-
-        private static IEnumerable<object> GetMethodArgs(ICollection<Expression> arguments)
-        {
-            foreach (var argument in arguments)
-                yield return GetArgument(argument);
+            return new SqlProperty(member, members.ToArray(), memberName);
         }
 
         private static object GetArgument(Expression expression)
@@ -95,7 +89,7 @@ namespace SharpOrm.Builder.Expressions
             List<SqlMemberInfo> methods = new List<SqlMemberInfo>();
             while (expression is MethodCallExpression methodCallExpression)
             {
-                methods.Insert(0, new SqlMethodInfo(methodCallExpression.Method, GetMethodArgs(methodCallExpression.Arguments).ToArray()));
+                methods.Insert(0, new SqlMethodInfo(methodCallExpression.Method, methodCallExpression.Arguments.Select(GetArgument).ToArray()));
                 expression = methodCallExpression.Object;
             }
 
