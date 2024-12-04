@@ -13,8 +13,6 @@ namespace SharpOrm.Builder.Expressions
         public Type DeclaringType => Member.DeclaringType;
         public string Name => Member.Name;
 
-        public abstract Type ValueType { get; }
-
         public SqlMemberInfo(MemberInfo member)
         {
             this.Member = member;

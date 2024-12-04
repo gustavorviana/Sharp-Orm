@@ -13,15 +13,15 @@ namespace SharpOrm.Builder.Expressions
         private readonly SqlMemberInfo[] childs;
         public MemberInfo Member { get; }
         public string Alias { get; }
+        public string Name { get; }
 
         public SqlProperty(MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
             this.Member = member;
 
             this.childs = childs;
-            this.Alias = !string.IsNullOrEmpty(alias) && alias != member.Name ?
-                alias :
-                member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
+            this.Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
+            this.Alias = !string.IsNullOrEmpty(alias) && alias != member.Name ? alias : null;
         }
 
         public override string ToString()

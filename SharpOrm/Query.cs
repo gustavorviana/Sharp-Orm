@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -189,6 +190,19 @@ namespace SharpOrm
         }
 
         #region Select
+
+        /// <summary>
+        /// Select column of table by Column object.
+        /// </summary>
+        /// <param name="columns"></param>
+        /// <returns></returns>
+        public Query<T> Select(Expression<ColumnExpression<T>> expression)
+        {
+            var processor = new ExpressionProcessor(true);
+            var columns = processor.ParseColumns<T>(this.Info, expression);
+
+            return (Query<T>)base.Select(columns.ToArray());
+        }
 
         /// <summary>
         /// Select column of table by Column object.

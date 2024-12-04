@@ -16,5 +16,21 @@
         public const string CannotUseEmptyCase = "You cannot use an empty case.";
         public const string TransactionOpen = "The transaction has already been opened.";
         public const string TransactionNotOpen = "The transaction has not been opened.";
+
+        public static class Mapper
+        {
+            public const string NotSupported = "The type \"{0}\" was not mapped with the function/property \"{1}\".";
+
+            public const string PropertyRequired = "The expected member for this operation is a property.";
+            public const string MethodRequired = "The expected member for this operation is a method.";
+        }
+
+        public static class Expressions
+        {
+            public const string FunctionDisabled = "It is not possible to use functions in this operation.";
+            public const string SubmembersDisabled = "It is not possible to use the subproperties \"x => x.MainProp.SubProp...\".";
+
+            public const string NewExpressionDisabled = "The expression \"new { }\" is not supported.";
+        }
     }
 }

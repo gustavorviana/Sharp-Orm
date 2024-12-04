@@ -48,16 +48,16 @@ namespace QueryTest
         public void ExpressionWithNoChildsTest()
         {
             var processor = new ExpressionProcessor(false);
-            var singleExpression = processor.ParseExpression<SampleClass>(x => x.Date);
+            var singleExpression = processor.ParseColumnExpression<SampleClass>(x => x.Date);
 
-            Assert.Throws<NotSupportedException>(() => processor.ParseExpression<SampleClass>(x => x.Date.Day.ToString().Trim()));
+            Assert.Throws<NotSupportedException>(() => processor.ParseColumnExpression<SampleClass>(x => x.Date.Day.ToString().Trim()));
             Assert.Equal("Date", singleExpression.ToString());
         }
 
         [Fact]
         public void ExpressionTest()
         {
-            var singleExpression = new ExpressionProcessor(true).ParseExpression<SampleClass>(x => x.Date.Day.ToString().Trim());
+            var singleExpression = new ExpressionProcessor(true).ParseColumnExpression<SampleClass>(x => x.Date.Day.ToString().Trim());
             var members = singleExpression.GetChilds();
 
             Assert.Equal("Date.Day.ToString().Trim()", singleExpression.ToString());
@@ -79,7 +79,7 @@ namespace QueryTest
         public void ExpressionWithMethodLocalArgsTest()
         {
             var value = "Test";
-            var singleExpression = new ExpressionProcessor(true).ParseExpression<SampleClass>(x => x.Name!.Insert(0, value));
+            var singleExpression = new ExpressionProcessor(true).ParseColumnExpression<SampleClass>(x => x.Name!.Insert(0, value));
             var members = singleExpression.GetChilds();
 
             Assert.Equal("Name.Insert(Int32, String)", singleExpression.ToString());
@@ -99,7 +99,7 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodStaticArgsTest()
         {
-            var singleExpression = new ExpressionProcessor(true).ParseExpression<SampleClass>(x => x.Name!.Insert(0, StaticString));
+            var singleExpression = new ExpressionProcessor(true).ParseColumnExpression<SampleClass>(x => x.Name!.Insert(0, StaticString));
             var members = singleExpression.GetChilds();
 
             Assert.Single(members);
@@ -111,7 +111,7 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodConstArgsTest()
         {
-            var singleExpression = new ExpressionProcessor(true).ParseExpression<SampleClass>(x => x.Name!.Insert(0, ConstString));
+            var singleExpression = new ExpressionProcessor(true).ParseColumnExpression<SampleClass>(x => x.Name!.Insert(0, ConstString));
             var members = singleExpression.GetChilds();
 
             Assert.Single(members);
@@ -123,7 +123,7 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodInstanceArgsTest()
         {
-            var singleExpression = new ExpressionProcessor(true).ParseExpression<SampleClass>(x => x.Name!.Insert(0, InstanceString));
+            var singleExpression = new ExpressionProcessor(true).ParseColumnExpression<SampleClass>(x => x.Name!.Insert(0, InstanceString));
             var members = singleExpression.GetChilds();
 
             Assert.Single(members);

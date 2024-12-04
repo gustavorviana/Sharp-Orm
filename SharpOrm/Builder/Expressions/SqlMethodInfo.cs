@@ -11,8 +11,6 @@ namespace SharpOrm.Builder.Expressions
         [DebuggerHidden]
         public new MethodInfo Member => base.Member as MethodInfo;
 
-        public override Type ValueType => this.Member.ReturnType;
-
         public object[] Args { get; }
 
         public SqlMethodInfo(MethodInfo method, object[] args) : base(method)

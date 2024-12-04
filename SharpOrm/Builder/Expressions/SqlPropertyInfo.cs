@@ -7,7 +7,7 @@ namespace SharpOrm.Builder.Expressions
 {
     public class SqlPropertyInfo : SqlMemberInfo
     {
-        public override Type ValueType => ReflectionUtils.GetMemberType(this.Member);
+        public Type ValueType => ReflectionUtils.GetMemberType(this.Member);
 
         public SqlPropertyInfo(MemberInfo member) : base(member)
         {

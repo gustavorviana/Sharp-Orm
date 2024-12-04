@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using SharpOrm.SqlMethods;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
@@ -18,10 +20,21 @@ namespace SharpOrm.Builder.Expressions
             this.allowSubMembers = allowSubMembers;
         }
 
-        public IEnumerable<SqlProperty> ParseNewExpression<T>(Expression<Func<T, object>> expression)
+        public IEnumerable<Column> ParseColumns<T>(IReadonlyQueryInfo info, Expression<ColumnExpression<T>> expression)
+        {
+            foreach (var item in this.ParseExpression(expression))
+                yield return new ExpressionColumn(info.Config.Translation.Methods.ApplyMember(info, item))
+                {
+                    Alias = item.Alias ?? item.Name
+                };
+        }
+
+        public IEnumerable<SqlProperty> ParseExpression<T>(Expression<ColumnExpression<T>> expression)
         {
             if (expression.Body is NewExpression newExpression)
             {
+                if (!allowSubMembers) throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
+
                 for (int i = 0; i < newExpression.Members.Count; i++)
                     yield return ParseExpression(newExpression.Arguments[i], newExpression.Members[i].Name);
             }
@@ -31,7 +44,14 @@ namespace SharpOrm.Builder.Expressions
             }
         }
 
-        public SqlProperty ParseExpression<T>(Expression<ColumnExpression<T>> expression)
+        internal IEnumerable<SqlProperty> ParseNewExpression<T>(Expression<Func<T, object>> expression)
+        {
+            if (expression.Body is NewExpression newExpression)
+                for (int i = 0; i < newExpression.Members.Count; i++)
+                    yield return ParseExpression(newExpression.Arguments[i], newExpression.Members[i].Name);
+        }
+
+        internal SqlProperty ParseColumnExpression<T>(Expression<ColumnExpression<T>> expression)
         {
             return this.ParseExpression(expression.Body);
         }
@@ -84,7 +104,7 @@ namespace SharpOrm.Builder.Expressions
 
         private List<SqlMemberInfo> GetFullPath(Expression expression, out MemberInfo member)
         {
-            if (!allowSubMembers) throw new NotSupportedException("It is not possible to use functions in this operation.");
+            if (!allowSubMembers) throw new NotSupportedException(Messages.Expressions.FunctionDisabled);
 
             List<SqlMemberInfo> methods = new List<SqlMemberInfo>();
             while (expression is MethodCallExpression methodCallExpression)
@@ -104,7 +124,7 @@ namespace SharpOrm.Builder.Expressions
         private List<SqlMemberInfo> GetFullPath(MemberExpression memberExp, out MemberInfo member)
         {
             if (!allowSubMembers && memberExp.Expression as MemberExpression != null)
-                throw new NotSupportedException("");
+                throw new NotSupportedException(Messages.Expressions.SubmembersDisabled);
 
             var path = new List<MemberInfo>();
 
