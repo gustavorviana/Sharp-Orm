@@ -23,9 +23,9 @@ namespace SharpOrm.Builder.Expressions
         public IEnumerable<Column> ParseColumns<T>(IReadonlyQueryInfo info, Expression<ColumnExpression<T>> expression)
         {
             foreach (var item in this.ParseExpression(expression))
-                yield return new ExpressionColumn(info.Config.Translation.Methods.ApplyMember(info, item))
+                yield return new ExpressionColumn(info.Config.Methods.ApplyMember(info, item))
                 {
-                    Alias = item.Alias ?? item.Name
+                    Alias = item.Alias ?? (item.HasChilds ? item.Name : null)
                 };
         }
 
@@ -68,6 +68,9 @@ namespace SharpOrm.Builder.Expressions
             else if (expression is MethodCallExpression methodCallExpression) members = GetFullPath(methodCallExpression, out member);
             else throw new NotSupportedException();
 
+            if (IsStatic(member) && member is PropertyInfo)
+                return new SqlProperty(new SqlPropertyInfo(member), memberName);
+
             return new SqlProperty(member, members.ToArray(), memberName);
         }
 
@@ -109,6 +112,9 @@ namespace SharpOrm.Builder.Expressions
             List<SqlMemberInfo> methods = new List<SqlMemberInfo>();
             while (expression is MethodCallExpression methodCallExpression)
             {
+                if (methodCallExpression.Method.IsStatic)
+                    throw new NotSupportedException("Static methods is not suported.");
+
                 methods.Insert(0, new SqlMethodInfo(methodCallExpression.Method, methodCallExpression.Arguments.Select(GetArgument).ToArray()));
                 expression = methodCallExpression.Object;
             }
@@ -138,6 +144,17 @@ namespace SharpOrm.Builder.Expressions
             path.RemoveAt(0);
 
             return new List<SqlMemberInfo>(path.Select(x => new SqlPropertyInfo(x)));
+        }
+
+        private static bool IsStatic(MemberInfo member)
+        {
+            if (member is PropertyInfo propertyInfo)
+                return propertyInfo.GetMethod?.IsStatic ?? false;
+
+            if (member is MethodInfo methodInfo)
+                return methodInfo.IsStatic;
+
+            return false;
         }
     }
 }

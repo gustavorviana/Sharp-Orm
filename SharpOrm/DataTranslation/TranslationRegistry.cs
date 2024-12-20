@@ -23,8 +23,6 @@ namespace SharpOrm.DataTranslation
 
         private readonly NativeSqlTranslation native = new NativeSqlTranslation();
 
-        public SqlMethodRegistry Methods { get; set; } = new SqlMethodRegistry();
-
         /// <summary>
         /// Custom value translators.
         /// </summary>

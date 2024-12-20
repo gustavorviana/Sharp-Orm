@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿using SharpOrm.SqlMethods;
+using SharpOrm.SqlMethods.Mapps;
+using SharpOrm.SqlMethods.Mapps.Mysql;
+using SharpOrm.SqlMethods.Mapps.SqlServer;
+using System;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -18,6 +23,23 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqlServerQueryConfig()
         {
+            var strType = typeof(string);
+
+            this.Methods.Add(strType, nameof(string.Substring), new MySqlSubstring());
+            this.Methods.Add(strType, nameof(string.Trim), new SqlServerTrim(TrimMode.All));
+            this.Methods.Add(strType, nameof(string.TrimStart), new SqlServerTrim(TrimMode.Left));
+            this.Methods.Add(strType, nameof(string.TrimEnd), new SqlServerTrim(TrimMode.Right));
+
+            var dateType = typeof(DateTime);
+
+            Methods.Add(dateType, nameof(DateTime.Now), new SqlServerDate(DateOption.DateTime));
+            Methods.Add(dateType, nameof(DateTime.UtcNow), new SqlServerDate(DateOption.DateTimeUtc));
+            Methods.Add(dateType, nameof(DateTime.Today), new SqlServerDate(DateOption.DateOnly));
+        }
+
+        private SqlServerQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
+        {
+
         }
 
         /// <summary>
@@ -57,7 +79,7 @@ namespace SharpOrm.Builder
 
         public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new SqlServerQueryConfig(safeOperations ?? this.OnlySafeModifications);
+            var clone = new SqlServerQueryConfig(safeOperations ?? this.OnlySafeModifications, Methods);
             this.CopyTo(clone);
             return clone;
         }

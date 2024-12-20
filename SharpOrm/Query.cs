@@ -151,6 +151,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
+        [Obsolete]
         public Query<T> OrderBy(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Asc, columns);
@@ -161,6 +162,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
+        [Obsolete]
         public Query<T> OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Desc, columns);
@@ -172,9 +174,44 @@ namespace SharpOrm
         /// <param name="order">Field ordering.</param>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
+        [Obsolete]
         public Query<T> OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
+        }
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
+        {
+            return this.OrderBy(SharpOrm.OrderBy.Asc, expression);
+        }
+
+        /// <summary>
+        /// Applies descending sort.
+        /// </summary>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query<T> OrderByDesc(Expression<ColumnExpression<T>> expression)
+        {
+            return this.OrderBy(SharpOrm.OrderBy.Desc, expression);
+        }
+
+        /// <summary>
+        /// Applies an ascending sort.
+        /// </summary>
+        /// <param name="order">Field ordering.</param>
+        /// <param name="columns">Columns that must be ordered.</param>
+        /// <returns></returns>
+        public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
+        {
+            var processor = new ExpressionProcessor(true);
+            var columns = processor.ParseColumns<T>(this.Info, expression);
+
+            return (Query<T>)this.OrderBy(order, columns.ToArray());
         }
 
         #endregion
@@ -184,6 +221,20 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columnNames">The column names by which the results should be grouped.</param>
         /// <returns></returns>
+        public Query<T> GroupBy(Expression<ColumnExpression<T>> expression)
+        {
+            var processor = new ExpressionProcessor(true);
+            var columns = processor.ParseColumns<T>(this.Info, expression);
+
+            return (Query<T>)base.GroupBy(columns.ToArray());
+        }
+
+        /// <summary>
+        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// </summary>
+        /// <param name="columnNames">The column names by which the results should be grouped.</param>
+        /// <returns></returns>
+        [Obsolete]
         public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
@@ -209,6 +260,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns"></param>
         /// <returns></returns>
+        [Obsolete]
         public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());

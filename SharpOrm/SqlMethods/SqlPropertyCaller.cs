@@ -1,7 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using System;
-using System.Linq.Expressions;
 
 namespace SharpOrm.SqlMethods
 {
@@ -14,6 +13,6 @@ namespace SharpOrm.SqlMethods
             throw new NotSupportedException(Messages.Mapper.PropertyRequired);
         }
 
-        protected abstract SqlExpression GetSqlExpression(IReadonlyQueryInfo info, Expression column, SqlPropertyInfo member);
+        protected abstract SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression column, SqlPropertyInfo member);
     }
 }

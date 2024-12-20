@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.SqlMethods;
 using System;
 using System.Reflection;
 using System.Text;
@@ -29,6 +30,8 @@ namespace SharpOrm.Builder
         /// Custom mapping of columns in the database.
         /// </summary>
         public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
+
+        public virtual SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
 
         /// <summary>
         /// Indicates if value modifications in the table should be made with "WHERE" (this is not valid for insert-and-select).
@@ -76,6 +79,12 @@ namespace SharpOrm.Builder
         public QueryConfig(bool safeModificationsOnly)
         {
             this.OnlySafeModifications = safeModificationsOnly;
+        }
+
+        protected QueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods)
+        {
+            this.OnlySafeModifications = safeModificationsOnly;
+            this.Methods = methods;
         }
 
         /// <summary>

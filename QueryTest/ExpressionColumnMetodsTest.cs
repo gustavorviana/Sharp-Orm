@@ -1,27 +1,29 @@
-﻿using SharpOrm;
+﻿using BaseTest.Utils;
 using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
-using System.Linq.Expressions;
 using static QueryTest.ExpressionProcessorTest;
 
 namespace QueryTest
 {
-    public class ExpressionColumnMetodsTest
+    public class ExpressionColumnMetodsTest : SqlMethodMapTest
     {
-        private readonly ReadonlyQueryInfo info;
-
-        public ExpressionColumnMetodsTest()
+        public ExpressionColumnMetodsTest() : base(new SqlServerQueryConfig())
         {
-            info = new ReadonlyQueryInfo(new SqlServerQueryConfig(), new DbName());
+
         }
 
         [Fact]
-        public void ParseColumn()
+        public void ThrowStaticMethodNotSupported()
+        {
+            Assert.Throws<NotSupportedException>(() => ParseColumns<SampleClass>(x => string.Concat("Name: ", x.Name)).First());
+        }
+
+        [Fact]
+        public void ParseSingleColumn()
         {
             var column = ParseColumns<SampleClass>(x => x.Name).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("Name", exp.ToString());
+            Assert.Equal("[Name]", exp.ToString());
         }
 
         [Fact]
@@ -30,7 +32,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => new { Name2 = x.Name!.ToLower() }).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("LOWER(Name) AS [Name2]", exp.ToString());
+            Assert.Equal("LOWER([Name]) AS [Name2]", exp.ToString());
         }
 
         [Fact]
@@ -39,7 +41,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => new { Namee = x.Name!.ToLower() }).First();
             var exp = column.ToExpression(info, false);
 
-            Assert.Equal("LOWER(Name)", exp.ToString());
+            Assert.Equal("LOWER([Name])", exp.ToString());
         }
 
         [Fact]
@@ -48,13 +50,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => x.Name!.ToUpper()).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("UPPER(Name) AS [Name]", exp.ToString());
-        }
-
-        private IEnumerable<Column> ParseColumns<T>(Expression<ColumnExpression<T>> expression, bool allowSubMembers = true)
-        {
-            var processor = new ExpressionProcessor(allowSubMembers);
-            return processor.ParseColumns(info, expression);
+            Assert.Equal("UPPER([Name]) AS [Name]", exp.ToString());
         }
     }
 }

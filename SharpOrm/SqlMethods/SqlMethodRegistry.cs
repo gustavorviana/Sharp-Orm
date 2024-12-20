@@ -27,7 +27,7 @@ namespace SharpOrm.SqlMethods
 
         public SqlExpression ApplyMember(IReadonlyQueryInfo info, SqlProperty property)
         {
-            SqlExpression column = new SqlExpression(property.Name);
+            SqlExpression column = new SqlExpression(property.IsStatic ? "" : info.Config.ApplyNomenclature(property.Name));
 
             foreach (var member in property.GetChilds())
                 column = this.ApplyCaller(info, column, member);

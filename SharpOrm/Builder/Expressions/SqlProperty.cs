@@ -10,18 +10,31 @@ namespace SharpOrm.Builder.Expressions
 {
     public class SqlProperty
     {
+        public bool IsStatic { get; }
         private readonly SqlMemberInfo[] childs;
         public MemberInfo Member { get; }
         public string Alias { get; }
         public string Name { get; }
 
+        public bool HasChilds => childs != null && childs.Length > 0;
+
+        public SqlProperty(SqlMemberInfo staticMember, string alias)
+        {
+            Member = staticMember.Member;
+            IsStatic = true;
+
+            Name = Member.Name;
+            childs = new[] { staticMember };
+            Alias = !string.IsNullOrEmpty(alias) && alias != Member.Name ? alias : null;
+        }
+
         public SqlProperty(MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
-            this.Member = member;
+            Member = member;
 
             this.childs = childs;
-            this.Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
-            this.Alias = !string.IsNullOrEmpty(alias) && alias != member.Name ? alias : null;
+            Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
+            Alias = !string.IsNullOrEmpty(alias) && alias != member.Name ? alias : null;
         }
 
         public override string ToString()

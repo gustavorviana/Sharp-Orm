@@ -1,4 +1,8 @@
-﻿using System.Linq;
+﻿using SharpOrm.SqlMethods;
+using SharpOrm.SqlMethods.Mapps;
+using SharpOrm.SqlMethods.Mapps.Mysql;
+using System;
+using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -14,6 +18,22 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the <see cref="MysqlQueryConfig"/> class.
         /// </summary>
         public MysqlQueryConfig()
+        {
+            var strType = typeof(string);
+
+            this.Methods.Add(strType, nameof(string.Substring), new MySqlSubstring());
+            this.Methods.Add(strType, nameof(string.Trim), new MySqlTrim(TrimMode.All));
+            this.Methods.Add(strType, nameof(string.TrimStart), new MySqlTrim(TrimMode.Left));
+            this.Methods.Add(strType, nameof(string.TrimEnd), new MySqlTrim(TrimMode.Right));
+
+            var dateType = typeof(DateTime);
+
+            Methods.Add(dateType, nameof(DateTime.Now), new MysqlDate(DateOption.DateTime));
+            Methods.Add(dateType, nameof(DateTime.UtcNow), new MysqlDate(DateOption.DateTimeUtc));
+            Methods.Add(dateType, nameof(DateTime.Today), new MysqlDate(DateOption.DateOnly));
+        }
+
+        private MysqlQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
         {
 
         }
@@ -98,7 +118,7 @@ namespace SharpOrm.Builder
         /// <returns>A clone of the current configuration.</returns>
         public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new MysqlQueryConfig(safeOperations ?? this.OnlySafeModifications);
+            var clone = new MysqlQueryConfig(safeOperations ?? this.OnlySafeModifications, Methods);
             this.CopyTo(clone);
             return clone;
         }
