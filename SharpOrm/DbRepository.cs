@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System;
 using System.Collections.Generic;
@@ -41,6 +42,8 @@ namespace SharpOrm
             get => this.commandTimeout ?? this.Creator?.Config?.CommandTimeout ?? 30;
             set => this.commandTimeout = value;
         }
+
+        protected TranslationRegistry Translation => this.Creator.Config.Translation;
 
         /// <summary>
         /// Gets the default connection creator for the repository.
@@ -332,7 +335,7 @@ namespace SharpOrm
         /// <param name="sql">The SQL query to execute.</param>
         /// <param name="args">An array of parameters to be applied to the SQL query.</param>
         /// <returns>An enumerable collection of objects of type <typeparamref name="T"/>.</returns>
-        protected IEnumerable<T> ExecuteEnumerable<T>(string sql, params object[] args) 
+        protected IEnumerable<T> ExecuteEnumerable<T>(string sql, params object[] args)
         {
             return CreateCommand(sql, args).ExecuteEnumerable<T>(null, this.Token, this.Creator.Management);
         }
@@ -439,6 +442,12 @@ namespace SharpOrm
             };
             _connections.Add(connection);
             return connection;
+        }
+
+        protected int Insert<T>(T value)
+        {
+            using (var query = this.Query<T>())
+                return query.Insert(value);
         }
 
         #region IDisposable

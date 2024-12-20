@@ -8,5 +8,8 @@
         void InsertExtendedClass();
         void BulkInsert();
         void InsertByBasicSelect();
+        void InsertByBasicWithColumnNamesSelect();
+        void InsertByExpressionSelect();
+        void InsertByExpressionWithColumnNamesSelect();
     }
 }

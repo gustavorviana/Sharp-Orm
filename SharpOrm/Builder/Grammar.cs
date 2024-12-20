@@ -124,7 +124,7 @@ namespace SharpOrm.Builder
         /// <param name="query">The query.</param>
         /// <param name="columnNames">The column names.</param>
         /// <returns>The SQL expression for the insert query.</returns>
-        internal SqlExpression InsertQuery(QueryBase query, IEnumerable<string> columnNames)
+        internal SqlExpression InsertQuery(QueryBase query, string[] columnNames)
         {
             return this.BuildExpression(() => this.ConfigureInsertQuery(query, columnNames));
         }
@@ -134,7 +134,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The query to be configured.</param>
         /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected abstract void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames);
+        protected abstract void ConfigureInsertQuery(QueryBase query, string[] columnNames);
 
         /// <summary>
         /// Builds the insert expression.
@@ -142,7 +142,7 @@ namespace SharpOrm.Builder
         /// <param name="expression">The SQL expression.</param>
         /// <param name="columnNames">The column names.</param>
         /// <returns>The SQL expression for the insert.</returns>
-        public SqlExpression InsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
+        public SqlExpression InsertExpression(SqlExpression expression, string[] columnNames)
         {
             return this.BuildExpression(() => this.ConfigureInsertExpression(expression, columnNames));
         }
@@ -152,7 +152,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="query">The query to be configured.</param>
         /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected abstract void ConfigureInsertExpression(SqlExpression expression, IEnumerable<string> columnNames);
+        protected abstract void ConfigureInsertExpression(SqlExpression expression, string[] columnNames);
 
         /// <summary>
         /// Inserts a new record into the database table with the specified cell values.
