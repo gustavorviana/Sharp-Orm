@@ -19,18 +19,8 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqliteQueryConfig()
         {
-            var strType = typeof(string);
-
-            this.Methods.Add(strType, nameof(string.Substring), new SqliteSubstring());
-            this.Methods.Add(strType, nameof(string.Trim), new MySqlTrim(TrimMode.All));
-            this.Methods.Add(strType, nameof(string.TrimStart), new MySqlTrim(TrimMode.Left));
-            this.Methods.Add(strType, nameof(string.TrimEnd), new MySqlTrim(TrimMode.Right));
-
-            var dateType = typeof(DateTime);
-
-            Methods.Add(dateType, nameof(DateTime.Now), new SqliteDate(DateOption.DateTime));
-            Methods.Add(dateType, nameof(DateTime.UtcNow), new SqliteDate(DateOption.DateTimeUtc));
-            Methods.Add(dateType, nameof(DateTime.Today), new SqliteDate(DateOption.DateOnly));
+            Methods.Add(new SqliteStringMethods());
+            Methods.Add(new SqliteDateProperties());
         }
 
         /// <summary>

@@ -4,15 +4,17 @@ using System;
 
 namespace SharpOrm.SqlMethods
 {
-    public abstract class SqlMethodCaller : SqlMemberCaller
+    public abstract class SqlMethodCaller<T> : SqlMemberCaller
     {
-        public override SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)
+        public override Type Type => typeof(T);
+
+        public sealed override SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)
         {
-            if (member is SqlMethodInfo funcMember) return this.GetSqlExpression(info, expression, funcMember.Args);
+            if (member is SqlMethodInfo funcMember) return this.GetSqlExpression(info, expression, funcMember);
 
             throw new NotSupportedException(Messages.Mapper.MethodRequired);
         }
 
-        public abstract SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, object[] values);
+        protected abstract SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMethodInfo method);
     }
 }

@@ -23,18 +23,8 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqlServerQueryConfig()
         {
-            var strType = typeof(string);
-
-            this.Methods.Add(strType, nameof(string.Substring), new MySqlSubstring());
-            this.Methods.Add(strType, nameof(string.Trim), new SqlServerTrim(TrimMode.All));
-            this.Methods.Add(strType, nameof(string.TrimStart), new SqlServerTrim(TrimMode.Left));
-            this.Methods.Add(strType, nameof(string.TrimEnd), new SqlServerTrim(TrimMode.Right));
-
-            var dateType = typeof(DateTime);
-
-            Methods.Add(dateType, nameof(DateTime.Now), new SqlServerDate(DateOption.DateTime));
-            Methods.Add(dateType, nameof(DateTime.UtcNow), new SqlServerDate(DateOption.DateTimeUtc));
-            Methods.Add(dateType, nameof(DateTime.Today), new SqlServerDate(DateOption.DateOnly));
+            Methods.Add(new SqlServerStringMethods());
+            Methods.Add(new SqlServerDateProperties());
         }
 
         private SqlServerQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)

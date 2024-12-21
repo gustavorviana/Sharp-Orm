@@ -19,18 +19,8 @@ namespace SharpOrm.Builder
         /// </summary>
         public MysqlQueryConfig()
         {
-            var strType = typeof(string);
-
-            this.Methods.Add(strType, nameof(string.Substring), new MySqlSubstring());
-            this.Methods.Add(strType, nameof(string.Trim), new MySqlTrim(TrimMode.All));
-            this.Methods.Add(strType, nameof(string.TrimStart), new MySqlTrim(TrimMode.Left));
-            this.Methods.Add(strType, nameof(string.TrimEnd), new MySqlTrim(TrimMode.Right));
-
-            var dateType = typeof(DateTime);
-
-            Methods.Add(dateType, nameof(DateTime.Now), new MysqlDate(DateOption.DateTime));
-            Methods.Add(dateType, nameof(DateTime.UtcNow), new MysqlDate(DateOption.DateTimeUtc));
-            Methods.Add(dateType, nameof(DateTime.Today), new MysqlDate(DateOption.DateOnly));
+            Methods.Add(new MysqlStringMethods());
+            Methods.Add(new MysqlDateProperties());
         }
 
         private MysqlQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
