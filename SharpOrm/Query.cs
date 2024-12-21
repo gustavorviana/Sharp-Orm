@@ -47,7 +47,6 @@ namespace SharpOrm
 
         #region Query
 
-
         /// <summary>
         /// Creates a read-only query for the specified table.
         /// </summary>
@@ -1524,6 +1523,16 @@ namespace SharpOrm
             {
                 this.Limit = lastLimit;
             }
+        }
+
+        /// <summary>
+        /// Retrieves an collection of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the collection.</typeparam>
+        /// <returns>An collection of the specified type.</returns>
+        public T[] Get<T>()
+        {
+            return this.GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
