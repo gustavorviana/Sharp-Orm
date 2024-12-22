@@ -14,10 +14,14 @@ namespace BaseTest.Utils
             return ParseColumns(expression, allowSubMembers).First();
         }
 
+        internal ExpressionProcessor<T> GetProcessor<T>(bool allowSubMembers)
+        {
+            return new ExpressionProcessor<T>(info, allowSubMembers);
+        }
+
         protected IEnumerable<Column> ParseColumns<T>(Expression<ColumnExpression<T>> expression, bool allowSubMembers = true)
         {
-            var processor = new ExpressionProcessor(allowSubMembers);
-            return processor.ParseColumns(info, expression);
+            return this.GetProcessor<T>(allowSubMembers).ParseColumns(expression);
         }
     }
 }

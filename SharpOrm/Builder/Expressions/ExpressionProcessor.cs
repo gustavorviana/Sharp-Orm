@@ -11,16 +11,35 @@ using System.Xml.Linq;
 
 namespace SharpOrm.Builder.Expressions
 {
-    public class ExpressionProcessor
+    internal class ExpressionProcessor<T>
     {
+        private readonly IReadonlyQueryInfo info;
+
         private readonly bool allowSubMembers;
 
-        public ExpressionProcessor(bool allowSubMembers)
+        public ExpressionProcessor(IReadonlyQueryInfo info, bool allowSubMembers)
         {
+            this.info = info;
             this.allowSubMembers = allowSubMembers;
         }
 
-        public IEnumerable<Column> ParseColumns<T>(IReadonlyQueryInfo info, Expression<ColumnExpression<T>> expression)
+        private string GetMemberName(MemberExpression memberExp)
+        {
+            if (memberExp == null) return string.Empty;
+
+            var current = memberExp;
+            var parts = new List<string>();
+
+            while (current != null)
+            {
+                parts.Insert(0, current.Member.Name);
+                current = current.Expression as MemberExpression;
+            }
+
+            return string.Join(".", parts);
+        }
+
+        public IEnumerable<Column> ParseColumns(Expression<ColumnExpression<T>> expression)
         {
             foreach (var item in this.ParseExpression(expression))
                 yield return new ExpressionColumn(info.Config.Methods.ApplyMember(info, item))
@@ -29,7 +48,7 @@ namespace SharpOrm.Builder.Expressions
                 };
         }
 
-        public IEnumerable<SqlProperty> ParseExpression<T>(Expression<ColumnExpression<T>> expression)
+        public IEnumerable<SqlMember> ParseExpression(Expression<ColumnExpression<T>> expression)
         {
             if (expression.Body is NewExpression newExpression)
             {
@@ -44,19 +63,19 @@ namespace SharpOrm.Builder.Expressions
             }
         }
 
-        internal IEnumerable<SqlProperty> ParseNewExpression<T>(Expression<Func<T, object>> expression)
+        internal IEnumerable<SqlMember> ParseNewExpression(Expression<Func<T, object>> expression)
         {
             if (expression.Body is NewExpression newExpression)
                 for (int i = 0; i < newExpression.Members.Count; i++)
                     yield return ParseExpression(newExpression.Arguments[i], newExpression.Members[i].Name);
         }
 
-        internal SqlProperty ParseColumnExpression<T>(Expression<ColumnExpression<T>> expression)
+        internal SqlMember ParseColumnExpression(Expression<ColumnExpression<T>> expression)
         {
             return this.ParseExpression(expression.Body);
         }
 
-        private SqlProperty ParseExpression(Expression expression, string memberName = null)
+        private SqlMember ParseExpression(Expression expression, string memberName = null)
         {
             List<SqlMemberInfo> members;
             MemberInfo member;
@@ -64,17 +83,20 @@ namespace SharpOrm.Builder.Expressions
             if (expression is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression unaryMemberExpression)
                 expression = unaryMemberExpression;
 
-            if (expression is MemberExpression memberExpression) members = GetFullPath(memberExpression, out member);
-            else if (expression is MethodCallExpression methodCallExpression) members = GetFullPath(methodCallExpression, out member);
-            else throw new NotSupportedException();
+            if (expression is MemberExpression memberExpression)
+                members = GetFullPath(memberExpression, out member);
+            else if (expression is MethodCallExpression methodCallExpression)
+                members = GetFullPath(methodCallExpression, out member);
+            else
+                throw new NotSupportedException();
 
-            if (IsStatic(member) && member is PropertyInfo)
-                return new SqlProperty(new SqlPropertyInfo(member), memberName);
+            if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
+                return new SqlMember(new SqlPropertyInfo(member), memberName);
 
-            return new SqlProperty(member, members.ToArray(), memberName);
+            return new SqlMember(member, members.ToArray(), memberName);
         }
 
-        private static object GetArgument(Expression expression)
+        private object GetArgument(Expression expression)
         {
             if (expression is MemberExpression memberExpression) return GetMemberValue(memberExpression);
             if (expression is ConstantExpression constantExp) return constantExp.Value;
@@ -82,21 +104,23 @@ namespace SharpOrm.Builder.Expressions
             throw new NotSupportedException(expression.GetType().FullName);
         }
 
-        private static object GetMemberValue(MemberExpression memberExpression)
+        private object GetMemberValue(MemberExpression memberExpression)
         {
             return GetExpressionValue(memberExpression, GetTargetFromExpression(memberExpression.Expression, null));
         }
 
-        private static object GetTargetFromExpression(Expression expression, object owner)
+        private object GetTargetFromExpression(Expression expression, object owner)
         {
             if (expression is ConstantExpression constantExpression) return constantExpression.Value;
-
             return GetExpressionValue(expression, null);
         }
 
-        private static object GetExpressionValue(Expression expression, object owner)
+        private object GetExpressionValue(Expression expression, object owner)
         {
             if (!(expression is MemberExpression memberExpression)) return null;
+
+            if (owner == null && !ReflectionUtils.IsStatic(memberExpression.Member))
+                return new MemberInfoColumn(memberExpression.Member);
 
             var member = memberExpression.Member;
             if (member is FieldInfo fieldInfo) return fieldInfo.GetValue(owner);
@@ -112,11 +136,18 @@ namespace SharpOrm.Builder.Expressions
             List<SqlMemberInfo> methods = new List<SqlMemberInfo>();
             while (expression is MethodCallExpression methodCallExpression)
             {
-                if (methodCallExpression.Method.IsStatic)
-                    throw new NotSupportedException("Static methods is not suported.");
-
                 methods.Insert(0, new SqlMethodInfo(methodCallExpression.Method, methodCallExpression.Arguments.Select(GetArgument).ToArray()));
+
+                if (methodCallExpression.Object == null)
+                    break;
+
                 expression = methodCallExpression.Object;
+            }
+
+            if (expression is MethodCallExpression methodCall)
+            {
+                member = methodCall.Method;
+                return methods;
             }
 
             if (!(expression is MemberExpression memberExpression))
@@ -144,17 +175,6 @@ namespace SharpOrm.Builder.Expressions
             path.RemoveAt(0);
 
             return new List<SqlMemberInfo>(path.Select(x => new SqlPropertyInfo(x)));
-        }
-
-        private static bool IsStatic(MemberInfo member)
-        {
-            if (member is PropertyInfo propertyInfo)
-                return propertyInfo.GetMethod?.IsStatic ?? false;
-
-            if (member is MethodInfo methodInfo)
-                return methodInfo.IsStatic;
-
-            return false;
         }
     }
 }

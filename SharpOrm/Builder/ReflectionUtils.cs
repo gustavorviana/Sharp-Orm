@@ -81,5 +81,19 @@ namespace SharpOrm.Builder
             if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
                 targetProp.SetValue(target, srcProp.GetValue(source));
         }
+
+        public static bool IsStatic(MemberInfo member)
+        {
+            if (member is PropertyInfo propertyInfo)
+                return propertyInfo.GetMethod?.IsStatic ?? false;
+
+            if (member is FieldInfo fieldInfo)
+                return fieldInfo.IsStatic;
+
+            if (member is MethodInfo methodInfo)
+                return methodInfo.IsStatic;
+
+            return false;
+        }
     }
 }

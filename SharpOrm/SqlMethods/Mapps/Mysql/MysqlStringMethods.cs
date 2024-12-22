@@ -19,7 +19,8 @@ namespace SharpOrm.SqlMethods.Mapps.Mysql
                     nameof(string.TrimEnd),
                     nameof(string.TrimStart),
                     nameof(string.ToUpper),
-                    nameof(string.ToLower)
+                    nameof(string.ToLower),
+                    nameof(string.Concat)
                 }.Contains(member.Name);
         }
 
@@ -33,6 +34,18 @@ namespace SharpOrm.SqlMethods.Mapps.Mysql
                 case nameof(string.Substring): return new SqlExpression("SUBSTRING(?,?,?)", expression, method.Args[0], method.Args[1]);
                 case nameof(string.ToLower): return new SqlExpression("LOWER(?)", expression);
                 case nameof(string.ToUpper): return new SqlExpression("UPPER(?)", expression);
+                case nameof(string.Concat):
+                    if (method.Args.Length < 2)
+                        throw new InvalidOperationException();
+
+                    var qb = new QueryBuilder(info);
+                    qb.Add("CONCAT(");
+                    qb.AddParameter(method.Args[0]);
+
+                    for (int i = 1; i < method.Args.Length; i++)
+                        qb.Add(',').AddParameter(method.Args[i], false);
+
+                    return qb.Add(')').ToExpression();
                 default: throw new NotSupportedException();
             }
         }

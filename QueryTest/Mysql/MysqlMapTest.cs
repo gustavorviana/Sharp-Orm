@@ -123,11 +123,28 @@ namespace QueryTest.Mysql
         }
 
         [Fact]
+        public void Concat()
+        {
+            string value2 = "value2";
+            var column = ParseColumn<SampleClass>(x => string.Concat("Value", value2, x.Name)).ToExpression(info)!;
+
+            Assert.Equal("CONCAT(?,?,`Name`) AS `Concat`", column.ToString());
+        }
+
+        [Fact]
         public void Substring()
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).ToExpression(info);
 
             Assert.Equal("SUBSTRING(`Name`,0,10) AS `Name`", column.ToString());
+        }
+
+        [Fact]
+        public void SubstringByIndexColumns()
+        {
+            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, x.EndIndex)).ToExpression(info);
+
+            Assert.Equal("SUBSTRING(`Name`,`StartIndex`,`EndIndex`) AS `Name`", column.ToString());
         }
 
         [Fact]
