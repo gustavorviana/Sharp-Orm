@@ -8,13 +8,16 @@ namespace SharpOrm.Builder.Expressions
     public abstract class SqlMemberInfo
     {
         public MemberInfo Member { get; }
-
         public MemberTypes MemberType => this.Member.MemberType;
         public Type DeclaringType => Member.DeclaringType;
         public string Name => Member.Name;
+        public Type ValueType => ReflectionUtils.GetMemberType(this.Member);
 
-        public SqlMemberInfo(MemberInfo member)
+        protected SqlMemberInfo(MemberInfo member)
         {
+            if (member == null)
+                throw new ArgumentNullException("member");
+
             this.Member = member;
         }
 
