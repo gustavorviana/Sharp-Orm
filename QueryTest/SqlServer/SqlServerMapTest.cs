@@ -115,6 +115,15 @@ namespace QueryTest.SqlServer
         }
 
         [Fact]
+        public void Concat()
+        {
+            string value2 = "value2";
+            var column = ParseColumn<SampleClass>(x => string.Concat("Value", value2, x.Name)).ToExpression(info)!;
+
+            Assert.Equal("CONCAT(?,?,[Name]) AS [Concat]", column.ToString());
+        }
+
+        [Fact]
         public void Substring()
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).ToExpression(info);
