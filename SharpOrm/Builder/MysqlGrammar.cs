@@ -25,7 +25,7 @@ namespace SharpOrm.Builder
             return this.Info.Config.Translation.DbTimeZone;
         }
 
-        protected override void ConfigureInsertQuery(QueryBase query, IEnumerable<string> columnNames)
+        protected override void ConfigureInsertQuery(QueryBase query, string[] columnNames)
         {
             this.AppendInsertHeader(columnNames);
             this.builder.AddAndReplace(
@@ -35,7 +35,7 @@ namespace SharpOrm.Builder
             );
         }
 
-        protected override void ConfigureInsertExpression(SqlExpression expression, IEnumerable<string> columnNames)
+        protected override void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
         {
             this.AppendInsertHeader(columnNames);
             this.builder.AddAndReplace(
@@ -81,7 +81,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
-            this.AppendInsertHeader(cells.Select(c => c.Name));
+            this.AppendInsertHeader(cells.Select(c => c.Name).ToArray());
             this.builder.Add("VALUES ");
             this.AppendInsertCells(cells);
 
@@ -89,14 +89,13 @@ namespace SharpOrm.Builder
                 this.builder.Add("; SELECT LAST_INSERT_ID();");
         }
 
-        protected void AppendInsertHeader(IEnumerable<string> columns)
+        protected void AppendInsertHeader(string[] columns)
         {
-            this.builder
-               .Add("INSERT INTO ")
-               .Add(this.GetTableName(false))
-               .Add(" (")
-               .AddJoin(", ", columns.Select(this.Info.Config.ApplyNomenclature))
-               .Add(") ");
+            columns = columns.Select(this.Info.Config.ApplyNomenclature).ToArray();
+            this.builder.Add("INSERT INTO ").Add(this.GetTableName(false));
+
+            if (columns.Length > 0) this.builder.Add(" (").AddJoin(", ", columns).Add(") ");
+            else this.builder.Add(' ');
         }
 
         protected void AppendInsertCells(IEnumerable<Cell> cells)

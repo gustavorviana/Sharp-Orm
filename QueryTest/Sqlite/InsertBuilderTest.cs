@@ -86,6 +86,20 @@ namespace QueryTest.Sqlite
         }
 
         [Fact]
+        public void InsertByBasicWithColumnNamesSelect()
+        {
+            using var selectQuery = new Query("User");
+            selectQuery
+                .Select("Id", "Status")
+                .Where("id", 1);
+
+            using var query = new Query(TestTableUtils.TABLE);
+            
+            var sqlExpression = query.Grammar().InsertQuery(selectQuery, []);
+            QueryAssert.Equal("INSERT INTO \"TestTable\" SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+        }
+
+        [Fact]
         public void InsertExtendedClass()
         {
             using var query = new Query(TestTableUtils.TABLE);
@@ -147,6 +161,24 @@ namespace QueryTest.Sqlite
                 "INSERT INTO \"TestTable\" (\"id\") VALUES (1); SELECT last_insert_rowid();",
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, (SqlExpression)"1")])
             );
+        }
+
+        [Fact]
+        public void InsertByExpressionSelect()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT \"Id\", 1 FROM \"User\" WHERE \"id\" = 1"), ["UserId", "Status"]);
+            QueryAssert.Equal("INSERT INTO \"TestTable\" (\"UserId\", \"Status\") SELECT \"Id\", 1 FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+        }
+
+        [Fact]
+        public void InsertByExpressionWithColumnNamesSelect()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1"), []);
+            QueryAssert.Equal("INSERT INTO \"TestTable\" SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1", sqlExpression);
         }
     }
 }

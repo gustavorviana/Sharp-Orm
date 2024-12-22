@@ -49,6 +49,17 @@ namespace SharpOrm
         #region Query
 
         /// <summary>
+        /// Creates a read-only query for the specified table.
+        /// </summary>
+        /// <param name="alias">The alias of the table.</param>
+        /// <param name="config">The configuration for the query. If null, the default configuration is used.</param>
+        /// <returns>A read-only query for the specified table.</returns>
+        public static new Query<T> ReadOnly(string alias, QueryConfig config = null)
+        {
+            return new Query<T>(new DbName(alias), config ?? ConnectionCreator.Default?.Config);
+        }
+
+        /// <summary>
         /// Creates a new instance of <see cref="Query"/> using the default values ​​defined in ConnectionCreator.Default.
         /// </summary>
         public Query() : this(new DbName(GetDbName()), ConnectionCreator.Default)
@@ -129,6 +140,11 @@ namespace SharpOrm
 
             if (TableInfo.SoftDelete != null)
                 this.Trashed = Trashed.Except;
+        }
+
+        private Query(DbName table, QueryConfig config) : base(table, config)
+        {
+
         }
 
         private void ApplyValidations()
@@ -1186,7 +1202,7 @@ namespace SharpOrm
             this.Manager = manager;
         }
 
-        private Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
+        internal Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
         {
 
         }
@@ -1461,10 +1477,11 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query"></param>
         /// <param name="columnNames"></param>
-        public int Insert(QueryBase query, params string[] columnNames)
+        public int Insert(QueryBase queryBase, params string[] columnNames)
         {
             this.ValidateReadonly();
-            return this.ExecuteAndGetAffected(this.GetGrammar().InsertQuery(query, columnNames));
+
+            return this.ExecuteAndGetAffected(this.GetGrammar().InsertQuery(queryBase, columnNames));
         }
 
         /// <summary>
@@ -1474,6 +1491,9 @@ namespace SharpOrm
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
             this.ValidateReadonly();
+            if (columnNames == null || columnNames.Length == 0)
+                throw new InvalidOperationException("");
+
             return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
         }
 
@@ -1569,6 +1589,16 @@ namespace SharpOrm
             {
                 this.Limit = lastLimit;
             }
+        }
+
+        /// <summary>
+        /// Retrieves an collection of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the collection.</typeparam>
+        /// <returns>An collection of the specified type.</returns>
+        public T[] Get<T>()
+        {
+            return this.GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -1709,6 +1739,36 @@ namespace SharpOrm
         }
 
         #endregion
+
+        /// <summary>
+        /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="table">The table name to be checked for the existence of a record.</param>
+        ///<param name="callback">Callback to build condition</param>
+        /// <returns>A Query instance for method chaining.</returns>
+        public Query Exists(string table, QueryCallback callback)
+        {
+            var query = Query.ReadOnly(table);
+            query.Limit = 1;
+            query.Where(callback);
+            base.Exists(query);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// </summary>
+        /// <param name="query">The table name to be checked for the existence of a record.</param>
+        ///<param name="callback">Callback to build condition</param>
+        /// <returns>A Query instance for method chaining.</returns>
+        public Query OrExists(string table, QueryCallback callback)
+        {
+            var query = Query.ReadOnly(table);
+            query.Limit = 1;
+            query.Where(callback);
+            base.OrExists(query);
+            return this;
+        }
 
         public Query Where(QueryBase where)
         {
