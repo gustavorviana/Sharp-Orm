@@ -12,12 +12,6 @@ namespace QueryTest
         }
 
         [Fact]
-        public void ThrowStaticMethodNotSupported()
-        {
-            Assert.Throws<NotSupportedException>(() => ParseColumns<SampleClass>(x => string.Concat("Name: ", x.Name)).First());
-        }
-
-        [Fact]
         public void ParseSingleColumn()
         {
             var column = ParseColumns<SampleClass>(x => x.Name).First();

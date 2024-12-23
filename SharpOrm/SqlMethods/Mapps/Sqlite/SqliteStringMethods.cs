@@ -19,7 +19,8 @@ namespace SharpOrm.SqlMethods.Mapps.Sqlite
                     nameof(string.TrimEnd),
                     nameof(string.TrimStart),
                     nameof(string.ToUpper),
-                    nameof(string.ToLower)
+                    nameof(string.ToLower),
+                    nameof(string.Concat)
                 }.Contains(member.Name);
         }
 
