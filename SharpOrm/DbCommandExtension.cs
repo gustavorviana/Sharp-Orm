@@ -100,7 +100,7 @@ namespace SharpOrm
         /// <returns></returns>
         public static DbCommand SetQuery(this DbCommand command, string query, params object[] args)
         {
-            return command.SetExpression(new SqlExpression(query, args));
+            return command.SetExpression(new QueryBuilder().Add(query, args).ToExpression());
         }
 
         /// <summary>
