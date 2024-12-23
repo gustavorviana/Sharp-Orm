@@ -4,10 +4,8 @@ using System;
 
 namespace SharpOrm.SqlMethods
 {
-    public abstract class SqlMethodCaller<T> : SqlMemberCaller
+    public abstract class SqlMethodCaller : SqlMemberCaller
     {
-        public override Type Type => typeof(T);
-
         public sealed override SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)
         {
             if (member is SqlMethodInfo funcMember) return this.GetSqlExpression(info, expression, funcMember);

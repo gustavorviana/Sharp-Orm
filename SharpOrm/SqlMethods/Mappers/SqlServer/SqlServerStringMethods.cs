@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpOrm.SqlMethods.Mapps.Sqlite
+namespace SharpOrm.SqlMethods.Mappers.SqlServer
 {
-    internal class SqliteStringMethods : SqlMethodCaller<string>
+    internal class SqlServerStringMethods : SqlMethodCaller
     {
         public override bool CanWork(SqlMemberInfo member)
         {
@@ -20,7 +20,8 @@ namespace SharpOrm.SqlMethods.Mapps.Sqlite
                     nameof(string.TrimStart),
                     nameof(string.ToUpper),
                     nameof(string.ToLower),
-                    nameof(string.Concat)
+                    nameof(string.Concat),
+                    nameof(string.ToString)
                 }.Contains(member.Name);
         }
 
@@ -28,10 +29,10 @@ namespace SharpOrm.SqlMethods.Mapps.Sqlite
         {
             switch (method.Name)
             {
-                case nameof(string.Trim): return new SqlExpression("TRIM(?)", expression);
+                case nameof(string.Trim): return new SqlExpression("LTRIM(RTRIM(?))", expression);
                 case nameof(string.TrimStart): return new SqlExpression("LTRIM(?)", expression);
                 case nameof(string.TrimEnd): return new SqlExpression("RTRIM(?)", expression);
-                case nameof(string.Substring): return new SqlExpression("SUBSTR(?,?,?)", expression, method.Args[0], method.Args[1]);
+                case nameof(string.Substring): return new SqlExpression("SUBSTRING(?,?,?)", expression, method.Args[0], method.Args[1]);
                 case nameof(string.ToLower): return new SqlExpression("LOWER(?)", expression);
                 case nameof(string.ToUpper): return new SqlExpression("UPPER(?)", expression);
                 case nameof(string.Concat):
@@ -46,6 +47,7 @@ namespace SharpOrm.SqlMethods.Mapps.Sqlite
                         qb.Add(',').AddParameter(method.Args[i], false);
 
                     return qb.Add(')').ToExpression();
+                case nameof(string.ToString): return expression;
                 default: throw new NotSupportedException();
             }
         }

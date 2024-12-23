@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -22,10 +23,23 @@ namespace SharpOrm.Builder.Expressions
             if (member == null) throw new ArgumentNullException(nameof(member));
 
             Member = member;
-            _childs = childs ?? new SqlMemberInfo[0];
+            _childs = LoadChilds(childs ?? new SqlMemberInfo[0]);
             IsStatic = false;
             Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
+        }
+
+        private static SqlMemberInfo[] LoadChilds(SqlMemberInfo[] childs)
+        {
+            if (childs.Length > 1 && childs.Last().Name == nameof(object.ToString))
+            {
+                var toCheck = childs[childs.Length - 2];
+                return TranslationUtils.IsDateOrTime(toCheck.DeclaringType) &&
+                    toCheck.Member.Name == nameof(DateTime.TimeOfDay)
+                    ? childs.Where((x, index) => index != childs.Length - 2).ToArray()
+                    : childs;
+            }
+            return childs;
         }
 
         public SqlMember(SqlMemberInfo staticMember, string alias)

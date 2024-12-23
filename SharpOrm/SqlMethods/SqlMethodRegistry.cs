@@ -1,6 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
-using SharpOrm.SqlMethods.Mapps;
+using SharpOrm.SqlMethods.Mappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +30,7 @@ namespace SharpOrm.SqlMethods
 
         private SqlExpression ApplyCaller(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)
         {
-            var caller = callers.FirstOrDefault(x => x.Type == member.DeclaringType && x.CanWork(member));
+            var caller = callers.FirstOrDefault(x => x.CanWork(member));
             if (caller == null)
                 throw new NotSupportedException(string.Format(Messages.Mapper.NotSupported, member.DeclaringType, member.Name));
 

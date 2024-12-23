@@ -7,8 +7,8 @@ namespace SharpOrm.Builder.Expressions
 {
     public class SqlPropertyInfo : SqlMemberInfo
     {
-        public SqlPropertyInfo(MemberInfo member)
-            : base(member)
+        public SqlPropertyInfo(Type declaringType, MemberInfo member)
+            : base(declaringType, member)
         {
             if (member.MemberType != MemberTypes.Property &&
                 member.MemberType != MemberTypes.Field)

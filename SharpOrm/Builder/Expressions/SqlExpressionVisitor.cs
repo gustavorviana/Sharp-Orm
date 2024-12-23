@@ -32,7 +32,7 @@ namespace SharpOrm.Builder.Expressions
             GetMembersAndMemberInfo(expression, out members, out member);
 
             if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
-                return new SqlMember(new SqlPropertyInfo(member), memberName);
+                return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
 
             return new SqlMember(member, members.ToArray(), memberName);
         }
@@ -79,7 +79,7 @@ namespace SharpOrm.Builder.Expressions
             member = path[0];
             path.RemoveAt(0);
 
-            return new List<SqlMemberInfo>(path.Select(x => new SqlPropertyInfo(x)));
+            return new List<SqlMemberInfo>(path.Select(x => new SqlPropertyInfo(memberExp.Expression.Type, x)));
         }
 
         private void ValidateSubmembers(MemberExpression memberExp)
@@ -129,7 +129,13 @@ namespace SharpOrm.Builder.Expressions
         private SqlMethodInfo CreateMethodInfo(MethodCallExpression methodCall)
         {
             var arguments = methodCall.Arguments.Select(VisitArgument).ToArray();
-            return new SqlMethodInfo(methodCall.Method, arguments);
+            return new SqlMethodInfo(
+                methodCall.Method.IsStatic ? 
+                methodCall.Method.DeclaringType : 
+                methodCall.Object.Type, 
+                methodCall.Method, 
+                arguments
+            );
         }
 
         private List<SqlMemberInfo> ProcessMethodCallResult(Expression currentExp, List<SqlMemberInfo> methods, out MemberInfo member)

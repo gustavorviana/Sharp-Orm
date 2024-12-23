@@ -1,6 +1,6 @@
 ﻿using SharpOrm.SqlMethods;
-using SharpOrm.SqlMethods.Mapps;
-using SharpOrm.SqlMethods.Mapps.Mysql;
+using SharpOrm.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Mysql;
 using System;
 using System.Linq;
 using System.Text;
@@ -21,6 +21,7 @@ namespace SharpOrm.Builder
         {
             Methods.Add(new MysqlStringMethods());
             Methods.Add(new MysqlDateProperties());
+            Methods.Add(new MysqlDateMethods());
         }
 
         private MysqlQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)

@@ -1,17 +1,19 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace SharpOrm.SqlMethods.Mapps.Sqlite
+namespace SharpOrm.SqlMethods.Mappers.Sqlite
 {
-    internal class SqliteDateProperties : SqlPropertyCaller<DateTime>
+    internal class SqliteDateProperties : SqlPropertyCaller
     {
         public override bool CanWork(SqlMemberInfo member)
         {
-            return member.DeclaringType == typeof(DateTime) && new[]
+            return TranslationUtils.IsDateOrTime(member.DeclaringType) && new[]
             {
                 nameof(DateTime.UtcNow),
                 nameof(DateTime.Today),
@@ -26,7 +28,7 @@ namespace SharpOrm.SqlMethods.Mapps.Sqlite
                 nameof(DateTime.Second),
                 nameof(DateTime.Millisecond),
                 nameof(DateTime.TimeOfDay),
-                nameof(DateTime.Date)
+                nameof(DateTime.Date),
             }.ContainsIgnoreCase(member.Name);
         }
 

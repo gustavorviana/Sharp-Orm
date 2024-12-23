@@ -9,16 +9,14 @@ namespace SharpOrm.Builder.Expressions
     {
         public MemberInfo Member { get; }
         public MemberTypes MemberType => this.Member.MemberType;
-        public Type DeclaringType => Member.DeclaringType;
+        public Type DeclaringType { get; }
         public string Name => Member.Name;
         public Type ValueType => ReflectionUtils.GetMemberType(this.Member);
 
-        protected SqlMemberInfo(MemberInfo member)
+        protected SqlMemberInfo(Type declaringType, MemberInfo member)
         {
-            if (member == null)
-                throw new ArgumentNullException("member");
-
-            this.Member = member;
+            this.DeclaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
+            this.Member = member ?? throw new ArgumentNullException(nameof(member));
         }
 
         public T GetCustomAttribute<T>() where T : Attribute

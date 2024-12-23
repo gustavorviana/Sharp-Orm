@@ -1,8 +1,8 @@
 ﻿using SharpOrm.SqlMethods;
-using SharpOrm.SqlMethods.Mapps;
-using SharpOrm.SqlMethods.Mapps.Mysql;
-using SharpOrm.SqlMethods.Mapps.Sqlite;
-using SharpOrm.SqlMethods.Mapps.SqlServer;
+using SharpOrm.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Mysql;
+using SharpOrm.SqlMethods.Mappers.Sqlite;
+using SharpOrm.SqlMethods.Mappers.SqlServer;
 using System;
 using System.Text;
 
@@ -21,6 +21,7 @@ namespace SharpOrm.Builder
         {
             Methods.Add(new SqliteStringMethods());
             Methods.Add(new SqliteDateProperties());
+            Methods.Add(new SqliteDateMethods());
         }
 
         /// <summary>

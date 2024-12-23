@@ -1,12 +1,13 @@
 ﻿using BaseTest.Utils;
+using QueryTest.Interfaces;
 using SharpOrm.Builder;
 using static QueryTest.ExpressionProcessorTest;
 
 namespace QueryTest.Sqlite
 {
-    public class SqliteMapTest : SqlMethodMapTest
+    public class DateMapTest : SqlMethodMapTest, ISqlDateMapTest
     {
-        public SqliteMapTest() : base(new SqliteQueryConfig())
+        public DateMapTest() : base(new SqliteQueryConfig())
         {
         }
 
@@ -106,14 +107,6 @@ namespace QueryTest.Sqlite
         }
 
         [Fact]
-        public void DateTimeTimeOfDay()
-        {
-            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).ToExpression(info);
-
-            Assert.Equal("STRFTIME('%H:%M:%S',\"Date\") AS \"Date\"", column.ToString());
-        }
-
-        [Fact]
         public void DateTimeDate()
         {
             var column = ParseColumn<SampleClass>(x => x.Date.Date).ToExpression(info);
@@ -122,44 +115,36 @@ namespace QueryTest.Sqlite
         }
 
         [Fact]
-        public void Concat()
+        public void DateTimeTimeOfDay()
         {
-            string value2 = "value2";
-            var column = ParseColumn<SampleClass>(x => string.Concat("Value", value2, x.Name)).ToExpression(info)!;
+            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).ToExpression(info);
 
-            Assert.Equal("CONCAT(?,?,\"Name\") AS \"Concat\"", column.ToString());
+            Assert.Equal("STRFTIME('%H:%M:%S',\"Date\") AS \"Date\"", column.ToString());
         }
 
         [Fact]
-        public void Substring()
+        public void DateTimeFormat()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.ToString()).ToExpression(info);
 
-            Assert.Equal("SUBSTR(\"Name\",0,10) AS \"Name\"", column.ToString());
+            Assert.Equal("strftime(?, \"Date\") AS \"Date\"", column.ToString());
+            Assert.Single(column.Parameters);
+
+            var format = Assert.IsType<string>(column.Parameters[0]);
+
+            Assert.Equal("%Y-%m-%d %H:%M:%S", format);
         }
 
         [Fact]
-        public void StringTrim()
+        public void TimeSpanFormat()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Trim()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay.ToString()).ToExpression(info);
 
-            Assert.Equal("TRIM(\"Name\") AS \"Name\"", column.ToString());
-        }
+            Assert.Equal("strftime(?, \"Date\") AS \"Date\"", column.ToString());
+            Assert.Single(column.Parameters);
 
-        [Fact]
-        public void StringTrimStart()
-        {
-            var column = ParseColumn<SampleClass>(x => x.Name!.TrimStart()).ToExpression(info);
-
-            Assert.Equal("LTRIM(\"Name\") AS \"Name\"", column.ToString());
-        }
-
-        [Fact]
-        public void StringTrimEnd()
-        {
-            var column = ParseColumn<SampleClass>(x => x.Name!.TrimEnd()).ToExpression(info);
-
-            Assert.Equal("RTRIM(\"Name\") AS \"Name\"", column.ToString());
+            var format = Assert.IsType<string>(column.Parameters[0]);
+            Assert.Equal("%H:%M:%S", format);
         }
     }
 }

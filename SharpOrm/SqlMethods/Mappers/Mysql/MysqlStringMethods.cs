@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpOrm.SqlMethods.Mapps.SqlServer
+namespace SharpOrm.SqlMethods.Mappers.Mysql
 {
-    internal class SqlServerStringMethods : SqlMethodCaller<string>
+    internal class MysqlStringMethods : SqlMethodCaller
     {
         public override bool CanWork(SqlMemberInfo member)
         {
@@ -20,7 +20,8 @@ namespace SharpOrm.SqlMethods.Mapps.SqlServer
                     nameof(string.TrimStart),
                     nameof(string.ToUpper),
                     nameof(string.ToLower),
-                    nameof(string.Concat)
+                    nameof(string.Concat),
+                    nameof(string.ToString)
                 }.Contains(member.Name);
         }
 
@@ -28,7 +29,7 @@ namespace SharpOrm.SqlMethods.Mapps.SqlServer
         {
             switch (method.Name)
             {
-                case nameof(string.Trim): return new SqlExpression("LTRIM(RTRIM(?))", expression);
+                case nameof(string.Trim): return new SqlExpression("TRIM(?)", expression);
                 case nameof(string.TrimStart): return new SqlExpression("LTRIM(?)", expression);
                 case nameof(string.TrimEnd): return new SqlExpression("RTRIM(?)", expression);
                 case nameof(string.Substring): return new SqlExpression("SUBSTRING(?,?,?)", expression, method.Args[0], method.Args[1]);
@@ -46,6 +47,7 @@ namespace SharpOrm.SqlMethods.Mapps.SqlServer
                         qb.Add(',').AddParameter(method.Args[i], false);
 
                     return qb.Add(')').ToExpression();
+                case nameof(string.ToString): return expression;
                 default: throw new NotSupportedException();
             }
         }

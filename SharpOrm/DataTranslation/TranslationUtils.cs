@@ -68,6 +68,20 @@ namespace SharpOrm.DataTranslation
             return IsNumeric(value?.GetType()) && value.Equals(Activator.CreateInstance(value.GetType()));
         }
 
+        public static bool IsDateOrTime(Type type)
+        {
+            return new Type[]
+            {
+#if NET6_0_OR_GREATER
+                typeof(DateOnly),
+                typeof(TimeOnly),
+#endif
+                typeof(TimeSpan),
+                typeof(DateTime),
+                typeof(DateTimeOffset)
+            }.Contains(type);
+        }
+
         /// <summary>
         /// Try parse object as number, 0 on fail.
         /// </summary>

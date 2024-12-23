@@ -13,7 +13,7 @@ namespace SharpOrm.Builder.Expressions
 
         public object[] Args { get; }
 
-        public SqlMethodInfo(MethodInfo method, object[] args) : base(method)
+        public SqlMethodInfo(Type declaringType, MethodInfo method, object[] args) : base(declaringType, method)
         {
             this.Args = args;
         }
