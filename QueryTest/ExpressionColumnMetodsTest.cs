@@ -6,9 +6,20 @@ namespace QueryTest
 {
     public class ExpressionColumnMetodsTest : SqlMethodMapTest
     {
+        private readonly int TestLength = 1;
+
         public ExpressionColumnMetodsTest() : base(new SqlServerQueryConfig())
         {
 
+        }
+
+        [Fact]
+        public void ConcatStringAndHours()
+        {
+            var column = ParseColumns<SampleClass>(x => new { Name = string.Concat(x.Name, x.Date.TimeOfDay.Hours, TestLength) }).First();
+            var exp = column.ToExpression(info);
+
+            Assert.Equal("CONCAT([Name],DATEPART(HOUR,CAST([Date] AS TIME)),1) AS [Name]", exp.ToString());
         }
 
         [Fact]

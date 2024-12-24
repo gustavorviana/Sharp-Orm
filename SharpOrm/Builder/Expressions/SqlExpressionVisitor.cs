@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using static SharpOrm.Messages;
 
 namespace SharpOrm.Builder.Expressions
 {
     internal class SqlExpressionVisitor
     {
-        private readonly IReadonlyQueryInfo info;
+        private const string PropertyExpressionTypeName = "System.Linq.Expressions.PropertyExpression";
+
         private readonly ExpressionConfig config;
+        private readonly IReadonlyQueryInfo info;
+        private readonly Type rootType;
 
-        public SqlExpressionVisitor(IReadonlyQueryInfo info, ExpressionConfig config)
+        public SqlExpressionVisitor(Type rootType, IReadonlyQueryInfo info, ExpressionConfig config)
         {
-            if (info == null)
-                throw new ArgumentNullException("info");
-
-            this.info = info;
+            this.rootType = rootType;
             this.config = config;
+            this.info = info;
         }
 
         public SqlMember Visit(Expression expression, string memberName = null)
@@ -27,9 +29,10 @@ namespace SharpOrm.Builder.Expressions
 
             expression = UnwrapUnaryExpression(expression);
 
-            List<SqlMemberInfo> members;
-            MemberInfo member;
-            GetMembersAndMemberInfo(expression, out members, out member);
+            if (expression is NewExpression)
+                throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
+
+            GetMembersAndMemberInfo(expression, out var members, out var member);
 
             if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
                 return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
@@ -41,9 +44,8 @@ namespace SharpOrm.Builder.Expressions
         {
             var unaryExpression = expression as UnaryExpression;
             if (unaryExpression != null && unaryExpression.Operand is MemberExpression)
-            {
                 return unaryExpression.Operand;
-            }
+
             return expression;
         }
 
@@ -61,11 +63,6 @@ namespace SharpOrm.Builder.Expressions
             {
                 members = VisitMethodCall(methodCallExpression, out member);
                 return;
-            }
-
-            if (expression is NewExpression)
-            {
-                throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
             }
 
             throw new NotSupportedException(string.Format("Expression type {0} is not supported", expression.GetType().Name));
@@ -126,12 +123,12 @@ namespace SharpOrm.Builder.Expressions
 
         private SqlMethodInfo CreateMethodInfo(MethodCallExpression methodCall)
         {
-            var arguments = methodCall.Arguments.Select(VisitArgument).ToArray();
+            var arguments = methodCall.Arguments.Select(VisitMethodArgument).ToArray();
             return new SqlMethodInfo(
-                methodCall.Method.IsStatic ? 
-                methodCall.Method.DeclaringType : 
-                methodCall.Object.Type, 
-                methodCall.Method, 
+                methodCall.Method.IsStatic ?
+                methodCall.Method.DeclaringType :
+                methodCall.Object.Type,
+                methodCall.Method,
                 arguments
             );
         }
@@ -156,56 +153,64 @@ namespace SharpOrm.Builder.Expressions
             throw new InvalidOperationException("Invalid expression structure");
         }
 
-        private object VisitArgument(Expression expression)
+        private object VisitMethodArgument(Expression expression)
         {
-            if (expression == null)
-                throw new ArgumentNullException("expression");
+            if (TryGetConstantValue(expression, out var value))
+                return value;
 
-            var memberExp = expression as MemberExpression;
-            if (memberExp != null)
-                return GetMemberValue(memberExp);
+            expression = UnwrapUnaryExpression(expression);
 
-            var constExp = expression as ConstantExpression;
-            if (constExp != null)
-                return constExp.Value;
+            if (!(expression is MemberExpression memberExp))
+                throw new NotSupportedException(
+                    string.Format("Argument expression type {0} is not supported", expression.GetType().Name));
 
-            throw new NotSupportedException(
-                string.Format("Argument expression type {0} is not supported", expression.GetType().Name));
+            return GetMethodArgValue(memberExp);
         }
 
-        private object GetMemberValue(MemberExpression memberExp)
+        private object GetMethodArgValue(MemberExpression memberExp)
         {
             var target = GetTarget(memberExp.Expression);
-
             if (target == null && !ReflectionUtils.IsStatic(memberExp.Member))
-                return new MemberInfoColumn(memberExp.Member);
+                return GetMethodColumn(memberExp);
 
-            var fieldInfo = memberExp.Member as FieldInfo;
-            if (fieldInfo != null)
-                return fieldInfo.GetValue(target);
-
-            var propertyInfo = memberExp.Member as PropertyInfo;
-            if (propertyInfo != null)
-                return propertyInfo.GetValue(target);
+            if (ReflectionUtils.TryGetValue(memberExp.Member, target, out var value))
+                return value;
 
             throw new NotSupportedException(
                 string.Format("Member type {0} is not supported", memberExp.Member.GetType().Name));
         }
 
+        private object GetMethodColumn(MemberExpression memberExp)
+        {
+            if (memberExp.Expression.GetType().ToString() != PropertyExpressionTypeName)
+                return new MemberInfoColumn(memberExp.Member);
+
+            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp));
+        }
+
         private object GetTarget(Expression expression)
         {
-            if (expression == null)
-                return null;
+            if (TryGetConstantValue(expression, out var value))
+                return value;
 
-            var constExp = expression as ConstantExpression;
-            if (constExp != null)
-                return constExp.Value;
-
-            var memberExp = expression as MemberExpression;
-            if (memberExp != null)
-                return GetMemberValue(memberExp);
+            if (expression is MemberExpression memberExp &&
+                ReflectionUtils.IsStatic(memberExp.Member) &&
+                ReflectionUtils.TryGetValue(memberExp.Member, null, out value))
+                return value;
 
             return null;
+        }
+
+        private static bool TryGetConstantValue(Expression expression, out object value)
+        {
+            value = null;
+            if (expression is ConstantExpression consExp)
+            {
+                value = consExp.Value;
+                return true;
+            }
+
+            return false;
         }
     }
 }

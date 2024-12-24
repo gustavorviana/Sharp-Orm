@@ -10,8 +10,7 @@ namespace SharpOrm.Builder.Expressions
         public MemberInfo Member { get; }
         public MemberTypes MemberType => this.Member.MemberType;
         public Type DeclaringType { get; }
-        public string Name => Member.Name;
-        public Type ValueType => ReflectionUtils.GetMemberType(this.Member);
+        public virtual string Name => Member.Name;
 
         protected SqlMemberInfo(Type declaringType, MemberInfo member)
         {

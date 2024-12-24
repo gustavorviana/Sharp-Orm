@@ -32,21 +32,10 @@ namespace SharpOrm.SqlMethods.Mappers.Sqlite
                 case nameof(string.Trim): return new SqlExpression("TRIM(?)", expression);
                 case nameof(string.TrimStart): return new SqlExpression("LTRIM(?)", expression);
                 case nameof(string.TrimEnd): return new SqlExpression("RTRIM(?)", expression);
-                case nameof(string.Substring): return new SqlExpression("SUBSTR(?,?,?)", expression, method.Args[0], method.Args[1]);
+                case nameof(string.Substring): return SqlMethodMapperUtils.GetSubstringExpression("SUBSTR", info, expression, method);
                 case nameof(string.ToLower): return new SqlExpression("LOWER(?)", expression);
                 case nameof(string.ToUpper): return new SqlExpression("UPPER(?)", expression);
-                case nameof(string.Concat):
-                    if (method.Args.Length < 2)
-                        throw new InvalidOperationException();
-
-                    var qb = new QueryBuilder(info);
-                    qb.Add("CONCAT(");
-                    qb.AddParameter(method.Args[0]);
-
-                    for (int i = 1; i < method.Args.Length; i++)
-                        qb.Add(',').AddParameter(method.Args[i], false);
-
-                    return qb.Add(')').ToExpression();
+                case nameof(string.Concat): return SqlMethodMapperUtils.GetConcatExpression(info, expression, method);
                 case nameof(string.ToString): return expression;
                 default: throw new NotSupportedException();
             }

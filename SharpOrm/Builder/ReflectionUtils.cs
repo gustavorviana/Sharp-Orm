@@ -39,10 +39,28 @@ namespace SharpOrm.Builder
 
         public static object GetMemberValue(MemberInfo member, object owner)
         {
-            if (member is FieldInfo field)
-                return field.GetValue(owner);
+            if (TryGetValue(member, owner, out object value))
+                return value;
 
-            return ((PropertyInfo)member).GetValue(owner);
+            throw new NotSupportedException();
+        }
+
+        public static bool TryGetValue(MemberInfo member, object owner, out object value)
+        {
+            if (member is FieldInfo field)
+            {
+                value = field.GetValue(owner);
+                return true;
+            }
+
+            if (member is PropertyInfo property)
+            {
+                value = property.GetValue(owner);
+                return true;
+            }
+
+            value = null;
+            return false;
         }
 
         public static void SetMemberValue(MemberInfo member, object owner, object value)
