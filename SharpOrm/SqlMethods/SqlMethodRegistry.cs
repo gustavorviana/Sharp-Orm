@@ -22,7 +22,7 @@ namespace SharpOrm.SqlMethods
         {
             SqlExpression column = new SqlExpression(property.IsStatic ? "" : info.Config.ApplyNomenclature(property.Name));
 
-            foreach (var member in property.GetChilds())
+            foreach (var member in property.Childs)
                 column = this.ApplyCaller(info, column, member);
 
             return column;

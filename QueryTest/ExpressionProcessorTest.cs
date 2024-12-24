@@ -14,10 +14,10 @@ namespace QueryTest
         [Fact]
         public void NewExpressionWithNoChildsTest()
         {
-            var processor = GetProcessor<SampleClass>(false);
-            var multipleExpression = processor.ParseNewExpression(x => new { x.Name }).ToArray();
+            var processor = GetProcessor<SampleClass>(ExpressionConfig.New);
+            var multipleExpression = processor.ParseExpression(x => new { x.Name }).ToArray();
 
-            Assert.Throws<NotSupportedException>(() => processor.ParseNewExpression(x => new
+            Assert.Throws<NotSupportedException>(() => processor.ParseExpression(x => new
             {
                 x.Name,
                 DateAlias = x.Date.Day.ToString()
@@ -30,7 +30,7 @@ namespace QueryTest
         [Fact]
         public void NewExpressionTest()
         {
-            var multipleExpression = GetProcessor<SampleClass>(true).ParseNewExpression(x => new
+            var multipleExpression = GetProcessor<SampleClass>().ParseExpression(x => new
             {
                 x.Name,
                 DateAlias = x.Date.Day.ToString()
@@ -41,24 +41,24 @@ namespace QueryTest
             Assert.Equal("Name", multipleExpression[0].Member.Name);
             Assert.Equal("DateAlias", multipleExpression[1].Alias);
             Assert.Equal("DateAlias.Day.ToString()", multipleExpression[1].ToString());
-            Assert.Equal(2, multipleExpression[1].GetChilds().Length);
+            Assert.Equal(2, multipleExpression[1].Childs.Length);
         }
 
         [Fact]
         public void ExpressionWithNoChildsTest()
         {
-            var processor = GetProcessor<SampleClass>(false);
-            var singleExpression = processor.ParseColumnExpression(x => x.Date);
+            var processor = GetProcessor<SampleClass>(ExpressionConfig.New);
+            var singleExpression = processor.ParseExpression(x => x.Date).First();
 
-            Assert.Throws<NotSupportedException>(() => processor.ParseColumnExpression(x => x.Date.Day.ToString().Trim()));
+            Assert.Throws<NotSupportedException>(() => processor.ParseExpression(x => x.Date.Day.ToString().Trim()).First());
             Assert.Equal("Date", singleExpression.ToString());
         }
 
         [Fact]
         public void ExpressionTest()
         {
-            var singleExpression = GetProcessor<SampleClass>(true).ParseColumnExpression(x => x.Date.Day.ToString().Trim());
-            var members = singleExpression.GetChilds();
+            var singleExpression = GetProcessor<SampleClass>().ParseExpression(x => x.Date.Day.ToString().Trim()).First();
+            var members = singleExpression.Childs;
 
             Assert.Equal("Date.Day.ToString().Trim()", singleExpression.ToString());
 
@@ -76,11 +76,27 @@ namespace QueryTest
         }
 
         [Fact]
+        public void MethodDisabledTest()
+        {
+            var processor = GetProcessor<SampleClass>(ExpressionConfig.SubMembers);
+
+            Assert.Throws<NotSupportedException>(() => processor.ParseExpression(x => x.Name!.Trim()).First());
+        }
+
+        [Fact]
+        public void NoSubMembersTest()
+        {
+            var processor = GetProcessor<SampleClass>(ExpressionConfig.None);
+
+            Assert.Throws<NotSupportedException>(() => processor.ParseExpression(x => x.Date.Day).First());
+        }
+
+        [Fact]
         public void ExpressionWithMethodLocalArgsTest()
         {
             var value = "Test";
-            var singleExpression = GetProcessor<SampleClass>(true).ParseColumnExpression(x => x.Name!.Insert(0, value));
-            var members = singleExpression.GetChilds();
+            var singleExpression = GetProcessor<SampleClass>().ParseExpression(x => x.Name!.Insert(0, value)).First();
+            var members = singleExpression.Childs;
 
             Assert.Equal("Name.Insert(Int32, String)", singleExpression.ToString());
             Assert.Single(members);
@@ -99,8 +115,8 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodStaticArgsTest()
         {
-            var singleExpression = GetProcessor<SampleClass>(true).ParseColumnExpression(x => x.Name!.Insert(0, StaticString));
-            var members = singleExpression.GetChilds();
+            var singleExpression = GetProcessor<SampleClass>().ParseExpression(x => x.Name!.Insert(0, StaticString)).First();
+            var members = singleExpression.Childs;
 
             Assert.Single(members);
 
@@ -111,8 +127,8 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodConstArgsTest()
         {
-            var singleExpression = GetProcessor<SampleClass>(true).ParseColumnExpression(x => x.Name!.Insert(0, ConstString));
-            var members = singleExpression.GetChilds();
+            var singleExpression = GetProcessor<SampleClass>().ParseExpression(x => x.Name!.Insert(0, ConstString)).First();
+            var members = singleExpression.Childs;
 
             Assert.Single(members);
 
@@ -123,8 +139,8 @@ namespace QueryTest
         [Fact]
         public void ExpressionWithMethodInstanceArgsTest()
         {
-            var singleExpression = GetProcessor<SampleClass>(true).ParseColumnExpression(x => x.Name!.Insert(0, InstanceString));
-            var members = singleExpression.GetChilds();
+            var singleExpression = GetProcessor<SampleClass>().ParseExpression(x => x.Name!.Insert(0, InstanceString)).First();
+            var members = singleExpression.Childs;
 
             Assert.Single(members);
 

@@ -103,7 +103,7 @@ namespace SharpOrm.Builder
         /// Validate fields of the object.
         /// </summary>
         /// <param name="owner">Object to be validated.</param>
-        /// <param name="columns">Fields/Properties of the object to be validated.</param>
+        /// <param name="columns">Fields/Property of the object to be validated.</param>
         public void Validate(object owner, params string[] columns)
         {
             if (columns.Length == 0)

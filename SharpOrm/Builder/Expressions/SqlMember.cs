@@ -10,36 +10,22 @@ namespace SharpOrm.Builder.Expressions
 {
     public class SqlMember : IEquatable<SqlMember>
     {
-        private readonly SqlMemberInfo[] _childs;
+        internal SqlMemberInfo[] Childs { get; set; }
 
         public MemberInfo Member { get; }
         public bool IsStatic { get; }
         public string Name { get; }
         public string Alias { get; }
-        public bool HasChilds => _childs.Length > 0;
 
         public SqlMember(MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
             if (member == null) throw new ArgumentNullException(nameof(member));
 
             Member = member;
-            _childs = LoadChilds(childs ?? new SqlMemberInfo[0]);
+            Childs = childs ?? new SqlMemberInfo[0];
             IsStatic = false;
             Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
-        }
-
-        private static SqlMemberInfo[] LoadChilds(SqlMemberInfo[] childs)
-        {
-            if (childs.Length > 1 && childs.Last().Name == nameof(object.ToString))
-            {
-                var toCheck = childs[childs.Length - 2];
-                return TranslationUtils.IsDateOrTime(toCheck.DeclaringType) &&
-                    toCheck.Member.Name == nameof(DateTime.TimeOfDay)
-                    ? childs.Where((x, index) => index != childs.Length - 2).ToArray()
-                    : childs;
-            }
-            return childs;
         }
 
         public SqlMember(SqlMemberInfo staticMember, string alias)
@@ -47,27 +33,10 @@ namespace SharpOrm.Builder.Expressions
             if (staticMember == null) throw new ArgumentNullException(nameof(staticMember));
 
             Member = staticMember.Member;
-            _childs = new[] { staticMember };
+            Childs = new[] { staticMember };
             IsStatic = true;
             Name = Member.Name;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
-        }
-
-        public SqlMember(IEnumerable<SqlMember> members)
-        {
-            if (members == null) throw new ArgumentNullException(nameof(members));
-
-            var membersList = members.ToList();
-            if (!membersList.Any()) throw new ArgumentException("Members collection cannot be empty", nameof(members));
-
-            _childs = membersList.SelectMany(m => m.GetChilds()).ToArray();
-            Member = _childs.First().Member;
-            Name = Member.Name;
-        }
-
-        public SqlMemberInfo[] GetChilds()
-        {
-            return _childs;
         }
 
         public bool Equals(SqlMember other)
@@ -79,7 +48,7 @@ namespace SharpOrm.Builder.Expressions
                    IsStatic == other.IsStatic &&
                    Name == other.Name &&
                    Alias == other.Alias &&
-                   _childs.SequenceEqual(other._childs);
+                   Childs.SequenceEqual(other.Childs);
         }
 
         public override bool Equals(object obj)
@@ -94,7 +63,7 @@ namespace SharpOrm.Builder.Expressions
         {
             StringBuilder builder = new StringBuilder(this.Alias ?? this.Member.Name);
 
-            foreach (var item in GetChilds())
+            foreach (var item in Childs)
                 builder.Append('.').Append(item.ToString());
 
             return builder.ToString();
@@ -103,12 +72,11 @@ namespace SharpOrm.Builder.Expressions
         public override int GetHashCode()
         {
             int hashCode = -1627946248;
-            hashCode = hashCode * -1521134295 + EqualityComparer<SqlMemberInfo[]>.Default.GetHashCode(_childs);
+            hashCode = hashCode * -1521134295 + EqualityComparer<SqlMemberInfo[]>.Default.GetHashCode(Childs);
             hashCode = hashCode * -1521134295 + EqualityComparer<MemberInfo>.Default.GetHashCode(Member);
             hashCode = hashCode * -1521134295 + IsStatic.GetHashCode();
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Alias);
-            hashCode = hashCode * -1521134295 + HasChilds.GetHashCode();
             return hashCode;
         }
 

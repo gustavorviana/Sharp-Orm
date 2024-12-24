@@ -224,7 +224,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, true);
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
             var columns = processor.ParseColumns(expression);
 
             return (Query<T>)this.OrderBy(order, columns.ToArray());
@@ -239,7 +239,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> GroupBy(Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, true);
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
             var columns = processor.ParseColumns(expression);
 
             return (Query<T>)base.GroupBy(columns.ToArray());
@@ -265,7 +265,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, true);
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
             var columns = processor.ParseColumns(expression);
 
             return (Query<T>)base.Select(columns.ToArray());

@@ -9,15 +9,15 @@ namespace SharpOrm.Builder.Expressions
     internal class SqlExpressionVisitor
     {
         private readonly IReadonlyQueryInfo info;
-        private readonly bool allowSubMembers;
+        private readonly ExpressionConfig config;
 
-        public SqlExpressionVisitor(IReadonlyQueryInfo info, bool allowSubMembers)
+        public SqlExpressionVisitor(IReadonlyQueryInfo info, ExpressionConfig config)
         {
             if (info == null)
                 throw new ArgumentNullException("info");
 
             this.info = info;
-            this.allowSubMembers = allowSubMembers;
+            this.config = config;
         }
 
         public SqlMember Visit(Expression expression, string memberName = null)
@@ -84,10 +84,8 @@ namespace SharpOrm.Builder.Expressions
 
         private void ValidateSubmembers(MemberExpression memberExp)
         {
-            if (!allowSubMembers && memberExp.Expression as MemberExpression != null)
-            {
+            if (!config.HasFlag(ExpressionConfig.SubMembers) && memberExp.Expression as MemberExpression != null)
                 throw new NotSupportedException(Messages.Expressions.SubmembersDisabled);
-            }
         }
 
         private List<MemberInfo> GatherMemberPath(MemberExpression memberExp)
@@ -106,7 +104,7 @@ namespace SharpOrm.Builder.Expressions
 
         private List<SqlMemberInfo> VisitMethodCall(MethodCallExpression methodCallExp, out MemberInfo member)
         {
-            if (!allowSubMembers)
+            if (!config.HasFlag(ExpressionConfig.Method))
                 throw new NotSupportedException(Messages.Expressions.FunctionDisabled);
 
             var methods = new List<SqlMemberInfo>();

@@ -9,19 +9,19 @@ namespace BaseTest.Utils
     {
         protected readonly IReadonlyQueryInfo info = new ReadonlyQueryInfo(config, new DbName());
 
-        protected Column ParseColumn<T>(Expression<ColumnExpression<T>> expression, bool allowSubMembers = true)
+        internal Column ParseColumn<T>(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            return ParseColumns(expression, allowSubMembers).First();
+            return ParseColumns(expression, config).First();
         }
 
-        internal ExpressionProcessor<T> GetProcessor<T>(bool allowSubMembers)
+        internal ExpressionProcessor<T> GetProcessor<T>(ExpressionConfig config = ExpressionConfig.All)
         {
-            return new ExpressionProcessor<T>(info, allowSubMembers);
+            return new ExpressionProcessor<T>(info, config);
         }
 
-        protected IEnumerable<Column> ParseColumns<T>(Expression<ColumnExpression<T>> expression, bool allowSubMembers = true)
+        internal IEnumerable<Column> ParseColumns<T>(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            return this.GetProcessor<T>(allowSubMembers).ParseColumns(expression);
+            return this.GetProcessor<T>(config).ParseColumns(expression);
         }
     }
 }
