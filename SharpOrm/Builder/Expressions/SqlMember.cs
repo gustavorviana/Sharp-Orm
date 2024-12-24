@@ -11,6 +11,7 @@ namespace SharpOrm.Builder.Expressions
     public class SqlMember : IEquatable<SqlMember>
     {
         internal SqlMemberInfo[] Childs { get; set; }
+        internal bool IsNativeType { get; }
 
         public MemberInfo Member { get; }
         public bool IsStatic { get; }
@@ -21,11 +22,13 @@ namespace SharpOrm.Builder.Expressions
         {
             if (member == null) throw new ArgumentNullException(nameof(member));
 
+            IsNativeType = member.MemberType == MemberTypes.Method || TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false);
+
             Member = member;
             Childs = childs ?? new SqlMemberInfo[0];
             IsStatic = false;
             Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
-            Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
+            Alias = GetAlias(Name, alias, childs, IsNativeType);
         }
 
         public SqlMember(SqlMemberInfo staticMember, string alias)
@@ -36,7 +39,16 @@ namespace SharpOrm.Builder.Expressions
             Childs = new[] { staticMember };
             IsStatic = true;
             Name = Member.Name;
+            IsNativeType = true;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
+        }
+        
+        private static string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
+        {
+            if (!isNative && childs.Length > 0)
+                name = childs[0].Name;
+
+            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null; ;
         }
 
         public bool Equals(SqlMember other)

@@ -27,7 +27,7 @@ namespace SharpOrm.Builder.Expressions
         public IEnumerable<Column> ParseColumns(Expression<ColumnExpression<T>> expression)
         {
             foreach (var item in ParseExpression(expression))
-                yield return new ExpressionColumn(info.Config.Methods.ApplyMember(info, ProcessMemberInfo(item)))
+                yield return new ExpressionColumn(info.Config.Methods.ApplyMember(info, ProcessMemberInfo(item), out var isFk), isFk || item.Member.MemberType == MemberTypes.Method)
                 {
                     Alias = item.Alias ?? (item.Childs.Length > 0 ? item.Name : null)
                 };

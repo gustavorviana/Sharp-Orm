@@ -1,5 +1,7 @@
-﻿using BaseTest.Utils;
+﻿using BaseTest.Models;
+using BaseTest.Utils;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using static QueryTest.ExpressionProcessorTest;
 
 namespace QueryTest
@@ -11,6 +13,37 @@ namespace QueryTest
         public ExpressionColumnMetodsTest() : base(new SqlServerQueryConfig())
         {
 
+        }
+
+        [Fact]
+        public void SelectCancatWithInclude()
+        {
+            var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
+
+            QueryInfo info = new(new SqlServerQueryConfig(), new DbName("Customer"));
+            info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
+
+            var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
+            var columns = processor.ParseColumns(x => string.Concat(x.Name, x.Address.Street)).ToArray();
+
+            Assert.Single(columns);
+            Assert.Equal("CONCAT([Customer].[Name],[Address].[Street]) AS [Concat]", columns[0].ToExpression(info).ToString());
+        }
+
+        [Fact]
+        public void SelectWithInclude()
+        {
+            var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
+
+            QueryInfo info = new(new SqlServerQueryConfig(), new DbName("Customer"));
+            info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
+
+            var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
+            var columns = processor.ParseColumns(x => new { x.Name, x.Address.Street }).ToArray();
+
+            Assert.Equal(2, columns.Length);
+            Assert.Equal("[Customer].[Name]", columns[0].ToExpression(info).ToString());
+            Assert.Equal("[Address].[Street]", columns[1].ToExpression(info).ToString());
         }
 
         [Fact]

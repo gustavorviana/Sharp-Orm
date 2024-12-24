@@ -185,7 +185,7 @@ namespace SharpOrm.Builder.Expressions
             if (memberExp.Expression.GetType().ToString() != PropertyExpressionTypeName)
                 return new MemberInfoColumn(memberExp.Member);
 
-            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp));
+            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp), out _);
         }
 
         private object GetTarget(Expression expression)
