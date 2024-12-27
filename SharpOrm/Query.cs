@@ -167,7 +167,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Use \"OrderBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> OrderBy(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Asc, columns);
@@ -178,7 +178,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Use \"OrderByDesc(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Desc, columns);
@@ -190,7 +190,7 @@ namespace SharpOrm
         /// <param name="order">Field ordering.</param>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Use \"OrderBy(OrderBy, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
@@ -244,7 +244,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columnNames">The column names by which the results should be grouped.</param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Use \"GroupBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
@@ -267,7 +267,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns"></param>
         /// <returns></returns>
-        [Obsolete]
+        [Obsolete("Use \"Select(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
         {
             return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
@@ -803,7 +803,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public Query<T> WhereContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereContains(Column.FromExp(columnExp), value);
+            this.WhereContains(GetColumn(columnExp), value);
             return this;
         }
 
@@ -815,7 +815,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public Query<T> WhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereStartsWith(Column.FromExp(columnExp), value);
+            this.WhereStartsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -827,7 +827,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public Query<T> WhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereEndsWith(Column.FromExp(columnExp), value);
+            this.WhereEndsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -839,7 +839,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public Query<T> WhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereNotContains(Column.FromExp(columnExp), value);
+            this.WhereNotContains(GetColumn(columnExp), value);
             return this;
         }
 
@@ -851,7 +851,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public Query<T> WhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereNotStartsWith(Column.FromExp(columnExp), value);
+            this.WhereNotStartsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -863,43 +863,81 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public Query<T> WhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.WhereNotEndsWith(Column.FromExp(columnExp), value);
+            this.WhereNotEndsWith(GetColumn(columnExp), value);
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column does not equal the specified value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNot(Expression<ColumnExpression<T>> columnExp, object value)
         {
-            base.WhereNot(Column.FromExp(columnExp), value);
+            base.WhereNot(GetColumn(columnExp), value);
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column equals the specified value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Where(Expression<ColumnExpression<T>> columnExp, object value)
         {
-            base.Where(Column.FromExp(columnExp), value);
+            base.Where(GetColumn(columnExp), value);
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause with a specified operation and value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Where(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.Where(Column.FromExp(columnExp), operation, value);
+            this.Where(GetColumn(columnExp), operation, value);
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that compares two columns for equality.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
         {
-            base.Where(Column.FromExp(columnExp), Column.FromExp(column2Exp));
+            base.Where(GetColumn(columnExp), GetColumn(column2Exp));
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that compares two columns with a specified operation.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.Where(Column.FromExp(columnExp), operation, Column.FromExp(column2Exp));
+            this.Where(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that checks if the first column does not equal the second column.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNotColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
         {
-            base.Where(Column.FromExp(columnExp), "!=", Column.FromExp(column2Exp));
+            base.Where(GetColumn(columnExp), "!=", GetColumn(column2Exp));
             return this;
         }
 
@@ -913,7 +951,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public Query<T> OrWhereContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereContains(Column.FromExp(columnExp), value);
+            this.OrWhereContains(GetColumn(columnExp), value);
             return this;
         }
 
@@ -925,7 +963,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public Query<T> OrWhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereStartsWith(Column.FromExp(columnExp), value);
+            this.OrWhereStartsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -937,7 +975,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public Query<T> OrWhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereEndsWith(Column.FromExp(columnExp), value);
+            this.OrWhereEndsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -949,7 +987,7 @@ namespace SharpOrm
         /// <param name="value">The value to search for within the specified column.</param>
         public Query<T> OrWhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereNotContains(Column.FromExp(columnExp), value);
+            this.OrWhereNotContains(GetColumn(columnExp), value);
             return this;
         }
 
@@ -961,7 +999,7 @@ namespace SharpOrm
         /// <param name="value">The value that the column should start with.</param>
         public Query<T> OrWhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereNotStartsWith(Column.FromExp(columnExp), value);
+            this.OrWhereNotStartsWith(GetColumn(columnExp), value);
             return this;
         }
 
@@ -973,43 +1011,81 @@ namespace SharpOrm
         /// <param name="value">The value that the column should end with.</param>
         public Query<T> OrWhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
-            this.OrWhereNotEndsWith(Column.FromExp(columnExp), value);
+            this.OrWhereNotEndsWith(GetColumn(columnExp), value);
             return this;
         }
-
+        
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column does not equal the specified value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNot(Expression<ColumnExpression<T>> columnExp, object value)
         {
-            base.OrWhereNot(Column.FromExp(columnExp), value);
+            base.OrWhereNot(GetColumn(columnExp), value);
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column equals the specified value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, object value)
         {
-            base.OrWhere(Column.FromExp(columnExp), value);
+            base.OrWhere(GetColumn(columnExp), value);
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause with a specified operation and value.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.OrWhere(Column.FromExp(columnExp), operation, value);
+            this.OrWhere(GetColumn(columnExp), operation, value);
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause that compares two columns for equality.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
         {
-            base.OrWhere(Column.FromExp(columnExp), Column.FromExp(column2Exp));
+            base.OrWhere(GetColumn(columnExp), GetColumn(column2Exp));
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause that compares two columns with a specified operation.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.OrWhere(Column.FromExp(columnExp), operation, Column.FromExp(column2Exp));
+            this.OrWhere(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the first column does not equal the second column.
+        /// </summary>
+        /// <param name="columnExp">The first column expression to compare.</param>
+        /// <param name="column2Exp">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotColumn(Expression<ColumnExpression<T>> columnExp, Expression<ColumnExpression<T>> column2Exp)
         {
-            base.OrWhere(Column.FromExp(columnExp), "!=", Column.FromExp(column2Exp));
+            base.OrWhere(GetColumn(columnExp), "!=", GetColumn(column2Exp));
             return this;
         }
 
@@ -1023,12 +1099,19 @@ namespace SharpOrm
             return processor.ParseColumns(column).First();
         }
 
+        /// <summary>
+        /// Clones the Query object.
+        /// </summary>
+        /// <param name="withWhere">Indicates if the parameters of the "WHERE" clause should be copied.</param>
+        /// <returns>A new instance of the Query object with the same configuration.</returns>
         public override Query Clone(bool withWhere)
         {
             Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
 
-            if (withWhere) query.Info.LoadFrom(this.Info);
-            else if (TableInfo.SoftDelete != null) query.Info.Where.SetTrash(this.Trashed, TableInfo);
+            if (withWhere)
+                query.Info.LoadFrom(this.Info);
+            else if (TableInfo.SoftDelete != null)
+                query.Info.Where.SetTrash(this.Trashed, TableInfo);
 
             this.OnClone(query);
 

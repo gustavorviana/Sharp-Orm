@@ -290,7 +290,12 @@ namespace SharpOrm.Builder
         public QueryBuilder AddColumn(object column)
         {
             if (column is string strColumn)
+            {
+                if (string.IsNullOrEmpty(strColumn))
+                    throw new Exception(Messages.EmptyColumnName);
+
                 return this.Add(this.info.Config.ApplyNomenclature(strColumn));
+            }
 
             if (column is MemberInfoColumn memberColumn)
                 return this.AddParameter(memberColumn);

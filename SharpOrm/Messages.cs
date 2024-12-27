@@ -17,6 +17,8 @@
         public const string TransactionOpen = "The transaction has already been opened.";
         public const string TransactionNotOpen = "The transaction has not been opened.";
 
+        public const string EmptyColumnName = "Column name cannot be empty.";
+
         public static class Mapper
         {
             public const string NotSupported = "The type \"{0}\" was not mapped with the function/property \"{1}\".";
