@@ -5,7 +5,8 @@ DROP TABLE IF EXISTS [Address];
 CREATE TABLE [Address] (
   [id] INT PRIMARY KEY,
   [name] VARCHAR(50),
-  [street] VARCHAR(100)
+  [street] VARCHAR(100),
+  [city] VARCHAR(100) NULL
 );
 
 CREATE TABLE [Customers] (

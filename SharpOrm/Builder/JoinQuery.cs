@@ -1,10 +1,14 @@
-﻿namespace SharpOrm.Builder
+﻿using System.Reflection;
+
+namespace SharpOrm.Builder
 {
     /// <summary>
     /// Represents a join query with configurable grammar options.
     /// </summary>
     public class JoinQuery : QueryBase, IGrammarOptions
     {
+        internal MemberInfo MemberInfo { get; set; }
+
         /// <summary>
         /// Gets or sets the options for customizing the execution of the grammar.
         /// </summary>

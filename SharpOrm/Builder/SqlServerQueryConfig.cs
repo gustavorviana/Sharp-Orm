@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿using SharpOrm.SqlMethods;
+using SharpOrm.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Mysql;
+using SharpOrm.SqlMethods.Mappers.SqlServer;
+using System;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -20,12 +25,24 @@ namespace SharpOrm.Builder
         {
         }
 
+        private SqlServerQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
+        {
+
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class with a flag indicating if only safe modifications are allowed.
         /// </summary>
         /// <param name="onlySafeModifications">If true, only safe modifications are allowed.</param>
         public SqlServerQueryConfig(bool onlySafeModifications) : base(onlySafeModifications)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new SqlServerStringMethods());
+            Methods.Add(new SqlServerDateProperties());
+            Methods.Add(new SqlServerDateMethods());
         }
 
         public override string ApplyNomenclature(string name)
@@ -57,7 +74,7 @@ namespace SharpOrm.Builder
 
         public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new SqlServerQueryConfig(safeOperations ?? this.OnlySafeModifications);
+            var clone = new SqlServerQueryConfig(safeOperations ?? this.OnlySafeModifications, Methods);
             this.CopyTo(clone);
             return clone;
         }

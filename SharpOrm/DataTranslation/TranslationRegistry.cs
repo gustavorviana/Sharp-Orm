@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;

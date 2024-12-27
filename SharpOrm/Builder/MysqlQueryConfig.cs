@@ -1,4 +1,9 @@
-﻿using System.Linq;
+﻿using SharpOrm.SqlMethods;
+using SharpOrm.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Mysql;
+using SharpOrm.SqlMethods.Mappers.Sqlite;
+using System;
+using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -15,6 +20,10 @@ namespace SharpOrm.Builder
         /// </summary>
         public MysqlQueryConfig()
         {
+        }
+
+        private MysqlQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
+        {
 
         }
 
@@ -24,6 +33,13 @@ namespace SharpOrm.Builder
         /// <param name="safeModificationsOnly">If true, only safe modifications are allowed.</param>
         public MysqlQueryConfig(bool safeModificationsOnly) : base(safeModificationsOnly)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new MysqlStringMethods());
+            Methods.Add(new MysqlDateProperties());
+            Methods.Add(new MysqlDateMethods());
         }
 
         /// <summary>
@@ -98,7 +114,7 @@ namespace SharpOrm.Builder
         /// <returns>A clone of the current configuration.</returns>
         public override QueryConfig Clone(bool? safeOperations = null)
         {
-            var clone = new MysqlQueryConfig(safeOperations ?? this.OnlySafeModifications);
+            var clone = new MysqlQueryConfig(safeOperations ?? this.OnlySafeModifications, Methods);
             this.CopyTo(clone);
             return clone;
         }

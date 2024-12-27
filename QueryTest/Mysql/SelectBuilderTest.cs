@@ -23,6 +23,60 @@ namespace QueryTest.Mysql
         }
 
         [Fact]
+        public void SelectByLambda()
+        {
+            using var query = new Query<Address>();
+            query.Select(x => x.Street);
+
+            QueryAssert.Equal($"SELECT `Street` FROM `Address`", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectByMultipleLambdas()
+        {
+            using var query = new Query<Address>();
+            query.Select(x => new { x.Id, x.Street, x.Name });
+
+            QueryAssert.Equal($"SELECT `Id`, `Street`, `Name` FROM `Address`", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void OrderByLambda()
+        {
+            using var query = new Query<Address>();
+            query.OrderBy(x => x.Name);
+
+            QueryAssert.Equal($"SELECT * FROM `Address` ORDER BY `Name` ASC", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void OrderByMultipleLambdas()
+        {
+            using var query = new Query<Address>();
+            query.OrderBy(x => new { x.Name, x.Street });
+
+            QueryAssert.Equal($"SELECT * FROM `Address` ORDER BY `Name` ASC, `Street` ASC", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void GroupByLambda()
+        {
+            using var query = new Query<Address>();
+            query.GroupBy(x => x.Name);
+
+            QueryAssert.Equal($"SELECT * FROM `Address` GROUP BY `Name`", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void GroupByLambdaColumnLowerCase()
+        {
+            using var query = new Query<Address>();
+            query.GroupBy(x => x.Name.ToLower());
+
+            QueryAssert.Equal($"SELECT * FROM `Address` GROUP BY LOWER(`Name`)", query.Grammar().Select());
+        }
+
+        [Fact]
         public void CaseEmptyCase()
         {
             using var query = new Query(TestTableUtils.TABLE).OrderBy("Name");

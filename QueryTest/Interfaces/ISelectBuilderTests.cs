@@ -4,6 +4,12 @@
     {
         // Métodos de Select
         void Select();
+        void SelectByLambda();
+        void SelectByMultipleLambdas();
+        void OrderByLambda();
+        void OrderByMultipleLambdas();
+        void GroupByLambda();
+        void GroupByLambdaColumnLowerCase();
         void Select2();
         void SelectCase();
         void SelectCase2();

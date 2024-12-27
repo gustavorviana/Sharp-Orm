@@ -9,5 +9,8 @@ namespace BaseTest.Models
 
         [AllowNull]
         public string Street { get; set; }
+
+        [AllowNull]
+        public string City { get; set; }
     }
 }

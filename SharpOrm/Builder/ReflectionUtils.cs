@@ -39,10 +39,28 @@ namespace SharpOrm.Builder
 
         public static object GetMemberValue(MemberInfo member, object owner)
         {
-            if (member is FieldInfo field)
-                return field.GetValue(owner);
+            if (TryGetValue(member, owner, out object value))
+                return value;
 
-            return ((PropertyInfo)member).GetValue(owner);
+            throw new NotSupportedException();
+        }
+
+        public static bool TryGetValue(MemberInfo member, object owner, out object value)
+        {
+            if (member is FieldInfo field)
+            {
+                value = field.GetValue(owner);
+                return true;
+            }
+
+            if (member is PropertyInfo property)
+            {
+                value = property.GetValue(owner);
+                return true;
+            }
+
+            value = null;
+            return false;
         }
 
         public static void SetMemberValue(MemberInfo member, object owner, object value)
@@ -82,6 +100,7 @@ namespace SharpOrm.Builder
                 targetProp.SetValue(target, srcProp.GetValue(source));
         }
 
+
         public static bool IsNullable(Type type)
         {
             return Nullable.GetUnderlyingType(type) != null;
@@ -90,6 +109,21 @@ namespace SharpOrm.Builder
         public static object GetDefault(Type type)
         {
             return type.IsValueType ? Activator.CreateInstance(type) : null;
+        }
+
+        public static bool IsStatic(MemberInfo member)
+        {
+            if (member is PropertyInfo propertyInfo)
+                return propertyInfo.GetMethod?.IsStatic ?? false;
+
+            if (member is FieldInfo fieldInfo)
+                return fieldInfo.IsStatic;
+
+            if (member is MethodInfo methodInfo)
+                return methodInfo.IsStatic;
+
+            return false;
+
         }
     }
 }

@@ -366,7 +366,7 @@ namespace SharpOrm.Builder
             if (order.Order == OrderBy.None)
                 return;
 
-            this.WriteColumn(order.Column);
+            this.WriteColumn(order.Column, false);
             this.builder.Add(' ');
             this.builder.Add(order.Order.ToString().ToUpper());
         }
@@ -375,9 +375,9 @@ namespace SharpOrm.Builder
         /// Writes the column to the query.
         /// </summary>
         /// <param name="column">The column.</param>
-        protected void WriteColumn(Column column)
+        protected void WriteColumn(Column column, bool allowAlias = true)
         {
-            this.builder.Add(column.ToExpression(this.Info.ToReadOnly()));
+            this.builder.Add(column.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -473,7 +473,7 @@ namespace SharpOrm.Builder
         /// <typeparam name="T">The type of the values.</typeparam>
         /// <param name="values">The values.</param>
         /// <param name="call">The function to get the value.</param>
-        protected void AddParams<T>(IEnumerable<T> values, Func<T, object> call = null)
+        protected void AddParams<T>(IEnumerable<T> values, Func<T, object> call = null, bool allowAlias = true)
         {
             if (call == null)
                 call = obj => obj;
@@ -483,10 +483,10 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     return;
 
-                this.builder.AddParameter(call(en.Current));
+                this.builder.AddParameter(call(en.Current), allowAlias);
 
                 while (en.MoveNext())
-                    this.builder.Add(", ").AddParameter(call(en.Current));
+                    this.builder.Add(", ").AddParameter(call(en.Current), allowAlias);
             }
         }
 
@@ -499,7 +499,7 @@ namespace SharpOrm.Builder
                 return;
 
             this.builder.Add(" GROUP BY ");
-            AddParams(this.Info.GroupsBy);
+            AddParams(this.Info.GroupsBy, null, false);
             if (this.Info.Having.Empty)
                 return;
 

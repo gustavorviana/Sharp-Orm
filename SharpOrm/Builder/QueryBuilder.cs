@@ -290,7 +290,12 @@ namespace SharpOrm.Builder
         public QueryBuilder AddColumn(object column)
         {
             if (column is string strColumn)
+            {
+                if (string.IsNullOrEmpty(strColumn))
+                    throw new Exception(Messages.EmptyColumnName);
+
                 return this.Add(this.info.Config.ApplyNomenclature(strColumn));
+            }
 
             if (column is MemberInfoColumn memberColumn)
                 return this.AddParameter(memberColumn);
@@ -494,8 +499,8 @@ namespace SharpOrm.Builder
 
         void IDisposable.Dispose()
         {
-            this.query.Clear();
-            this.parameters.Clear();
+            this.query?.Clear();
+            this.parameters?.Clear();
             GC.SuppressFinalize(this);
         }
         #endregion

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.SqlMethods.Mappers.SqlServer;
+using System;
 
 namespace SharpOrm.Builder
 {
@@ -15,6 +16,13 @@ namespace SharpOrm.Builder
         public override string ApplyNomenclature(string name)
         {
             return name;
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new SqlServerStringMethods());
+            Methods.Add(new SqlServerDateProperties());
+            Methods.Add(new SqlServerDateMethods());
         }
 
         public override string EscapeString(string value)

@@ -39,7 +39,7 @@ namespace SharpOrm.Builder
             return cols;
         }
 
-        private static void ValidateMemberType(MemberInfo member)
+        internal static void ValidateMemberType(MemberInfo member)
         {
             if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
                 return;

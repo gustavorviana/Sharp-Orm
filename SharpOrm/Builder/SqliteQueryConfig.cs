@@ -1,4 +1,10 @@
-﻿using System.Text;
+﻿using SharpOrm.SqlMethods;
+using SharpOrm.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Mysql;
+using SharpOrm.SqlMethods.Mappers.Sqlite;
+using SharpOrm.SqlMethods.Mappers.SqlServer;
+using System;
+using System.Text;
 
 namespace SharpOrm.Builder
 {
@@ -6,12 +12,13 @@ namespace SharpOrm.Builder
     {
         public override bool CanUpdateJoin { get; } = false;
 
+        public override SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
+
         /// <summary>
         /// Create an instance that allows only safe modifications.
         /// </summary>
         public SqliteQueryConfig()
         {
-
         }
 
         /// <summary>
@@ -21,6 +28,13 @@ namespace SharpOrm.Builder
         /// <remarks>Safe modifications are updates and deletes with a WHERE clause.</remarks>
         public SqliteQueryConfig(bool safeModificationsOnly) : base(safeModificationsOnly)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new SqliteStringMethods());
+            Methods.Add(new SqliteDateProperties());
+            Methods.Add(new SqliteDateMethods());
         }
 
         public override string ApplyNomenclature(string name)

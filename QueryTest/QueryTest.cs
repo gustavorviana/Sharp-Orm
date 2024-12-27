@@ -1,18 +1,50 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
 using BaseTest.Utils;
-using Bogus;
-using Bogus.DataSets;
-using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
+using System.Linq.Expressions;
 using Xunit.Abstractions;
 
 namespace QueryTest
 {
     public class QueryTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
+        [Fact]
+        public void OrderBy_ShouldApplyAscendingOrder()
+        {
+            // Arrange
+            var query = new Query<Address>();
+            Expression<ColumnExpression<Address>> expression = x => x.City;
+
+            // Act
+            var result = query.OrderBy(expression);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains(result.Info.Orders, o => o.Column.Name == nameof(Address.City) && o.Order == SharpOrm.OrderBy.Asc);
+        }
+
+        [Fact]
+        public void OrderBy_SubstringIndex2_ShouldApplyAscendingOrder()
+        {
+            // Arrange
+            var query = new Query<Address>();
+            Expression<ColumnExpression<Address>> expression = x => x.City.Substring(x.Street.Length);
+
+            // Act
+            var result = query.OrderBy(expression);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains(
+                result.Info.Orders, o => o.Column.Name == nameof(Address.City)  &&
+                o.Order == SharpOrm.OrderBy.Asc &&
+                o.Column.ToString() == "Column(SUBSTRING([City],LEN([Street])))"
+            );
+        }
+
         [Fact]
         public void OrderBy()
         {
