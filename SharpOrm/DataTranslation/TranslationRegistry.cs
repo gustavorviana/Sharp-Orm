@@ -110,6 +110,17 @@ namespace SharpOrm.DataTranslation
         /// <summary>
         /// Converts a value from the database to C#.
         /// </summary>
+        /// <typeparam name="T">Expected type</typeparam>
+        /// <param name="value">The value to be converted.</param>
+        /// <returns></returns>
+        public T FromSql<T>(object value)
+        {
+            return (T)FromSql(value, typeof(T));
+        }
+
+        /// <summary>
+        /// Converts a value from the database to C#.
+        /// </summary>
         /// <param name="value">The value to be converted.</param>
         /// <param name="expectedType">Expected type in C#.</param>
         /// <returns></returns>

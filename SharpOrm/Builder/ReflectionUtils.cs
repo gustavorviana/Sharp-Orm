@@ -81,5 +81,15 @@ namespace SharpOrm.Builder
             if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
                 targetProp.SetValue(target, srcProp.GetValue(source));
         }
+
+        public static bool IsNullable(Type type)
+        {
+            return Nullable.GetUnderlyingType(type) != null;
+        }
+
+        public static object GetDefault(Type type)
+        {
+            return type.IsValueType ? Activator.CreateInstance(type) : null;
+        }
     }
 }
