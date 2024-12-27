@@ -494,8 +494,8 @@ namespace SharpOrm.Builder
 
         void IDisposable.Dispose()
         {
-            this.query.Clear();
-            this.parameters.Clear();
+            this.query?.Clear();
+            this.parameters?.Clear();
             GC.SuppressFinalize(this);
         }
         #endregion

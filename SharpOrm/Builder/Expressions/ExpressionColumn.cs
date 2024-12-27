@@ -11,9 +11,10 @@ namespace SharpOrm.Builder.Expressions
         public ExpressionColumn(SqlExpression expression) : base(expression)
         {
         }
-
-        public ExpressionColumn(SqlExpression expression, bool isFk) : base(expression)
+        
+        public ExpressionColumn(string name, SqlExpression expression, bool isFk) : base(expression)
         {
+            this.Name = name;
             this.isFk = isFk;
         }
 

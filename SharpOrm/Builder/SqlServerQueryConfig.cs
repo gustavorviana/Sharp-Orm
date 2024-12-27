@@ -23,9 +23,6 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqlServerQueryConfig()
         {
-            Methods.Add(new SqlServerStringMethods());
-            Methods.Add(new SqlServerDateProperties());
-            Methods.Add(new SqlServerDateMethods());
         }
 
         private SqlServerQueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods) : base(safeModificationsOnly, methods)
@@ -39,6 +36,13 @@ namespace SharpOrm.Builder
         /// <param name="onlySafeModifications">If true, only safe modifications are allowed.</param>
         public SqlServerQueryConfig(bool onlySafeModifications) : base(onlySafeModifications)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new SqlServerStringMethods());
+            Methods.Add(new SqlServerDateProperties());
+            Methods.Add(new SqlServerDateMethods());
         }
 
         public override string ApplyNomenclature(string name)

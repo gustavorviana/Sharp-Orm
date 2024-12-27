@@ -19,9 +19,6 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqliteQueryConfig()
         {
-            Methods.Add(new SqliteStringMethods());
-            Methods.Add(new SqliteDateProperties());
-            Methods.Add(new SqliteDateMethods());
         }
 
         /// <summary>
@@ -31,6 +28,13 @@ namespace SharpOrm.Builder
         /// <remarks>Safe modifications are updates and deletes with a WHERE clause.</remarks>
         public SqliteQueryConfig(bool safeModificationsOnly) : base(safeModificationsOnly)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new SqliteStringMethods());
+            Methods.Add(new SqliteDateProperties());
+            Methods.Add(new SqliteDateMethods());
         }
 
         public override string ApplyNomenclature(string name)

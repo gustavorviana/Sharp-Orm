@@ -224,10 +224,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
-            var columns = processor.ParseColumns(expression);
-
-            return (Query<T>)this.OrderBy(order, columns.ToArray());
+            return (Query<T>)this.OrderBy(order, GetColumns(expression));
         }
 
         #endregion
@@ -239,10 +236,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> GroupBy(Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
-            var columns = processor.ParseColumns(expression);
-
-            return (Query<T>)base.GroupBy(columns.ToArray());
+            return (Query<T>)base.GroupBy(GetColumns(expression));
         }
 
         /// <summary>
@@ -265,10 +259,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
-            var columns = processor.ParseColumns(expression);
-
-            return (Query<T>)base.Select(columns.ToArray());
+            return (Query<T>)base.Select(GetColumns(expression));
         }
 
         /// <summary>
@@ -303,6 +294,12 @@ namespace SharpOrm
         }
 
         #endregion
+
+        private Column[] GetColumns(Expression<ColumnExpression<T>> expression)
+        {
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
+            return processor.ParseColumns(expression).ToArray();
+        }
 
         #region AddForeign
 
@@ -1019,6 +1016,12 @@ namespace SharpOrm
         #endregion
 
         #endregion
+
+        private Column GetColumn(Expression<ColumnExpression<T>> column)
+        {
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.SubMembers | ExpressionConfig.Method);
+            return processor.ParseColumns(column).First();
+        }
 
         public override Query Clone(bool withWhere)
         {

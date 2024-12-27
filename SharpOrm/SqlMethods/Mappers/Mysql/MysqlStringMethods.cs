@@ -7,12 +7,14 @@ using System.Text;
 
 namespace SharpOrm.SqlMethods.Mappers.Mysql
 {
-    internal class MysqlStringMethods : SqlMethodCaller
+    internal class MysqlStringMethods : SqlMemberCaller<string>
     {
-        public override bool CanWork(SqlMemberInfo member)
+        protected override bool CanWorkMember(SqlMemberInfo member)
         {
-            return member.DeclaringType == typeof(string) &&
-                new[]
+            if (member.MemberType == System.Reflection.MemberTypes.Property)
+                return member.Name == nameof(string.Length);
+
+            return new[]
                 {
                     nameof(string.Substring),
                     nameof(string.Trim),
@@ -25,7 +27,7 @@ namespace SharpOrm.SqlMethods.Mappers.Mysql
                 }.Contains(member.Name);
         }
 
-        protected override SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMethodInfo method)
+        protected override SqlExpression GetSqlMethodExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMethodInfo method)
         {
             switch (method.Name)
             {
@@ -39,6 +41,14 @@ namespace SharpOrm.SqlMethods.Mappers.Mysql
                 case nameof(string.ToString): return expression;
                 default: throw new NotSupportedException();
             }
+        }
+
+        protected override SqlExpression GetSqlPropertyExpression(IReadonlyQueryInfo info, SqlExpression column, SqlPropertyInfo member)
+        {
+            if (member.Name == nameof(string.Length))
+                return new SqlExpression("CHAR_LENGTH(?)", column);
+
+            throw new NotSupportedException();
         }
     }
 }

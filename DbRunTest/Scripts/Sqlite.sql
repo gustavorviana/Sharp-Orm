@@ -8,7 +8,8 @@ DROP TABLE IF EXISTS DateTimeInfo;
 CREATE TABLE IF NOT EXISTS "address" (
   "id" INTEGER PRIMARY KEY,
   "name" VARCHAR(50),
-  "street" VARCHAR(100)
+  "street" VARCHAR(100),
+  "city" VARCHAR(100) NULL
 );
 
 CREATE TABLE IF NOT EXISTS "customers" (

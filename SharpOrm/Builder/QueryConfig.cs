@@ -68,7 +68,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public QueryConfig() : this(true)
         {
-
+            RegisterMethods();
         }
 
         /// <summary>
@@ -79,12 +79,18 @@ namespace SharpOrm.Builder
         public QueryConfig(bool safeModificationsOnly)
         {
             this.OnlySafeModifications = safeModificationsOnly;
+            RegisterMethods();
         }
 
         protected QueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods)
         {
             this.OnlySafeModifications = safeModificationsOnly;
             this.Methods = methods;
+        }
+
+        protected virtual void RegisterMethods()
+        {
+
         }
 
         /// <summary>

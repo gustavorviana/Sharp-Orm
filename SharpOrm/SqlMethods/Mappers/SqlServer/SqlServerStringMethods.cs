@@ -7,12 +7,14 @@ using System.Text;
 
 namespace SharpOrm.SqlMethods.Mappers.SqlServer
 {
-    internal class SqlServerStringMethods : SqlMethodCaller
+    internal class SqlServerStringMethods : SqlMemberCaller<string>
     {
-        public override bool CanWork(SqlMemberInfo member)
+        protected override bool CanWorkMember(SqlMemberInfo member)
         {
-            return member.DeclaringType == typeof(string) &&
-                new[]
+            if (member.MemberType == System.Reflection.MemberTypes.Property)
+                return member.Name == nameof(string.Length);
+
+            return new[]
                 {
                     nameof(string.Substring),
                     nameof(string.Trim),
@@ -25,7 +27,7 @@ namespace SharpOrm.SqlMethods.Mappers.SqlServer
                 }.Contains(member.Name);
         }
 
-        protected override SqlExpression GetSqlExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMethodInfo method)
+        protected override SqlExpression GetSqlMethodExpression(IReadonlyQueryInfo info, SqlExpression expression, SqlMethodInfo method)
         {
             switch (method.Name)
             {
@@ -38,6 +40,14 @@ namespace SharpOrm.SqlMethods.Mappers.SqlServer
                 case nameof(string.Concat): return SqlMethodMapperUtils.GetConcatExpression(info, expression, method);
                 default: throw new NotSupportedException();
             }
+        }
+
+        protected override SqlExpression GetSqlPropertyExpression(IReadonlyQueryInfo info, SqlExpression column, SqlPropertyInfo member)
+        {
+            if (member.Name == nameof(string.Length))
+                return new SqlExpression("LEN(?)", column);
+
+            throw new NotSupportedException();
         }
     }
 }
