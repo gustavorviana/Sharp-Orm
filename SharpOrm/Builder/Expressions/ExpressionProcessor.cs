@@ -24,6 +24,12 @@ namespace SharpOrm.Builder.Expressions
             this.visitor = new SqlExpressionVisitor(typeof(T), info, config);
         }
 
+        internal IEnumerable<string> ParseColumnNames(Expression<ColumnExpression<T>> expression)
+        {
+            foreach (var item in ParseExpression(expression))
+                yield return item.Name;
+        }
+
         public IEnumerable<Column> ParseColumns(Expression<ColumnExpression<T>> expression)
         {
             foreach (var item in ParseExpression(expression))

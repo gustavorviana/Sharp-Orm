@@ -64,7 +64,7 @@ namespace SharpOrm.Builder
             }
         }
 
-        private static MemberExpression GetMemberExpression(Expression<ColumnExpression<T>> expression)
+        internal static MemberExpression GetMemberExpression(Expression<ColumnExpression<T>> expression)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression));
             if (expression.Body is MemberExpression mExp) return mExp;

@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class MockReadUpdateTest(ITestOutputHelper? output) : DbMockTest(output)
+    public class MockReadUpdateTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
         public void ReadWithCreateForeignIfNoDepth()
@@ -93,20 +93,37 @@ namespace QueryTest
         public void UpdateByPropName()
         {
             var config = new MysqlQueryConfig(false);
-            var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
+            var fallback = RegisterFallback();
 
             var query = new Query<Order>(GetManager(config));
             query.Update(new Order { Quantity = 1 }, o => o.Quantity);
+
+            Assert.Equal("UPDATE `Orders` SET `Quantity` = 1", fallback.ToString());
+        }
+
+        [Fact]
+        [Obsolete]
+        public void ObsoleteUpdateIgnorePropName()
+        {
+            var config = new MysqlQueryConfig(false);
+            var fallback = RegisterFallback();
+
+            var query = new Query<Order>(GetManager(config));
+            query.UpdateExcept(new Order { Quantity = 1 }, o => o.Customer, o => o.CustomerId, o => o.Product, o => o.Status);
+
+            Assert.Equal("UPDATE `Orders` SET `Quantity` = 1", fallback.ToString());
         }
 
         [Fact]
         public void UpdateIgnorePropName()
         {
             var config = new MysqlQueryConfig(false);
-            var conn = GetNonQueryCommand("UPDATE `Orders` SET `Quantity` = 1");
+            var fallback = RegisterFallback();
 
             var query = new Query<Order>(GetManager(config));
-            query.UpdateExcept(new Order { Quantity = 1 }, o => o.Customer, o => o.CustomerId, o => o.Product, o => o.Status);
+            query.UpdateExcept(new Order { Quantity = 1 }, o => new { o.Customer, o.CustomerId, o.Product, o.Status });
+
+            Assert.Equal("UPDATE `Orders` SET `Quantity` = 1", fallback.ToString());
         }
 
         private static MockDataReader OrderReader(int qtd)

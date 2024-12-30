@@ -530,6 +530,7 @@ namespace SharpOrm
         /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("Use \"Update(T, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
         {
             if (obj == null)
@@ -539,6 +540,21 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(calls));
 
             return this.Update(this.GetObjectReader(false, false).Only(calls).ReadCells(obj));
+        }
+
+        /// <summary>
+        /// Update table keys using object values.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="expression">Expression to retrieve the properties that should be saved.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public int Update(T obj, Expression<ColumnExpression<T>> expression)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            return this.Update(this.GetObjectReader(false, false).Only(expression).ReadCells(obj));
         }
 
         /// <summary>

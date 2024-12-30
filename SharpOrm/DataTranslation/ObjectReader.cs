@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -41,10 +42,17 @@ namespace SharpOrm.DataTranslation
             this.hasCreateColumn = !string.IsNullOrEmpty(table.Timestamp?.CreatedAtColumn);
         }
 
+        [Obsolete]
         public ObjectReader Only<T>(params Expression<ColumnExpression<T>>[] calls)
         {
             this.needContains = true;
             return this.SetProps(calls);
+        }
+
+        public ObjectReader Only<T>(Expression<ColumnExpression<T>> expression)
+        {
+            this.needContains = true;
+            return this.SetExpression(expression);
         }
 
         public ObjectReader Only(params string[] columns)
@@ -59,15 +67,29 @@ namespace SharpOrm.DataTranslation
             return this.SetColumns(columns);
         }
 
+        [Obsolete]
         public ObjectReader Except<T>(params Expression<ColumnExpression<T>>[] calls)
         {
             this.needContains = false;
             return this.SetProps(calls);
         }
 
+        public ObjectReader Except<T>(Expression<ColumnExpression<T>> expression)
+        {
+            this.needContains = false;
+            return this.SetExpression(expression);
+        }
+
+        private ObjectReader SetExpression<T>(Expression<ColumnExpression<T>> expression)
+        {
+            return this.SetColumns(
+                new ExpressionProcessor<T>(null, ExpressionConfig.New).ParseColumnNames(expression).ToArray()
+            );
+        }
+
         private ObjectReader SetProps<T>(Expression<ColumnExpression<T>>[] calls)
         {
-            return this.SetColumns(calls.Select(ExpressionUtils<T>.GetPropName).ToArray());
+            return this.SetColumns(calls.Select(x => ColumnInfo.GetName(ExpressionUtils<T>.GetMemberExpression(x).Member)).ToArray());
         }
 
         private ObjectReader SetColumns(string[] columns)
