@@ -3,9 +3,9 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net45;net46;net5.0;net6.0;net8.0</TargetFrameworks>
 		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
-		<AssemblyVersion>2.5.0</AssemblyVersion>
-		<FileVersion>2.5.0</FileVersion>
-		<VersionPrefix>2.5.0</VersionPrefix>
+		<AssemblyVersion>2.6.0</AssemblyVersion>
+		<FileVersion>2.6.0</FileVersion>
+		<VersionPrefix>2.6.0</VersionPrefix>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<IncludeSymbols>True</IncludeSymbols>
 		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
@@ -21,7 +21,7 @@
 		<PackageTags>Db;Sql;Mysql;SqlServer;SharpOrm;Sharp Orm;Database;Table;Connection;Management</PackageTags>
 		<Copyright>$(Authors)</Copyright>
 		<PackageReleaseNotes>
-			Support for soft delete, timestamps on create and update rows, improvements in dynamic usage, and various fixes.
+			Creation of the new expressions management system.
 		</PackageReleaseNotes>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
