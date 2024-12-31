@@ -1,7 +1,7 @@
-﻿using SharpOrm.Builder;
-using BaseTest.Fixtures;
-using Xunit.Abstractions;
+﻿using BaseTest.Fixtures;
 using BaseTest.Utils;
+using SharpOrm.Builder;
+using Xunit.Abstractions;
 
 namespace QueryTest.Utils
 {

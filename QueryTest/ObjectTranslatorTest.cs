@@ -1,7 +1,6 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
 using BaseTest.Utils;
-using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;

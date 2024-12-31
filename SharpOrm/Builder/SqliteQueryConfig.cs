@@ -1,10 +1,5 @@
 ﻿using SharpOrm.SqlMethods;
-using SharpOrm.SqlMethods.Mappers;
-using SharpOrm.SqlMethods.Mappers.Mysql;
 using SharpOrm.SqlMethods.Mappers.Sqlite;
-using SharpOrm.SqlMethods.Mappers.SqlServer;
-using System;
-using System.Text;
 
 namespace SharpOrm.Builder
 {

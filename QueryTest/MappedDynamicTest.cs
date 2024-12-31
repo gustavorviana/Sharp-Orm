@@ -1,6 +1,5 @@
 ﻿using BaseTest.Utils;
 using Bogus;
-using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.DataTranslation.Reader;
 using System.Dynamic;

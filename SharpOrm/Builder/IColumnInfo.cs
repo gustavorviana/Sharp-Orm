@@ -1,5 +1,4 @@
 ﻿using SharpOrm.DataTranslation;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace SharpOrm.Builder

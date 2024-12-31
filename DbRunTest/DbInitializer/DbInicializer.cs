@@ -9,7 +9,7 @@ namespace DbRunTest.DbInitializer
 
         protected void ExecuteScriptFile(ConnectionManager manager, string name)
         {
-           manager.ExecuteNonQuery(File.ReadAllText("./Scripts/" + name));
+            manager.ExecuteNonQuery(File.ReadAllText("./Scripts/" + name));
         }
     }
 }

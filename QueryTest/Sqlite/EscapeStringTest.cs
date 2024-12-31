@@ -1,5 +1,5 @@
-﻿using BaseTest.Utils;
-using BaseTest.Fixtures;
+﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;

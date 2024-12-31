@@ -111,9 +111,9 @@ namespace QueryTest
 
             Connection.QueryReaders.Add("SELECT TOP(1) * FROM [DynamicMappedTable]",
                 () => new MockDataReader(
-                    new Cell("Id", id), 
-                    new Cell("id2", id2), 
-                    new Cell("name", name), 
+                    new Cell("Id", id),
+                    new Cell("id2", id2),
+                    new Cell("name", name),
                     new Cell("nick", nick),
                     new Cell("record_created", record_created),
                     new Cell("number", number),

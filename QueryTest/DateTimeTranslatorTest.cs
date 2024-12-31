@@ -86,7 +86,7 @@ namespace QueryTest
             // Assert
             Assert.Equal(expected, result);
         }
-        
+
         [Fact]
         public void TimeOnlyFromSqlUtcDateTime()
         {

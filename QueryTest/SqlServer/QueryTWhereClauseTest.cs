@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class QueryTWhereClauseTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : 
+    public class QueryTWhereClauseTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) :
         DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
     {
         [Fact]

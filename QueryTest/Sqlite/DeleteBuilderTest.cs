@@ -1,11 +1,11 @@
-﻿using BaseTest.Utils;
-using BaseTest.Fixtures;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
+using BaseTest.Utils;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using Xunit.Abstractions;
-using BaseTest.Models;
 
 namespace QueryTest.Sqlite
 {
@@ -72,7 +72,7 @@ namespace QueryTest.Sqlite
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("id");
 
-           Assert.Throws<NotSupportedException>(() => query.Grammar().Delete());
+            Assert.Throws<NotSupportedException>(() => query.Grammar().Delete());
         }
 
         [Fact]

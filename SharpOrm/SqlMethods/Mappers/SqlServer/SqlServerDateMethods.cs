@@ -2,9 +2,7 @@
 using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SharpOrm.SqlMethods.Mappers.SqlServer
 {

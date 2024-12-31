@@ -1,6 +1,6 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -94,7 +94,7 @@ namespace QueryTest.Sqlite
                 .Where("id", 1);
 
             using var query = new Query(TestTableUtils.TABLE);
-            
+
             var sqlExpression = query.Grammar().InsertQuery(selectQuery, []);
             QueryAssert.Equal("INSERT INTO \"TestTable\" SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1", sqlExpression);
         }

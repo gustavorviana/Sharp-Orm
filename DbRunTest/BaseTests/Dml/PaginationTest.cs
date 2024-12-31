@@ -1,8 +1,8 @@
-﻿using BaseTest.Utils;
+﻿using BaseTest.Models;
+using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using System.Data.Common;
 using SharpOrm;
-using BaseTest.Models;
+using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml

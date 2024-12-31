@@ -1,7 +1,9 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -159,6 +161,31 @@ namespace SharpOrm
                 return new MemberInfoColumn(member, table.GetColumn(member).Name);
 
             return new MemberInfoColumn(member);
+        }
+
+        /// <summary>
+        /// Parses a column expression and returns a Column object.
+        /// </summary>
+        /// <typeparam name="T">The type of the object containing the column.</typeparam>
+        /// <param name="expression">The column expression to parse.</param>
+        /// <param name="info">The read-only query information.</param>
+        /// <returns>A Column object representing the parsed column expression.</returns>
+        public static Column Parse<T>(Expression<ColumnExpression<T>> expression, IReadonlyQueryInfo info)
+        {
+            return new ExpressionProcessor<T>(info, ExpressionConfig.All).ParseColumns(expression).First();
+        }
+
+        /// <summary>
+        /// Parses a column expression and returns a Column object.
+        /// </summary>
+        /// <typeparam name="T">The type of the object containing the column.</typeparam>
+        /// <typeparam name="R">The type of the column value.</typeparam>
+        /// <param name="expression">The column expression to parse.</param>
+        /// <param name="info">The read-only query information.</param>
+        /// <returns>A Column object representing the parsed column expression.</returns>
+        public static Column Parse<T, R>(Expression<ColumnExpression<T, R>> expression, IReadonlyQueryInfo info)
+        {
+            return new ExpressionProcessor<T>(info, ExpressionConfig.All).ParseColumn(expression);
         }
 
         internal string GetCountColumn()

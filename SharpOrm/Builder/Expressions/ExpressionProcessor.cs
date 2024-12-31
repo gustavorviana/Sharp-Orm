@@ -1,13 +1,9 @@
 ﻿using SharpOrm.DataTranslation;
-using SharpOrm.SqlMethods;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace SharpOrm.Builder.Expressions
 {
@@ -26,17 +22,12 @@ namespace SharpOrm.Builder.Expressions
 
         internal IEnumerable<string> ParseColumnNames(Expression<ColumnExpression<T>> expression)
         {
-            foreach (var item in ParseExpression(expression))
-                yield return item.Name;
+            return ParseExpression(expression).Select(x => x.Name);
         }
 
         public IEnumerable<Column> ParseColumns(Expression<ColumnExpression<T>> expression)
         {
-            foreach (var item in ParseExpression(expression))
-                yield return new ExpressionColumn(item.Name, info.Config.Methods.ApplyMember(info, ProcessMemberInfo(item), out var isFk), isFk || item.Member.MemberType == MemberTypes.Method)
-                {
-                    Alias = item.Alias ?? (item.Childs.Length > 0 ? item.Name : null)
-                };
+            return ParseExpression(expression).Select(BuildColumn);
         }
 
         private SqlMember ProcessMemberInfo(SqlMember info)
@@ -53,6 +44,34 @@ namespace SharpOrm.Builder.Expressions
             }
 
             return info;
+        }
+
+        public ExpressionColumn ParseColumn<R>(Expression<ColumnExpression<T, R>> expression)
+        {
+            return BuildColumn(ParseExpressionField<R>(expression));
+        }
+
+        private ExpressionColumn BuildColumn(SqlMember member)
+        {
+            var sqlExpression = info.Config.Methods.ApplyMember(info, ProcessMemberInfo(member), out var isFk);
+            return new ExpressionColumn(member.Name, sqlExpression, isFk || member.Member.MemberType == MemberTypes.Method)
+            {
+                Alias = member.Alias ?? (member.Childs.Length > 0 ? member.Name : null)
+            };
+        }
+
+        public SqlMember ParseExpressionField<R>(Expression<ColumnExpression<T, R>> expression)
+        {
+            if (!(expression.Body is NewExpression newExpression))
+                return visitor.Visit(expression.Body);
+
+            if (!config.HasFlag(ExpressionConfig.New))
+                throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
+
+            return visitor.Visit(
+               newExpression.Arguments.First(),
+               newExpression.Members.First().Name
+           );
         }
 
         public IEnumerable<SqlMember> ParseExpression(Expression<ColumnExpression<T>> expression)

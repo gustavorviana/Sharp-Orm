@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Errors;
-using System;
 using System.Reflection;
 
 namespace SharpOrm.SqlMethods

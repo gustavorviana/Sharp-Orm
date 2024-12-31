@@ -1,12 +1,8 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
-using SharpOrm.SqlMethods.Mappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 
 namespace SharpOrm.SqlMethods
 {

@@ -2,10 +2,8 @@
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using SharpOrm;
-using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using System.Data.Common;
-using System.Xml.Linq;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml

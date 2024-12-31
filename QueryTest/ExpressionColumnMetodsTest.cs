@@ -1,5 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
+using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using static QueryTest.ExpressionProcessorTest;
@@ -13,6 +14,38 @@ namespace QueryTest
         public ExpressionColumnMetodsTest() : base(new SqlServerQueryConfig())
         {
 
+        }
+
+        [Fact]
+        public void ParseColumnTest()
+        {
+            var column = Column.Parse<Customer>(x => x.Id, info);
+
+            Assert.Equal("[Id]", column.ToExpression(info).ToString());
+        }
+
+        [Fact]
+        public void ParseColumnWithAliasTest()
+        {
+            var column = Column.Parse<Customer>(x => new { CliId = x.Id }, info);
+
+            Assert.Equal("[Id] AS [CliId]", column.ToExpression(info).ToString());
+        }
+
+        [Fact]
+        public void ParseColumn_NameLength_ReturnsCorrectExpression()
+        {
+            var column = Column.Parse<Customer>(x => x.Name.Length, info);
+
+            Assert.Equal("LEN([Name]) AS [Name]", column.ToExpression(info).ToString());
+        }
+
+        [Fact]
+        public void ParseColumnWithAlias_NameLength_ReturnsCorrectExpressionWithAlias()
+        {
+            var column = Column.Parse<Customer>(x => new { CliId = x.Name.Length }, info);
+
+            Assert.Equal("LEN([Name]) AS [CliId]", column.ToExpression(info).ToString());
         }
 
         [Fact]

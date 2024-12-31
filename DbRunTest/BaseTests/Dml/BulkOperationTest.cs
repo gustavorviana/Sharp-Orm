@@ -17,12 +17,12 @@ namespace DbRunTest.BaseTests.Dml
 
             using var q = NewQuery<TestTable>();
             int updateCount = QueryExtension.BulkUpdate(
-                q, 
+                q,
                 [
-                    MakeUpdateRow(1, _guid), 
-                    MakeUpdateRow(2, _guid), 
+                    MakeUpdateRow(1, _guid),
+                    MakeUpdateRow(2, _guid),
                     MakeUpdateRow(3, _guid)
-                ], 
+                ],
                 [TestTableUtils.ID, TestTableUtils.NAME]
             );
             q.Where(TestTableUtils.GUIDID, _guid);

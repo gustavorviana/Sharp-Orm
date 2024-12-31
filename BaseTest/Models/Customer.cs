@@ -1,5 +1,4 @@
-﻿using BaseTest.Models;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BaseTest.Models
 {

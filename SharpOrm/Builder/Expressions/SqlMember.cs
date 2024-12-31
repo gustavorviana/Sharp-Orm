@@ -42,7 +42,7 @@ namespace SharpOrm.Builder.Expressions
             IsNativeType = true;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
         }
-        
+
         private static string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
         {
             if (!isNative && childs.Length > 0)

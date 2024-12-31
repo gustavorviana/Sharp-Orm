@@ -11,7 +11,7 @@ namespace DbRunTest.DbInitializer
 
         public override void ResetDb(ConnectionManager manager)
         {
-            
+
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;

@@ -39,7 +39,7 @@ namespace QueryTest
             // Assert
             Assert.NotNull(result);
             Assert.Contains(
-                result.Info.Orders, o => o.Column.Name == nameof(Address.City)  &&
+                result.Info.Orders, o => o.Column.Name == nameof(Address.City) &&
                 o.Order == SharpOrm.OrderBy.Asc &&
                 o.Column.ToString() == "Column(SUBSTRING([City],LEN([Street])))"
             );

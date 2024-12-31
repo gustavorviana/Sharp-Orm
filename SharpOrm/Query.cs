@@ -5,7 +5,6 @@ using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -1030,7 +1029,7 @@ namespace SharpOrm
             this.OrWhereNotEndsWith(GetColumn(columnExp), value);
             return this;
         }
-        
+
         /// <summary>
         /// Adds an OR WHERE clause that checks if the column does not equal the specified value.
         /// </summary>

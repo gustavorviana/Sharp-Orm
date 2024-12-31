@@ -1,6 +1,6 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using BaseTest.Fixtures;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
@@ -78,7 +78,7 @@ namespace QueryTest.Mysql
                 .Where("id", 1);
 
             using var query = new Query(TestTableUtils.TABLE);
-            
+
             var sqlExpression = query.Grammar().InsertQuery(selectQuery, []);
             QueryAssert.Equal("INSERT INTO `TestTable` SELECT `Id`, `Status` FROM `User` WHERE `id` = 1", sqlExpression);
         }
@@ -105,7 +105,7 @@ namespace QueryTest.Mysql
                 query.Grammar().Insert(Row.Parse(table, typeof(TestTable), true, false).Cells)
             );
         }
-        
+
         [Fact]
         public void InsertWithoutId()
         {
@@ -119,7 +119,7 @@ namespace QueryTest.Mysql
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, 1), new Cell(TestTableUtils.NAME, "T1"), new Cell("value", null)])
             );
         }
-        
+
         [Fact]
         public void InsertWIthRaw()
         {

@@ -44,7 +44,7 @@ namespace QueryTest
 
             Assert.Equal(expected, fallback.ToString());
         }
-        
+
         [Theory]
         [InlineData(Trashed.With, "SELECT * FROM [SoftDeleteAddress]")]
         [InlineData(Trashed.Only, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 1")]

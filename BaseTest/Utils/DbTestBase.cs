@@ -1,9 +1,9 @@
-﻿using SharpOrm.Builder;
+﻿using BaseTest.Fixtures;
+using SharpOrm;
+using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
-using BaseTest.Fixtures;
 using Xunit.Abstractions;
-using SharpOrm;
 
 namespace BaseTest.Utils
 {

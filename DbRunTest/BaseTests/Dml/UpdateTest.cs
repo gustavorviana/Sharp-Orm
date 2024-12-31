@@ -23,7 +23,7 @@ namespace DbRunTest.BaseTests.Dml
             Assert.NotNull(row);
             Assert.Equal("Name2", row[TestTableUtils.NAME]);
         }
-        
+
         [Fact]
         public void UpdateObject()
         {
@@ -53,7 +53,7 @@ namespace DbRunTest.BaseTests.Dml
             Assert.Equal("Tester", row[TestTableUtils.NICK]);
             Assert.Throws<InvalidOperationException>(() => query.Update(new TestTable(), "Invalid"));
         }
-        
+
         [Fact]
         public void UpdateWhereIsNull()
         {
@@ -72,7 +72,7 @@ namespace DbRunTest.BaseTests.Dml
             Assert.NotNull(row);
             Assert.Equal("Name2", row[TestTableUtils.NICK]);
         }
-        
+
         [Fact]
         public virtual void UpdateJoin()
         {

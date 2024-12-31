@@ -1,6 +1,5 @@
 ﻿using SharpOrm.Builder;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 
@@ -86,7 +85,7 @@ namespace SharpOrm.DataTranslation.Reader
                 if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
                 else if (column.Type != this.Type && !ReflectionUtils.IsCollection(column.Type)) this.MapChild(reader, column, prefix);
-                    
+
             return this;
         }
 

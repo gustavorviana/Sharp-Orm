@@ -1,5 +1,4 @@
 ﻿using BaseTest.Utils;
-using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Connection;
 using SharpOrm.Errors;

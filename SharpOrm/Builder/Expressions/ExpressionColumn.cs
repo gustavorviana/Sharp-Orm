@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder.Expressions
+﻿namespace SharpOrm.Builder.Expressions
 {
     internal class ExpressionColumn : Column
     {
@@ -11,7 +7,7 @@ namespace SharpOrm.Builder.Expressions
         public ExpressionColumn(SqlExpression expression) : base(expression)
         {
         }
-        
+
         public ExpressionColumn(string name, SqlExpression expression, bool isFk) : base(expression)
         {
             this.Name = name;
