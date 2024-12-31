@@ -48,6 +48,16 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Gets or sets the serialization format for enums.
+        /// </summary>
+        /// <value>The serialization format for enums.</value>
+        public EnumSerialization EnumSerialization
+        {
+            get => native.EnumSerialization;
+            set => native.EnumSerialization = value;
+        }
+
+        /// <summary>
         /// Timezone in which dates should be stored in the database.
         /// </summary>
         /// <value><see cref="TimeZoneInfo.Local"/></value>

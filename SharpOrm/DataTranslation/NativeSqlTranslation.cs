@@ -7,6 +7,7 @@ namespace SharpOrm.DataTranslation
         private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
         private static readonly NumericTranslation numericTranslation = new NumericTranslation();
         internal readonly DateTranslation dateTranslation = new DateTranslation();
+        public EnumSerialization EnumSerialization { get; set; } = EnumSerialization.Value;
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
@@ -114,7 +115,7 @@ namespace SharpOrm.DataTranslation
                 return guid.ToString(GuidFormat);
 
             if (type.IsEnum)
-                return Convert.ToInt32(value);
+                return SerializeEnum(value);
 
             if (value is bool vBool)
                 return vBool ? 1 : 0;
@@ -129,6 +130,14 @@ namespace SharpOrm.DataTranslation
                 return dateTranslation.ToSqlValue(value, type);
 
             return value?.ToString();
+        }
+
+        private object SerializeEnum(object value)
+        {
+            if (EnumSerialization == DataTranslation.EnumSerialization.Value)
+                return Convert.ToInt32(value);
+
+            return value.ToString();
         }
     }
 }
