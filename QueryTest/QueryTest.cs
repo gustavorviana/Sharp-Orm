@@ -180,5 +180,21 @@ namespace QueryTest
                 Assert.Equal(0, query.Insert(order));
             }
         }
+
+        [Fact]
+        public void Select_ByColumnExpressionTR_ShouldSelectColumn()
+        {
+            // Arrange
+            var expected = new SqlExpression("[City]");
+            var query = new Query<Address>();
+            Expression<ColumnExpression<Address, string>> expression = x => x.City;
+
+            // Act
+            var result = query.SelectColumn(expression);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expected, result.Info.Select.FirstOrDefault().ToSafeExpression(query.Info, false));
+        }
     }
 }

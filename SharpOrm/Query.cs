@@ -252,6 +252,17 @@ namespace SharpOrm
         #region Select
 
         /// <summary>
+        /// Selects a column from the table using a column expression.
+        /// </summary>
+        /// <typeparam name="K">The type of the column value.</typeparam>
+        /// <param name="column">The column expression to select.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> SelectColumn<K>(Expression<ColumnExpression<T, K>> column)
+        {
+            return Select(GetColumn(column));
+        }
+
+        /// <summary>
         /// Select column of table by Column object.
         /// </summary>
         /// <param name="columns"></param>
@@ -956,6 +967,70 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column value is between two specified values.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="arg1">The first value to compare.</param>
+        /// <param name="arg2">The second value to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereBetween(Expression<ColumnExpression<T>> columnExp, object arg1, object arg2)
+        {
+            return (Query<T>)base.WhereBetween(GetColumn(columnExp), arg1, arg2);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause that checks if the column value is not between two specified values.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="arg1">The first value to compare.</param>
+        /// <param name="arg2">The second value to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereNotBetween(Expression<ColumnExpression<T>> columnExp, object arg1, object arg2)
+        {
+            return (Query<T>)base.WhereNotBetween(GetColumn(columnExp), arg1, arg2);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
+        public Query<T> WhereIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "IN", items);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
+        public Query<T> WhereNotIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "NOT IN", items);
+        }
+
+        /// <summary>
+        /// This method adds a clause to the "WHERE" clause checking if a column is null
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        public Query<T> WhereNull(Expression<ColumnExpression<T>> columnExp)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "IS", null);
+        }
+
+        /// <summary>
+        /// This method adds a clause to the "WHERE" clause checking if a column is not null
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        public Query<T> WhereNotNull(Expression<ColumnExpression<T>> columnExp)
+        {
+            return (Query<T>)this.Where(GetColumn(columnExp), "IS NOT", null);
+        }
+
         #region OR
 
         /// <summary>
@@ -1104,6 +1179,74 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column value is between two specified values.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="arg1">The first value to compare.</param>
+        /// <param name="arg2">The second value to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereBetween(Expression<ColumnExpression<T>> columnExp, object arg1, object arg2)
+        {
+            return (Query<T>)base.OrWhereBetween(GetColumn(columnExp), arg1, arg2);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column value is not between two specified values.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="arg1">The first value to compare.</param>
+        /// <param name="arg2">The second value to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNotBetween(Expression<ColumnExpression<T>> columnExp, object arg1, object arg2)
+        {
+            return (Query<T>)base.OrWhereNotBetween(GetColumn(columnExp), arg1, arg2);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="K">The type of items to compare.</typeparam>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
+        {
+            return (Query<T>)base.OrWhere(GetColumn(columnExp), "IN", items);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
+        /// </summary>
+        /// <typeparam name="K">The type of items to compare.</typeparam>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNotIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
+        {
+            return (Query<T>)base.OrWhere(GetColumn(columnExp), "NOT IN", items);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column is null.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNull(Expression<ColumnExpression<T>> columnExp)
+        {
+            return (Query<T>)base.OrWhere(GetColumn(columnExp), "IS", null);
+        }
+
+        /// <summary>
+        /// Adds an OR WHERE clause that checks if the column is not null.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNotNull(Expression<ColumnExpression<T>> columnExp)
+        {
+            return (Query<T>)this.OrWhere(GetColumn(columnExp), "IS NOT", null);
+        }
+
         #endregion
 
         #endregion
@@ -1112,6 +1255,12 @@ namespace SharpOrm
         {
             var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.SubMembers | ExpressionConfig.Method);
             return processor.ParseColumns(column).First();
+        }
+
+        private Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
+        {
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
+            return processor.ParseColumn(column);
         }
 
         /// <summary>
