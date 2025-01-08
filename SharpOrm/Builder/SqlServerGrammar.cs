@@ -93,19 +93,19 @@ namespace SharpOrm.Builder
             }
 
             this.builder.Add("SELECT COUNT(*) FROM (");
-            this.ConfigureSelect(true, column);
+            this.ConfigureSelect(true, column, true);
             this.builder.Add(") AS [count]");
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            this.ConfigureSelect(configureWhereParams, null);
+            this.ConfigureSelect(configureWhereParams, null, false);
         }
 
-        private void ConfigureSelect(bool configureWhereParams, Column countColumn)
+        private void ConfigureSelect(bool configureWhereParams, Column countColumn, bool isCount)
         {
-            if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams, countColumn);
-            else this.WriteSelect(configureWhereParams, countColumn);
+            if (this.HasOffset && this.Config.UseOldPagination) this.WriteSelectWithOldPagination(configureWhereParams, countColumn, isCount);
+            else this.WriteSelect(configureWhereParams, isCount);
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
@@ -116,21 +116,21 @@ namespace SharpOrm.Builder
                 this.builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
-        private void WriteSelect(bool configureWhereParams, Column countColumn)
+        private void WriteSelect(bool configureWhereParams, bool isCount)
         {
             this.builder.Add("SELECT");
 
             if (this.Query.Distinct)
                 this.builder.Add(" DISTINCT");
 
-            if (!HasOffset && !this.Info.IsCount())
+            if (!HasOffset && !isCount)
                 this.AddLimit();
 
             this.builder.Add(' ');
             this.WriteSelectColumns();
             this.WriteSelectFrom(configureWhereParams);
 
-            if (countColumn != null)
+            if (isCount)
                 return;
 
             this.ApplyOrderBy();
@@ -207,7 +207,7 @@ namespace SharpOrm.Builder
             return this.builder.Add(')');
         }
 
-        private void WriteSelectWithOldPagination(bool configureWhereParams, Column countColunm)
+        private void WriteSelectWithOldPagination(bool configureWhereParams, Column countColunm, bool isCount)
         {
             this.builder.Add("SELECT * FROM (");
             this.WriteRowNumber();
@@ -224,7 +224,9 @@ namespace SharpOrm.Builder
             this.WriteWhere(configureWhereParams);
             this.WriteGroupBy();
             this.builder.Add(") ").Add(this.TryGetTableAlias(this.Query));
-            this.ApplyPagination();
+
+            if (!isCount)
+                this.ApplyPagination();
         }
 
         private void ApplyPagination()

@@ -149,8 +149,6 @@ namespace SharpOrm
         /// </summary>
         private void RefreshPageCount()
         {
-            this.query.Offset = null;
-            this.query.Limit = null;
             this.Total = this.countColunm == null ? this.query.Count() : this.query.Count(this.countColunm);
             this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
         }

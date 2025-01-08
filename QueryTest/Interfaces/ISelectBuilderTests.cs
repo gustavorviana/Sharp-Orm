@@ -71,18 +71,6 @@
         void SelectNonDecimalSqlExpression();
         void SelectDecimalSqlExpression();
 
-        //Count
-        void Count();
-        void CountJoin();
-        void CountDistinct();
-        void CountDistinctColumn();
-        void CountWhere();
-        void CountDistinct2();
-        void CountDistinct3();
-        void CountAllDistinct();
-        void CountAllOfTableDistinct();
-        void CountOffset();
-
         // Cases
         void ColumnCase();
         void CaseEmptyCase();
