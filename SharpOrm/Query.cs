@@ -493,12 +493,14 @@ namespace SharpOrm
 
         private void SetPrimaryKey(T owner, object result)
         {
-            if (!this.Config.ApplyGeneratedKey) return;
+            if (!Config.ApplyGeneratedKey) return;
 
             var keys = TableInfo.GetPrimaryKeys();
-            if (keys.Length > 1) return;
+            if (keys.Length != 1) return;
+            var key = keys.First();
 
-            keys[0].Set(owner, result);
+            if (object.Equals(ReflectionUtils.GetDefault(key.Type), key.Get(owner)))
+                key.Set(owner, result);
         }
 
         /// <summary>

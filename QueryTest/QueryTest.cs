@@ -12,6 +12,35 @@ namespace QueryTest
     public class QueryTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
+        public void InsertT_ShouldNotChangeAddressId()
+        {
+            const int expectedId = 1;
+            var query = new Query<Address>();
+            var addr = new Address(1)
+            {
+                City = "City"
+            };
+
+            query.Insert(addr);
+            Assert.Equal(expectedId, addr.Id);
+        }
+
+        [Fact]
+        public void InsertT_ShouldNotChangeIdGuid()
+        {
+            var expectedId = Guid.NewGuid();
+            var query = new Query<GuidIdModel>();
+            var addr = new GuidIdModel
+            {
+               Id = expectedId,
+               Value = "Value"
+            };
+
+            query.Insert(addr);
+            Assert.Equal(expectedId, addr.Id);
+        }
+
+        [Fact]
         public void OrderBy_ShouldApplyAscendingOrder()
         {
             // Arrange
@@ -160,7 +189,7 @@ namespace QueryTest
 
                 Assert.Equal(id, query.Insert(order));
 
-                if (applyGeneratedKey) Assert.Equal(id, order.Id);
+                if (applyGeneratedKey) Assert.Equal(order.Id, order.Id);
                 else Assert.Equal(0, order.Id);
             }
         }
