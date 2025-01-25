@@ -1,5 +1,6 @@
 ﻿using BaseTest.Utils;
 using QueryTest.Interfaces;
+using QueryTest.Utils;
 using SharpOrm.Builder;
 using static QueryTest.ExpressionProcessorTest;
 
@@ -14,7 +15,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeNow()
         {
-            var column = ParseColumn<SampleClass>(x => DateTime.Now).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => DateTime.Now).LoadDeferred(info, true);
 
             Assert.Equal("DATETIME() AS \"Now\"", column.ToString());
         }
@@ -22,7 +23,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeDateOnly()
         {
-            var column = ParseColumn<SampleClass>(x => DateTime.Today).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => DateTime.Today).LoadDeferred(info, true);
 
             Assert.Equal("DATE('now') AS \"Today\"", column.ToString());
         }
@@ -30,14 +31,14 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeUtcNow()
         {
-            var column = ParseColumn<SampleClass>(x => DateTime.UtcNow).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => DateTime.UtcNow).LoadDeferred(info, true);
 
             Assert.Equal("CURRENT_TIMESTAMP AS \"UtcNow\"", column.ToString());
         }
         [Fact]
         public void DateTimeDayOfYear()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.DayOfYear).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.DayOfYear).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%j',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -45,7 +46,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeDayOfWeek()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.DayOfWeek).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.DayOfWeek).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%w',\"Date\")+1 AS \"Date\"", column.ToString());
         }
@@ -53,7 +54,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeDay()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%H:%M:%S',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -61,7 +62,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeMonth()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Month).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Month).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%m',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -69,7 +70,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeYear()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Year).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Year).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%Y',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -77,7 +78,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeHour()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Hour).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Hour).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%H',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -85,7 +86,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeMinute()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Minute).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Minute).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%M',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -93,7 +94,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeSecond()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Second).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Second).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%S',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -101,7 +102,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeMillisecond()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Millisecond).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Millisecond).LoadDeferred(info, true);
 
             Assert.Equal("(STRFTIME('%f',\"Date\")-floor(STRFTIME('%f',\"Date\")))*1000 AS \"Date\"", column.ToString());
         }
@@ -109,7 +110,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeDate()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.Date).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.Date).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%Y-%m-%d',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -117,7 +118,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeTimeOfDay()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay).LoadDeferred(info, true);
 
             Assert.Equal("STRFTIME('%H:%M:%S',\"Date\") AS \"Date\"", column.ToString());
         }
@@ -125,7 +126,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DateTimeFormat()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.ToString()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.ToString()).LoadDeferred(info, true);
 
             Assert.Equal("strftime(?, \"Date\") AS \"Date\"", column.ToString());
             Assert.Single(column.Parameters);
@@ -138,7 +139,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void TimeSpanFormat()
         {
-            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay.ToString()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Date.TimeOfDay.ToString()).LoadDeferred(info, true);
 
             Assert.Equal("strftime(?, \"Date\") AS \"Date\"", column.ToString());
             Assert.Single(column.Parameters);

@@ -209,13 +209,5 @@ namespace QueryTest.SqlServer
 
             QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] ON [Customers].[address_id] = [Orders].[Id] WHERE LOWER([Orders].[Product]) = ?", query.Grammar().Select());
         }
-
-        [Fact]
-        public void SelectBeforeJoin()
-        {
-            using var query = new Query<Order>();
-            var ex = Assert.Throws<ForeignMemberException>(() => query.Select(x => new { x.Product, x.Customer.Name }));
-            Assert.Equal("It's not possible to load the 'Customer' property before performing a join.", ex.Message);
-        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Mock;
 using SharpOrm;
+using SharpOrm.Builder;
 using System.Data.Common;
 using System.Text;
 using Xunit.Abstractions;
@@ -33,7 +34,7 @@ namespace BaseTest.Utils
             return new QueryFallback(Connection, fallback);
         }
 
-        protected class QueryFallback : IDisposable
+        protected class QueryFallback : IDisposable, ISqlExpressible
         {
             private readonly StringBuilder builder = new();
 
@@ -86,6 +87,11 @@ namespace BaseTest.Utils
             public override string ToString()
             {
                 return this.builder.ToString().TrimEnd();
+            }
+
+            public SqlExpression ToExpression(IReadonlyQueryInfo info)
+            {
+                return new(this.ToString());
             }
         }
     }

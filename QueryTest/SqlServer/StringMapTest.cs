@@ -1,5 +1,6 @@
 ﻿using BaseTest.Utils;
 using QueryTest.Interfaces;
+using QueryTest.Utils;
 using SharpOrm.Builder;
 using static QueryTest.ExpressionProcessorTest;
 
@@ -23,7 +24,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void Substring()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).LoadDeferred(info, true);
 
             Assert.Equal("SUBSTRING([Name],0,10) AS [Name]", column.ToString());
         }
@@ -31,7 +32,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void StringTrim()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Trim()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.Trim()).LoadDeferred(info, true);
 
             Assert.Equal("LTRIM(RTRIM([Name])) AS [Name]", column.ToString());
         }
@@ -39,7 +40,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void StringTrimStart()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.TrimStart()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.TrimStart()).LoadDeferred(info, true);
 
             Assert.Equal("LTRIM([Name]) AS [Name]", column.ToString());
         }
@@ -47,7 +48,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void StringTrimEnd()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.TrimEnd()).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.TrimEnd()).LoadDeferred(info, true);
 
             Assert.Equal("RTRIM([Name]) AS [Name]", column.ToString());
         }
@@ -55,7 +56,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SubstringWithColumnIndex()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, 10)).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, 10)).LoadDeferred(info, true);
 
             Assert.Equal("SUBSTRING([Name],[StartIndex],10) AS [Name]", column.ToString());
         }
@@ -63,7 +64,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SubstringByIndexColumns()
         {
-            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, x.EndIndex)).ToExpression(info);
+            var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, x.EndIndex)).LoadDeferred(info, true);
 
             Assert.Equal("SUBSTRING([Name],[StartIndex],[EndIndex]) AS [Name]", column.ToString());
         }

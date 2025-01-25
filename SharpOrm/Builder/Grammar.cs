@@ -438,7 +438,7 @@ namespace SharpOrm.Builder
             this.builder.Clear();
             builderAction();
 
-            return this.builder.ToExpression();
+            return this.builder.ToExpression(true);
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
-using SharpOrm;
+using QueryTest.Utils;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using static QueryTest.ExpressionProcessorTest;
@@ -19,33 +19,33 @@ namespace QueryTest
         [Fact]
         public void ParseColumnTest()
         {
-            var column = Column.Parse<Customer>(x => x.Id, info);
+            var column = ParseColumn<Customer>(x => x.Id);
 
-            Assert.Equal("[Id]", column.ToExpression(info).ToString());
+            QueryAssert.Equal(info, "[Id]", column.ToExpression(info));
         }
 
         [Fact]
         public void ParseColumnWithAliasTest()
         {
-            var column = Column.Parse<Customer>(x => new { CliId = x.Id }, info);
+            var column = ParseColumn<Customer>(x => new { CliId = x.Id });
 
-            Assert.Equal("[Id] AS [CliId]", column.ToExpression(info).ToString());
+            QueryAssert.Equal(info, "[Id] AS [CliId]", column.ToExpression(info));
         }
 
         [Fact]
         public void ParseColumn_NameLength_ReturnsCorrectExpression()
         {
-            var column = Column.Parse<Customer>(x => x.Name.Length, info);
+            var column = ParseColumn<Customer>(x => x.Name.Length);
 
-            Assert.Equal("LEN([Name]) AS [Name]", column.ToExpression(info).ToString());
+            QueryAssert.Equal(info, "LEN([Name]) AS [Name]", column.ToExpression(info));
         }
 
         [Fact]
         public void ParseColumnWithAlias_NameLength_ReturnsCorrectExpressionWithAlias()
         {
-            var column = Column.Parse<Customer>(x => new { CliId = x.Name.Length }, info);
+            var column = ParseColumn<Customer>(x => new { CliId = x.Name.Length });
 
-            Assert.Equal("LEN([Name]) AS [CliId]", column.ToExpression(info).ToString());
+            QueryAssert.Equal(info, "LEN([Name]) AS [CliId]", column.ToExpression(info));
         }
 
         [Fact]
@@ -53,14 +53,14 @@ namespace QueryTest
         {
             var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
 
-            QueryInfo info = new(new SqlServerQueryConfig(), new DbName("Customer"));
+            var info = GetQueryInfo<Customer>(new SqlServerQueryConfig(), new DbName("Customer"));
             info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
 
             var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
             var columns = processor.ParseColumns(x => string.Concat(x.Name, x.Address.Street)).ToArray();
 
             Assert.Single(columns);
-            Assert.Equal("CONCAT([Customer].[Name],[Address].[Street]) AS [Concat]", columns[0].ToExpression(info).ToString());
+            QueryAssert.Equal(info, "CONCAT([Customer].[Name],[Address].[Street]) AS [Concat]", columns[0].ToExpression(info));
         }
 
         [Fact]
@@ -68,15 +68,15 @@ namespace QueryTest
         {
             var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
 
-            QueryInfo info = new(new SqlServerQueryConfig(), new DbName("Customer"));
+            var info = GetQueryInfo<Customer>(new SqlServerQueryConfig(), new DbName("Customer"));
             info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
 
             var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
             var columns = processor.ParseColumns(x => new { x.Name, x.Address.Street }).ToArray();
 
             Assert.Equal(2, columns.Length);
-            Assert.Equal("[Customer].[Name]", columns[0].ToExpression(info).ToString());
-            Assert.Equal("[Address].[Street]", columns[1].ToExpression(info).ToString());
+            QueryAssert.Equal(info, "[Customer].[Name]", columns[0].ToExpression(info));
+            QueryAssert.Equal(info, "[Address].[Street]", columns[1].ToExpression(info));
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => new { Name = string.Concat(x.Name, x.Date.TimeOfDay.Hours, TestLength) }).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("CONCAT([Name],DATEPART(HOUR,CAST([Date] AS TIME)),1) AS [Name]", exp.ToString());
+            QueryAssert.Equal(info, "CONCAT([Name],DATEPART(HOUR,CAST([Date] AS TIME)),1) AS [Name]", exp);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => x.Name).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("[Name]", exp.ToString());
+            QueryAssert.Equal(info, "[Name]", exp);
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => new { Name2 = x.Name!.ToLower() }).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("LOWER([Name]) AS [Name2]", exp.ToString());
+            QueryAssert.Equal(info, "LOWER([Name]) AS [Name2]", exp);
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => new { Namee = x.Name!.ToLower() }).First();
             var exp = column.ToExpression(info, false);
 
-            Assert.Equal("LOWER([Name])", exp.ToString());
+            QueryAssert.Equal(info, "LOWER([Name])", exp);
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace QueryTest
             var column = ParseColumns<SampleClass>(x => x.Name!.ToUpper()).First();
             var exp = column.ToExpression(info);
 
-            Assert.Equal("UPPER([Name]) AS [Name]", exp.ToString());
+            QueryAssert.Equal(info, "UPPER([Name]) AS [Name]", exp);
         }
     }
 }

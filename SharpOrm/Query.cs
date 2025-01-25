@@ -133,7 +133,8 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
-            TableInfo = manager.Config.Translation.GetTable(typeof(T));
+            ((IRootTypeMap)Info).RootType = typeof(T);
+            TableInfo = manager.Config.Translation.GetTable(((IRootTypeMap)Info).RootType);
             this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
             this.ApplyValidations();
 
@@ -143,7 +144,7 @@ namespace SharpOrm
 
         private Query(DbName table, QueryConfig config) : base(table, config)
         {
-
+            ((IRootTypeMap)Info).RootType = typeof(T);
         }
 
         private void ApplyValidations()
@@ -1300,7 +1301,7 @@ namespace SharpOrm
         {
             var processor = new ExpressionProcessor<K>(info, ExpressionConfig.SubMembers | ExpressionConfig.Method)
             {
-                ForceTablePrefix = forceTablePrefix
+                ForceTablePrefix = forceTablePrefix,
             };
 
             return processor.ParseColumns(column).First();

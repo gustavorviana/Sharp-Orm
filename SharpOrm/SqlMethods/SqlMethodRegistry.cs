@@ -23,29 +23,34 @@ namespace SharpOrm.SqlMethods
             foreach (var member in property.Childs)
                 column = this.ApplyCaller(info, column, member);
 
-            return column;
+            return new QueryBuilder(info).Add(column).ToExpression();
         }
 
         private SqlExpression GetMemberNameExpression(IReadonlyQueryInfo info, SqlMember property, bool forcePrefix)
         {
             if (property.IsNativeType)
-                return property.IsStatic ? new SqlExpression("") : new ColumnSqlExpression(info, property.Name, forcePrefix);
+                return GetNativeTypeExpression(info, property, forcePrefix);
 
             return GetForeignMemberExpression(info, property);
         }
 
-        private static ColumnSqlExpression GetForeignMemberExpression(IReadonlyQueryInfo info, SqlMember property)
+        private SqlExpression GetNativeTypeExpression(IReadonlyQueryInfo info, SqlMember property, bool forcePrefix)
         {
-            if (!(info is QueryInfo qInfo) || !(qInfo.Joins.FirstOrDefault(x => x.MemberInfo == property.Member) is JoinQuery join))
-                throw ForeignMemberException.IncompatibleType(property.Member);
+            if (property.IsStatic)
+                return new SqlExpression("");
 
+            return new DeferredMemberColumn(info, property.Member, forcePrefix);
+        }
+
+        private static DeferredMemberColumn GetForeignMemberExpression(IReadonlyQueryInfo info, SqlMember property)
+        {
             if (property.Childs.Length == 0)
                 throw new ForeignMemberException(property.Member, "A property of the foreign class must be provided.");
 
             var member = property.Childs[0];
             property.Childs = property.Childs.Skip(1).ToArray();
 
-            return new ColumnSqlExpression(join.Info, member.Name, true);
+            return new DeferredMemberColumn(info, member.Member, true);
         }
 
         private SqlExpression ApplyCaller(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)

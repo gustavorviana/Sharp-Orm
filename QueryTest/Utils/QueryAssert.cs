@@ -1,4 +1,5 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder;
 using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -24,10 +25,43 @@ namespace QueryTest.Utils
         }
         #endregion
 
+        public static void Equal(Query info, SqlExpression expected, SqlExpression actual, bool allowAlias = false)
+        {
+            Equal(info.Info, expected, actual, allowAlias);
+        }
+
+        public static void Equal(QueryInfo info, SqlExpression expected, SqlExpression actual, bool allowAlias = false)
+        {
+            actual = new QueryBuilder(info).Add(actual, allowAlias).ToExpression(true);
+
+            Assert.Equal(expected.ToString(), actual.ToString());
+            Assert.True(expected.Parameters.SequenceEqual(actual.Parameters), "The arguments of the expression do not match.");
+        }
+
         public static void Equal(SqlExpression expected, SqlExpression actual)
         {
             Assert.Equal(expected.ToString(), actual.ToString());
             Assert.True(expected.Parameters.SequenceEqual(actual.Parameters), "The arguments of the expression do not match.");
+        }
+
+        public static void Equal(QueryBase query, string expected, SqlExpression actual)
+        {
+            Equal(query.Info, expected, actual);
+        }
+
+        public static void Equal(QueryBase query, string expected, ISqlExpressible actual)
+        {
+            Equal(query.Info, expected, actual);
+        }
+
+        public static void Equal(IReadonlyQueryInfo info, string expected, ISqlExpressible actual)
+        {
+            Equal(info, expected, actual.ToExpression(info));
+        }
+
+        public static void Equal(IReadonlyQueryInfo info, string expected, SqlExpression actual, bool allowAlias = false)
+        {
+            Assert.Equal(expected, new QueryBuilder(info).Add(actual, allowAlias).ToExpression(true).ToString());
         }
 
         public static void Equal(string expected, SqlExpression actual)

@@ -1,4 +1,6 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -114,6 +116,9 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
         public QueryBuilder Add(SqlExpression expression, bool allowAlias)
         {
+            if (expression is IDeferredSqlExpression deferrer)
+                return InternalAddParam(new DeferredValue(deferrer, allowAlias));
+
             return this.Add(expression.ToString(), allowAlias, expression.Parameters);
         }
 
@@ -177,6 +182,9 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         public QueryBuilder AddParameter(object val, bool allowAlias = true, bool forceWriteColumn = false)
         {
+            if (TryDeferredExpression(ref val, allowAlias))
+                return this;
+
             if (val is SqlExpression exp)
                 return this.Add(exp, allowAlias);
 
@@ -297,16 +305,30 @@ namespace SharpOrm.Builder
                 return this.Add(this.info.Config.ApplyNomenclature(strColumn));
             }
 
+            if (TryDeferredExpression(ref column, allowAlias))
+                return this;
+
             if (column is MemberInfoColumn memberColumn)
                 return this.AddParameter(memberColumn);
-
-            if (column is ISqlExpressible iExp)
-                column = iExp.ToSafeExpression(this.info, allowAlias);
 
             if (column is SqlExpression exp)
                 return this.Add(exp);
 
             throw new NotSupportedException("The column type is not supported.");
+        }
+
+        private bool TryDeferredExpression(ref object column, bool allowAlias)
+        {
+            if (column is ISqlExpressible iExp && !(column is IDeferredSqlExpression))
+                column = iExp.ToSafeExpression(this.info, allowAlias);
+
+            if (column is IDeferredSqlExpression deferrer)
+            {
+                this.InternalAddParam(new DeferredValue(deferrer, allowAlias));
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -426,24 +448,33 @@ namespace SharpOrm.Builder
         /// Returns an <see cref="SqlExpression"/> representation of the query.
         /// </summary>
         /// <param name="info">The query information.</param>
-        public SqlExpression ToExpression()
+        public SqlExpression ToExpression(bool withDeferrer = false)
         {
-            if (this.hasMemberColumn)
-                return ToSafeExpression();
+            if (this.hasMemberColumn || withDeferrer)
+                return ToSafeExpression(withDeferrer);
 
             return new SqlExpression(this.ToString(), this.parameters.ToArray());
         }
 
-        private SqlExpression ToSafeExpression()
+        private SqlExpression ToSafeExpression(bool withDeferrer = false)
         {
             var builder = new StringBuilder();
             builder.AppendAndReplace(this.query.ToString(), '?', count =>
              {
                  if (this.Parameters[count - 1] is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
+                 else if (withDeferrer && this.Parameters[count - 1] is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info));
                  else builder.Append('?');
              });
 
-            return new SqlExpression(builder.ToString(), this.parameters.Where(x => !(x is MemberInfoColumn)).ToArray());
+            return new SqlExpression(builder.ToString(), this.parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
+        }
+
+        private static bool CanBeUsedAsParameter(object value, bool withDeferrer)
+        {
+            if (value is MemberInfoColumn)
+                return false;
+
+            return !(value is IDeferredSqlExpression) || !withDeferrer;
         }
 
         /// <summary>
@@ -504,5 +535,22 @@ namespace SharpOrm.Builder
             GC.SuppressFinalize(this);
         }
         #endregion
+
+        private class DeferredValue : IDeferredSqlExpression
+        {
+            private readonly IDeferredSqlExpression original;
+            private readonly bool alias;
+
+            public DeferredValue(IDeferredSqlExpression original, bool alias)
+            {
+                this.original = original;
+                this.alias = alias;
+            }
+
+            public SqlExpression ToExpression(IReadonlyQueryInfo info)
+            {
+                return original.ToSafeExpression(info, alias);
+            }
+        }
     }
 }

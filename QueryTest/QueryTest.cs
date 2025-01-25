@@ -1,6 +1,7 @@
 ﻿using BaseTest.Mock;
 using BaseTest.Models;
 using BaseTest.Utils;
+using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
@@ -32,8 +33,8 @@ namespace QueryTest
             var query = new Query<GuidIdModel>();
             var addr = new GuidIdModel
             {
-               Id = expectedId,
-               Value = "Value"
+                Id = expectedId,
+                Value = "Value"
             };
 
             query.Insert(addr);
@@ -70,7 +71,7 @@ namespace QueryTest
             Assert.Contains(
                 result.Info.Orders, o => o.Column.Name == nameof(Address.City) &&
                 o.Order == SharpOrm.OrderBy.Asc &&
-                o.Column.ToString() == "Column(SUBSTRING([City],LEN([Street])))"
+                o.Column.ToString(query, false) == "SUBSTRING([City],LEN([Street]))"
             );
         }
 
@@ -223,7 +224,7 @@ namespace QueryTest
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(expected, result.Info.Select.FirstOrDefault().ToSafeExpression(query.Info, false));
+            QueryAssert.Equal(query, expected, result.Info.Select.FirstOrDefault().ToSafeExpression(query.Info, false));
         }
     }
 }

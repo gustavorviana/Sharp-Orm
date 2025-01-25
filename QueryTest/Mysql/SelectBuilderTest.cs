@@ -235,7 +235,7 @@ namespace QueryTest.Mysql
             query.GroupBy(x => x.Name);
             query.Join("X", "X.Id", "TestTable.Id");
 
-            QueryAssert.Equal("SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` GROUP BY `TestTable`.`Name`", query.Grammar().Select());
+            QueryAssert.Equal(query, "SELECT * FROM `TestTable` INNER JOIN `X` ON `X`.`Id` = `TestTable`.`Id` GROUP BY `TestTable`.`Name`", query.Grammar().Select());
         }
 
         [Fact]

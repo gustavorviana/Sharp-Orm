@@ -15,7 +15,7 @@ namespace SharpOrm.Builder.Expressions
 
         public MemberInfo Member { get; }
         public bool IsStatic { get; }
-        public string Name { get; }
+        public string Name => ColumnInfo.GetName(Member);
         public string Alias { get; }
 
         public SqlMember(MemberInfo member, SqlMemberInfo[] childs, string alias)
@@ -27,7 +27,6 @@ namespace SharpOrm.Builder.Expressions
             Member = member;
             Childs = childs ?? new SqlMemberInfo[0];
             IsStatic = false;
-            Name = member.GetCustomAttribute<ColumnAttribute>()?.Name ?? member.Name;
             Alias = GetAlias(Name, alias, childs, IsNativeType);
         }
 
@@ -38,7 +37,6 @@ namespace SharpOrm.Builder.Expressions
             Member = staticMember.Member;
             Childs = new[] { staticMember };
             IsStatic = true;
-            Name = Member.Name;
             IsNativeType = true;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
         }

@@ -1,5 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
+using QueryTest.Utils;
 using SharpOrm;
 
 namespace QueryTest
@@ -69,7 +70,7 @@ namespace QueryTest
             query.WhereNot(x => x.Street, "First");
             query.Get();
 
-            Assert.Equal(expected, fallback.ToString());
+            QueryAssert.Equal(query, expected, fallback);
         }
     }
 }

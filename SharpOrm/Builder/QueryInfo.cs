@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.Expressions;
+using System;
 using System.Collections.Generic;
 
 namespace SharpOrm.Builder
@@ -6,8 +7,10 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents the information for building a SQL query.
     /// </summary>
-    public class QueryInfo : QueryBaseInfo
+    public class QueryInfo : QueryBaseInfo, IRootTypeMap
     {
+        Type IRootTypeMap.RootType { get; set; }
+
         /// <summary>
         /// Gets the HAVING clause builder.
         /// </summary>
