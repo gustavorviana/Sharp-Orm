@@ -12,6 +12,7 @@ namespace SharpOrm.Builder.Expressions
         private readonly IReadonlyQueryInfo info;
         private readonly ExpressionConfig config;
         private readonly SqlExpressionVisitor visitor;
+        public bool ForceTablePrefix { get => visitor.ForceTablePrefix; set => visitor.ForceTablePrefix = value; }
 
         public ExpressionProcessor(IReadonlyQueryInfo info, ExpressionConfig config)
         {
@@ -25,7 +26,7 @@ namespace SharpOrm.Builder.Expressions
             return ParseExpression(expression).Select(x => x.Name);
         }
 
-        public IEnumerable<Column> ParseColumns(Expression<ColumnExpression<T>> expression)
+        public IEnumerable<ExpressionColumn> ParseColumns(Expression<ColumnExpression<T>> expression)
         {
             return ParseExpression(expression).Select(BuildColumn);
         }
@@ -53,8 +54,8 @@ namespace SharpOrm.Builder.Expressions
 
         private ExpressionColumn BuildColumn(SqlMember member)
         {
-            var sqlExpression = info.Config.Methods.ApplyMember(info, ProcessMemberInfo(member), out var isFk);
-            return new ExpressionColumn(member.Name, sqlExpression, isFk || member.Member.MemberType == MemberTypes.Method)
+            var sqlExpression = info.Config.Methods.ApplyMember(info, ProcessMemberInfo(member), ForceTablePrefix);
+            return new ExpressionColumn(member.Member, sqlExpression)
             {
                 Alias = member.Alias ?? (member.Childs.Length > 0 ? member.Name : null)
             };

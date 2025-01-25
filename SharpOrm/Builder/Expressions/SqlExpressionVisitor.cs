@@ -14,6 +14,8 @@ namespace SharpOrm.Builder.Expressions
         private readonly IReadonlyQueryInfo info;
         private readonly Type rootType;
 
+        public bool ForceTablePrefix { get; set; }
+
         public SqlExpressionVisitor(Type rootType, IReadonlyQueryInfo info, ExpressionConfig config)
         {
             this.rootType = rootType;
@@ -184,7 +186,7 @@ namespace SharpOrm.Builder.Expressions
             if (memberExp.Expression.GetType().ToString() != PropertyExpressionTypeName)
                 return new MemberInfoColumn(memberExp.Member);
 
-            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp), out _);
+            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp), ForceTablePrefix);
         }
 
         private object GetTarget(Expression expression)

@@ -305,9 +305,9 @@ namespace SharpOrm
 
         #endregion
 
-        private Column[] GetColumns(Expression<ColumnExpression<T>> expression)
+        internal ExpressionColumn[] GetColumns(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
+            var processor = new ExpressionProcessor<T>(this.Info, config);
             return processor.ParseColumns(expression).ToArray();
         }
 
@@ -597,6 +597,44 @@ namespace SharpOrm
 
         #region Join
 
+        public Query<T> LeftJoin<C>(Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(null, Config.Translation), column1, "=", column2, "LEFT");
+        }
+
+        public Query<T> LeftJoin<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, "=", column2, "LEFT");
+        }
+
+        public Query<T> LeftJoin<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, operation, column2, "LEFT");
+        }
+
+        public Query<T> Join<C>(Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(null, Config.Translation), column1, "=", column2);
+        }
+
+        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, "=", column2);
+        }
+
+        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2)
+        {
+            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, operation, column2);
+        }
+
+        private Query<T> Join<C>(DbName name, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
+        {
+            return (Query<T>)base.Join(name, q =>
+            {
+                q.Where(GetColumn<C>(q.Info, column1, true), operation, GetColumn(column2, true));
+            }, type);
+        }
+
         public Query<T> Join<C>(string alias, string column1, string column2)
         {
             return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, column2));
@@ -609,7 +647,7 @@ namespace SharpOrm
 
         public Query<T> Join<C>(string alias, QueryCallback callback, string type = "INNER")
         {
-            return (Query<T>)base.Join(DbName.Of<C>(alias), callback, type); ;
+            return (Query<T>)base.Join(DbName.Of<C>(alias, Config.Translation), callback, type); ;
         }
 
         /// <summary>
@@ -1253,9 +1291,18 @@ namespace SharpOrm
 
         #endregion
 
-        private Column GetColumn(Expression<ColumnExpression<T>> column)
+        private ExpressionColumn GetColumn(Expression<ColumnExpression<T>> column, bool forceTablePrefix = false)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.SubMembers | ExpressionConfig.Method);
+            return GetColumn(Info, column, forceTablePrefix);
+        }
+
+        private static ExpressionColumn GetColumn<K>(IReadonlyQueryInfo info, Expression<ColumnExpression<K>> column, bool forceTablePrefix)
+        {
+            var processor = new ExpressionProcessor<K>(info, ExpressionConfig.SubMembers | ExpressionConfig.Method)
+            {
+                ForceTablePrefix = forceTablePrefix
+            };
+
             return processor.ParseColumns(column).First();
         }
 

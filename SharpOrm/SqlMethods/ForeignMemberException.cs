@@ -15,8 +15,7 @@ namespace SharpOrm.SqlMethods
         public static ForeignMemberException IncompatibleType(MemberInfo member)
         {
             string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
-
-            return new ForeignMemberException(member, $"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
+            return new ForeignMemberException(member, $"It's not possible to load the '{member.Name}' {mType} before performing a join.");
         }
     }
 }

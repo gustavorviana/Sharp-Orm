@@ -16,9 +16,9 @@ namespace SharpOrm.SqlMethods
             return this;
         }
 
-        public SqlExpression ApplyMember(IReadonlyQueryInfo info, SqlMember property, out bool isFk)
+        public SqlExpression ApplyMember(IReadonlyQueryInfo info, SqlMember property, bool forcePrefix)
         {
-            SqlExpression column = GetMemberNameExpression(info, property, out isFk);
+            SqlExpression column = GetMemberNameExpression(info, property, forcePrefix);
 
             foreach (var member in property.Childs)
                 column = this.ApplyCaller(info, column, member);
@@ -26,28 +26,26 @@ namespace SharpOrm.SqlMethods
             return column;
         }
 
-        private SqlExpression GetMemberNameExpression(IReadonlyQueryInfo info, SqlMember property, out bool isFk)
+        private SqlExpression GetMemberNameExpression(IReadonlyQueryInfo info, SqlMember property, bool forcePrefix)
         {
             if (property.IsNativeType)
-            {
-                isFk = false;
-                return new SqlExpression(property.IsStatic ? "" : info.Config.ApplyNomenclature(property.Name));
-            }
+                return property.IsStatic ? new SqlExpression("") : new ColumnSqlExpression(info, property.Name, forcePrefix);
 
+            return GetForeignMemberExpression(info, property);
+        }
+
+        private static ColumnSqlExpression GetForeignMemberExpression(IReadonlyQueryInfo info, SqlMember property)
+        {
             if (!(info is QueryInfo qInfo) || !(qInfo.Joins.FirstOrDefault(x => x.MemberInfo == property.Member) is JoinQuery join))
                 throw ForeignMemberException.IncompatibleType(property.Member);
 
             if (property.Childs.Length == 0)
                 throw new ForeignMemberException(property.Member, "A property of the foreign class must be provided.");
 
-            var prefix = join.Info.TableName.TryGetAlias(info.Config);
             var member = property.Childs[0];
-
             property.Childs = property.Childs.Skip(1).ToArray();
 
-
-            isFk = true;
-            return new SqlExpression($"{prefix}.{info.Config.ApplyNomenclature(member.Name)}");
+            return new ColumnSqlExpression(join.Info, member.Name, true);
         }
 
         private SqlExpression ApplyCaller(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)

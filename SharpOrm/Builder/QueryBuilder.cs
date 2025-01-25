@@ -287,7 +287,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="column"></param>
         /// <returns></returns>
-        public QueryBuilder AddColumn(object column)
+        public QueryBuilder AddColumn(object column, bool allowAlias = true)
         {
             if (column is string strColumn)
             {
@@ -301,7 +301,7 @@ namespace SharpOrm.Builder
                 return this.AddParameter(memberColumn);
 
             if (column is ISqlExpressible iExp)
-                column = iExp.ToSafeExpression(this.info, true);
+                column = iExp.ToSafeExpression(this.info, allowAlias);
 
             if (column is SqlExpression exp)
                 return this.Add(exp);

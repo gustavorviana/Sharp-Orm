@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -666,11 +667,48 @@ namespace SharpOrm
         /// <typeparam name="T">The type of the items to be upserted.</typeparam>
         /// <param name="query">The query object to perform the upsert operation on.</param>
         /// <param name="items">The collection of items to be upserted.</param>
+        /// <param name="toCheckColumnsExp">Columns to check for conflicts during the upsert operation.</param>
+        public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, Expression<ColumnExpression<T>> toCheckColumnsExp)
+        {
+            foreach (var item in items)
+                query.Upsert(item, toCheckColumnsExp);
+        }
+
+        /// <summary>
+        /// Performs a bulk upsert operation on a collection of items in the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to be upserted.</typeparam>
+        /// <param name="query">The query object to perform the upsert operation on.</param>
+        /// <param name="items">The collection of items to be upserted.</param>
         /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
         public static void BulkUpsert<T>(this Query<T> query, IEnumerable<T> items, string[] toCheckColumns)
         {
             foreach (var item in items)
                 query.Upsert(item, toCheckColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
+        /// </summary>
+        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
+        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
+        /// <param name="obj">The object of type T to be inserted or updated.</param>
+        /// <param name="toCheckColumnsExp">Column names to check for upserting.</param>
+        /// <remarks>
+        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
+        /// </remarks>
+        public static void Upsert<T>(this Query<T> query, T obj, Expression<ColumnExpression<T>> toCheckColumnsExp)
+        {
+            var toCheckColumns = query.GetColumns(toCheckColumnsExp, ExpressionConfig.New);
+
+            using (query = (Query<T>)query.Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, query.TableInfo.GetValue(obj, column.memberInfo));
+
+                if (query.Any()) query.Update(obj);
+                else query.Insert(obj);
+            }
         }
 
         /// <summary>
@@ -699,18 +737,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Performs a bulk upsert operation on a collection of rows in the query.
-        /// </summary>
-        /// <param name="query">The query object to perform the upsert operation on.</param>
-        /// <param name="rows">The collection of rows to be upserted.</param>
-        /// <param name="toCheckColumns">The columns to check for conflicts during the upsert operation.</param>
-        public static void BulkUpsert(this Query query, IEnumerable<Row> rows, string[] toCheckColumns)
-        {
-            foreach (var row in rows)
-                query.Upsert(row, toCheckColumns);
-        }
-
-        /// <summary>
         /// Performs a bulk delete operation on a collection of values in the query.
         /// </summary>
         /// <param name="query">The query object to perform the delete operation on.</param>
@@ -722,7 +748,7 @@ namespace SharpOrm
             using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Delete();
         }
-
+        
         /// <summary>
         /// Performs a bulk update operation on a collection of values in the query.
         /// </summary>

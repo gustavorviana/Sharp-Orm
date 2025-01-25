@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using System;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -52,12 +53,21 @@ namespace SharpOrm.Builder
                 throw new InvalidOperationException("The alias contains one or more invalid characters.");
         }
 
+        public static DbName Of<T>(string alias, TranslationRegistry registry = null)
+        {
+            if (ReflectionUtils.IsDynamic(typeof(T)))
+                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
+
+            return new DbName(registry.GetTableName(typeof(T)), alias, false);
+        }
+
+        [Obsolete("Use Of<T>(string) instead.")]
         public static DbName Of<T>(string alias)
         {
             if (ReflectionUtils.IsDynamic(typeof(T)))
                 throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
 
-            return new DbName(TableInfo.GetNameOf(typeof(T)), alias);
+            return new DbName(TableInfo.GetNameOf(typeof(T)), alias, false);
         }
 
         /// <summary>

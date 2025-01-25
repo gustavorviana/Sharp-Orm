@@ -155,6 +155,14 @@ namespace SharpOrm.Builder
             return col.Get(owner);
         }
 
+        internal object GetValue(object owner, MemberInfo column)
+        {
+            if (!(this.Columns.FirstOrDefault(c => c.column == column) is ColumnInfo col))
+                throw new KeyNotFoundException($"The key '{column.Name}' does not exist in the object '{this.Type.FullName}'.");
+
+            return col.Get(owner);
+        }
+
         /// <summary>
         /// Gets the cells representing the column values of the specified owner object.
         /// </summary>

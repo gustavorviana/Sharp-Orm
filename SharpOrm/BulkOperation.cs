@@ -1,7 +1,11 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 
 namespace SharpOrm
@@ -12,7 +16,7 @@ namespace SharpOrm
         private const string TargetAlias = "target";
 
         private bool disposed;
-        private readonly DbTable table;
+        internal readonly DbTable table;
         private readonly string targetTable;
         private QueryConfig Config => this.table.Manager.Config;
         private readonly string[] tempColumns;
@@ -72,28 +76,47 @@ namespace SharpOrm
                 return q.Delete();
         }
 
-        public int Update(string[] comparationColumns)
+        public int Update<T>(Expression<ColumnExpression<T>> toCheckColumnsExp)
         {
-            using (var q = this.GetQuery(comparationColumns))
+            using (var targetQuery = GetQueryBase())
             {
-                string tempName = table.DbName.TryGetAlias(Config);
-                return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell(tempName, col)));
+                var targetColumns = GetColumns(targetQuery, toCheckColumnsExp);
+                targetQuery.Join($"{table.DbName} tempTable", q =>
+                {
+                    var tempTableColumns = GetColumns((Query)q, toCheckColumnsExp);
+
+                    for (int i = 0; i < tempTableColumns.Length; i++)
+                        q.Where(tempTableColumns[i], targetColumns[i]);
+                }, "INNER");
+
+                return targetQuery.Update(GetToUpdateCells(targetColumns).Select(col => GetUpdateCell("tempTable", col)));
             }
         }
 
-        private Query GetQuery(string[] comparationColumns)
+        private ExpressionColumn[] GetColumns<T>(Query query, Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            return ApplyJoin(new Query(string.Concat(this.targetTable, " ", TargetAlias), this.table.Manager) { Token = token }, comparationColumns);
+            var processor = new ExpressionProcessor<T>(query.Info, config) { ForceTablePrefix = true };
+            return processor.ParseColumns(expression).ToArray();
         }
 
-        private Query ApplyJoin(Query query, string[] columns)
+        public int Update(string[] comparationColumns)
         {
-            return query.Join(table.DbName, q =>
+            using (var q = this.GetQuery(comparationColumns))
+                return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell("tempTable", col)));
+        }
+
+        private Query GetQuery(string[] columnNames)
+        {
+            return GetQueryBase().Join($"{table.DbName} tempTable", q =>
             {
-                string tempName = table.DbName.TryGetAlias(Config);
-                foreach (var col in columns)
-                    q.WhereColumn(string.Concat(tempName, ".", col), string.Concat(TargetAlias, ".", col));
+                foreach (var col in columnNames)
+                    q.WhereColumn(ToColumnString("tempTable", col), ToColumnString(TargetAlias, col));
             }, "INNER");
+        }
+
+        private Query GetQueryBase()
+        {
+            return new Query($"{this.targetTable} {TargetAlias}", this.table.Manager) { Token = token };
         }
 
         private string[] GetToUpdateCells(string[] comparationColumns)
@@ -101,12 +124,22 @@ namespace SharpOrm
             return this.tempColumns.Where(x => !comparationColumns.Contains(x)).ToArray();
         }
 
+        private IEnumerable<string> GetToUpdateCells(ExpressionColumn[] comparationColumns)
+        {
+            return this.tempColumns.Where(tc => !comparationColumns.Any(c => tc == c.Name));
+        }
+
         private Cell GetUpdateCell(string tempName, string col)
         {
             return new Cell(
-                this.Config.ApplyNomenclature(string.Concat("target.", col)),
-                (SqlExpression)this.Config.ApplyNomenclature(string.Concat(tempName, ".", col))
+                this.Config.ApplyNomenclature(ToColumnString("target", col)),
+                (SqlExpression)this.Config.ApplyNomenclature(ToColumnString(tempName, col))
             );
+        }
+
+        private static string ToColumnString(string tablePrefix, string columnName)
+        {
+            return new StringBuilder(tablePrefix).Append('.').Append(columnName).ToString();
         }
 
         #region IDisposable

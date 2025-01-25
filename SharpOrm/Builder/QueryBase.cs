@@ -481,7 +481,7 @@ namespace SharpOrm.Builder
                 return this;
             }
 
-            this.Info.Where.AddColumn(column);
+            this.Info.Where.AddColumn(column, false);
             this.Info.Where.Add().Add(operation).Add();
 
             bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");

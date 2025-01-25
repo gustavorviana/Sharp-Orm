@@ -19,7 +19,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets the name of the column.
         /// </summary>
-        public string Name { get; protected set; }
+        public virtual string Name { get; protected set; }
 
         /// <summary>
         /// Gets or sets the alias of the column.
@@ -222,10 +222,10 @@ namespace SharpOrm
 
         public bool Equals(Column other)
         {
-            return other is Column &&
+            return other != null &&
                    Name == other.Name &&
                    Alias == other.Alias &&
-                   expression.Equals(other.expression);
+                   Expression.Equals(expression, other.expression);
         }
 
         public override int GetHashCode()
