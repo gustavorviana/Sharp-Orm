@@ -87,7 +87,21 @@ namespace SharpOrm.Collections
                 this.current = null;
                 throw;
             }
-            this.current = next ? this.map.Read(reader) : null;
+
+            try
+            {
+                this.current = next ? this.map.Read(reader) : null;
+            }
+            catch (Exception)
+            {
+                this.current = null;
+
+                if (Token.IsCancellationRequested)
+                    Token.ThrowIfCancellationRequested();
+
+                throw;
+            }
+
             return next;
         }
 

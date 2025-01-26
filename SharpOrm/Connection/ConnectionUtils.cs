@@ -114,6 +114,11 @@ namespace SharpOrm.Connection
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteNonQuery();
             }
+            catch
+            {
+                token.ThrowIfCancellationRequested();
+                throw;
+            }
             finally
             {
                 manager.CloseByEndOperation();
@@ -145,6 +150,11 @@ namespace SharpOrm.Connection
             {
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteScalar<T>();
+            }
+            catch
+            {
+                token.ThrowIfCancellationRequested();
+                throw;
             }
             finally
             {
