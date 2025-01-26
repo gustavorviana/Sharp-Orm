@@ -659,10 +659,12 @@ namespace SharpOrm
         public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
             var name = new ExpressionProcessor<T>(this.Info, ExpressionConfig.None).GetTableName(table, out var member);
-            if (Info.Joins.Any(j => j.MemberInfo == member))
+            var dbName = new DbName(name, alias);
+
+            if (Info.Joins.Any(j => j.MemberInfo == member && j.Info.TableName == dbName))
                 throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
 
-            JoinQuery join = new JoinQuery(this.Info.Config, name) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
+            JoinQuery join = new JoinQuery(this.Info.Config, dbName) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
             join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
             this.Info.Joins.Add(join);
 

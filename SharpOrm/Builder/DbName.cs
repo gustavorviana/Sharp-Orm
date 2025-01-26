@@ -1,5 +1,6 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SharpOrm.Builder
@@ -7,7 +8,7 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents the name of an element in the database.
     /// </summary>
-    public struct DbName
+    public struct DbName : IEquatable<DbName>
     {
         /// <summary>
         /// Gets or sets the alias.
@@ -140,5 +141,37 @@ namespace SharpOrm.Builder
         {
             return content.All(c => char.IsLetterOrDigit(c) || allowed.Contains(c));
         }
+
+        #region IEquatable
+
+        public override bool Equals(object obj)
+        {
+            return obj is DbName name && this.Equals(name);
+        }
+
+        public bool Equals(DbName other)
+        {
+            return this.Name == other.Name && this.Alias == other.Alias;
+        }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 1124293869;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Alias);
+            return hashCode;
+        }
+
+        public static bool operator ==(DbName left, DbName right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(DbName left, DbName right)
+        {
+            return !Equals(left, right);
+        }
+
+        #endregion
     }
 }
