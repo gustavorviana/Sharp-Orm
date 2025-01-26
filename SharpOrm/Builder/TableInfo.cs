@@ -194,6 +194,7 @@ namespace SharpOrm.Builder
             return this.reader;
         }
 
+        [Obsolete("This method will be removed in version 2.x.")]
         public object CreateInstance()
         {
             return Activator.CreateInstance(this.Type);
