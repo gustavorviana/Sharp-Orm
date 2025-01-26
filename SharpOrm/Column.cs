@@ -27,6 +27,9 @@ namespace SharpOrm
         public string Alias { get; set; }
 
         private bool? isCount;
+        /// <summary>
+        /// Gets a value indicating whether the column represents a count expression.
+        /// </summary>
         public bool IsCount
         {
             get

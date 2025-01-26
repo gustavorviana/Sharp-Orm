@@ -34,6 +34,9 @@ namespace SharpOrm
         /// </summary>
         public bool ValidateModelOnSave { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to ignore timestamps during operations.
+        /// </summary>
         public bool IgnoreTimestamps { get; set; }
 
         /// <summary>
@@ -389,6 +392,10 @@ namespace SharpOrm
             return Pager<T>.FromBuilder(this, peerPage, currentPage);
         }
 
+        /// <summary>
+        /// Retrieves an enumerable collection of the specified type.
+        /// </summary>
+        /// <returns>An enumerable collection of the specified type.</returns>
         public IEnumerable<T> GetEnumerable()
         {
             return base.GetEnumerable<T>();
@@ -598,54 +605,116 @@ namespace SharpOrm
 
         #region Join
 
-        public Query<T> LeftJoin<C>(Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        /// <summary>
+        /// Performs a LEFT JOIN between this query and another table.
+        /// </summary>
+        /// <typeparam name="R">The type of the related table.</typeparam>
+        /// <param name="table">The table expression to join.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> LeftJoin<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, Expression<ColumnExpression<T>> column2)
         {
-            return Join<C>(DbName.Of<C>(null, Config.Translation), column1, "=", column2, "LEFT");
+            return Join(table, column1, "=", column2, "LEFT");
         }
 
-        public Query<T> LeftJoin<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        /// <summary>
+        /// Performs a LEFT JOIN between this query and another table with a specified operation.
+        /// </summary>
+        /// <typeparam name="R">The type of the related table.</typeparam>
+        /// <param name="table">The table expression to join.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> LeftJoin<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2)
         {
-            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, "=", column2, "LEFT");
+            return Join(table, column1, operation, column2, "LEFT");
         }
 
-        public Query<T> LeftJoin<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2)
+        /// <summary>
+        /// Performs an INNER JOIN between this query and another table.
+        /// </summary>
+        /// <typeparam name="R">The type of the related table.</typeparam>
+        /// <param name="table">The table expression to join.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, Expression<ColumnExpression<T>> column2)
         {
-            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, operation, column2, "LEFT");
+            return Join(table, column1, "=", column2);
         }
 
-        public Query<T> Join<C>(Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
+        /// <summary>
+        /// Performs a JOIN between this query and another table with a specified operation and join type.
+        /// </summary>
+        /// <typeparam name="R">The type of the related table.</typeparam>
+        /// <param name="table">The table expression to join.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <param name="alias">The alias for the table.</param>
+        /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
-            return Join<C>(DbName.Of<C>(null, Config.Translation), column1, "=", column2);
+            var name = new ExpressionProcessor<T>(this.Info, ExpressionConfig.None).GetTableName(table, out var member);
+            if (Info.Joins.Any(j => j.MemberInfo == member))
+                throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
+
+            JoinQuery join = new JoinQuery(this.Info.Config, name) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
+            join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
+            this.Info.Joins.Add(join);
+
+            return this;
         }
 
+        /// <summary>
+        /// Performs an INNER JOIN between this query and another table with a specified alias.
+        /// </summary>
+        /// <typeparam name="C">The type of the related table.</typeparam>
+        /// <param name="alias">The alias for the table. If no alias is desired, use an empty string.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
         {
-            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, "=", column2);
+            return (Query<T>)this.Join<C>(alias, column1, "=", column2);
         }
 
-        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2)
+        /// <summary>
+        /// Performs a JOIN between this query and another table with a specified alias, operation, and join type.
+        /// </summary>
+        /// <typeparam name="C">The type of the related table.</typeparam>
+        /// <param name="alias">The alias for the table. If no alias is desired, use an empty string.</param>
+        /// <param name="column1">The first column expression to compare.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="column2">The second column expression to compare.</param>
+        /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
         {
-            return Join<C>(DbName.Of<C>(alias, Config.Translation), column1, operation, column2);
-        }
+            var name = Config.Translation.GetTableName(typeof(C));
 
-        private Query<T> Join<C>(DbName name, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
-        {
-            return (Query<T>)base.Join(name, q =>
+            return (Query<T>)this.Join(new DbName(name, alias), q =>
             {
-                q.Where(GetColumn<C>(q.Info, column1, true), operation, GetColumn(column2, true));
+                q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
             }, type);
         }
 
+        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> Join<C>(string alias, string column1, string column2)
         {
             return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, column2));
         }
 
+        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
         {
             return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
         }
 
+        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
         public Query<T> Join<C>(string alias, QueryCallback callback, string type = "INNER")
         {
             return (Query<T>)base.Join(DbName.Of<C>(alias, Config.Translation), callback, type); ;
@@ -807,6 +876,7 @@ namespace SharpOrm
 
         #endregion
 
+        /// <inheritdoc/>
         public override int Delete()
         {
             return this.Delete(false);
@@ -833,31 +903,6 @@ namespace SharpOrm
         public int Restore()
         {
             return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
-        }
-
-        private int ForceTrashType(Trashed trash, Func<int> call)
-        {
-            if (this.IsTrashedType(trash))
-                return call();
-
-            var last = this.Info.Where.Trashed;
-            try
-            {
-                this.Info.Where.SetTrash(trash, TableInfo);
-                return call();
-            }
-            finally
-            {
-                this.Info.Where.SetTrash(last, TableInfo);
-            }
-        }
-
-        private bool IsTrashedType(Trashed trashed)
-        {
-            if (this.TableInfo.SoftDelete == null)
-                return trashed == Trashed.With;
-
-            return this.Trashed == trashed;
         }
 
         #region Where
@@ -2070,6 +2115,11 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds a WHERE clause to the query based on another QueryBase instance.
+        /// </summary>
+        /// <param name="where">The QueryBase instance to add to the WHERE clause.</param>
+        /// <returns>The current query instance.</returns>
         public Query Where(QueryBase where)
         {
             if (where is Query) throw new NotSupportedException($"Cannot add a {where.GetType().FullName} to the WHERE clause.");

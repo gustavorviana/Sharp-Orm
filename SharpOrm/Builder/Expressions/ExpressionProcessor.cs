@@ -31,6 +31,16 @@ namespace SharpOrm.Builder.Expressions
             return ParseExpression(expression).Select(BuildColumn);
         }
 
+        public string GetTableName<R>(Expression<ColumnExpression<T, R>> expression, out MemberInfo memberInfo)
+        {
+            var member = InternalParseExpression(expression).First();
+            if (member.IsNativeType)
+                throw new NotSupportedException(Messages.Expressions.NativeTypeInTableName);
+
+            memberInfo = member.Member;
+            return info.Config.Translation.GetTableName(ReflectionUtils.GetMemberType(member.Member));
+        }
+
         private SqlMember ProcessMemberInfo(SqlMember info)
         {
             if (info.Childs.Length > 1 && info.Childs.Last().Name == nameof(object.ToString))
@@ -77,21 +87,32 @@ namespace SharpOrm.Builder.Expressions
 
         public IEnumerable<SqlMember> ParseExpression(Expression<ColumnExpression<T>> expression)
         {
+            return InternalParseExpression(expression);
+        }
+
+        private IEnumerable<SqlMember> InternalParseExpression(LambdaExpression expression)
+        {
             if (expression.Body is NewExpression newExpression)
             {
-                if (!config.HasFlag(ExpressionConfig.New))
-                    throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
-
-                for (int i = 0; i < newExpression.Members.Count; i++)
-                    yield return visitor.Visit(
-                        newExpression.Arguments[i],
-                        newExpression.Members[i].Name
-                    );
+                foreach (var item in ParseExpression(newExpression))
+                    yield return item;
             }
             else
             {
                 yield return visitor.Visit(expression.Body);
             }
+        }
+
+        private IEnumerable<SqlMember> ParseExpression(NewExpression newExpression)
+        {
+            if (!config.HasFlag(ExpressionConfig.New))
+                throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
+
+            for (int i = 0; i < newExpression.Members.Count; i++)
+                yield return visitor.Visit(
+                    newExpression.Arguments[i],
+                    newExpression.Members[i].Name
+                );
         }
     }
 }

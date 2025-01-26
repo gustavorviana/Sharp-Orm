@@ -33,6 +33,12 @@
             public const string SubmembersDisabled = "It is not possible to use the subproperties \"x => x.MainProp.SubProp...\".";
 
             public const string NewExpressionDisabled = "The expression \"new { }\" is not supported.";
+            public const string NativeTypeInTableName = "The type of the table name cannot be a native type.";
+        }
+
+        public static class Query
+        {
+            public const string DuplicateJoin = "The join using the property \"{0}\" has already been added.";
         }
     }
 }

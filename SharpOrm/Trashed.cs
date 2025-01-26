@@ -1,5 +1,8 @@
 ﻿namespace SharpOrm
 {
+    /// <summary>
+    /// Enum representing the state of trashed items.
+    /// </summary>
     public enum Trashed
     {
         /// <summary>

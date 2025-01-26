@@ -61,6 +61,11 @@ namespace SharpOrm.Builder
             return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
         }
 
+        /// <summary>
+        /// Adds a clause to the "WHERE" statement based on a QueryBuilder object.
+        /// </summary>
+        /// <param name="builder">The QueryBuilder object that contains the values to be added to the WHERE statement.</param>
+        /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(QueryBuilder builder)
         {
             this.WriteWhereType(AND);
@@ -265,6 +270,9 @@ namespace SharpOrm.Builder
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR condition to the WHERE clause of the query based on a QueryBuilder object.
+        /// </summary>
         public QueryBase OrWhere(QueryBuilder builder)
         {
             this.WriteWhereType(OR);
