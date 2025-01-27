@@ -748,7 +748,22 @@ namespace SharpOrm
             using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Delete();
         }
-        
+
+        /// <summary>
+        /// Performs a bulk update operation on a collection of values in the query.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to be updated.</typeparam>
+        /// <param name="query">The query object to perform the update operation on.</param>
+        /// <param name="values">The array of values to be updated.</param>
+        /// <param name="toCheckColumnsExp">Columns to check for conflicts during the update operation.</param>
+        /// <param name="insertLot">An optional integer specifying the insert lot size. Default is 0.</param>
+        /// <returns>The number of rows updated.</returns>
+        public static int BulkUpdate<T>(this Query query, Row[] values, Expression<ColumnExpression<T>> toCheckColumnsExp, int? insertLot = 0)
+        {
+            using (var bulk = new BulkOperation(query, values, insertLot))
+                return bulk.Update(toCheckColumnsExp);
+        }
+
         /// <summary>
         /// Performs a bulk update operation on a collection of values in the query.
         /// </summary>
