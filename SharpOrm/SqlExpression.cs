@@ -116,6 +116,9 @@ namespace SharpOrm
 
         protected internal virtual string GetParamName(int index)
         {
+            if (Parameters[index - 1] is QueryParam param)
+                return param.Name;
+
             return string.Concat("@p", index);
         }
 

@@ -182,6 +182,9 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         public QueryBuilder AddParameter(object val, bool allowAlias = true, bool forceWriteColumn = false)
         {
+            if (val is QueryParam)
+                return InternalAddParam(val);
+
             if (TryDeferredExpression(ref val, allowAlias))
                 return this;
 

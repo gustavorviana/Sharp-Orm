@@ -213,7 +213,10 @@ namespace SharpOrm.Connection
 
         internal static DbParameter AddParam(this DbCommand command, string name, object value)
         {
-            var param = command.CreateParameter();
+            if (value is QueryParam queryParam)
+                return queryParam.Init(command);
+
+            DbParameter param = command.CreateParameter();
             param.ParameterName = name;
             param.Value = value ?? DBNull.Value;
             command.Parameters.Add(param);
