@@ -41,12 +41,15 @@ namespace SharpOrm.Builder.Expressions
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
         }
 
-        private static string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
+        private string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
         {
             if (!isNative && childs.Length > 0)
                 name = childs[0].Name;
 
-            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null; ;
+            if(Member.Name == alias)
+                alias = null;
+
+            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null;
         }
 
         public bool Equals(SqlMember other)

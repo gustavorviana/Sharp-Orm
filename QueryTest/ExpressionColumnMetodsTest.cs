@@ -17,6 +17,13 @@ namespace QueryTest
         }
 
         [Fact]
+        public void ParseColumnWithNotEqualsPropertyNameTest()
+        {
+            var column = ParseColumn<Customer>(x => new { x.AddressId });
+            QueryAssert.Equal(info, "[address_id]", column.ToExpression(info));
+        }
+
+        [Fact]
         public void ParseColumnTest()
         {
             var column = ParseColumn<Customer>(x => x.Id);
