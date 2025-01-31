@@ -84,7 +84,7 @@ namespace SharpOrm.DataTranslation.Reader
             foreach (var column in registry.GetTable(this.Type).Columns)
                 if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
-                else if (column.Type != this.Type && !ReflectionUtils.IsCollection(column.Type)) this.MapChild(reader, column, prefix);
+                else if (column.MapNested) this.MapChild(reader, column, prefix);
 
             return this;
         }

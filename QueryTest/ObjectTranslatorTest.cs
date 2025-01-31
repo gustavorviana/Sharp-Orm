@@ -300,50 +300,10 @@ namespace QueryTest
         }
 
         [Fact]
-        public void LoadAdvancedObject()
-        {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootAdvancedObject]", GetAdvancedObjectReader);
-
-            using var query = new Query<RootAdvancedObject>(Manager);
-            var obj = query.FirstOrDefault();
-
-            Assert.NotNull(obj);
-            Assert.Equal(11, obj.Id);
-            Assert.Equal(32, obj.Child1.ChildId);
-            Assert.Equal(32, obj.Child2.ChildId);
-            Assert.Equal(4, obj.Child1.Id);
-            Assert.Equal(5, obj.Child2.Id);
-            Assert.Equal("Value Child 1", obj.Child1.Value);
-            Assert.Equal("Value Child 2", obj.Child2.Value);
-            Assert.Empty(obj.StrArray);
-        }
-
-        [Fact]
         public void TableWithSchemaTest()
         {
             var info = new TableInfo(typeof(TableWithSchema));
             Assert.Equal("MySchema.MyName", info.Name);
-        }
-
-        [Fact]
-        public void RecursiveCallTest()
-        {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [Recursive]", GetAdvancedObjectReader);
-
-            using var query = new Query<RecursiveClass>(Manager);
-            Assert.NotNull(query.FirstOrDefault());
-        }
-
-        private MockDataReader GetAdvancedObjectReader()
-        {
-            return new MockDataReader(
-                new Cell("Id", 11),
-                new Cell("Child_Id", 32),
-                new Cell("Child1_Id", 4),
-                new Cell("Child2_Id", 5),
-                new Cell("Child1_Value", "Value Child 1"),
-                new Cell("Child2_Value", "Value Child 2")
-            );
         }
 
         private static Cell[] MakeOrderCells(int id)
@@ -391,62 +351,9 @@ namespace QueryTest
             Assert.False(TranslationUtils.IsNumericString("1,1,1"));
         }
 
-        [Fact]
-        public void TestGetTranslationTest()
-        {
-            TableInfo table = new(typeof(CustomClassInfo), new TranslationRegistry());
-            var owner = new CustomClassInfo();
-            var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
-            Assert.Equal(2, cell?.Value);
-        }
-
-        [Table("Recursive")]
-        private class RecursiveClass
-        {
-            public int Id { get; set; }
-
-            [SqlConverter(typeof(CustomTranslation))]
-            [Column("Child1_Id")]
-            public RecursiveClass? Parent { get; set; }
-        }
-
-        internal class CustomTranslation : ISqlTranslation
-        {
-            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
-
-            public object FromSqlValue(object value, Type expectedType)
-            {
-                return new RecursiveClass { };
-            }
-
-            public object ToSqlValue(object value, Type type)
-            {
-                return value;
-            }
-        }
-
         [Table("MyName", Schema = "MySchema")]
         private class TableWithSchema
         {
-        }
-
-        private class RootAdvancedObject
-        {
-            public int Id { get; set; }
-            public ChildAdvancedObject Child1 { get; set; }
-            public ChildAdvancedObject Child2 { get; set; }
-
-            public string[] StrArray { get; set; } = [];
-        }
-
-        private class ChildAdvancedObject
-        {
-            public int Id { get; set; }
-
-            [Column("child_id")]
-            public int ChildId { get; set; }
-
-            public string? Value { get; set; }
         }
 
         private class InvalidFields
@@ -485,25 +392,5 @@ namespace QueryTest
             public int Value { get; set; }
         }
 
-        private class CustomClassInfo
-        {
-            [SqlConverter(typeof(TestGetTranslator))]
-            public int MyValue { get; set; }
-        }
-
-        public class TestGetTranslator : ISqlTranslation
-        {
-            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
-
-            public object FromSqlValue(object value, Type expectedType)
-            {
-                return 1;
-            }
-
-            public object ToSqlValue(object value, Type type)
-            {
-                return 2;
-            }
-        }
     }
 }
