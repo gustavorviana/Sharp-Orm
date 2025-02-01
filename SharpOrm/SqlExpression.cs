@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,6 +1,6 @@
-﻿namespace SharpOrm
+﻿namespace SharpOrm.Msg
 {
-    internal static class Messages
+    internal static partial class Messages
     {
         public const string OperationCannotBePerformedArgumentsMismatch = "The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.";
         public const string InsertedTypeMismatch = "Inserted type is not the same as defined in the primary key column of the model.";

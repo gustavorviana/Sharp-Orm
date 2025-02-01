@@ -71,6 +71,17 @@ namespace QueryTest.DataTranslation.Reader
             Assert.Equal(20, instance.Age);
         }
 
+
+        [Fact]
+        public void InstanceClassWithParamsTest()
+        {
+            var reader = new MockDataReader(new Cell("firstName", "My First Name"), new Cell("lastName", "My Last Name"), new Cell("Age", 30));
+            var instance = CreateInstance<Person3>(reader);
+
+            Assert.Equal("My First Name", instance.FirstName);
+            Assert.Equal("My Last Name", instance.LastName);
+        }
+
         [Fact]
         public void InstanceIgnoringConstructorTest()
         {
@@ -100,11 +111,17 @@ namespace QueryTest.DataTranslation.Reader
             }
         }
 
+        public class Person3(string firstName, string lastName)
+        {
+            public string FirstName => firstName;
+            public string LastName => lastName;
+        }
+
         public readonly struct Info
         {
             public string FirstName { get; }
             public string LastName { get; }
-            public string Status { get; init; }
+            public string? Status { get; init; }
 
             [QueryIgnore]
             public Info(string firstName, string lastName, string status) : this(firstName, lastName)

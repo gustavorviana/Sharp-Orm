@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 using System.Data;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +15,8 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly ParamInfo[] objParams;
         public readonly Type type;
 
+        public bool IsDefaultConstructor => objParams.Length == 0;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectActivator"/> class.
         /// </summary>
@@ -22,17 +25,13 @@ namespace SharpOrm.DataTranslation.Reader
         /// <exception cref="NotSupportedException">Thrown if the type is abstract or no suitable constructor is found.</exception>
         public ObjectActivator(Type type, IDataReader reader, TranslationRegistry registry)
         {
-            if (type.IsAbstract) throw new NotSupportedException("It's not possible to instantiate an abstract type.");
+            if (type.IsAbstract) throw new NotSupportedException(Messages.ObjectActivator.AbstractType);
+            if (type.IsInterface) throw new NotSupportedException(Messages.ObjectActivator.InterfaceType);
+            if (type.IsEnum) throw new NotSupportedException(Messages.ObjectActivator.EnumType);
+            if (type.IsArray) throw new NotSupportedException(Messages.ObjectActivator.ArrayType);
 
             this.type = type;
-
-            if (
-                type.IsValueType
-#if NET5_0_OR_GREATER
-                || type.GetMethod("<Clone>$") != null
-#endif
-                )
-                objParams = GetParams(reader, registry) ?? throw new NotSupportedException("A compatible constructor for the received data could not be found.");
+            objParams = GetParams(reader, registry) ?? throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
         }
 
         /// <summary>
@@ -89,17 +88,15 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>The created object instance.</returns>
         public object CreateInstance(IDataReader reader)
         {
-            if (type.IsArray) return null;
-
             try
             {
-                if (objParams == null) return Activator.CreateInstance(type);
+                if (IsDefaultConstructor) return Activator.CreateInstance(type);
 
                 return Activator.CreateInstance(type, GetValues(reader));
             }
             catch (MissingMethodException ex)
             {
-                throw new NotSupportedException("A compatible constructor for the received data could not be found.", ex);
+                throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor, ex);
             }
         }
 
@@ -110,7 +107,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>An array of values for the constructor parameters.</returns>
         private object[] GetValues(IDataReader reader)
         {
-            if (objParams == null)
+            if (IsDefaultConstructor)
 #if NET45
                 return new object[0];
 #else
