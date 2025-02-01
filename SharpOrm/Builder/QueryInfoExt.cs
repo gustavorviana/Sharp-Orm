@@ -21,11 +21,5 @@ namespace SharpOrm.Builder
         {
             return map.RootType == type || type.IsAssignableFrom(map.RootType);
         }
-
-        public static bool IsExpectedType(this JoinQuery query, Type type)
-        {
-            var rootType = (query as IRootTypeMap).RootType;
-            return rootType == type || rootType.IsAssignableFrom(type);
-        }
     }
 }

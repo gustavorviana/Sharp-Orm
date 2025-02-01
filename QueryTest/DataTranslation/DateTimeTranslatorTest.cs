@@ -2,11 +2,11 @@
 using Bogus;
 using SharpOrm.DataTranslation;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation
 {
     public class DateTimeTranslatorTest : DbMockTest
     {
-        private TranslationRegistry Registry => this.Config.Translation;
+        private TranslationRegistry Registry => Config.Translation;
 
         [Fact]
         public void DateOnlyToSqlValue()

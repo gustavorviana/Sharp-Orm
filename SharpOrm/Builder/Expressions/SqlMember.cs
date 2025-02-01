@@ -12,18 +12,20 @@ namespace SharpOrm.Builder.Expressions
     {
         internal SqlMemberInfo[] Childs { get; set; }
         internal bool IsNativeType { get; }
+        private readonly Type declaringType;
 
         public MemberInfo Member { get; }
         public bool IsStatic { get; }
         public string Name => ColumnInfo.GetName(Member);
         public string Alias { get; }
 
-        public SqlMember(MemberInfo member, SqlMemberInfo[] childs, string alias)
+        public SqlMember(Type declaringType, MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
             if (member == null) throw new ArgumentNullException(nameof(member));
 
             IsNativeType = member.MemberType == MemberTypes.Method || TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false);
 
+            this.declaringType = declaringType;
             Member = member;
             Childs = childs ?? new SqlMemberInfo[0];
             IsStatic = false;
@@ -91,6 +93,14 @@ namespace SharpOrm.Builder.Expressions
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Alias);
             return hashCode;
+        }
+
+        internal SqlPropertyInfo GetInfo()
+        {
+            if (Member.MemberType == MemberTypes.Property || Member.MemberType == MemberTypes.Field)
+                return new SqlPropertyInfo(declaringType, Member);
+
+            throw new NotSupportedException();
         }
 
         public static bool operator ==(SqlMember left, SqlMember right)

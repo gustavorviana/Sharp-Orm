@@ -664,7 +664,7 @@ namespace SharpOrm
             if (Info.Joins.Any(j => j.MemberInfo == member && j.Info.TableName == dbName))
                 throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
 
-            JoinQuery join = new JoinQuery(this.Info.Config, dbName) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
+            JoinQuery join = new JoinQuery(this.Info.Config, dbName, typeof(T)) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
             join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
             this.Info.Joins.Add(join);
 

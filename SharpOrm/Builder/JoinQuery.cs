@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using SharpOrm.Builder.Expressions;
+using System;
+using System.Reflection;
 
 namespace SharpOrm.Builder
 {
@@ -26,6 +28,11 @@ namespace SharpOrm.Builder
         /// <param name="table">The name of the table.</param>
         public JoinQuery(QueryConfig config, string table) : this(config, new DbName(table))
         {
+        }
+
+        internal JoinQuery(QueryConfig config, DbName table, Type rootType) : base(config, table)
+        {
+            ((IRootTypeMap)Info).RootType = rootType;
         }
 
         /// <summary>

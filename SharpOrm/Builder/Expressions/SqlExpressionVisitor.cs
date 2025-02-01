@@ -33,12 +33,14 @@ namespace SharpOrm.Builder.Expressions
             if (expression is NewExpression)
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
-            GetMembersAndMemberInfo(expression, out var members, out var member);
+            GetMembers(expression, out var members, out var member);
 
             if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
                 return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
 
-            return new SqlMember(member, members.ToArray(), memberName);
+            var memberType = member.DeclaringType.IsAssignableFrom(rootType) ? rootType : member.DeclaringType;
+
+            return new SqlMember(memberType, member, members.ToArray(), memberName);
         }
 
         private Expression UnwrapUnaryExpression(Expression expression)
@@ -50,7 +52,7 @@ namespace SharpOrm.Builder.Expressions
             return expression;
         }
 
-        private void GetMembersAndMemberInfo(Expression expression, out List<SqlMemberInfo> members, out MemberInfo member)
+        private void GetMembers(Expression expression, out List<SqlMemberInfo> members, out MemberInfo member)
         {
             var memberExpression = expression as MemberExpression;
             if (memberExpression != null)

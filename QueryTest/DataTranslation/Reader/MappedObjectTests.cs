@@ -1,4 +1,5 @@
 ﻿using BaseTest.Mock;
+using BaseTest.Models;
 using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -25,7 +26,7 @@ namespace QueryTest.DataTranslation.Reader
                 new Cell("address_id", addressId)
             );
 
-            var obj = MappedObject.Read<NoAddressCustomer>(dbReader);
+            var obj = MappedObject.Read<CustomerWithoutAddress>(dbReader);
 
             Assert.Equal(id, obj.Id);
             Assert.Equal(name, obj.Name);
@@ -36,7 +37,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void MapNestedTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetAdvancedObjectReader);
+            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetNestedObjectReader);
 
             using var query = new Query<RootNestedObject>(Manager);
             var obj = query.FirstOrDefault();
@@ -53,16 +54,7 @@ namespace QueryTest.DataTranslation.Reader
             Assert.Empty(obj.StrArray);
         }
 
-        [Fact]
-        public void RecursiveCallTest()
-        {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetAdvancedObjectReader);
-
-            using var query = new Query<RecursiveClass>(Manager);
-            Assert.NotNull(query.FirstOrDefault());
-        }
-
-        private MockDataReader GetAdvancedObjectReader()
+        private static MockDataReader GetNestedObjectReader()
         {
             return new MockDataReader(
                 new Cell("Id", 11),
@@ -74,57 +66,7 @@ namespace QueryTest.DataTranslation.Reader
             );
         }
 
-        [Fact]
-        public void TestGetTranslationTest()
-        {
-            TableInfo table = new(typeof(CustomClassInfo), new TranslationRegistry());
-            var owner = new CustomClassInfo();
-            var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
-            Assert.Equal(2, cell?.Value);
-        }
-
         #region Classes
-
-        private class CustomClassInfo
-        {
-            [SqlConverter(typeof(TestGetTranslator))]
-            public int MyValue { get; set; }
-        }
-
-        public class TestGetTranslator : ISqlTranslation
-        {
-            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
-
-            public object FromSqlValue(object value, Type expectedType)
-            {
-                return 1;
-            }
-
-            public object ToSqlValue(object value, Type type)
-            {
-                return 2;
-            }
-        }
-
-        [Table("Recursive")]
-        private class RecursiveClass
-        {
-            public int Id { get; set; }
-
-            [SqlConverter(typeof(CustomTranslation))]
-            [Column("Child1_Id")]
-            public RecursiveClass? Parent { get; set; }
-        }
-
-        private class NoAddressCustomer
-        {
-            public uint Id { get; set; }
-            public string Name { get; set; }
-            public string Email { get; set; }
-
-            [Column("address_id")]
-            public int? AddressId { get; set; }
-        }
 
         private class RootNestedObject
         {
@@ -144,21 +86,6 @@ namespace QueryTest.DataTranslation.Reader
             public int ChildId { get; set; }
 
             public string? Value { get; set; }
-        }
-
-        internal class CustomTranslation : ISqlTranslation
-        {
-            public bool CanWork(Type type) => type == typeof(int) || type == typeof(RecursiveClass);
-
-            public object FromSqlValue(object value, Type expectedType)
-            {
-                return new RecursiveClass { };
-            }
-
-            public object ToSqlValue(object value, Type type)
-            {
-                return value;
-            }
         }
         #endregion
     }

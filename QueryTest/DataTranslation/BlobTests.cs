@@ -4,9 +4,9 @@ using SharpOrm;
 using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation
 {
-    public class BlobTest(ITestOutputHelper? output) : DbMockTest(output)
+    public class BlobTests(ITestOutputHelper? output) : DbMockTest(output)
     {
         private readonly byte[] bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 

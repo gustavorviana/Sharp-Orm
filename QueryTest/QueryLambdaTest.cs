@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest
 {
-    public class QueryLampdaTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbMockFallbackTest(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
+    public class QueryLambdaTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : DbMockFallbackTest(output, connection), IClassFixture<MockFixture<SqlServerQueryConfig>>
     {
         [Fact]
         public void SelectColumnWithoutJoin_ThrowsError()
