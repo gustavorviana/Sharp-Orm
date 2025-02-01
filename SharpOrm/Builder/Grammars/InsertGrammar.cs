@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.Grammars
 {
     public class InsertGrammar : GrammarBase
     {
-        internal protected InsertGrammar(Query query, QueryBuilder builder) : base(query, builder)
+        public InsertGrammar(GrammarBase owner) : base(owner)
         {
         }
 
@@ -39,7 +39,7 @@ namespace SharpOrm.Builder.Grammars
                 if (!@enum.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                BuildInsert(@enum.Current.Cells, false);
+                BuildInsert(@enum.Current.Cells);
 
                 while (@enum.MoveNext())
                 {
@@ -49,14 +49,11 @@ namespace SharpOrm.Builder.Grammars
             }
         }
 
-        public virtual void BuildInsert(IEnumerable<Cell> cells, bool getGeneratedId)
+        public virtual void BuildInsert(IEnumerable<Cell> cells)
         {
             AppendInsertHeader(cells.Select(c => c.Name).ToArray());
             builder.Add("VALUES ");
             AppendInsertCells(cells);
-
-            if (getGeneratedId && Query.ReturnsInsetionId)
-                builder.Add("; SELECT LAST_INSERT_ID();");
         }
 
         protected void AppendInsertHeader(string[] columns)

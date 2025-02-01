@@ -122,7 +122,7 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected virtual void ConfigureInsertQuery(QueryBase query, string[] columnNames)
         {
-            new InsertGrammar(Query, builder).BuildInsertQuery(query, columnNames);
+            new InsertGrammar(this).BuildInsertQuery(query, columnNames);
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected virtual void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
         {
-            new InsertGrammar(Query, builder).BuildInsertExpression(expression, columnNames);
+            new InsertGrammar(this).BuildInsertExpression(expression, columnNames);
         }
 
         /// <summary>
@@ -160,10 +160,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="cells">The cells to be inserted.</param>
         /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
-        protected virtual void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
-        {
-            new InsertGrammar(Query, builder).BuildInsert(cells, getGeneratedId);
-        }
+        protected abstract void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId);
 
         /// <summary>
         /// Executes a bulk insert operation with the given rows.
@@ -180,7 +177,7 @@ namespace SharpOrm.Builder
         /// <param name="rows">The rows to be inserted.</param>
         protected virtual void ConfigureBulkInsert(IEnumerable<Row> rows)
         {
-            new InsertGrammar(Query, builder).BuildBulkInsert(rows);
+            new InsertGrammar(this).BuildBulkInsert(rows);
         }
 
         /// <summary>
@@ -270,12 +267,6 @@ namespace SharpOrm.Builder
             return cells;
         }
 
-        protected void ThrowDeleteJoinsNotSupported()
-        {
-            if (this.IsMultipleTablesDeleteWithJoin())
-                throw new NotSupportedException("Delete operations on multiple tables with JOINs are not supported in SQL Server. Please execute separate DELETE statements for each table.");
-        }
-
         #endregion
 
         private SqlExpression BuildExpression(Action builderAction)
@@ -284,23 +275,6 @@ namespace SharpOrm.Builder
             builderAction();
 
             return this.builder.ToExpression(true);
-        }
-
-        /// <summary>
-        /// Writes the select columns to the query.
-        /// </summary>
-        protected virtual void WriteSelectColumns()
-        {
-            AddParams(this.Info.Select);
-        }
-
-        /// <summary>
-        /// Writes the select column to the query.
-        /// </summary>
-        /// <param name="column">The column.</param>
-        protected void WriteSelect(Column column)
-        {
-            this.builder.AddExpression(column, true);
         }
 
         protected QueryBaseInfo GetInfo(QueryBase query)

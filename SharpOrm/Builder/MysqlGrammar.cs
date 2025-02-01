@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder.Grammars.Sgbd.Mysql;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Sgbd.Mysql;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,14 @@ namespace SharpOrm.Builder
             return this.Info.Config.Translation.DbTimeZone;
         }
 
+        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
+        {
+            new InsertGrammar(this).BuildInsert(cells);
+
+            if (getGeneratedId && Query.ReturnsInsetionId)
+                builder.Add("; SELECT LAST_INSERT_ID();");
+        }
+
         protected override void ConfigureDelete()
         {
             new MysqlDeleteGrammar(this).Build();
@@ -39,71 +48,12 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureCount(Column column)
         {
-            bool safeDistinct = (column == null || column.IsAll()) && this.Query.Distinct;
-
-            if (safeDistinct)
-                this.builder.Add("SELECT COUNT(*) FROM (");
-
-            this.ConfigureSelect(true, safeDistinct ? null : column, true);
-
-            if (safeDistinct)
-                this.builder.Add(") ").Add(this.Info.Config.ApplyNomenclature("count"));
+            new MysqlSelectGrammar(this).BuildCount(column);
         }
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-            this.ConfigureSelect(configureWhereParams, null, false);
-        }
-
-        private void ConfigureSelect(bool configureWhereParams, Column countColumn, bool isCount)
-        {
-            bool _isCount = countColumn != null;
-            bool isCustomCount = countColumn != null && countColumn.IsCount;
-
-            this.builder.Add("SELECT ");
-
-            if (_isCount && !isCustomCount)
-                this.builder.Add("COUNT(");
-
-            if (this.Query.Distinct && !isCustomCount)
-                this.builder.Add("DISTINCT ");
-
-            if (_isCount)
-            {
-                WriteSelect(countColumn);
-                if (!isCustomCount)
-                    this.builder.Add(')');
-            }
-            else
-            {
-                this.WriteSelectColumns();
-            }
-
-            this.builder.Add(" FROM ").Add(this.GetTableName(true));
-
-            this.ApplyJoins();
-            this.WriteWhere(configureWhereParams);
-
-            this.WriteGroupBy();
-
-            if (isCount || _isCount)
-                return;
-
-            if (this.CanWriteOrderby())
-                this.ApplyOrderBy();
-
-            this.WritePagination();
-        }
-
-        private void WritePagination()
-        {
-            if (this.Query.Limit is null && this.Query.Offset is null)
-                return;
-
-            this.builder.Add(" LIMIT ").Add(this.Query.Limit ?? int.MaxValue);
-
-            if (this.Query.Offset != null)
-                this.builder.Add(" OFFSET ").Add(this.Query.Offset);
+           new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
         }
     }
 }

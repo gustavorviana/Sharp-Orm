@@ -91,9 +91,9 @@ namespace SharpOrm.Builder.Grammars
             builder
                 .Add(' ')
                 .Add(join.Type)
-                .Add(" JOIN ")
-                .Add(GetTableName(join, true))
-                .Add(" ON ");
+                .Add(" JOIN ");
+            WriteTable(join);
+            builder.Add(" ON ");
 
             WriteWhereContent(join.Info);
         }
@@ -136,6 +136,11 @@ namespace SharpOrm.Builder.Grammars
         protected string GetTableName(bool withAlias)
         {
             return GetTableName(Query, withAlias);
+        }
+
+        protected virtual void WriteTable(QueryBase query)
+        {
+            builder.Add(GetTableName(query, true));
         }
 
         /// <summary>
@@ -185,7 +190,7 @@ namespace SharpOrm.Builder.Grammars
                     (count) => builder.AddParameter(Info.Having.Parameters[count - 1])
                 );
         }
-        
+
         /// <summary>
         /// Adds the parameters to the query.
         /// </summary>
@@ -255,6 +260,23 @@ namespace SharpOrm.Builder.Grammars
         protected string TryGetTableAlias(QueryBase query)
         {
             return query.Info.TableName.TryGetAlias(query.Info.Config);
+        }
+
+        /// <summary>
+        /// Writes the select columns to the query.
+        /// </summary>
+        protected virtual void WriteSelectColumns()
+        {
+            AddParams(this.Info.Select);
+        }
+
+        /// <summary>
+        /// Writes the select column to the query.
+        /// </summary>
+        /// <param name="column">The column.</param>
+        protected void WriteSelect(Column column)
+        {
+            this.builder.AddExpression(column, true);
         }
 
         protected bool IsMultipleTablesDeleteWithJoin()
