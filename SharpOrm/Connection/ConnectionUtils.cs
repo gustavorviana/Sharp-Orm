@@ -163,18 +163,6 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
-        /// Gets a command with the specified SQL expression.
-        /// </summary>
-        /// <param name="manager">The connection manager.</param>
-        /// <param name="expression">The SQL expression to set in the command.</param>
-        /// <returns>The configured database command.</returns>
-        [Obsolete("Use CreateCommand(SqlExpression). This method will be removed in version 3.x.")]
-        public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
-        {
-            return manager.CreateCommand().SetExpression(expression);
-        }
-
-        /// <summary>
         /// Creates a new database command with the default command timeout.
         /// </summary>
         /// <param name="manager">The connection manager.</param>

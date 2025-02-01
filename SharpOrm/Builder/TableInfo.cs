@@ -47,22 +47,7 @@ namespace SharpOrm.Builder
             this.SoftDelete = softDelete;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
-        /// </summary>
-        /// <param name="type">The type representing the table.</param>s
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
-        public TableInfo(Type type) : this(type, TranslationRegistry.Default)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation registry and type.
-        /// </summary>
-        /// <param name="registry">The translation registry.</param>
-        /// <param name="type">The type representing the table.</param>
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
-        public TableInfo(Type type, TranslationRegistry registry)
+        internal TableInfo(Type type, TranslationRegistry registry)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
@@ -205,8 +190,7 @@ namespace SharpOrm.Builder
             return string.Format("{0}: {1}", this.Name, this.Type);
         }
 
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTableName(Type)\". This constructor will be removed in version 3.x.")]
-        public static string GetNameOf(Type type)
+        internal static string GetNameOf(Type type)
         {
             if (!(GetValidType(type).GetCustomAttribute<TableAttribute>(false) is TableAttribute table) || string.IsNullOrEmpty(table.Name))
                 return type.Name;

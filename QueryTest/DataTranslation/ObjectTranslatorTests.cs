@@ -8,14 +8,19 @@ using Xunit.Abstractions;
 
 namespace QueryTest.DataTranslation
 {
-    public class ObjectTranslatorTests(ITestOutputHelper? output) : DbMockTest(output)
+    public class ObjectTranslatorTests : DbMockTest
     {
-        private static readonly TableInfo table = new(typeof(TestClass), new TranslationRegistry());
+        private readonly TableInfo table;
+
+        public ObjectTranslatorTests(ITestOutputHelper? output) : base(output)
+        {
+            table = Translation.GetTable(typeof(TestClass));
+        }
 
         [Fact]
         public void TestInvalidFields()
         {
-            TableInfo table = new(typeof(InvalidFields), new TranslationRegistry());
+            TableInfo table = Translation.GetTable(typeof(InvalidFields));
             Assert.True(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Id)) == null, "The invalid field 'Id' was retrieved.");
             Assert.True(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Value)) == null, "The invalid property 'Value' was retrieved.");
             Assert.True(table.Columns.FirstOrDefault(c => c.Name == nameof(InvalidFields.Name)) == null, "The invalid property 'Name' was retrieved.");
@@ -44,7 +49,7 @@ namespace QueryTest.DataTranslation
         public void SelectValidPk()
         {
             var obj = new Customer { AddressId = 1, Address = new Address(2) };
-            var cells = new TableInfo(typeof(Customer)).GetObjCells(obj, false, true).Where(c => c.Name == "address_id").ToArray();
+            var cells = Translation.GetTable(typeof(Customer)).GetObjCells(obj, false, true).Where(c => c.Name == "address_id").ToArray();
             Assert.Single(cells);
             Assert.Equal(1, cells[0].Value);
         }
@@ -53,7 +58,7 @@ namespace QueryTest.DataTranslation
         public void SelectForeignKeyValue()
         {
             var obj = new CustomCustomer { Address = new CustomAddr { Id = 1 } };
-            var cell = new TableInfo(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
+            var cell = Translation.GetTable(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
             Assert.Equal(1, cell?.Value);
         }
 
@@ -61,7 +66,7 @@ namespace QueryTest.DataTranslation
         public void SelectForeignKeyNullValue()
         {
             var obj = new CustomCustomer();
-            var cell = new TableInfo(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
+            var cell = Translation.GetTable(typeof(CustomCustomer)).GetObjCells(obj, false, true).FirstOrDefault(c => c.Name == "address_id");
             Assert.Null(cell?.Value);
         }
 
@@ -290,7 +295,7 @@ namespace QueryTest.DataTranslation
                 ]
             };
 
-            var table = new TableInfo(typeof(Order));
+            var table = Translation.GetTable(typeof(Order));
             var cells = table.GetObjCells(order, true, true).ToArray();
             Assert.NotNull(cells);
             Assert.Single(cells);
@@ -301,7 +306,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void TableWithSchemaTest()
         {
-            var info = new TableInfo(typeof(TableWithSchema));
+            var info = Translation.GetTable(typeof(TableWithSchema));
             Assert.Equal("MySchema.MyName", info.Name);
         }
 
@@ -315,7 +320,7 @@ namespace QueryTest.DataTranslation
             return [new("Id", id), new("order_id", orderId), new("Value", value)];
         }
 
-        private static void AssertPropertyValue(object expected, TestClass objOwner, string propName)
+        private void AssertPropertyValue(object expected, TestClass objOwner, string propName)
         {
             var prop = table.Columns.FirstOrDefault(c => c.Name == propName);
 

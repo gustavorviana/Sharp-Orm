@@ -15,7 +15,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         public ForeignInfo(MemberInfoColumn column, object foreignKey, string localKey)
         {
-            TableName = TableInfo.GetNameOf(column.ValueType);
+            TableName = TranslationRegistry.Default.GetTableName(column.ValueType);
             ForeignKey = foreignKey;
             Type = column.ValueType;
             LocalKey = localKey;

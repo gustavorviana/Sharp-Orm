@@ -11,7 +11,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void GetTranslationTest()
         {
-            TableInfo table = new(typeof(CustomClassInfo), new TranslationRegistry());
+            TableInfo table = Translation.GetTable(typeof(CustomClassInfo));
             var owner = new CustomClassInfo();
             var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
             Assert.Equal(2, cell?.Value);

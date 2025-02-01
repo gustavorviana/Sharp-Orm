@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System.ComponentModel.DataAnnotations;
 
 namespace QueryTest
@@ -20,7 +21,7 @@ namespace QueryTest
 
         private static void Validate<T>(T value)
         {
-            new TableInfo(typeof(T)).Validate(value);
+            TranslationRegistry.Default.GetTable(typeof(T)).Validate(value);
         }
 
         private class ValidableClass

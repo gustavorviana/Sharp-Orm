@@ -48,12 +48,6 @@ namespace SharpOrm.Builder
             this._order = colAttr?.Order ?? -1;
         }
 
-        [Obsolete("Use \"HasColumnName(string)\". This constructor will be removed in version 3.x.")]
-        public ColumnMapInfo SetColumn(string name)
-        {
-            return this.HasColumnName(name);
-        }
-
         /// <summary>
         /// Sets the name of the column in the database..
         /// </summary>

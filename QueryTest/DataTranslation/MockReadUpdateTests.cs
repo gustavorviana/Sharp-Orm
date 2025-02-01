@@ -60,7 +60,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void ReadObjectPk()
         {
-            var info = new TableInfo(typeof(Order));
+            var info = Translation.GetTable(typeof(Order));
             var obj = new Order { Id = 1 };
             Assert.NotNull(info.GetObjCells(obj, true, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
         }
@@ -68,7 +68,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void ReadObjectIgnorePk()
         {
-            var info = new TableInfo(typeof(Order));
+            var info = Translation.GetTable(typeof(Order));
             var obj = new Order { Id = 1 };
             Assert.Null(info.GetObjCells(obj, false, false).FirstOrDefault(c => c.Name.Equals("id", StringComparison.OrdinalIgnoreCase)));
         }

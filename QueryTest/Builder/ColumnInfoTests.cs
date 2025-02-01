@@ -1,11 +1,13 @@
 ﻿using BaseTest.Models;
 using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 
 namespace QueryTest.Builder
 {
     public class ColumnInfoTests
     {
-        private static readonly TableInfo info = new(typeof(TestClass));
+        private static readonly TranslationRegistry Translation = new ();
+        private static readonly TableInfo info = Translation.GetTable(typeof(TestClass));
 
         [Fact]
         public void GetValue()
@@ -76,7 +78,7 @@ namespace QueryTest.Builder
         public void SetByteArray()
         {
             var buffer = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var info = new TableInfo(typeof(BinaryClass));
+            var info = Translation.GetTable(typeof(BinaryClass));
             var _class = new BinaryClass();
 
             var col = info.Columns.Where(c => c.Name == nameof(_class.bytes)).First();
@@ -90,7 +92,7 @@ namespace QueryTest.Builder
         {
             using var ms = new MemoryStream([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-            var info = new TableInfo(typeof(BinaryClass));
+            var info = Translation.GetTable(typeof(BinaryClass));
             var _class = new BinaryClass();
 
             var bytesCol = info.Columns.Where(c => c.Name == nameof(_class.bytes)).First();
@@ -105,7 +107,7 @@ namespace QueryTest.Builder
         public void GetByteArray()
         {
             var buffer = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var info = new TableInfo(typeof(BinaryClass));
+            var info = Translation.GetTable(typeof(BinaryClass));
             var _class = new BinaryClass();
 
             var bytesCol = info.Columns.Where(c => c.Name == nameof(_class.bytes)).First();

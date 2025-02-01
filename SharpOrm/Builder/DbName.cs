@@ -62,15 +62,6 @@ namespace SharpOrm.Builder
             return new DbName(registry.GetTableName(typeof(T)), alias, false);
         }
 
-        [Obsolete("Use Of<T>(string) instead.")]
-        public static DbName Of<T>(string alias)
-        {
-            if (ReflectionUtils.IsDynamic(typeof(T)))
-                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
-
-            return new DbName(TableInfo.GetNameOf(typeof(T)), alias, false);
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DbName"/> struct with the specified full name.
         /// </summary>

@@ -64,7 +64,7 @@ namespace DbRunTest.BaseTests
             query.Limit = 0;
 
             var tableColumns = query.ReadTable().Columns.OfType<DataColumn>().Select(x => x.ColumnName).ToArray();
-            var classColumns = new TableInfo(typeof(Address)).Columns.Select(x => x.Name).ToArray();
+            var classColumns = Translation.GetTable(typeof(Address)).Columns.Select(x => x.Name).ToArray();
 
             Assert.Equal(tableColumns, classColumns);
         }

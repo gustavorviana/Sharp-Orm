@@ -23,11 +23,6 @@ namespace SharpOrm
     {
         private ObjectReader _objReader;
 
-        /// <summary>
-        /// Table name in the database.
-        /// </summary>
-        [Obsolete("This property will be removed in version 3.x.")]
-        public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo { get; }
         private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
 
