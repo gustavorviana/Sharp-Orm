@@ -447,31 +447,6 @@ namespace SharpOrm.Builder
             return this.ToExpression();
         }
 
-        /// <summary>
-        /// Returns an <see cref="SqlExpression"/> representation of the query.
-        /// </summary>
-        /// <param name="info">The query information.</param>
-        public SqlExpression ToExpression(bool withDeferrer = false)
-        {
-            if (this.hasMemberColumn || withDeferrer)
-                return ToSafeExpression(withDeferrer);
-
-            return new SqlExpression(this.ToString(), this.parameters.ToArray());
-        }
-
-        private SqlExpression ToSafeExpression(bool withDeferrer = false)
-        {
-            var builder = new StringBuilder();
-            builder.AppendAndReplace(this.query.ToString(), '?', count =>
-             {
-                 if (this.Parameters[count - 1] is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
-                 else if (withDeferrer && this.Parameters[count - 1] is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info));
-                 else builder.Append('?');
-             });
-
-            return new SqlExpression(builder.ToString(), this.parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
-        }
-
         private static bool CanBeUsedAsParameter(object value, bool withDeferrer)
         {
             if (value is MemberInfoColumn)
@@ -486,20 +461,48 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return this.Trashed == Trashed.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
+            return ToExpression(true, false).ToString();
         }
 
-        private string ApplyTrashedFilter(string content)
+        /// <summary>
+        /// Returns an <see cref="SqlExpression"/> representation of the query.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        public SqlExpression ToExpression(bool withDeferrer = false, bool throwOnDeferrerFail = true)
         {
+            var builder = GetSafeStringBuilder();
+            if (query.Length == 0)
+                return new SqlExpression(builder.ToString(), this.parameters.ToArray());
+
+            if (Trashed != Trashed.With)
+                builder.Append(" AND (");
+
+            builder.AppendAndReplace(this.query.ToString(), '?', count =>
+            {
+                var param = this.parameters[count - 1];
+                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
+                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info, throwOnDeferrerFail));
+                else builder.Append('?');
+            });
+
+            if (Trashed != Trashed.With)
+                builder.Append(')');
+
+
+            return new SqlExpression(builder.ToString(), parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
+        }
+
+        private StringBuilder GetSafeStringBuilder()
+        {
+            if (Trashed == Trashed.With)
+                return new StringBuilder();
+
             StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
 
             if (this.Trashed == Trashed.Only) sb.Append(" = 1");
             else sb.Append(" = 0");
 
-            if (content.Length == 0)
-                return sb.ToString();
-
-            return sb.Append(" AND (").Append(content).Append(')').ToString();
+            return sb;
         }
 
         internal void SetTrash(Trashed visibility, TableInfo table)
@@ -552,7 +555,22 @@ namespace SharpOrm.Builder
 
             public SqlExpression ToExpression(IReadonlyQueryInfo info)
             {
-                return original.ToSafeExpression(info, alias);
+                return ToExpression(info, true);
+            }
+
+            public SqlExpression ToExpression(IReadonlyQueryInfo info, bool throwOnFail)
+            {
+                try
+                {
+                    return original.ToExpression(info);
+                }
+                catch (Exception)
+                {
+                    if (throwOnFail)
+                        throw;
+
+                    return new SqlExpression("!");
+                }
             }
         }
     }

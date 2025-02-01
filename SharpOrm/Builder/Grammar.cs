@@ -539,11 +539,7 @@ namespace SharpOrm.Builder
 
         protected void WriteWhereContent(QueryBaseInfo info)
         {
-            this.builder.AddAndReplace(
-                info.Where.ToString(),
-                '?',
-                (count) => this.builder.AddParameter(info.Where.Parameters[count - 1])
-            );
+            this.builder.Add(info.Where.ToExpression(true));
         }
 
         protected void ThrowOffsetNotSupported()

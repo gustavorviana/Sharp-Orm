@@ -226,5 +226,35 @@ namespace QueryTest
             Assert.NotNull(result);
             QueryAssert.Equal(query, expected, result.Info.Select.FirstOrDefault().ToSafeExpression(query.Info, false));
         }
+
+
+        [Fact]
+        public void QueryToStringShowDeferrerColumn()
+        {
+            // Arrange
+            var expected = "SELECT [City] FROM [Address] WHERE [Name] LIKE ?";
+            var query = new Query<Address>();
+
+            // Act
+            var result = query.Select(x => x.City).WhereContains(x => x.Name, "Mr.");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
+
+        [Fact]
+        public void Should_Success_Query_ToString_With_Invalid_Select_Column_Test()
+        {
+            var expected = "SELECT ! FROM [Customers] WHERE [Name] LIKE ?";
+            var query = new Query<Customer>();
+
+            // Act
+            var result = query.Select(x => x.Address!.Id).WhereContains(x => x.Name, "Mr.");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
     }
 }
