@@ -1,4 +1,5 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Sgbd.Mysql;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,19 +29,12 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureDelete()
         {
-            this.ThrowOffsetNotSupported();
+            new MysqlDeleteGrammar(this).Build();
+        }
 
-            this.builder.Add("DELETE");
-            this.ApplyDeleteJoins();
-            this.builder.Add(" FROM ").Add(this.Info.TableName.GetName(true, this.Info.Config));
-
-            this.ApplyJoins();
-            this.WriteWhere(true);
-
-            if (this.CanWriteOrderby())
-                this.ApplyOrderBy();
-
-            this.AddLimit();
+        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
+        {
+            new MysqlUpdateGrammar(this).Build(cells);
         }
 
         protected override void ConfigureCount(Column column)
@@ -110,41 +104,6 @@ namespace SharpOrm.Builder
 
             if (this.Query.Offset != null)
                 this.builder.Add(" OFFSET ").Add(this.Query.Offset);
-        }
-
-        protected bool CanWriteOrderby()
-        {
-            return this.Info.Select.Length != 1 || !this.Info.Select[0].IsCount;
-        }
-
-        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
-        {
-            this.ThrowOffsetNotSupported();
-
-            using (var en = cells.GetEnumerator())
-            {
-                if (!en.MoveNext())
-                    throw new InvalidOperationException(Messages.NoColumnsInserted);
-
-                this.builder.Add("UPDATE ").Add(this.GetTableName(false));
-                if (this.Info.Joins.Count > 0 && !string.IsNullOrEmpty(this.Info.TableName.Alias))
-                    this.builder.Add(' ').Add(this.ApplyNomenclature(this.Info.TableName.Alias));
-
-                this.ApplyJoins();
-
-                this.builder.Add(" SET ");
-                this.builder.AddJoin(WriteUpdateCell, ", ", en);
-
-                this.WriteWhere(true);
-            }
-
-            this.AddLimit();
-        }
-
-        private void AddLimit()
-        {
-            if (this.Query.Limit != null)
-                this.builder.Add(" LIMIT ").Add(this.Query.Limit);
         }
     }
 }

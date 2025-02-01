@@ -122,7 +122,7 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected virtual void ConfigureInsertQuery(QueryBase query, string[] columnNames)
         {
-            new InsertGrammar(Query, builder).ConfigureInsertQuery(query, columnNames);
+            new InsertGrammar(Query, builder).BuildInsertQuery(query, columnNames);
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace SharpOrm.Builder
         /// <param name="columnNames">The names of the columns to be inserted.</param>
         protected virtual void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
         {
-            new InsertGrammar(Query, builder).ConfigureInsertExpression(expression, columnNames);
+            new InsertGrammar(Query, builder).BuildInsertExpression(expression, columnNames);
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace SharpOrm.Builder
         /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
         protected virtual void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
-            new InsertGrammar(Query, builder).ConfigureInsert(cells, getGeneratedId);
+            new InsertGrammar(Query, builder).BuildInsert(cells, getGeneratedId);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace SharpOrm.Builder
         /// <param name="rows">The rows to be inserted.</param>
         protected virtual void ConfigureBulkInsert(IEnumerable<Row> rows)
         {
-            new InsertGrammar(Query, builder).ConfigureBulkInsert(rows);
+            new InsertGrammar(Query, builder).BuildBulkInsert(rows);
         }
 
         /// <summary>
@@ -212,25 +212,6 @@ namespace SharpOrm.Builder
         /// This method is an abstract method which will be implemented by the derived classes. It is responsible for configuring a DELETE query command.
         /// </summary>
         protected abstract void ConfigureDelete();
-
-        /// <summary>
-        /// Applies the delete joins to the query.
-        /// </summary>
-        protected void ApplyDeleteJoins()
-        {
-            if (!this.CanApplyDeleteJoins())
-                return;
-
-            this.builder
-                .Add(' ')
-                .Add(this.TryGetTableAlias(this.Query));
-
-            if (!this.IsMultipleTablesDeleteWithJoin())
-                return;
-
-            foreach (var join in this.Info.Joins.Where(j => this.CanDeleteJoin(j.Info)))
-                this.builder.Add(", ").Add(this.TryGetTableAlias(join));
-        }
 
         public SqlExpression SoftDelete(SoftDeleteAttribute softDelete)
         {
@@ -295,66 +276,7 @@ namespace SharpOrm.Builder
                 throw new NotSupportedException("Delete operations on multiple tables with JOINs are not supported in SQL Server. Please execute separate DELETE statements for each table.");
         }
 
-        protected bool IsMultipleTablesDeleteWithJoin()
-        {
-            return this.Query.deleteJoins?.Any() ?? false;
-        }
-
-        /// <summary>
-        /// Determines whether delete joins can be applied.
-        /// </summary>
-        /// <returns>True if delete joins can be applied; otherwise, false.</returns>
-        protected virtual bool CanApplyDeleteJoins()
-        {
-            return this.Info.Joins.Any();
-        }
-
-        /// <summary>
-        /// Determines whether the join can be deleted.
-        /// </summary>
-        /// <param name="info">The query information.</param>
-        /// <returns>True if the join can be deleted; otherwise, false.</returns>
-        protected bool CanDeleteJoin(QueryBaseInfo info)
-        {
-            string name = info.TableName.TryGetAlias(this.Info.Config);
-            foreach (var jName in this.Query.deleteJoins)
-                if (jName.Equals(name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Writes the update cell to the query.
-        /// </summary>
-        /// <param name="cell">The cell.</param>
-        protected void WriteUpdateCell(Cell cell)
-        {
-            this.builder.Add(this.ApplyTableColumnConfig(cell.Name)).Add(" = ");
-            this.builder.AddParameter(cell.Value);
-        }
-
         #endregion
-
-        /// <summary>
-        /// Tries to get the table alias for the query.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>The table alias.</returns>
-        protected string TryGetTableAlias(QueryBase query)
-        {
-            return query.Info.TableName.TryGetAlias(query.Info.Config);
-        }
-
-        /// <summary>
-        /// Applies the nomenclature to the name.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <returns>The name with the applied nomenclature.</returns>
-        protected string ApplyNomenclature(string name)
-        {
-            return this.Info.Config.ApplyNomenclature(name);
-        }
 
         private SqlExpression BuildExpression(Action builderAction)
         {
@@ -380,43 +302,10 @@ namespace SharpOrm.Builder
         {
             this.builder.AddExpression(column, true);
         }
-        /// <summary>
-        /// Apply column prefix and suffix.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        protected string ApplyTableColumnConfig(string name)
-        {
-            return this.Info.Config.ApplyNomenclature(name);
-        }
 
         protected QueryBaseInfo GetInfo(QueryBase query)
         {
             return query.Info;
-        }
-
-        protected void ThrowOffsetNotSupported()
-        {
-            if (this.Query.Offset.HasValue && this.Query.Offset.Value > 0)
-                throw new NotSupportedException();
-        }
-
-        protected void ThrowLimitNotSupported()
-        {
-            if (this.Query.Limit.HasValue && this.Query.Limit.Value > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.OffsetNotSupported);
-        }
-
-        protected void ThrowJoinNotSupported()
-        {
-            if (this.Query.Info.Joins.Count > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.JoinNotSupported);
-        }
-
-        protected void ThrowOrderNotSupported()
-        {
-            if (this.Query.Info.Orders.Length > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.OrderByNotSupported);
         }
     }
 }

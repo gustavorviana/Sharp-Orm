@@ -12,45 +12,44 @@ namespace SharpOrm.Builder.Grammars
         {
         }
 
-        public virtual void ConfigureInsertQuery(QueryBase query, string[] columnNames)
+        public virtual void BuildInsertQuery(QueryBase query, string[] columnNames)
         {
-            this.AppendInsertHeader(columnNames);
-            this.builder.AddAndReplace(
+            AppendInsertHeader(columnNames);
+            builder.AddAndReplace(
                 query.ToString(),
                 '?',
-                (count) => this.builder.AddParameter(query.Info.Where.Parameters[count - 1])
+                (count) => builder.AddParameter(query.Info.Where.Parameters[count - 1])
             );
         }
 
-        public virtual void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
+        public virtual void BuildInsertExpression(SqlExpression expression, string[] columnNames)
         {
-            this.AppendInsertHeader(columnNames);
-            this.builder.AddAndReplace(
+            AppendInsertHeader(columnNames);
+            builder.AddAndReplace(
                 expression.ToString(),
                 '?',
-                (count) => this.builder.AddParameter(expression.Parameters[count - 1])
+                (count) => builder.AddParameter(expression.Parameters[count - 1])
             );
         }
 
-        public virtual void ConfigureBulkInsert(IEnumerable<Row> rows)
+        public virtual void BuildBulkInsert(IEnumerable<Row> rows)
         {
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                this.ConfigureInsert(@enum.Current.Cells, false);
+                BuildInsert(@enum.Current.Cells, false);
 
                 while (@enum.MoveNext())
                 {
-                    this.builder.Add(", ");
-                    this.AppendInsertCells(@enum.Current.Cells);
+                    builder.Add(", ");
+                    AppendInsertCells(@enum.Current.Cells);
                 }
             }
         }
 
-
-        public virtual void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
+        public virtual void BuildInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
             AppendInsertHeader(cells.Select(c => c.Name).ToArray());
             builder.Add("VALUES ");

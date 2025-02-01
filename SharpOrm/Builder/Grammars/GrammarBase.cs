@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
+using SharpOrm.Msg;
+using System.Linq;
 
 namespace SharpOrm.Builder.Grammars
 {
@@ -18,18 +20,29 @@ namespace SharpOrm.Builder.Grammars
         /// <summary>
         /// Gets the query information.
         /// </summary>
-        public QueryInfo Info => this.Query.Info;
+        public QueryInfo Info => Query.Info;
 
         public GrammarBase(Query query)
         {
-            this.builder = new QueryBuilder(query);
-            this.Query = query;
+            builder = new QueryBuilder(query);
+            Query = query;
         }
 
         public GrammarBase(Query query, QueryBuilder builder)
         {
             this.builder = builder;
-            this.Query = query;
+            Query = query;
+        }
+
+        public GrammarBase(GrammarBase owner)
+        {
+            builder = owner.builder;
+            Query = owner.Query;
+        }
+
+        protected bool CanWriteOrderby()
+        {
+            return Info.Select.Length != 1 || !Info.Select[0].IsCount;
         }
 
         /// <summary>
@@ -37,7 +50,7 @@ namespace SharpOrm.Builder.Grammars
         /// </summary>
         protected virtual void ApplyOrderBy()
         {
-            this.ApplyOrderBy(this.Info.Orders, false);
+            ApplyOrderBy(Info.Orders, false);
         }
 
         /// <summary>
@@ -52,22 +65,22 @@ namespace SharpOrm.Builder.Grammars
                 return;
 
             if (!writeOrderByFlag)
-                this.builder.Add(" ORDER BY ");
+                builder.Add(" ORDER BY ");
 
             WriteColumnOrder(en.Current);
 
             while (en.MoveNext())
             {
-                this.builder.Add(", ");
-                this.WriteColumnOrder(en.Current);
+                builder.Add(", ");
+                WriteColumnOrder(en.Current);
             }
         }
 
         protected void ApplyJoins()
         {
-            if (this.Info.Joins.Count > 0)
-                foreach (var join in this.Info.Joins)
-                    this.WriteJoin(join);
+            if (Info.Joins.Count > 0)
+                foreach (var join in Info.Joins)
+                    WriteJoin(join);
         }
 
         protected virtual void WriteJoin(JoinQuery join)
@@ -75,14 +88,44 @@ namespace SharpOrm.Builder.Grammars
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            this.builder
+            builder
                 .Add(' ')
                 .Add(join.Type)
                 .Add(" JOIN ")
                 .Add(GetTableName(join, true))
                 .Add(" ON ");
 
-            this.WriteWhereContent(join.Info);
+            WriteWhereContent(join.Info);
+        }
+
+        /// <summary>
+        /// Writes the update cell to the query.
+        /// </summary>
+        /// <param name="cell">The cell.</param>
+        protected void WriteUpdateCell(Cell cell)
+        {
+            builder.Add(FixColumnName(cell.Name)).Add(" = ");
+            builder.AddParameter(cell.Value);
+        }
+
+        /// <summary>
+        /// Applies the nomenclature to the name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The name with the applied nomenclature.</returns>
+        protected string FixTableName(string name)
+        {
+            return Info.Config.ApplyNomenclature(name);
+        }
+
+        /// <summary>
+        /// Apply column prefix and suffix.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        protected string FixColumnName(string name)
+        {
+            return Info.Config.ApplyNomenclature(name);
         }
 
         /// <summary>
@@ -92,7 +135,7 @@ namespace SharpOrm.Builder.Grammars
         /// <returns>The table name.</returns>
         protected string GetTableName(bool withAlias)
         {
-            return this.GetTableName(this.Query, withAlias);
+            return GetTableName(Query, withAlias);
         }
 
         /// <summary>
@@ -108,17 +151,17 @@ namespace SharpOrm.Builder.Grammars
 
         protected void WriteWhereContent(QueryBaseInfo info)
         {
-            this.builder.Add(info.Where.ToExpression(true));
+            builder.Add(info.Where.ToExpression(true));
         }
 
         protected void WriteWhere(bool configureParameters)
         {
-            if (this.Info.Where.Empty && this.Info.Where.Trashed == Trashed.With)
+            if (Info.Where.Empty && Info.Where.Trashed == Trashed.With)
                 return;
 
-            this.builder.Add(" WHERE ");
-            if (configureParameters) this.WriteWhereContent(this.Info);
-            else this.builder.Add(this.Info.Where);
+            builder.Add(" WHERE ");
+            if (configureParameters) WriteWhereContent(Info);
+            else builder.Add(Info.Where);
         }
 
         /// <summary>
@@ -126,20 +169,20 @@ namespace SharpOrm.Builder.Grammars
         /// </summary>
         protected virtual void WriteGroupBy()
         {
-            if (this.Info.GroupsBy.Length == 0)
+            if (Info.GroupsBy.Length == 0)
                 return;
 
-            this.builder.Add(" GROUP BY ");
-            AddParams(this.Info.GroupsBy, null, false);
-            if (this.Info.Having.Empty)
+            builder.Add(" GROUP BY ");
+            AddParams(Info.GroupsBy, null, false);
+            if (Info.Having.Empty)
                 return;
 
-            this.builder
+            builder
                 .Add(" HAVING ")
                 .AddAndReplace(
                     Info.Having.ToString(),
                     '?',
-                    (count) => this.builder.AddParameter(Info.Having.Parameters[count - 1])
+                    (count) => builder.AddParameter(Info.Having.Parameters[count - 1])
                 );
         }
         
@@ -159,10 +202,10 @@ namespace SharpOrm.Builder.Grammars
                 if (!en.MoveNext())
                     return;
 
-                this.builder.AddParameter(call(en.Current), allowAlias);
+                builder.AddParameter(call(en.Current), allowAlias);
 
                 while (en.MoveNext())
-                    this.builder.Add(", ").AddParameter(call(en.Current), allowAlias);
+                    builder.Add(", ").AddParameter(call(en.Current), allowAlias);
             }
         }
 
@@ -175,9 +218,9 @@ namespace SharpOrm.Builder.Grammars
             if (order.Order == OrderBy.None)
                 return;
 
-            this.WriteColumn(order.Column, false);
-            this.builder.Add(' ');
-            this.builder.Add(order.Order.ToString().ToUpper());
+            WriteColumn(order.Column, false);
+            builder.Add(' ');
+            builder.Add(order.Order.ToString().ToUpper());
         }
 
         /// <summary>
@@ -186,7 +229,61 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="column">The column.</param>
         protected void WriteColumn(Column column, bool allowAlias = true)
         {
-            this.builder.Add(column.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
+            builder.Add(column.ToSafeExpression(Info.ToReadOnly(), allowAlias));
+        }
+
+        /// <summary>
+        /// Determines whether the join can be deleted.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        /// <returns>True if the join can be deleted; otherwise, false.</returns>
+        protected bool CanDeleteJoin(QueryBaseInfo info)
+        {
+            string name = info.TableName.TryGetAlias(this.Info.Config);
+            foreach (var jName in this.Query.deleteJoins)
+                if (jName.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Tries to get the table alias for the query.
+        /// </summary>
+        /// <param name="query">The query.</param>
+        /// <returns>The table alias.</returns>
+        protected string TryGetTableAlias(QueryBase query)
+        {
+            return query.Info.TableName.TryGetAlias(query.Info.Config);
+        }
+
+        protected bool IsMultipleTablesDeleteWithJoin()
+        {
+            return Query.deleteJoins?.Any() ?? false;
+        }
+
+        protected void ThrowOffsetNotSupported()
+        {
+            if (Query.Offset.HasValue && Query.Offset.Value > 0)
+                throw new NotSupportedException();
+        }
+
+        protected void ThrowLimitNotSupported()
+        {
+            if (Query.Limit.HasValue && Query.Limit.Value > 0)
+                throw new NotSupportedException(Messages.GrammarMessage.OffsetNotSupported);
+        }
+
+        protected void ThrowJoinNotSupported()
+        {
+            if (Query.Info.Joins.Count > 0)
+                throw new NotSupportedException(Messages.GrammarMessage.JoinNotSupported);
+        }
+
+        protected void ThrowOrderNotSupported()
+        {
+            if (Query.Info.Orders.Length > 0)
+                throw new NotSupportedException(Messages.GrammarMessage.OrderByNotSupported);
         }
     }
 }

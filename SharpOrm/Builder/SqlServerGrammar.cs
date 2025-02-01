@@ -67,7 +67,7 @@ namespace SharpOrm.Builder
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                this.builder.Add("UPDATE ").Add(this.Info.Joins.Any() ? ApplyNomenclature(this.Info.TableName.ToString()) : this.GetTableName(false));
+                this.builder.Add("UPDATE ").Add(this.Info.Joins.Any() ? FixTableName(this.Info.TableName.ToString()) : this.GetTableName(false));
                 this.AddLimit();
                 this.builder.Add(" SET ");
                 this.builder.AddJoin(WriteUpdateCell, ", ", en);
