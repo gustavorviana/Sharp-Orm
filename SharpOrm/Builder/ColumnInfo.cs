@@ -142,9 +142,6 @@ namespace SharpOrm.Builder
             if (this.GetAttribute<ForeignAttribute>() is ForeignAttribute fka)
                 return fka;
 
-            if (this.GetAttribute<HasManyAttribute>() is ForeignAttribute hma)
-                return hma;
-
             var attr = this.GetAttribute<ForeignKeyAttribute>();
             if (attr == null) return null;
 

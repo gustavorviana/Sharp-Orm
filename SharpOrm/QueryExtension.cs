@@ -557,24 +557,6 @@ namespace SharpOrm
         /// <typeparam name="T"></typeparam>
         /// <param name="query"></param>
         /// <param name="obj"></param>
-        /// <param name="calls">Calls to retrieve the names of the properties.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        [Obsolete("Use \"UpdateExcept(T, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls)
-        {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-
-            return query.Update(query.GetObjectReader(false, false).Except(calls).ReadCells(obj));
-        }
-
-        /// <summary>
-        /// Update the row of a table, ignoring the values of the properties.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="query"></param>
-        /// <param name="obj"></param>
         /// <param name="expression">Expression to retrieve the names of the properties.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>

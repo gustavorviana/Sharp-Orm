@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder.Expressions;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,7 +18,7 @@ namespace SharpOrm.Builder
 
         public static MemberInfo GetColumnMember(Expression<ColumnExpression<T>> columnExpression, out Type rootClass)
         {
-            var paths = GetValueMemberPath(columnExpression);
+            var paths = GetMemberPath(columnExpression, true);
             rootClass = paths.Last().DeclaringType;
             var member = paths.First();
             if (member.IsDefined(typeof(NotMappedAttribute)))
@@ -26,36 +27,17 @@ namespace SharpOrm.Builder
             return member;
         }
 
-        public static List<MemberInfoColumn> GetColumnPath(Expression<ColumnExpression<T>> propertyExpression)
-        {
-            var cols = new List<MemberInfoColumn>();
-
-            foreach (var member in GetValueMemberPath(propertyExpression))
-            {
-                ValidateMemberType(member);
-                cols.Insert(0, new MemberInfoColumn(member));
-            }
-
-            return cols;
-        }
-
-        internal static void ValidateMemberType(MemberInfo member)
-        {
-            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
-                return;
-
-            string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
-            throw new InvalidOperationException($"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
-        }
-
         public static string GetPropName(Expression<ColumnExpression<T>> exp)
         {
             return GetMemberExpression(exp).Member.Name;
         }
 
-        private static IEnumerable<MemberInfo> GetValueMemberPath(Expression<ColumnExpression<T>> propertyExpression)
+        internal static IEnumerable<MemberInfo> GetMemberPath(Expression<ColumnExpression<T>> propertyExpression, bool allowNativeType)
         {
             var memberExpression = GetMemberExpression(propertyExpression);
+
+            if (!allowNativeType)
+                SqlExpressionVisitor.ValidateMemberType(memberExpression.Member);
 
             while (memberExpression != null)
             {

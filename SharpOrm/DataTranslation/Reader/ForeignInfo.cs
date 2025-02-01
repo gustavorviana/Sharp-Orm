@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -13,11 +14,12 @@ namespace SharpOrm.DataTranslation.Reader
         public string LocalKey { get; }
         public Type Type { get; }
 
-        public ForeignInfo(MemberInfoColumn column, object foreignKey, string localKey)
+        public ForeignInfo(MemberInfo member, object foreignKey, string localKey)
         {
-            TableName = TranslationRegistry.Default.GetTableName(column.ValueType);
+            Type = ReflectionUtils.GetMemberType(member);
+
+            TableName = TranslationRegistry.Default.GetTableName(Type);
             ForeignKey = foreignKey;
-            Type = column.ValueType;
             LocalKey = localKey;
         }
 

@@ -4,10 +4,9 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    [Obsolete("This class will be removed in version 3.x.")]
-    public class MemberInfoColumn : Column, IEquatable<MemberInfoColumn>
+    internal class MemberInfoColumn : Column, IEquatable<MemberInfoColumn>
     {
-        private readonly MemberInfo member;
+        internal readonly MemberInfo member;
 
         public string PropertyName => this.member.Name;
         public Type DeclaringType => member.DeclaringType;

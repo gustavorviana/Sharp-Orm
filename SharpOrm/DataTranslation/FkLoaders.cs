@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace SharpOrm.DataTranslation
@@ -15,12 +16,12 @@ namespace SharpOrm.DataTranslation
         #region Fields/Props
         private readonly Queue<ForeignInfo> foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly CancellationToken token;
-        private readonly MemberInfoColumn[] fkToLoad;
+        private readonly IReadOnlyList<MemberInfo> fkToLoad;
 
         public ConnectionManager Manager { get; }
         #endregion
 
-        public FkLoaders(ConnectionManager manager, MemberInfoColumn[] fkToLoad, CancellationToken token)
+        public FkLoaders(ConnectionManager manager, IReadOnlyList<MemberInfo> fkToLoad, CancellationToken token)
         {
             this.token = token;
             Manager = manager;
@@ -32,7 +33,7 @@ namespace SharpOrm.DataTranslation
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            if (fkToLoad.FirstOrDefault(f => f.IsSame(column)) is MemberInfoColumn lCol)
+            if (fkToLoad.FirstOrDefault(f => f == column.column) is MemberInfo lCol)
                 AddFkColumn(lCol, owner, fkValue, column);
             else if (Manager.Config.LoadForeign)
                 column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(translator, column, fkValue));
@@ -97,7 +98,7 @@ namespace SharpOrm.DataTranslation
             return new DbObjectEnumerator(reader, mapped, token);
         }
 
-        private void AddFkColumn(MemberInfoColumn lCol, object owner, object fkValue, ColumnInfo column)
+        private void AddFkColumn(MemberInfo lCol, object owner, object fkValue, ColumnInfo column)
         {
             var info = foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
             if (info == null)

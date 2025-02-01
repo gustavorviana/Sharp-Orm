@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 
 namespace SharpOrm
@@ -24,7 +25,7 @@ namespace SharpOrm
         private ObjectReader _objReader;
 
         protected internal TableInfo TableInfo { get; }
-        private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
+        private List<MemberInfo> _fkToLoad = new List<MemberInfo>();
 
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
@@ -167,40 +168,6 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        [Obsolete("Use \"OrderBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderBy(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Asc, columns);
-        }
-
-        /// <summary>
-        /// Applies descending sort.
-        /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"OrderByDesc(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Desc, columns);
-        }
-
-        /// <summary>
-        /// Applies an ascending sort.
-        /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"OrderBy(OrderBy, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
-        }
-
-        /// <summary>
-        /// Applies an ascending sort.
-        /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
         public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
         {
             return this.OrderBy(SharpOrm.OrderBy.Asc, expression);
@@ -227,8 +194,6 @@ namespace SharpOrm
             return (Query<T>)this.OrderBy(order, GetColumns(expression));
         }
 
-        #endregion
-
         /// <summary>
         /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
         /// </summary>
@@ -238,19 +203,6 @@ namespace SharpOrm
         {
             return (Query<T>)base.GroupBy(GetColumns(expression));
         }
-
-        /// <summary>
-        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
-        /// </summary>
-        /// <param name="columns">The column names by which the results should be grouped.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"GroupBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
-        }
-
-        #region Select
 
         /// <summary>
         /// Selects a column from the table using a column expression.
@@ -271,17 +223,6 @@ namespace SharpOrm
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.Select(GetColumns(expression));
-        }
-
-        /// <summary>
-        /// Select column of table by Column object.
-        /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
-        [Obsolete("Use \"Select(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
         /// <summary>
@@ -314,16 +255,6 @@ namespace SharpOrm
 
         #region AddForeign
 
-        public Query<T> AddForeign(Expression<ColumnExpression<T>> call, params Expression<ColumnExpression<T>>[] calls)
-        {
-            this.AddForeign(call);
-
-            foreach (var item in calls)
-                this.AddForeign(item);
-
-            return this;
-        }
-
         /// <summary>
         /// Adds a foreign key to the query based on the specified column expression.
         /// </summary>
@@ -332,8 +263,10 @@ namespace SharpOrm
         /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
-            var cols = ExpressionUtils<T>.GetColumnPath(call);
-            ReflectionUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
+            foreach (var column in ExpressionUtils<T>.GetMemberPath(call, false).Reverse())
+                if (!_fkToLoad.Contains(column))
+                    _fkToLoad.Add(column);
+
             return this;
         }
 
@@ -544,25 +477,6 @@ namespace SharpOrm
         /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
-        /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        [Obsolete("Use \"Update(T, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
-        {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-
-            if (calls.Length == 0)
-                throw new ArgumentNullException(nameof(calls));
-
-            return this.Update(this.GetObjectReader(false, false).Only(calls).ReadCells(obj));
-        }
-
-        /// <summary>
-        /// Update table keys using object values.
-        /// </summary>
-        /// <param name="obj"></param>
         /// <param name="expression">Expression to retrieve the properties that should be saved.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
@@ -699,24 +613,6 @@ namespace SharpOrm
             {
                 q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
             }, type);
-        }
-
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, string column1, string column2)
-        {
-            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, column2));
-        }
-
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
-        {
-            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
-        }
-
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, QueryCallback callback, string type = "INNER")
-        {
-            return (Query<T>)base.Join(DbName.Of<C>(alias, Config.Translation), callback, type); ;
         }
 
         /// <summary>
@@ -1383,7 +1279,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad = (MemberInfoColumn[])this._fkToLoad.Clone();
+            query._fkToLoad.AddRange(this._fkToLoad);
         }
 
         internal ObjectReader GetObjectReader(bool readPk, bool isCreate)

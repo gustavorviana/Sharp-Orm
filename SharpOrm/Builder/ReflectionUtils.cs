@@ -66,15 +66,6 @@ namespace SharpOrm.Builder
             else ((PropertyInfo)member).SetValue(owner, value);
         }
 
-        public static void AddToArray<T>(ref T[] array, IList<T> items)
-        {
-            int lastSize = array.Length;
-            Array.Resize(ref array, array.Length + items.Count);
-
-            for (int i = 0; i < items.Count; i++)
-                array[lastSize + i] = items[i];
-        }
-
         public static bool IsCollection(Type type)
         {
             return RuntimeList.IsCollection(type);

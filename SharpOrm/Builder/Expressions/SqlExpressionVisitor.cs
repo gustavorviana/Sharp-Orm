@@ -1,4 +1,5 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -207,6 +208,27 @@ namespace SharpOrm.Builder.Expressions
             }
 
             return false;
+        }
+ 
+        internal static IEnumerable<MemberInfo> GetMemberPath(MemberExpression memberExpression, bool allowNativeType)
+        {
+            if (!allowNativeType)
+                ValidateMemberType(memberExpression.Member);
+
+            while (memberExpression != null)
+            {
+                yield return memberExpression.Member;
+                memberExpression = memberExpression.Expression as MemberExpression;
+            }
+        }
+
+        internal static void ValidateMemberType(MemberInfo member)
+        {
+            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
+                return;
+
+            string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
+            throw new InvalidOperationException($"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
         }
     }
 }

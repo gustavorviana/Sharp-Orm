@@ -270,7 +270,7 @@ namespace DbRunTest.BaseTests.Dml
             ConfigureInitialCustomerAndOrder();
             using var qOrder = new Query<Order>(this.Creator);
 
-            qOrder.Join<Customer>("c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
+            qOrder.Join("Customers c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
             qOrder.Where("c.name", "Ronaldo");
             Assert.NotNull(qOrder.FirstOrDefault());
         }

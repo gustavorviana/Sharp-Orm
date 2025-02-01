@@ -32,7 +32,7 @@ namespace DbRunTest.BaseTests.Dml
             using var qOrder = new Query<Order>(Creator);
             using var qCustomer = new Query<Customer>(Creator);
 
-            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Join("Customers c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
             qOrder.Delete();
 

@@ -102,14 +102,13 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        [Obsolete]
         public void ObsoleteUpdateIgnorePropName()
         {
             var config = new MysqlQueryConfig(false);
             var fallback = RegisterFallback();
 
             var query = new Query<Order>(GetManager(config));
-            query.UpdateExcept(new Order { Quantity = 1 }, o => o.Customer, o => o.CustomerId, o => o.Product, o => o.Status);
+            query.UpdateExcept(new Order { Quantity = 1 }, o => new { o.Customer, o.CustomerId, o.Product, o.Status });
 
             Assert.Equal("UPDATE `Orders` SET `Quantity` = 1", fallback.ToString());
         }
