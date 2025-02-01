@@ -1,5 +1,4 @@
-﻿using SharpOrm;
-using SharpOrm.Builder;
+﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using System.Linq.Expressions;
 

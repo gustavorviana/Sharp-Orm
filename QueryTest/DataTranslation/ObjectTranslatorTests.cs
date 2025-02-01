@@ -1,5 +1,4 @@
-﻿using BaseTest.Mock;
-using BaseTest.Models;
+﻿using BaseTest.Models;
 using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -7,9 +6,9 @@ using SharpOrm.DataTranslation;
 using System.ComponentModel.DataAnnotations.Schema;
 using Xunit.Abstractions;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation
 {
-    public class ObjectTranslatorTest(ITestOutputHelper? output) : DbMockTest(output)
+    public class ObjectTranslatorTests(ITestOutputHelper? output) : DbMockTest(output)
     {
         private static readonly TableInfo table = new(typeof(TestClass), new TranslationRegistry());
 

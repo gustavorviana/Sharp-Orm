@@ -1,8 +1,8 @@
 ﻿using SharpOrm.Builder;
 
-namespace QueryTest
+namespace QueryTest.Builder
 {
-    public class DbNameTest
+    public class DbNameTests
     {
 
         [Fact]

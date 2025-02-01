@@ -3,7 +3,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using Xunit.Abstractions;
 
-namespace QueryTest
+namespace QueryTest.Builder
 {
     public class QueryBuilderTest(ITestOutputHelper? output) : DbMockTest(output)
     {

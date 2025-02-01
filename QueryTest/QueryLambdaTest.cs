@@ -27,9 +27,9 @@ namespace QueryTest
 
             using var query = new Query<Order>();
             query.Join(x => x.Customer, x => x.Id, x => x.CustomerId);
-            var sql = query.Get();
+            query.Get();
 
-            //Assert.Equal("SELECT [Customers].[Name] FROM [Orders] INNER JOIN [Customers] ON [Orders].[customer_id] = [Customers].[Id]", sql);
+            Assert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] ON [Customers].[Id] = [Orders].[customer_id]", fallback.ToString());
         }
     }
 }

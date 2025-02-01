@@ -5,9 +5,9 @@ using SharpOrm.Builder;
 using SharpOrm.DataTranslation.Reader;
 using System.Collections;
 using System.Collections.ObjectModel;
-using static QueryTest.ObjectActivatorTest;
+using static QueryTest.DataTranslation.Reader.ObjectActivatorTests;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation.Reader
 {
     public class MapperTest : DbMockTest
     {

@@ -1,9 +1,9 @@
 ﻿using BaseTest.Models;
 using SharpOrm.Builder;
 
-namespace QueryTest
+namespace QueryTest.Builder
 {
-    public class ColumnInfoTest
+    public class ColumnInfoTests
     {
         private static readonly TableInfo info = new(typeof(TestClass));
 

@@ -3,15 +3,15 @@ using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
-using static QueryTest.ExpressionProcessorTest;
+using static QueryTest.Builder.Expressions.ExpressionProcessorTests;
 
-namespace QueryTest
+namespace QueryTest.Builder.Expressions
 {
-    public class ExpressionColumnMetodsTest : SqlMethodMapTest
+    public class ExpressionColumnMetodsTests : SqlMethodMapTest
     {
         private readonly int TestLength = 1;
 
-        public ExpressionColumnMetodsTest() : base(new SqlServerQueryConfig())
+        public ExpressionColumnMetodsTests() : base(new SqlServerQueryConfig())
         {
 
         }

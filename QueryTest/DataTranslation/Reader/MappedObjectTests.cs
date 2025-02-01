@@ -2,8 +2,6 @@
 using BaseTest.Models;
 using BaseTest.Utils;
 using SharpOrm;
-using SharpOrm.Builder;
-using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System.ComponentModel.DataAnnotations.Schema;
 

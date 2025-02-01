@@ -2,7 +2,7 @@
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm.Builder;
-using static QueryTest.ExpressionProcessorTest;
+using static QueryTest.Builder.Expressions.ExpressionProcessorTests;
 
 namespace QueryTest.SqlServer
 {

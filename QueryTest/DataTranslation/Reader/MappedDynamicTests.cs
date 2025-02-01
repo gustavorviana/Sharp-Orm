@@ -4,9 +4,9 @@ using SharpOrm;
 using SharpOrm.DataTranslation.Reader;
 using System.Dynamic;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation.Reader
 {
-    public class MappedDynamicTest : DbMockTest
+    public class MappedDynamicTests : DbMockTest
     {
         [Fact]
         public void ReadTest()

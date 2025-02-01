@@ -6,9 +6,9 @@ using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using Xunit.Abstractions;
-using static QueryTest.ObjectActivatorTest;
+using static QueryTest.DataTranslation.Reader.ObjectActivatorTests;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation.Reader
 {
     public class ManualMapTests(ITestOutputHelper? output) : DbMockTest(output)
     {

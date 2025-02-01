@@ -8,9 +8,9 @@ using System.Data.Common;
 using System.Drawing;
 using Xunit.Abstractions;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation.Reader
 {
-    public class ObjectActivatorTest(ITestOutputHelper? output) : DbMockTest(output)
+    public class ObjectActivatorTests(ITestOutputHelper? output) : DbMockTest(output)
     {
         [Fact]
         public void InstanceClassInstanceTest()
@@ -109,14 +109,14 @@ namespace QueryTest
             [QueryIgnore]
             public Info(string firstName, string lastName, string status) : this(firstName, lastName)
             {
-                this.Status = status;
+                Status = status;
             }
 
             public Info(string firstName, string lastName)
             {
-                this.FirstName = firstName;
-                this.LastName = lastName;
-                this.Status = null;
+                FirstName = firstName;
+                LastName = lastName;
+                Status = null;
             }
         }
 
@@ -126,7 +126,7 @@ namespace QueryTest
 
             public InvalidClassConstructor(int id)
             {
-                this.Id = id;
+                Id = id;
             }
         }
 

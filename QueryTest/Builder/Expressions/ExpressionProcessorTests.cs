@@ -3,9 +3,9 @@ using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using System.Reflection;
 
-namespace QueryTest
+namespace QueryTest.Builder.Expressions
 {
-    public class ExpressionProcessorTest() : SqlMethodMapTest(new SqlServerQueryConfig())
+    public class ExpressionProcessorTests() : SqlMethodMapTest(new SqlServerQueryConfig())
     {
         private static readonly string StaticString = "Static Value";
         private readonly string InstanceString = "Instance String";

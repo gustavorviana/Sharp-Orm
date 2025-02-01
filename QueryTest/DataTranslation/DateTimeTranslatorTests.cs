@@ -4,7 +4,7 @@ using SharpOrm.DataTranslation;
 
 namespace QueryTest.DataTranslation
 {
-    public class DateTimeTranslatorTest : DbMockTest
+    public class DateTimeTranslatorTests : DbMockTest
     {
         private TranslationRegistry Registry => Config.Translation;
 

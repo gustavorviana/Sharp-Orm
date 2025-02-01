@@ -6,9 +6,9 @@ using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
-namespace QueryTest
+namespace QueryTest.DataTranslation
 {
-    public class MockReadUpdateTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
+    public class MockReadUpdateTests(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
         public void ReadWithCreateForeignIfNoDepth()
@@ -49,7 +49,7 @@ namespace QueryTest
 
         private Query<Order> GetConfiguredOrderQuery(bool loadForeign = false, int itens = 1, string queryStr = "SELECT TOP(1) * FROM [Orders]")
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.LoadForeign = loadForeign;
 
             var query = new Query<Order>(GetManager(config));

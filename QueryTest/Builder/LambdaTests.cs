@@ -2,9 +2,9 @@
 using SharpOrm.Builder;
 using System.Linq.Expressions;
 
-namespace QueryTest
+namespace QueryTest.Builder
 {
-    public class LambdaTest
+    public class LambdaTests
     {
         [Fact]
         public void GetOneColumn()

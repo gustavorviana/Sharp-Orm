@@ -1,9 +1,9 @@
 ﻿using SharpOrm.Collections;
 using System.ComponentModel;
 
-namespace QueryTest
+namespace QueryTest.Collections
 {
-    public class WeakCollectionTest
+    public class WeakCollectionTests
     {
         [Fact]
         public void AddAndRemoveItemTest()
