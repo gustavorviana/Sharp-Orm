@@ -34,7 +34,7 @@ namespace SharpOrm.Builder.Expressions
             if (expression is NewExpression)
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
-            GetMembers(expression, out var members, out var member);
+            var members = GetMembers(expression, out var member);
 
             if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
                 return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
@@ -53,21 +53,13 @@ namespace SharpOrm.Builder.Expressions
             return expression;
         }
 
-        private void GetMembers(Expression expression, out List<SqlMemberInfo> members, out MemberInfo member)
+        private List<SqlMemberInfo> GetMembers(Expression expression, out MemberInfo member)
         {
-            var memberExpression = expression as MemberExpression;
-            if (memberExpression != null)
-            {
-                members = VisitMemberExpression(memberExpression, out member);
-                return;
-            }
+            if (expression is MemberExpression memberExpression)
+                return VisitMemberExpression(memberExpression, out member);
 
-            var methodCallExpression = expression as MethodCallExpression;
-            if (methodCallExpression != null)
-            {
-                members = VisitMethodCall(methodCallExpression, out member);
-                return;
-            }
+            if (expression is MethodCallExpression methodCallExpression)
+                return VisitMethodCall(methodCallExpression, out member);
 
             throw new NotSupportedException(string.Format("Expression type {0} is not supported", expression.GetType().Name));
         }
