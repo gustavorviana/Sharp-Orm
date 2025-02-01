@@ -1,7 +1,5 @@
 ﻿using SharpOrm.Builder.Expressions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharpOrm.Builder
 {

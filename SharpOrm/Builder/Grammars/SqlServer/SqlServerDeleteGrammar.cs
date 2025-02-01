@@ -1,7 +1,8 @@
-﻿using System;
+﻿using SharpOrm;
+using System;
 using System.Linq;
 
-namespace SharpOrm.Builder.Grammars.Sgbd.SqlServer
+namespace SharpOrm.Builder.Grammars.SqlServer
 {
     internal class SqlServerDeleteGrammar : SqlServerGrammarBase
     {

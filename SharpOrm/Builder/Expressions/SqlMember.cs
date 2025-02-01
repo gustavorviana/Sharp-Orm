@@ -1,7 +1,6 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -48,7 +47,7 @@ namespace SharpOrm.Builder.Expressions
             if (!isNative && childs.Length > 0)
                 name = childs[0].Name;
 
-            if(Member.Name == alias)
+            if (Member.Name == alias)
                 alias = null;
 
             return !string.IsNullOrEmpty(alias) && alias != name ? alias : null;

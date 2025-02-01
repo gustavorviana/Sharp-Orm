@@ -1,4 +1,4 @@
-﻿namespace SharpOrm.Builder
+﻿namespace SharpOrm.Builder.Grammars.SqlServer
 {
     /// <summary>
     /// Represents the grammar options for SQL Server.

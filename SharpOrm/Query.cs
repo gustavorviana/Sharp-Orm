@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Builder.Grammars;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;

@@ -1,4 +1,4 @@
-﻿namespace SharpOrm.Builder.Grammars.Sgbd.Mysql
+﻿namespace SharpOrm.Builder.Grammars.Mysql
 {
     public abstract class MysqlGrammarBase : GrammarBase
     {

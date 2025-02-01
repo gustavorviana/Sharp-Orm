@@ -1,4 +1,6 @@
-﻿using SharpOrm.SqlMethods;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Mysql;
+using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.Mysql;
 using System.Linq;
 using System.Text;

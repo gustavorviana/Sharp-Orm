@@ -1,11 +1,6 @@
-﻿using SharpOrm.Builder.Grammars;
-using SharpOrm.Builder.Grammars.Sgbd.SqlServer;
-using SharpOrm.Msg;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars.SqlServer
 {
     /// <summary>
     /// Provides the implementation for building SQL table-related commands specific to SQL Server.
@@ -44,26 +39,26 @@ namespace SharpOrm.Builder
         {
             new InsertGrammar(this).BuildInsert(cells);
 
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
-                this.builder.Add("; SELECT SCOPE_IDENTITY();");
+            if (getGeneratedId && Query.ReturnsInsetionId)
+                builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
         internal SqlExpression GetSelectFrom()
         {
             var grammar = new SqlServerSelectGrammar(this);
 
-            this.builder.Clear();
+            builder.Clear();
             grammar.WriteSelectFrom(true);
-            this.ApplyOrderBy();
+            ApplyOrderBy();
             grammar.WritePagination();
 
             try
             {
-                return this.builder.ToExpression();
+                return builder.ToExpression();
             }
             finally
             {
-                this.builder.Clear();
+                builder.Clear();
             }
         }
     }

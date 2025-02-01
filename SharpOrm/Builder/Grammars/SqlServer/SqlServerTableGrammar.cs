@@ -3,7 +3,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars.SqlServer
 {
     /// <summary>
     /// Provides the implementation for building SQL table-related commands specific to SQL Server.
@@ -21,15 +21,15 @@ namespace SharpOrm.Builder
 
         protected override DbName LoadName()
         {
-            bool isTempName = this.Schema.Name.StartsWith("#");
-            if (isTempName && !this.Schema.Temporary)
+            bool isTempName = Schema.Name.StartsWith("#");
+            if (isTempName && !Schema.Temporary)
                 throw new InvalidOperationException("The table name cannot start with '#'.");
 
-            if (this.Schema.Name.EndsWith("_"))
+            if (Schema.Name.EndsWith("_"))
                 throw new NotSupportedException("The table name cannot end with '_'.");
 
-            if (!this.Schema.Temporary)
-                return new DbName(this.Schema.Name, "");
+            if (!Schema.Temporary)
+                return new DbName(Schema.Name, "");
 
             if (Schema.Name.Contains("."))
                 throw new NotSupportedException("A temporary table cannot contain '.' in its name.");
@@ -37,19 +37,19 @@ namespace SharpOrm.Builder
             if (Schema.Name.Length > 115)
                 throw new InvalidOperationException("The table name must contain up to 115 characters.");
 
-            if (isTempName) return new DbName(this.Schema.Name, "", false);
+            if (isTempName) return new DbName(Schema.Name, "", false);
 
-            return new DbName(string.Concat("#", this.Schema.Name), "");
+            return new DbName(string.Concat("#", Schema.Name), "");
         }
 
         public override SqlExpression Create()
         {
-            if (this.Schema.BasedQuery != null)
-                return this.CreateBased();
+            if (Schema.BasedQuery != null)
+                return CreateBased();
 
-            var query = this.GetBuilder()
-                .AddFormat("CREATE TABLE [{0}] (", this.Name.Name)
-                .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
+            var query = GetBuilder()
+                .AddFormat("CREATE TABLE [{0}] (", Name.Name)
+                .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
             WriteUnique(query);
             WritePk(query);
@@ -80,7 +80,7 @@ namespace SharpOrm.Builder
 
         private string GetSqlDataType(DataColumn column)
         {
-            if (this.GetCustomColumnTypeMap(column) is ColumnTypeMap map)
+            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
                 return map.GetTypeString(column);
 
             if (GetExpectedColumnType(column) is string typeColumn)
@@ -112,7 +112,7 @@ namespace SharpOrm.Builder
                 return "BIT";
 
             if (dataType == typeof(string))
-                return string.Concat("VARCHAR(", column.MaxLength < 1 ? (object)"MAX" : (object)column.MaxLength, ")");
+                return string.Concat("VARCHAR(", column.MaxLength < 1 ? "MAX" : (object)column.MaxLength, ")");
 
             if (dataType == typeof(char))
                 return "NCHAR(1)";
@@ -134,17 +134,17 @@ namespace SharpOrm.Builder
 
         private SqlExpression CreateBased()
         {
-            QueryBuilder query = this.GetBuilder();
+            QueryBuilder query = GetBuilder();
             query.Add("SELECT ");
 
-            if (this.Schema.BasedQuery.Limit is int limit && this.Schema.BasedQuery.Offset is null)
+            if (Schema.BasedQuery.Limit is int limit && Schema.BasedQuery.Offset is null)
                 query.Add($"TOP(").Add(limit).Add(") ");
 
-            this.WriteColumns(query, this.BasedTable.Select);
+            WriteColumns(query, BasedTable.Select);
 
-            query.Add(" INTO [").Add(this.Name).Add("]");
+            query.Add(" INTO [").Add(Name).Add("]");
 
-            var qGrammar = new SqlServerGrammar(this.Schema.BasedQuery);
+            var qGrammar = new SqlServerGrammar(Schema.BasedQuery);
             query.Add(qGrammar.GetSelectFrom());
 
             return query.ToExpression();
@@ -152,10 +152,10 @@ namespace SharpOrm.Builder
 
         public override SqlExpression Exists()
         {
-            if (this.Schema.Temporary)
-                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", this.Name.Name);
+            if (Schema.Temporary)
+                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", Name.Name);
 
-            var query = this.GetBuilder();
+            var query = GetBuilder();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");
 
             var name = GetSplittedName();
@@ -169,10 +169,10 @@ namespace SharpOrm.Builder
 
         private string[] GetSplittedName()
         {
-            if (!this.Schema.Name.Contains("."))
-                return new string[] { null, this.Schema.Name };
+            if (!Schema.Name.Contains("."))
+                return new string[] { null, Schema.Name };
 
-            return this.Schema.Name.Split('.');
+            return Schema.Name.Split('.');
         }
     }
 }

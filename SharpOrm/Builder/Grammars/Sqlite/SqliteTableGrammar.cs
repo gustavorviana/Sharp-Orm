@@ -1,9 +1,10 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Data;
 using System.Linq;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars.Sqlite
 {
     /// <summary>
     /// Provides the implementation for building SQL table-related commands specific to SQLite.
@@ -21,23 +22,23 @@ namespace SharpOrm.Builder
 
         protected override DbName LoadName()
         {
-            if (this.Schema.Temporary && !this.Schema.Name.StartsWith("temp_"))
-                return new DbName(string.Concat("temp_", this.Schema.Name), "");
+            if (Schema.Temporary && !Schema.Name.StartsWith("temp_"))
+                return new DbName(string.Concat("temp_", Schema.Name), "");
 
-            return new DbName(this.Schema.Name, "");
+            return new DbName(Schema.Name, "");
         }
 
         public override SqlExpression Create()
         {
-            if (this.Schema.BasedQuery != null)
-                return this.CreateBased();
+            if (Schema.BasedQuery != null)
+                return CreateBased();
 
-            if (this.GetPrimaryKeys().Length > 1 && this.Schema.Columns.Count(x => x.AutoIncrement) > 0)
+            if (GetPrimaryKeys().Length > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
                 throw new InvalidOperationException("It is not possible to have more than one primary key column when there is an AUTOINCREMENT column.");
 
-            var query = this.GetCreateTableQuery()
+            var query = GetCreateTableQuery()
                  .Add('(')
-                 .AddJoin(",", this.Schema.Columns.Select(GetColumnDefinition));
+                 .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
             WriteUnique(query);
             WritePk(query);
@@ -59,7 +60,7 @@ namespace SharpOrm.Builder
 
         private string GetSqliteDataType(DataColumn column)
         {
-            if (this.GetCustomColumnTypeMap(column) is ColumnTypeMap map)
+            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
                 return map.GetTypeString(column);
 
             if (GetExpectedColumnType(column) is string typeColumn)
@@ -91,14 +92,14 @@ namespace SharpOrm.Builder
                 return "BLOB";
 
             if (dataType == typeof(Guid))
-                return string.Concat("TEXT(", this.GetGuidSize(), ")");
+                return string.Concat("TEXT(", GetGuidSize(), ")");
 
             throw new ArgumentException($"Unsupported data type: {dataType.Name}");
         }
 
         protected override void WritePk(QueryBuilder query)
         {
-            var pks = this.GetPrimaryKeys().OrderBy(x => x.AutoIncrement).ToArray();
+            var pks = GetPrimaryKeys().OrderBy(x => x.AutoIncrement).ToArray();
             if (pks.Length == 0)
                 return;
 
@@ -110,42 +111,42 @@ namespace SharpOrm.Builder
 
         private string BuildAutoIncrement(DataColumn column)
         {
-            string name = this.Config.ApplyNomenclature(column.ColumnName);
+            string name = Config.ApplyNomenclature(column.ColumnName);
             return column.AutoIncrement ? string.Concat(name, " AUTOINCREMENT") : name;
         }
 
         private SqlExpression CreateBased()
         {
-            return this.GetCreateTableQuery()
+            return GetCreateTableQuery()
                 .Add(" AS ")
-                .Add(new SqliteGrammar(this.Schema.BasedQuery).Select())
+                .Add(new SqliteGrammar(Schema.BasedQuery).Select())
                 .ToExpression();
         }
 
         private QueryBuilder GetCreateTableQuery()
         {
-            QueryBuilder query = this.GetBuilder();
+            QueryBuilder query = GetBuilder();
             query.Add("CREATE TABLE ");
 
-            if (this.Schema.Temporary)
+            if (Schema.Temporary)
                 query.Add("temp.");
 
-            return query.Add(this.ApplyNomenclature(this.Name.Name));
+            return query.Add(ApplyNomenclature(Name.Name));
         }
 
         public override SqlExpression Drop()
         {
-            return this.GetBuilder()
+            return GetBuilder()
                 .Add("DROP ")
                 .Add("TABLE ")
-                .Add(this.ApplyNomenclature(this.Name.Name))
+                .Add(ApplyNomenclature(Name.Name))
                 .ToExpression();
         }
 
         public override SqlExpression Exists()
         {
-            string table = this.Schema.Temporary ? "sqlite_temp_master" : "sqlite_master";
-            return new SqlExpression($"SELECT COUNT(*) FROM {table} WHERE type='table' AND name = \"{this.Name.Name}\";");
+            string table = Schema.Temporary ? "sqlite_temp_master" : "sqlite_master";
+            return new SqlExpression($"SELECT COUNT(*) FROM {table} WHERE type='table' AND name = \"{Name.Name}\";");
         }
     }
 }

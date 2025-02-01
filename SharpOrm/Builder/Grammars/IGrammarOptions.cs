@@ -1,4 +1,4 @@
-﻿namespace SharpOrm.Builder
+﻿namespace SharpOrm.Builder.Grammars
 {
     /// <summary>
     /// Provides options for customizing the execution of the grammar.

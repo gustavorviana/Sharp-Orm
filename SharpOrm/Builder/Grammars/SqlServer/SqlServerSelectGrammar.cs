@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace SharpOrm.Builder.Grammars.Sgbd.SqlServer
+namespace SharpOrm.Builder.Grammars.SqlServer
 {
     internal class SqlServerSelectGrammar : SqlServerGrammarBase
     {
@@ -16,7 +14,7 @@ namespace SharpOrm.Builder.Grammars.Sgbd.SqlServer
 
         public void BuildCount(Column column)
         {
-            if (!Config.UseOldPagination && column != null && (Query.Distinct != column.IsAll()))
+            if (!Config.UseOldPagination && column != null && Query.Distinct != column.IsAll())
             {
                 builder.Add("SELECT ");
                 WriteCountColumn(column);

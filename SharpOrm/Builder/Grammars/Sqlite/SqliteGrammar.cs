@@ -1,8 +1,9 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder.Grammars.Mysql;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars.Sqlite
 {
     /// <summary>
     /// Provides the implementation for building SQL table-related commands specific to SQLite.
@@ -15,7 +16,7 @@ namespace SharpOrm.Builder
         /// <param name="query">The query.</param>
         public SqliteGrammar(Query query) : base(query)
         {
-            this.builder.paramInterceptor += (original) =>
+            builder.paramInterceptor += (original) =>
             {
                 if (original is DateTime date)
                     return date.ToString(DateTranslation.Format);
@@ -29,55 +30,55 @@ namespace SharpOrm.Builder
 
         private TimeZoneInfo GetTimeZoneInfo()
         {
-            return this.Info.Config.Translation.DbTimeZone;
+            return Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
-            this.ThrowNotSupportedOperations("INSERT");
+            ThrowNotSupportedOperations("INSERT");
             base.ConfigureInsert(cells, false);
 
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
-                this.builder.Add("; SELECT last_insert_rowid();");
+            if (getGeneratedId && Query.ReturnsInsetionId)
+                builder.Add("; SELECT last_insert_rowid();");
         }
 
         protected override void ConfigureDelete()
         {
-            this.ThrowNotSupportedOperations("DELETE");
-            this.ValidateAlias();
+            ThrowNotSupportedOperations("DELETE");
+            ValidateAlias();
 
             base.ConfigureDelete();
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
         {
-            this.ThrowNotSupportedOperations("UPDATE");
+            ThrowNotSupportedOperations("UPDATE");
 
-            this.ValidateAlias();
+            ValidateAlias();
             base.ConfigureUpdate(cells);
         }
 
         private void ValidateAlias()
         {
-            if (!string.IsNullOrEmpty(this.Info.TableName.Alias))
+            if (!string.IsNullOrEmpty(Info.TableName.Alias))
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
         }
 
         private void ThrowNotSupportedOperations(string operationName)
         {
-            if (this.Query.Limit > 0)
+            if (Query.Limit > 0)
                 throw new NotSupportedException($"SQLite does not support `Limit` with `{operationName}`.");
 
-            if (this.Query.Offset > 0)
+            if (Query.Offset > 0)
                 throw new NotSupportedException($"SQLite does not support `Offset` with `{operationName}`.");
 
-            if (this.Info.Joins.Count > 0)
+            if (Info.Joins.Count > 0)
                 throw new NotSupportedException($"SQLite does not support `Joins` with `{operationName}`.");
 
-            if (!this.Info.Having.Empty)
+            if (!Info.Having.Empty)
                 throw new NotSupportedException($"SQLite does not support `Having` with `{operationName}`.");
 
-            if (this.Info.Orders.Length > 0)
+            if (Info.Orders.Length > 0)
                 throw new NotSupportedException($"SQLite does not support `Orders` with `{operationName}`.");
         }
     }

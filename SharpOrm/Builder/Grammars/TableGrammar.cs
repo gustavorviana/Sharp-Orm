@@ -2,7 +2,7 @@
 using System.Data;
 using System.Linq;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars
 {
     /// <summary>
     /// Provides the base implementation for building SQL table-related commands using a fluent interface.
@@ -24,7 +24,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets the query configuration.
         /// </summary>
-        public QueryConfig Config => this.queryInfo.Config;
+        public QueryConfig Config => queryInfo.Config;
 
         /// <summary>
         /// Database name in the database's standard format.
@@ -34,7 +34,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets the query information for the base table.
         /// </summary>
-        protected QueryInfo BasedTable => this.Schema.BasedQuery.Info;
+        protected QueryInfo BasedTable => Schema.BasedQuery.Info;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableGrammar"/> class with the specified configuration and schema.
@@ -43,9 +43,9 @@ namespace SharpOrm.Builder
         /// <param name="schema">The table schema.</param>
         public TableGrammar(QueryConfig config, TableSchema schema)
         {
-            this.Schema = schema;
-            this.Name = this.LoadName();
-            this.queryInfo = new ReadonlyQueryInfo(config, this.Name);
+            Schema = schema;
+            Name = LoadName();
+            queryInfo = new ReadonlyQueryInfo(config, Name);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace SharpOrm.Builder
         /// <returns>The SQL expression for dropping the table.</returns>
         public virtual SqlExpression Drop()
         {
-            return new SqlExpression(string.Concat("DROP TABLE ", this.Config.ApplyNomenclature(this.Name.Name)));
+            return new SqlExpression(string.Concat("DROP TABLE ", Config.ApplyNomenclature(Name.Name)));
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace SharpOrm.Builder
         /// <returns>The SQL expression for truncating the table.</returns>
         public virtual SqlExpression Truncate()
         {
-            return new SqlExpression(string.Concat("TRUNCATE TABLE ", this.ApplyNomenclature(this.Name.Name)));
+            return new SqlExpression(string.Concat("TRUNCATE TABLE ", ApplyNomenclature(Name.Name)));
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace SharpOrm.Builder
         /// <returns>The custom column type map.</returns>
         protected ColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {
-            return this.queryInfo
+            return queryInfo
                 .Config
                 .CustomColumnTypes?
                 .FirstOrDefault(x => x.CanWork(column.DataType));
@@ -125,9 +125,9 @@ namespace SharpOrm.Builder
         /// <param name="query">The query builder.</param>
         protected virtual void WritePk(QueryBuilder query)
         {
-            var pks = this.GetPrimaryKeys();
+            var pks = GetPrimaryKeys();
             if (pks.Length != 0)
-                query.AddFormat(",CONSTRAINT {0} PRIMARY KEY (", this.Config.ApplyNomenclature(string.Concat("PK_", this.Name))).AddJoin(",", pks.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
+                query.AddFormat(",CONSTRAINT {0} PRIMARY KEY (", Config.ApplyNomenclature(string.Concat("PK_", Name))).AddJoin(",", pks.Select(x => Config.ApplyNomenclature(x.ColumnName))).Add(')');
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace SharpOrm.Builder
         /// <returns>The primary key columns.</returns>
         protected DataColumn[] GetPrimaryKeys()
         {
-            return this.Schema.Columns.PrimaryKeys;
+            return Schema.Columns.PrimaryKeys;
         }
 
         /// <summary>
@@ -145,9 +145,9 @@ namespace SharpOrm.Builder
         /// <param name="query">The query builder.</param>
         protected void WriteUnique(QueryBuilder query)
         {
-            var uniques = this.GetUniqueKeys();
+            var uniques = GetUniqueKeys();
             if (uniques.Length != 0)
-                query.AddFormat(",CONSTRAINT {0} UNIQUE (", this.Config.ApplyNomenclature(string.Concat("UC_", this.Name))).AddJoin(",", uniques.Select(x => this.Config.ApplyNomenclature(x.ColumnName))).Add(')');
+                query.AddFormat(",CONSTRAINT {0} UNIQUE (", Config.ApplyNomenclature(string.Concat("UC_", Name))).AddJoin(",", uniques.Select(x => Config.ApplyNomenclature(x.ColumnName))).Add(')');
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace SharpOrm.Builder
         /// <returns>The unique key columns.</returns>
         protected DataColumn[] GetUniqueKeys()
         {
-            return this.Schema.Columns.Where(x => x.Unique).ToArray();
+            return Schema.Columns.Where(x => x.Unique).ToArray();
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace SharpOrm.Builder
         /// <returns>The name with the applied nomenclature.</returns>
         protected string ApplyNomenclature(string name)
         {
-            return this.queryInfo.Config.ApplyNomenclature(name);
+            return queryInfo.Config.ApplyNomenclature(name);
         }
 
         /// <summary>
@@ -185,7 +185,7 @@ namespace SharpOrm.Builder
         /// <remarks>Ref: https://learn.microsoft.com/pt-br/dotnet/api/system.guid.tostring?view=net-8.0</remarks>
         protected int GetGuidSize()
         {
-            switch (this.Config.Translation.GuidFormat)
+            switch (Config.Translation.GuidFormat)
             {
                 case "N": return 32;
                 case "D": return 36;

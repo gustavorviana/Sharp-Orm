@@ -1,4 +1,6 @@
-﻿using SharpOrm.SqlMethods;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Sqlite;
+using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.Sqlite;
 
 namespace SharpOrm.Builder

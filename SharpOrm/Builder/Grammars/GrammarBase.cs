@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using SharpOrm.Msg;
 using System;
-using SharpOrm.Msg;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SharpOrm.Builder.Grammars

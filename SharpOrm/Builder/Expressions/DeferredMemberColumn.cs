@@ -1,8 +1,6 @@
 ﻿using SharpOrm.SqlMethods;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder.Expressions
@@ -62,7 +60,7 @@ namespace SharpOrm.Builder.Expressions
 
         private bool NeedChangeInfo(IReadonlyQueryInfo info)
         {
-            return !(queryInfo is QueryInfo qInfo) 
+            return !(queryInfo is QueryInfo qInfo)
                 || (!qInfo.IsExpectedType(member.DeclaringType)
                 && !qInfo.TableName.Name.Equals(GetTableName(), StringComparison.OrdinalIgnoreCase));
         }

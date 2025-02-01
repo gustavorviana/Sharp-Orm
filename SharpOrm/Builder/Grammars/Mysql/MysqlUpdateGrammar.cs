@@ -1,9 +1,8 @@
 ﻿using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace SharpOrm.Builder.Grammars.Sgbd.Mysql
+namespace SharpOrm.Builder.Grammars.Mysql
 {
     internal class MysqlUpdateGrammar : MysqlGrammarBase
     {

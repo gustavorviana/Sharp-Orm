@@ -1,11 +1,7 @@
-﻿using SharpOrm.Builder.Grammars;
-using SharpOrm.Builder.Grammars.Sgbd.Mysql;
-using SharpOrm.Msg;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars.Mysql
 {
     /// <summary>
     /// Provides the implementation for building SQL queries specific to MySQL using a fluent interface.
@@ -14,7 +10,7 @@ namespace SharpOrm.Builder
     {
         public MysqlGrammar(Query query) : base(query)
         {
-            this.builder.paramInterceptor += (original) =>
+            builder.paramInterceptor += (original) =>
             {
                 if (original is DateTimeOffset offset)
                     return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo());
@@ -25,7 +21,7 @@ namespace SharpOrm.Builder
 
         private TimeZoneInfo GetTimeZoneInfo()
         {
-            return this.Info.Config.Translation.DbTimeZone;
+            return Info.Config.Translation.DbTimeZone;
         }
 
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
@@ -53,7 +49,7 @@ namespace SharpOrm.Builder
 
         protected override void ConfigureSelect(bool configureWhereParams)
         {
-           new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
+            new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
         }
     }
 }

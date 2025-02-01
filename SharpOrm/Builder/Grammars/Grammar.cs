@@ -1,11 +1,9 @@
-﻿using SharpOrm.Builder.Grammars;
-using SharpOrm.Msg;
+﻿using SharpOrm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static SharpOrm.Msg.Messages;
 
-namespace SharpOrm.Builder
+namespace SharpOrm.Builder.Grammars
 {
     /// <summary>
     /// Provides the base implementation for building SQL queries using a fluent interface.
@@ -33,23 +31,23 @@ namespace SharpOrm.Builder
         /// <returns>The database command configured to perform the record count.</returns>
         public SqlExpression Count()
         {
-            return this.Count(this.GetColumnToCount());
+            return Count(GetColumnToCount());
         }
 
         private Column GetColumnToCount()
         {
-            if (this.Query.Distinct)
-                return this.Info.Select.Length == 1 ? this.Info.Select[0] : null;
+            if (Query.Distinct)
+                return Info.Select.Length == 1 ? Info.Select[0] : null;
 
-            if (this.Info.Select.Length > 1 || this.Info.Select.Any(c => c.IsAll()))
+            if (Info.Select.Length > 1 || Info.Select.Any(c => c.IsAll()))
                 return Column.All;
 
-            return this.Info.Select.FirstOrDefault();
+            return Info.Select.FirstOrDefault();
         }
 
         protected void SetParamInterceptor(Func<object, object> func)
         {
-            this.builder.paramInterceptor = func;
+            builder.paramInterceptor = func;
         }
 
         /// <summary>
@@ -58,7 +56,7 @@ namespace SharpOrm.Builder
         /// <returns>The database command configured to perform the record count.</returns>
         public SqlExpression Count(Column column)
         {
-            return this.BuildExpression(() => this.ConfigureCount(column));
+            return BuildExpression(() => ConfigureCount(column));
         }
 
         /// <summary>
@@ -72,7 +70,7 @@ namespace SharpOrm.Builder
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
         public SqlExpression Select()
         {
-            return this.BuildExpression(() => this.ConfigureSelect(true));
+            return BuildExpression(() => ConfigureSelect(true));
         }
 
         /// <summary>
@@ -81,9 +79,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public string SelectSqlOnly()
         {
-            this.builder.Clear();
-            this.ConfigureSelect(false);
-            return this.builder.ToString();
+            builder.Clear();
+            ConfigureSelect(false);
+            return builder.ToString();
         }
 
         /// <summary>
@@ -92,9 +90,9 @@ namespace SharpOrm.Builder
         /// <returns>The SQL expression for the SELECT statement.</returns>
         public SqlExpression GetSelectExpression()
         {
-            this.builder.Clear();
-            this.ConfigureSelect(false);
-            return this.builder.ToExpression();
+            builder.Clear();
+            ConfigureSelect(false);
+            return builder.ToExpression();
         }
 
         /// <summary>
@@ -112,7 +110,7 @@ namespace SharpOrm.Builder
         /// <returns>The SQL expression for the insert query.</returns>
         internal SqlExpression InsertQuery(QueryBase query, string[] columnNames)
         {
-            return this.BuildExpression(() => this.ConfigureInsertQuery(query, columnNames));
+            return BuildExpression(() => ConfigureInsertQuery(query, columnNames));
         }
 
         /// <summary>
@@ -133,7 +131,7 @@ namespace SharpOrm.Builder
         /// <returns>The SQL expression for the insert.</returns>
         public SqlExpression InsertExpression(SqlExpression expression, string[] columnNames)
         {
-            return this.BuildExpression(() => this.ConfigureInsertExpression(expression, columnNames));
+            return BuildExpression(() => ConfigureInsertExpression(expression, columnNames));
         }
 
         /// <summary>
@@ -152,7 +150,7 @@ namespace SharpOrm.Builder
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
         public SqlExpression Insert(IEnumerable<Cell> cells, bool returnsInsetionId = true)
         {
-            return this.BuildExpression(() => this.ConfigureInsert(cells, returnsInsetionId));
+            return BuildExpression(() => ConfigureInsert(cells, returnsInsetionId));
         }
 
         /// <summary>
@@ -168,7 +166,7 @@ namespace SharpOrm.Builder
         /// <param name="rows">The rows to be inserted.</param>
         public SqlExpression BulkInsert(IEnumerable<Row> rows)
         {
-            return this.BuildExpression(() => this.ConfigureBulkInsert(rows));
+            return BuildExpression(() => ConfigureBulkInsert(rows));
         }
 
         /// <summary>
@@ -186,7 +184,7 @@ namespace SharpOrm.Builder
         /// <param name="cells">An array of cells containing the values to be updated.</param>
         public SqlExpression Update(IEnumerable<Cell> cells)
         {
-            return this.BuildExpression(() => this.ConfigureUpdate(cells));
+            return BuildExpression(() => ConfigureUpdate(cells));
         }
 
 
@@ -202,7 +200,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public SqlExpression Delete()
         {
-            return this.BuildExpression(this.ConfigureDelete);
+            return BuildExpression(ConfigureDelete);
         }
 
         /// <summary>
@@ -212,7 +210,7 @@ namespace SharpOrm.Builder
 
         public SqlExpression SoftDelete(SoftDeleteAttribute softDelete)
         {
-            return this.BuildSoftDeleteExpression(this.ConfigureSoftDelete, softDelete, true);
+            return BuildSoftDeleteExpression(ConfigureSoftDelete, softDelete, true);
         }
 
         protected virtual void ConfigureSoftDelete(SoftDeleteAttribute softDelete)
@@ -220,12 +218,12 @@ namespace SharpOrm.Builder
             if (softDelete == null)
                 throw new NotSupportedException("SotDelete is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
 
-            this.ConfigureUpdate(this.GetSoftDeleteColumns(softDelete, true));
+            ConfigureUpdate(GetSoftDeleteColumns(softDelete, true));
         }
 
         public SqlExpression RestoreSoftDeleted(SoftDeleteAttribute softDelete)
         {
-            return this.BuildSoftDeleteExpression(this.ConfigureRestoreSoftDelete, softDelete, false);
+            return BuildSoftDeleteExpression(ConfigureRestoreSoftDelete, softDelete, false);
         }
 
         protected virtual void ConfigureRestoreSoftDelete(SoftDeleteAttribute softDelete)
@@ -233,25 +231,25 @@ namespace SharpOrm.Builder
             if (softDelete == null)
                 throw new NotSupportedException("Restore is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
 
-            this.ConfigureUpdate(this.GetSoftDeleteColumns(softDelete, false));
+            ConfigureUpdate(GetSoftDeleteColumns(softDelete, false));
         }
 
         private SqlExpression BuildSoftDeleteExpression(Action<SoftDeleteAttribute> builderAction, SoftDeleteAttribute softDelete, bool isDelete)
         {
-            return this.BuildExpression(() =>
+            return BuildExpression(() =>
             {
-                var originalSoftDelete = this.Query.Info.Where.softDelete;
-                var originalTrashed = this.Query.Info.Where.Trashed;
+                var originalSoftDelete = Query.Info.Where.softDelete;
+                var originalTrashed = Query.Info.Where.Trashed;
                 try
                 {
-                    this.Query.Info.Where.Trashed = isDelete ? Trashed.Except : Trashed.Only;
-                    this.Query.Info.Where.softDelete = softDelete;
+                    Query.Info.Where.Trashed = isDelete ? Trashed.Except : Trashed.Only;
+                    Query.Info.Where.softDelete = softDelete;
                     builderAction(softDelete);
                 }
                 finally
                 {
-                    this.Query.Info.Where.softDelete = originalSoftDelete;
-                    this.Query.Info.Where.Trashed = originalTrashed;
+                    Query.Info.Where.softDelete = originalSoftDelete;
+                    Query.Info.Where.Trashed = originalTrashed;
                 }
             });
         }
@@ -271,10 +269,10 @@ namespace SharpOrm.Builder
 
         private SqlExpression BuildExpression(Action builderAction)
         {
-            this.builder.Clear();
+            builder.Clear();
             builderAction();
 
-            return this.builder.ToExpression(true);
+            return builder.ToExpression(true);
         }
 
         protected QueryBaseInfo GetInfo(QueryBase query)
