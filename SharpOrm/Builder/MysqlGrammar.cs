@@ -26,43 +26,6 @@ namespace SharpOrm.Builder
             return this.Info.Config.Translation.DbTimeZone;
         }
 
-        protected override void ConfigureInsertQuery(QueryBase query, string[] columnNames)
-        {
-            this.AppendInsertHeader(columnNames);
-            this.builder.AddAndReplace(
-                query.ToString(),
-                '?',
-                (count) => this.builder.AddParameter(query.Info.Where.Parameters[count - 1])
-            );
-        }
-
-        protected override void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
-        {
-            this.AppendInsertHeader(columnNames);
-            this.builder.AddAndReplace(
-                expression.ToString(),
-                '?',
-                (count) => this.builder.AddParameter(expression.Parameters[count - 1])
-            );
-        }
-
-        protected override void ConfigureBulkInsert(IEnumerable<Row> rows)
-        {
-            using (var @enum = rows.GetEnumerator())
-            {
-                if (!@enum.MoveNext())
-                    throw new InvalidOperationException(Messages.NoColumnsInserted);
-
-                this.ConfigureInsert(@enum.Current.Cells, false);
-
-                while (@enum.MoveNext())
-                {
-                    this.builder.Add(", ");
-                    this.AppendInsertCells(@enum.Current.Cells);
-                }
-            }
-        }
-
         protected override void ConfigureDelete()
         {
             this.ThrowOffsetNotSupported();
@@ -78,32 +41,6 @@ namespace SharpOrm.Builder
                 this.ApplyOrderBy();
 
             this.AddLimit();
-        }
-
-        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
-        {
-            this.AppendInsertHeader(cells.Select(c => c.Name).ToArray());
-            this.builder.Add("VALUES ");
-            this.AppendInsertCells(cells);
-
-            if (getGeneratedId && this.Query.ReturnsInsetionId)
-                this.builder.Add("; SELECT LAST_INSERT_ID();");
-        }
-
-        protected void AppendInsertHeader(string[] columns)
-        {
-            columns = columns.Select(this.Info.Config.ApplyNomenclature).ToArray();
-            this.builder.Add("INSERT INTO ").Add(this.GetTableName(false));
-
-            if (columns.Length > 0) this.builder.Add(" (").AddJoin(", ", columns).Add(") ");
-            else this.builder.Add(' ');
-        }
-
-        protected void AppendInsertCells(IEnumerable<Cell> cells)
-        {
-            this.builder.Add('(');
-            this.AppendCells(cells);
-            this.builder.Add(")");
         }
 
         protected override void ConfigureCount(Column column)
@@ -208,28 +145,6 @@ namespace SharpOrm.Builder
         {
             if (this.Query.Limit != null)
                 this.builder.Add(" LIMIT ").Add(this.Query.Limit);
-        }
-
-        protected void ApplyJoins()
-        {
-            if (this.Info.Joins.Count > 0)
-                foreach (var join in this.Info.Joins)
-                    this.WriteJoin(join);
-        }
-
-        protected virtual void WriteJoin(JoinQuery join)
-        {
-            if (string.IsNullOrEmpty(join.Type))
-                join.Type = "INNER";
-
-            this.builder
-                .Add(' ')
-                .Add(join.Type)
-                .Add(" JOIN ")
-                .Add(this.GetTableName(join, true))
-                .Add(" ON ");
-
-            this.WriteWhereContent(join.Info);
         }
     }
 }
