@@ -179,12 +179,6 @@ namespace SharpOrm.Builder
             return this.reader;
         }
 
-        [Obsolete("This method will be removed in version 2.x.")]
-        public object CreateInstance()
-        {
-            return Activator.CreateInstance(this.Type);
-        }
-
         public override string ToString()
         {
             return string.Format("{0}: {1}", this.Name, this.Type);

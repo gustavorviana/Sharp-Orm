@@ -12,60 +12,66 @@ namespace SharpOrm.DataTranslation.Reader
     /// </summary>
     internal class ObjectActivator
     {
-        private readonly ParamInfo[] objParams;
-        public readonly Type type;
-
-        public bool IsDefaultConstructor => objParams.Length == 0;
+        private readonly ConstructorInfo _ctor;
+        private readonly ParamInfo[] _objParams;
+        public readonly Type _type;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectActivator"/> class.
         /// </summary>
-        /// <param name="type">The type of the object to be activated.</param>
-        /// <param name="reader">The data reader used to retrieve the object's data.</param>
-        /// <exception cref="NotSupportedException">Thrown if the type is abstract or no suitable constructor is found.</exception>
-        public ObjectActivator(Type type, IDataReader reader, TranslationRegistry registry)
+        /// <param name="type">The _type of the object to be activated.</param>
+        /// <param name="record">The data record used to retrieve the object's data.</param>
+        /// <exception cref="NotSupportedException">Thrown if the _type is abstract or no suitable constructor is found.</exception>
+        public ObjectActivator(Type type, IDataRecord record, TranslationRegistry registry)
         {
             if (type.IsAbstract) throw new NotSupportedException(Messages.ObjectActivator.AbstractType);
             if (type.IsInterface) throw new NotSupportedException(Messages.ObjectActivator.InterfaceType);
             if (type.IsEnum) throw new NotSupportedException(Messages.ObjectActivator.EnumType);
             if (type.IsArray) throw new NotSupportedException(Messages.ObjectActivator.ArrayType);
 
-            this.type = type;
-            objParams = GetParams(reader, registry) ?? throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
+            _type = type;
+            _objParams = GetParams(record, registry, out _ctor) ?? throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
+
+            if (_ctor == null)
+                throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
         }
 
         /// <summary>
-        /// Gets the appropriate constructor for the type based on the data reader.
+        /// Gets the appropriate constructor for the _type based on the data record.
         /// </summary>
-        /// <param name="reader">The data reader used to match constructor parameters.</param>
+        /// <param name="record">The data record used to match constructor parameters.</param>
         /// <param name="paramsIndex">Array of parameter indexes.</param>
         /// <returns>The matched constructor, or null if none found.</returns>
-        private ParamInfo[] GetParams(IDataReader reader, TranslationRegistry registry)
+        private ParamInfo[] GetParams(IDataRecord record, TranslationRegistry registry, out ConstructorInfo constructor)
         {
-            var constructors = type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
+            var constructors = _type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
 
-            foreach (var constructor in constructors)
+            foreach (var construct in constructors)
             {
-                var ctorParams = constructor.GetParameters();
-                var indexes = ctorParams.Select(x => FindParamOnDb(x, reader, registry)).Where(x => x != null).ToArray();
+                var ctorParams = construct.GetParameters();
+                var indexes = ctorParams.Select(x => FindParamOnDb(x, record, registry)).Where(x => x != null).ToArray();
                 if (indexes.Length == ctorParams.Length)
+                {
+                    constructor = construct;
                     return indexes;
+                }
             }
 
+            constructor = null;
             return null;
         }
 
         /// <summary>
-        /// Gets the index of a parameter in the data reader.
+        /// Gets the index of a parameter in the data record.
         /// </summary>
         /// <param name="parameter">The parameter info to locate.</param>
-        /// <param name="reader">The data reader used to find the parameter index.</param>
-        /// <returns>The index of the parameter in the data reader, or -1 if not found.</returns>
-        private static ParamInfo FindParamOnDb(ParameterInfo parameter, IDataReader reader, TranslationRegistry registry)
+        /// <param name="record">The data record used to find the parameter index.</param>
+        /// <returns>The index of the parameter in the data record, or -1 if not found.</returns>
+        private static ParamInfo FindParamOnDb(ParameterInfo parameter, IDataRecord record, TranslationRegistry registry)
         {
             try
             {
-                var columnIndex = reader.GetIndexOf(GetName(parameter));
+                var columnIndex = record.GetIndexOf(GetName(parameter));
                 if (columnIndex == -1 || !(registry.GetFor(parameter.ParameterType) is ISqlTranslation translation))
                     return null;
 
@@ -82,39 +88,14 @@ namespace SharpOrm.DataTranslation.Reader
         }
 
         /// <summary>
-        /// Creates an instance of the object using the data from the data reader.
+        /// Creates an instance of the object using the data from the data record.
         /// </summary>
-        /// <param name="reader">The data reader containing the object's data.</param>
+        /// <param name="record">The data record containing the object's data.</param>
         /// <returns>The created object instance.</returns>
-        public object CreateInstance(IDataReader reader)
+        public object CreateInstance(IDataRecord record)
         {
-            try
-            {
-                if (IsDefaultConstructor) return Activator.CreateInstance(type);
-
-                return Activator.CreateInstance(type, GetValues(reader));
-            }
-            catch (MissingMethodException ex)
-            {
-                throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor, ex);
-            }
-        }
-
-        /// <summary>
-        /// Gets the values from the data reader corresponding to the constructor parameters.
-        /// </summary>
-        /// <param name="reader">The data reader containing the object's data.</param>
-        /// <returns>An array of values for the constructor parameters.</returns>
-        private object[] GetValues(IDataReader reader)
-        {
-            if (IsDefaultConstructor)
-#if NET45
-                return new object[0];
-#else
-                return Array.Empty<object>();
-#endif
-
-            return objParams.Select(x => x.GetValue(reader)).ToArray();
+            var values = _objParams.Select(x => x.GetValue(record)).ToArray();
+            return _ctor.Invoke(values);
         }
 
         /// <summary>
@@ -141,9 +122,9 @@ namespace SharpOrm.DataTranslation.Reader
                 this.translation = translation;
             }
 
-            public object GetValue(IDataReader reader)
+            public object GetValue(IDataRecord record)
             {
-                return translation.FromSqlValue(reader[index], expectedType);
+                return translation.FromSqlValue(record[index], expectedType);
             }
         }
     }

@@ -9,19 +9,19 @@ namespace SharpOrm
     public static class DataReaderExtension
     {
         /// <summary>
-        /// Get row of current reader.
+        /// Get row of current record.
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="record"></param>
         /// <returns></returns>
-        public static Row ReadRow(this IDataReader reader, TranslationRegistry translation = null)
+        public static Row ReadRow(this IDataRecord record, TranslationRegistry translation = null)
         {
             if (translation == null)
                 translation = TranslationRegistry.Default;
 
-            Cell[] cells = new Cell[reader.FieldCount];
+            Cell[] cells = new Cell[record.FieldCount];
 
             for (int i = 0; i < cells.Length; i++)
-                cells[i] = reader.GetCell(translation, i);
+                cells[i] = record.GetCell(translation, i);
 
             return new Row(cells);
         }
@@ -29,15 +29,15 @@ namespace SharpOrm
         /// <summary>
         /// Get Cell by column index.
         /// </summary>
-        /// <param name="reader"></param>
+        /// <param name="record"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        public static Cell GetCell(this IDataReader reader, TranslationRegistry translation, int index)
+        public static Cell GetCell(this IDataRecord record, TranslationRegistry translation, int index)
         {
-            if (index < 0 || index > reader.FieldCount)
+            if (index < 0 || index > record.FieldCount)
                 throw new ArgumentOutOfRangeException();
 
-            return new Cell(reader.GetName(index), translation.FromSql(reader[index]));
+            return new Cell(record.GetName(index), translation.FromSql(record[index]));
         }
 
         internal static bool CanClose(this DbConnection connection, ConnectionManagement management)

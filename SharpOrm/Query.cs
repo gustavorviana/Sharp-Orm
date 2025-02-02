@@ -358,7 +358,7 @@ namespace SharpOrm
 
             try
             {
-                FkLoaders fkLoaders = new FkLoaders(this.Manager, this._fkToLoad, this.Token);
+                FkLoaders fkLoaders = new FkLoaders(Manager, _fkToLoad, Token);
 
                 enumerable.fkQueue = fkLoaders;
                 var list = enumerable.ToList();

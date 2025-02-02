@@ -17,7 +17,7 @@ namespace SharpOrm.DataTranslation.Reader
         public static object MakeObjWithId(TranslationRegistry translator, ColumnInfo column, object fkValue)
         {
             var fkTable = translator.GetTable(column.Type);
-            object value = fkTable.CreateInstance();
+            object value = Activator.CreateInstance(column.Type);
             fkTable.Columns.FirstOrDefault(c => c.Key)?.Set(value, fkValue);
             return value;
         }

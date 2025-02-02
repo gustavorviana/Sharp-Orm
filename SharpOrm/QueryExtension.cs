@@ -892,13 +892,13 @@ namespace SharpOrm
         /// <summary>
         /// Retrieves the index of the specified column from the data reader, ignoring the case of the column name.
         /// </summary>
-        /// <param name="reader">The data reader to retrieve the column index from.</param>
+        /// <param name="record">The data record to retrieve the column index from.</param>
         /// <param name="name">The name of the column to find the index of.</param>
         /// <returns>The index of the specified column, or -1 if the column is not found.</returns>
-        public static int GetIndexOf(this IDataReader reader, string name)
+        public static int GetIndexOf(this IDataRecord record, string name)
         {
-            for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < record.FieldCount; i++)
+                if (record.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
