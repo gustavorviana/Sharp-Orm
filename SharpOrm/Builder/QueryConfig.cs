@@ -65,6 +65,11 @@ namespace SharpOrm.Builder
         public bool EscapeStrings { get; set; }
 
         /// <summary>
+        /// Gets or sets the mode for mapping nested objects.
+        /// </summary>
+        public NestedMode NestedMapMode { get; set; } = NestedMode.Attribute;
+
+        /// <summary>
         /// Create an instance that allows only safe modifications.
         /// </summary>
         public QueryConfig() : this(true)

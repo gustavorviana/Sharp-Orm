@@ -1,4 +1,5 @@
-﻿using SharpOrm.Connection;
+﻿using SharpOrm.Builder;
+using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
 using System;
@@ -17,6 +18,7 @@ namespace SharpOrm.Collections
     {
         private readonly ConnectionManagement management;
         private readonly TranslationRegistry translation;
+        internal NestedMode mode = NestedMode.Attribute;
         private readonly CancellationToken token;
         private readonly DbCommand command;
         internal IFkQueue fkQueue;
@@ -71,7 +73,7 @@ namespace SharpOrm.Collections
 
         private IMappedObject CreateMappedObj(DbDataReader reader)
         {
-            return MappedObject.Create(reader, typeof(T), this.fkQueue, translation);
+            return MappedObject.Create(reader, typeof(T), mode, this.fkQueue, translation);
         }
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator

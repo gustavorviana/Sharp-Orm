@@ -52,6 +52,30 @@ namespace QueryTest.DataTranslation.Reader
             Assert.Empty(obj.StrArray);
         }
 
+        [Fact]
+        public void MapAllAsNestedTest()
+        {
+            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetNestedObjectReader);
+
+            using var query = new Query<RootNestedObject>(GetManager(x => x.NestedMapMode = SharpOrm.Builder.NestedMode.All));
+            var obj = query.FirstOrDefault();
+
+            Assert.NotNull(obj);
+            Assert.NotNull(obj.Child1);
+            Assert.NotNull(obj.Child2);
+
+            Assert.Equal(11, obj.Id);
+            Assert.Equal(32, obj.Child1.ChildId);
+            Assert.Equal(4, obj.Child1.Id);
+            Assert.Equal("Value Child 1", obj.Child1.Value);
+
+            Assert.Equal(11, obj.Id);
+            Assert.Equal(32, obj.Child2.ChildId);
+            Assert.Equal(5, obj.Child2.Id);
+
+            Assert.Empty(obj.StrArray);
+        }
+
         private static MockDataReader GetNestedObjectReader()
         {
             return new MockDataReader(

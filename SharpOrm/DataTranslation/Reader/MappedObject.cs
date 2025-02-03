@@ -17,6 +17,7 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly TranslationRegistry registry;
         private readonly object _lock = new object();
         private ObjectActivator objectActivator;
+        private readonly NestedMode nestedMode;
         private readonly IFkQueue enqueueable;
         private ColumnInfo parentColumn;
         private MappedObject parent;
@@ -51,6 +52,21 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
         public static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
+            return Create(record, type, NestedMode.Attribute, enqueueable, registry);
+        }
+
+
+        /// <summary>
+        /// Creates an <see cref="IMappedObject"/> for the specified type.
+        /// </summary>
+        /// <param name="record">The database record.</param>
+        /// <param name="type">The type of the object to create.</param>
+        /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
+        /// <param name="registry">The translation registry. If null, the default registry is used.</param>
+        /// <param name="nestedMode">The nested mode to use for mapping.</param>
+        /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        public static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable = null, TranslationRegistry registry = null)
+        {
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
@@ -60,14 +76,15 @@ namespace SharpOrm.DataTranslation.Reader
             if (registry.GetManualMap(type) is TableInfo table)
                 return new MappedManualObj(table, registry, record);
 
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue()).Map(registry, record, "");
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(registry, record, "");
         }
 
-        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
+        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
         {
             this.Type = type;
             this.registry = registry;
             this.enqueueable = enqueueable;
+            this.nestedMode = nestedMode;
         }
 
         private MappedObject Map(TranslationRegistry registry, IDataRecord record, string prefix)
@@ -84,14 +101,31 @@ namespace SharpOrm.DataTranslation.Reader
             foreach (var column in registry.GetTable(this.Type).Columns)
                 if (column.ForeignInfo != null) AddIfValidId(record, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(record, columns, GetName(column, prefix), column);
-                else if (column.MapNested) this.MapChild(record, column, prefix);
+                else MapNested(column, record, prefix);
 
             return this;
         }
 
+        private void MapNested(ColumnInfo column, IDataRecord record, string prefix)
+        {
+            if (IsValidNested(column))
+                MapChild(record, column, prefix);
+        }
+
+        private bool IsValidNested(ColumnInfo column)
+        {
+            return column.MapNested ||
+                (nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
+        }
+
+        private bool IsRootType(ColumnInfo column)
+        {
+            return column.Type == Type;
+        }
+
         private void MapChild(IDataRecord record, ColumnInfo column, string prefix)
         {
-            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }
+            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable, nestedMode) { parentColumn = column, parent = this }
                     .Map(registry, record, prefix + column.Name));
         }
 

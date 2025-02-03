@@ -11,8 +11,8 @@ namespace BaseTest.Utils
 {
     public class DbMockTest : QueryTestBase
     {
-        protected MockConnection Connection => (MockConnection)this.fixture.Creator.GetConnection();
-        protected ConnectionManager Manager => this.fixture.Manager;
+        protected MockConnection Connection => (MockConnection)fixture.Creator.GetConnection();
+        protected ConnectionManager Manager => fixture.Manager;
 
         public DbMockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
         {
@@ -26,6 +26,13 @@ namespace BaseTest.Utils
         public DbMockTest() : base(null, new MockFixture(new SqlServerQueryConfig(false)))
         {
 
+        }
+
+        protected ConnectionManager GetManager(Action<QueryConfig> configure)
+        {
+            var config = Config.Clone();
+            configure(config);
+            return GetManager(config);
         }
 
         protected ConnectionManager GetManager(QueryConfig config)
