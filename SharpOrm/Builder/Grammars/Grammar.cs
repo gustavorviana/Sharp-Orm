@@ -187,7 +187,21 @@ namespace SharpOrm.Builder.Grammars
             return BuildExpression(() => ConfigureUpdate(cells));
         }
 
+        public SqlExpression Merge(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            if (whereColumns.Length == 0)
+                throw new InvalidOperationException("The comparison columns must be defined.");
 
+            var target = new MergeQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
+            var source = new MergeQueryInfo(sourceTableName, Query.Info.Config, "Source");
+
+            return BuildExpression(() => ConfigureMerge(target, source, whereColumns, updateColumns, insertColumns));
+        }
+
+        protected virtual void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            throw new NotSupportedException();
+        }
 
         /// <summary>
         /// This method is used to configure an SQL UPDATE statement with the given cell array.

@@ -43,6 +43,11 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
+        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            new SqlServerMergeGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+        }
+
         internal SqlExpression GetSelectFrom()
         {
             var grammar = new SqlServerSelectGrammar(this);

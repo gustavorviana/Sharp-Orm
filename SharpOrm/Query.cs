@@ -1660,6 +1660,18 @@ namespace SharpOrm
         #region DML SQL commands
 
         /// <summary>
+        /// Merges data from the source table into the target table based on the specified conditions.
+        /// </summary>
+        /// <param name="sourceName">The name of the source table containing the data to be merged.</param>
+        /// <param name="updateColumns">The columns to be updated if a match is found.</param>
+        /// <param name="insertColumns">The columns to be inserted if no match is found.</param>
+        public int Merge(DbName sourceName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            this.ValidateReadonly();
+            return this.ExecuteAndGetAffected(this.GetGrammar().Merge(sourceName, whereColumns, updateColumns, insertColumns));
+        }
+
+        /// <summary>
         /// Update rows on table.
         /// </summary>
         /// <param name="cells"></param>

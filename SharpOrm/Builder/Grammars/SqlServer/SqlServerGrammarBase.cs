@@ -17,7 +17,11 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         protected override void WriteTable(QueryBase query)
         {
             base.WriteTable(query);
+            WriteGrammarOptions(query);
+        }
 
+        protected void WriteGrammarOptions(QueryBase query)
+        {
             if (query is IGrammarOptions options && options.IsNoLock())
                 builder.Add(" WITH (NOLOCK)");
         }
