@@ -1,4 +1,5 @@
 ﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -6,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class MergeTests(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>
+    public class UpsertTests(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>
     {
         [Fact]
         public void MergeTest()
@@ -15,7 +16,7 @@ namespace QueryTest.Sqlite
 
             using var query = new Query("TargetTable");
 
-            var result = query.GetGrammar().Merge(
+            var result = query.GetGrammar().Upsert(
                 new DbName("SrcTable"),
                 ["Id", "Description"],
                 ["Name", "Description"],
@@ -32,7 +33,7 @@ namespace QueryTest.Sqlite
 
             using var query = new Query("TargetTable Tgt");
 
-            var result = query.GetGrammar().Merge(
+            var result = query.GetGrammar().Upsert(
                 new DbName("SrcTable Src"),
                 ["Id", "Description"],
                 ["Name", "Description"],
@@ -40,6 +41,18 @@ namespace QueryTest.Sqlite
             );
 
             QueryAssert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void MergeWithRow()
+        {
+            using var query = new Query("Address");
+
+            Assert.Throws<NotSupportedException>(() => query.GetGrammar().Upsert(
+                Tables.Address.RandomRows(5),
+                [Tables.Address.ID, Tables.Address.NAME],
+                [Tables.Address.NAME, Tables.Address.CITY]
+            ));
         }
     }
 }

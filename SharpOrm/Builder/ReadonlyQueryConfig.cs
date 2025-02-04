@@ -9,6 +9,8 @@ namespace SharpOrm.Builder
     /// </summary>
     internal class ReadonlyQueryConfig : QueryConfig
     {
+        protected internal override bool NativeUpsertRows => false;
+
         /// <summary>
         /// Returns the name without any treatment applied to it.
         /// </summary>

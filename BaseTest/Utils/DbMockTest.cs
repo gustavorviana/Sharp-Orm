@@ -28,13 +28,6 @@ namespace BaseTest.Utils
 
         }
 
-        protected ConnectionManager GetManager(Action<QueryConfig> configure)
-        {
-            var config = Config.Clone();
-            configure(config);
-            return GetManager(config);
-        }
-
         protected ConnectionManager GetManager(QueryConfig config)
         {
             return new ConnectionManager(config, this.Connection);

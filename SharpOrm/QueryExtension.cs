@@ -671,55 +671,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
-        /// </summary>
-        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
-        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
-        /// <param name="obj">The object of type T to be inserted or updated.</param>
-        /// <param name="toCheckColumnsExp">Column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, Expression<ColumnExpression<T>> toCheckColumnsExp)
-        {
-            var toCheckColumns = query.GetColumns(toCheckColumnsExp, ExpressionConfig.New);
-
-            using (query = (Query<T>)query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, query.TableInfo.GetValue(obj, column.memberInfo));
-
-                if (query.Any()) query.Update(obj);
-                else query.Insert(obj);
-            }
-        }
-
-        /// <summary>
-        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
-        /// </summary>
-        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
-        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
-        /// <param name="obj">The object of type T to be inserted or updated.</param>
-        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns)
-        {
-            if (toCheckColumns.Length < 1)
-                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
-
-            using (query = (Query<T>)query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, query.TableInfo.GetValue(obj, column));
-
-                if (query.Any()) query.Update(obj);
-                else query.Insert(obj);
-            }
-        }
-
-        /// <summary>
         /// Performs a bulk delete operation on a collection of values in the query.
         /// </summary>
         /// <param name="query">The query object to perform the delete operation on.</param>
@@ -759,30 +710,6 @@ namespace SharpOrm
         {
             using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Update(comparationColumns);
-        }
-
-        /// <summary>
-        /// Inserts or updates a row using the provided query, row data, and columns to check for upserting.
-        /// </summary>
-        /// <param name="query">The Query object representing the database query.</param>
-        /// <param name="row">The Row object containing the row data to be inserted or updated.</param>
-        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new row if it doesn't exist or updates an existing row if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert(this Query query, Row row, string[] toCheckColumns)
-        {
-            if (toCheckColumns.Length < 1)
-                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
-
-            using (query = query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, row[column]);
-
-                if (query.Any()) query.Update(row.Cells);
-                else query.Insert(row.Cells);
-            }
         }
 
         #region Join

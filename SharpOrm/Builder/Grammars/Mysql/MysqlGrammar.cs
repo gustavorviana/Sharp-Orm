@@ -52,9 +52,14 @@ namespace SharpOrm.Builder.Grammars.Mysql
             new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
         }
 
-        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
-            new MysqlMergeGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+            new MysqlUpsertGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+        }
+
+        protected override void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
+        {
+            new MysqlUpsertGrammar(this).Build(target, rows, whereColumns, updateColumns);
         }
     }
 }

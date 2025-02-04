@@ -22,8 +22,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         protected void WriteGrammarOptions(QueryBase query)
         {
-            if (query is IGrammarOptions options && options.IsNoLock())
-                builder.Add(" WITH (NOLOCK)");
+            SqlServerGrammarOptions.WriteTo(builder, query);
         }
 
         protected void ValidateOffsetOrderBy()

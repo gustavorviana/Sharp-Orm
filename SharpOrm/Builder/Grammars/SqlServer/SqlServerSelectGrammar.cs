@@ -27,7 +27,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             builder.Add(") AS [count]");
         }
 
-
         private QueryBuilder WriteCountColumn(Column column)
         {
             if (column.IsCount) return builder.AddExpression(column);

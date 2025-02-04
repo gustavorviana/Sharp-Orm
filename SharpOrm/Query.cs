@@ -512,6 +512,36 @@ namespace SharpOrm
             return base.Update(toUpdate);
         }
 
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public void Upsert(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
+        {
+            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            Upsert(obj, toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentException">Thrown when no columns are specified to check.</exception>
+        public void Upsert(T obj, string[] toCheckColumns, params string[] updateColumns)
+        {
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            base.Upsert(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns);
+        }
+
         #endregion
 
         #region Join
@@ -1659,16 +1689,52 @@ namespace SharpOrm
 
         #region DML SQL commands
 
-        /// <summary>
-        /// Merges data from the source table into the target table based on the specified conditions.
-        /// </summary>
-        /// <param name="sourceName">The name of the source table containing the data to be merged.</param>
-        /// <param name="updateColumns">The columns to be updated if a match is found.</param>
-        /// <param name="insertColumns">The columns to be inserted if no match is found.</param>
-        public int Merge(DbName sourceName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        public void Upsert(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
         {
-            this.ValidateReadonly();
-            return this.ExecuteAndGetAffected(this.GetGrammar().Merge(sourceName, whereColumns, updateColumns, insertColumns));
+            ValidateReadonly();
+            ExecuteAndGetAffected(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns));
+        }
+
+        public void Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns)
+        {
+            ValidateReadonly();
+
+            if (!Config.NativeUpsertRows) NonNativeUpsertRows(rows, toCheckColumns, updateColumns);
+            else ExecuteAndGetAffected(GetGrammar().Upsert(rows, toCheckColumns, updateColumns));
+        }
+
+        internal int NonNativeUpsertRows(Row[] rows, string[] toCheckColumns, string[] updateColumns)
+        {
+            foreach (var row in rows)
+                Upsert(row, toCheckColumns, updateColumns);
+
+            return 0;
+        }
+
+        public void Upsert(Row row, string[] toCheckColumns, params string[] updateColumns)
+        {
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            using (var query = Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, row[column]);
+
+                if (query.Any()) query.Update(row.Cells.Where(x => AnyColumn(toCheckColumns, x.Name)));
+                else query.Insert(row.Cells);
+            }
+        }
+
+        private static bool AnyColumn(string[] columns, string column)
+        {
+            if (columns.Length == 0) return true;
+
+            for (int i = 0; i < columns.Length; i++)
+                if (columns[i].Equals(column, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+            return false;
         }
 
         /// <summary>

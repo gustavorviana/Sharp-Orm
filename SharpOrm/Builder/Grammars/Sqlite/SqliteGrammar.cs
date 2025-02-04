@@ -8,7 +8,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
     /// <summary>
     /// Provides the implementation for building SQL table-related commands specific to SQLite.
     /// </summary>
-    public class SqliteGrammar : MysqlGrammar
+    public class SqliteGrammar : Grammar
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SqliteGrammar"/> class with the specified query.
@@ -36,7 +36,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
         {
             ThrowNotSupportedOperations("INSERT");
-            base.ConfigureInsert(cells, false);
+            new InsertGrammar(this).BuildInsert(cells);
 
             if (getGeneratedId && Query.ReturnsInsetionId)
                 builder.Add("; SELECT last_insert_rowid();");
@@ -47,7 +47,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             ThrowNotSupportedOperations("DELETE");
             ValidateAlias();
 
-            base.ConfigureDelete();
+            new MysqlDeleteGrammar(this).Build();
         }
 
         protected override void ConfigureUpdate(IEnumerable<Cell> cells)
@@ -55,7 +55,17 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             ThrowNotSupportedOperations("UPDATE");
 
             ValidateAlias();
-            base.ConfigureUpdate(cells);
+            new MysqlUpdateGrammar(this).Build(cells); ;
+        }
+
+        protected override void ConfigureCount(Column column)
+        {
+            new MysqlSelectGrammar(this).BuildCount(column);
+        }
+
+        protected override void ConfigureSelect(bool configureWhereParams)
+        {
+            new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
         }
 
         private void ValidateAlias()
@@ -64,7 +74,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
         }
 
-        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
             builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
             WriteColumns("", insertColumns);

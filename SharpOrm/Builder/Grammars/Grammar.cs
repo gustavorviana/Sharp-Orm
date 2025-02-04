@@ -187,20 +187,45 @@ namespace SharpOrm.Builder.Grammars
             return BuildExpression(() => ConfigureUpdate(cells));
         }
 
-        public SqlExpression Merge(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        public SqlExpression Upsert(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
             if (whereColumns.Length == 0)
                 throw new InvalidOperationException("The comparison columns must be defined.");
 
-            var target = new MergeQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
-            var source = new MergeQueryInfo(sourceTableName, Query.Info.Config, "Source");
+            var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
+            var source = new UpsertQueryInfo(sourceTableName, Query.Info.Config, "Source");
 
-            return BuildExpression(() => ConfigureMerge(target, source, whereColumns, updateColumns, insertColumns));
+            return BuildExpression(() => ConfigureUpsert(target, source, whereColumns, updateColumns, insertColumns));
         }
 
-        protected virtual void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+
+        public SqlExpression Upsert(IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
         {
-            throw new NotSupportedException();
+            if (whereColumns.Length == 0)
+                throw new InvalidOperationException("The comparison columns must be defined.");
+
+            var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
+
+            return BuildExpression(() => ConfigureUpsert(target, rows, whereColumns, updateColumns));
+        }
+
+        protected virtual void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
+        {
+            throw new NotSupportedException($"The \"{GetConfigName()}\" configuration does not support upserting rows.");
+        }
+
+        protected virtual void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            throw new NotSupportedException($"The \"{GetConfigName()}\" configuration does not support upsert between tables.");
+        }
+
+        private string GetConfigName()
+        {
+            string fullName = Info.Config.GetType().Name;
+            if (fullName.EndsWith(nameof(QueryConfig)))
+                return fullName.Substring(0, fullName.Length - nameof(QueryConfig).Length);
+
+            return fullName;
         }
 
         /// <summary>

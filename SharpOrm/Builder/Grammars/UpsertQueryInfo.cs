@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SharpOrm.Builder.Grammars
 {
-    public class MergeQueryInfo : IReadonlyQueryInfo
+    public class UpsertQueryInfo : IReadonlyQueryInfo
     {
         public QueryConfig Config { get; set; }
 
@@ -12,7 +12,7 @@ namespace SharpOrm.Builder.Grammars
 
         public string Alias { get; }
 
-        internal MergeQueryInfo(DbName name, QueryConfig config, string aliasIfEmpty)
+        internal UpsertQueryInfo(DbName name, QueryConfig config, string aliasIfEmpty)
         {
             Config = config;
 

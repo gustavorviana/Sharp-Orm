@@ -43,9 +43,14 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
-        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
-            new SqlServerMergeGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+            new SqlServerUpsertGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+        }
+
+        protected override void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
+        {
+            new SqlServerUpsertGrammar(this).Build(target, rows, whereColumns, updateColumns);
         }
 
         internal SqlExpression GetSelectFrom()

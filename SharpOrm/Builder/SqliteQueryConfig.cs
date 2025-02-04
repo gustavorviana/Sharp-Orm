@@ -11,6 +11,8 @@ namespace SharpOrm.Builder
 
         public override SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
 
+        protected internal override bool NativeUpsertRows => false;
+
         /// <summary>
         /// Create an instance that allows only safe modifications.
         /// </summary>

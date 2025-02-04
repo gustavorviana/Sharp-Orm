@@ -16,6 +16,8 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool UseOldPagination { get; set; }
 
+        protected internal override bool NativeUpsertRows => true;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class.
         /// </summary>

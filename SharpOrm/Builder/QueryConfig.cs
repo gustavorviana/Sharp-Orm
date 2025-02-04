@@ -12,6 +12,7 @@ namespace SharpOrm.Builder
     /// </summary>
     public abstract class QueryConfig : ICloneable
     {
+        internal protected virtual bool NativeUpsertRows { get; }
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
         /// </summary>

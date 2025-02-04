@@ -14,6 +14,8 @@ namespace SharpOrm.Builder
     {
         private static string unsafeChars = "\\¥Š₩∖﹨＼\"'`\u00b4ʹʺʻʼˈˊˋ\u02d9\u0300\u0301‘’‚′‵❛❜＇";
 
+        protected internal override bool NativeUpsertRows => true;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MysqlQueryConfig"/> class.
         /// </summary>
