@@ -51,5 +51,10 @@ namespace SharpOrm.Builder.Grammars.Mysql
         {
             new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
         }
+
+        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            new MysqlMergeGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
+        }
     }
 }

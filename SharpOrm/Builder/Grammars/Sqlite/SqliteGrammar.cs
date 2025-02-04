@@ -64,6 +64,49 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
         }
 
+        protected override void ConfigureMerge(MergeQueryInfo target, MergeQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        {
+            builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
+            WriteColumns("", insertColumns);
+            builder.Add(')');
+
+            builder.Add(" SELECT ");
+            WriteColumns(source.Alias + '.', insertColumns);
+
+            builder.AddFormat(" FROM {0}", source.GetFullName());
+            builder.Add(" WHERE true ON CONFLICT(");
+            WriteColumns("", whereColumns);
+            builder.Add(") SET ");
+
+            WriteColumn(source.Alias, updateColumns[0]);
+
+            for (int i = 1; i < updateColumns.Length; i++)
+            {
+                builder.Add(", ");
+                WriteColumn(source.Alias, updateColumns[i]);
+            }
+        }
+
+        private void WriteColumn(string srcAlias, string column)
+        {
+            column = Info.Config.ApplyNomenclature(column);
+            builder.AddFormat("{1}={0}.{1}", srcAlias, column);
+        }
+
+        private void WriteColumns(string prefix, string[] columns)
+        {
+            var column = Info.Config.ApplyNomenclature(columns[0]);
+            builder.AddFormat("{0}{1}", prefix, column);
+
+            for (int i = 1; i < columns.Length; i++)
+            {
+                builder.Add(", ");
+                column = Info.Config.ApplyNomenclature(columns[i]);
+
+                builder.AddFormat("{0}{1}", prefix, column);
+            }
+        }
+
         private void ThrowNotSupportedOperations(string operationName)
         {
             if (Query.Limit > 0)

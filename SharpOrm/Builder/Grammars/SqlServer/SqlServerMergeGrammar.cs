@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    internal class SqlServerMergeGrammar : SqlServerGrammarBase
+    internal class SqlServerMergeGrammar : SqlServerGrammarBase, IMergeGrammar
     {
         public SqlServerMergeGrammar(GrammarBase grammar) : base(grammar)
         {
@@ -48,7 +48,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         private void WriteMatchedColumns(MergeQueryInfo target, MergeQueryInfo source, string[] updateColumns)
         {
             builder
-                .Add(" WHEN MATCHED THEN UPDATE SET");
+                .Add(" WHEN MATCHED THEN UPDATE SET ");
 
             WriteColumn(target.Alias, source.Alias, updateColumns[0]);
 
