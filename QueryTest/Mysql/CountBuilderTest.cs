@@ -123,5 +123,15 @@ namespace QueryTest.Mysql
                 sqlExpression
             );
         }
+
+        [Fact]
+        public void CountWithOrderBy()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.OrderBy(OrderBy.Asc, "Id");
+
+            var sqlExpression = query.Grammar().Count();
+            QueryAssert.Equal("SELECT COUNT(*) FROM `TestTable`", sqlExpression);
+        }
     }
 }

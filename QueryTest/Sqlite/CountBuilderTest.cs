@@ -130,5 +130,14 @@ namespace QueryTest.Sqlite
 
             QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\" WHERE \"Column\" IS NULL", query.Grammar().Count());
         }
+
+        [Fact]
+        public void CountWithOrderBy()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.OrderBy(OrderBy.Asc, "Id");
+
+            QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\"", query.Grammar().Count());
+        }
     }
 }
