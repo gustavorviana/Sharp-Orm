@@ -115,20 +115,10 @@ namespace SharpOrm.Connection
             if (expression is SqlExpressionCollection expCollection)
                 return InternalExecuteNonQueryLot(manager, expCollection, token);
 
-            return InternalExecuteNonQuery(manager, expression, token);
-        }
-
-        private static int InternalExecuteNonQueryLot(ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token = default)
-        {
-            int result = 0;
-
             try
             {
-                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
-                    foreach (var exp in expressions.Expressions)
-                        result += cmd.SetExpression(exp).ExecuteNonQuery();
-
-                return result;
+                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
+                    return cmd.ExecuteNonQuery();
             }
             catch (Exception ex)
             {
@@ -142,12 +132,20 @@ namespace SharpOrm.Connection
             }
         }
 
-        private static int InternalExecuteNonQuery(ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        private static int InternalExecuteNonQueryLot(ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token)
         {
+            if (expressions.Expressions.Length == 0)
+                return 0;
+
+            int result = 0;
+
             try
             {
-                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteNonQuery();
+                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
+                    foreach (var exp in expressions.Expressions)
+                        result += cmd.SetExpression(exp).ExecuteNonQuery();
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -180,12 +178,42 @@ namespace SharpOrm.Connection
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <param name="expression">SqlExpression to execute.</param>
         /// <returns>The first column of the first row in the result set.</returns>
-        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
         {
+            if (expression is SqlExpressionCollection exCollection)
+                return ExecuteScalarLot<T>(manager, exCollection, token, registry);
+
             try
             {
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteScalar<T>();
+                    return cmd.ExecuteScalar<T>(registry);
+            }
+            catch (Exception ex)
+            {
+                token.ThrowIfCancellationRequested();
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        private static T ExecuteScalarLot<T>(this ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token, TranslationRegistry registry = null)
+        {
+            if (expressions.Expressions.Length == 0)
+                return default(T);
+
+            try
+            {
+                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
+                {
+                    for (int i = 0; i < expressions.Expressions.Length - 1; i++)
+                        cmd.SetExpression(expressions.Expressions[i]).ExecuteNonQuery();
+
+                    return cmd.SetExpression(expressions.Expressions[expressions.Expressions.Length - 1]).ExecuteScalar<T>(registry);
+                }
             }
             catch (Exception ex)
             {
