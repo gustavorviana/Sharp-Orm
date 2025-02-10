@@ -14,6 +14,8 @@ namespace SharpOrm.Connection
     public class ConnectionManager : IDisposableWithEvent
     {
         #region Fields/Properties
+        public event EventHandler<ConnectionExceptionEventArgs> OnError;
+
         private ConnectionManagement management = ConnectionManagement.CloseOnDispose;
         internal readonly bool isMyTransaction = false;
         private readonly ConnectionCreator creator;
@@ -324,6 +326,11 @@ namespace SharpOrm.Connection
 
             await this.Connection.OpenAsync(token);
             try { this.Connection.Close(); } catch { }
+        }
+
+        internal void SignalException(Exception exception)
+        {
+            OnError?.Invoke(this, new ConnectionExceptionEventArgs(exception));
         }
 
         #region Transaction

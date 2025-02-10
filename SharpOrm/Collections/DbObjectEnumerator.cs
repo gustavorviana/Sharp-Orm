@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation.Reader;
+﻿using SharpOrm.Connection;
+using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace SharpOrm.Collections
     /// </summary>
     internal class DbObjectEnumerator : IEnumerator, IDisposable
     {
+        internal ConnectionManager manager;
         /// <summary>
         /// Gets the cancellation token.
         /// </summary>
@@ -92,11 +94,11 @@ namespace SharpOrm.Collections
             {
                 current = next ? map.Read(reader) : null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 current = null;
                 Token.ThrowIfCancellationRequested();
-
+                manager?.SignalException(ex);
                 throw;
             }
 

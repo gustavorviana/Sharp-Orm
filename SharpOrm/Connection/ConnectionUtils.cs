@@ -85,7 +85,10 @@ namespace SharpOrm.Connection
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public static IEnumerable<T> ExecuteEnumerable<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            return new DbCommandEnumerable<T>(manager.CreateCommand(expression).SetCancellationToken(token), registry, manager.Management, token);
+            return new DbCommandEnumerable<T>(manager.CreateCommand(expression).SetCancellationToken(token), registry, manager.Management, token)
+            {
+                manager = manager
+            };
         }
 
         /// <summary>
@@ -114,9 +117,10 @@ namespace SharpOrm.Connection
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteNonQuery();
             }
-            catch
+            catch (Exception ex)
             {
                 token.ThrowIfCancellationRequested();
+                manager.SignalException(ex);
                 throw;
             }
             finally
@@ -151,9 +155,10 @@ namespace SharpOrm.Connection
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteScalar<T>();
             }
-            catch
+            catch(Exception ex)
             {
                 token.ThrowIfCancellationRequested();
+                manager.SignalException(ex);
                 throw;
             }
             finally

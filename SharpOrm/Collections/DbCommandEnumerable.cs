@@ -29,6 +29,8 @@ namespace SharpOrm.Collections
         /// </summary>
         public bool DisposeCommand { get; set; } = true;
 
+        internal ConnectionManager manager;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DbCommandEnumerable{T}"/> class.
         /// </summary>
@@ -52,14 +54,14 @@ namespace SharpOrm.Collections
         {
             this.CheckRun();
             var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator<T>(reader, this.CreateMappedObj(reader), token));
+            return RegisterDispose(new DbObjectEnumerator<T>(reader, this.CreateMappedObj(reader), token) { manager = manager });
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             this.CheckRun();
             var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token));
+            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token) { manager = manager });
         }
 
         private void CheckRun()
