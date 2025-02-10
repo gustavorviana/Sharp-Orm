@@ -112,6 +112,38 @@ namespace SharpOrm.Connection
         /// <returns>The number of rows affected by the SQL query.</returns>
         public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
+            if (expression is SqlExpressionCollection expCollection)
+                return InternalExecuteNonQueryLot(manager, expCollection, token);
+
+            return InternalExecuteNonQuery(manager, expression, token);
+        }
+
+        private static int InternalExecuteNonQueryLot(ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token = default)
+        {
+            int result = 0;
+
+            try
+            {
+                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
+                    foreach (var exp in expressions.Expressions)
+                        result += cmd.SetExpression(exp).ExecuteNonQuery();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                token.ThrowIfCancellationRequested();
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        private static int InternalExecuteNonQuery(ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        {
             try
             {
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
@@ -155,7 +187,7 @@ namespace SharpOrm.Connection
                 using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
                     return cmd.ExecuteScalar<T>();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
