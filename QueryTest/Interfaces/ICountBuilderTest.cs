@@ -12,4 +12,5 @@ public interface ICountBuilderTest
     void CountWhere();
     void CountOffset();
     void CountJoin();
+    void CountWithOrderBy();
 }

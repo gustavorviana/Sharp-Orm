@@ -1721,7 +1721,7 @@ namespace SharpOrm
                 foreach (var column in toCheckColumns)
                     query.Where(column, row[column]);
 
-                if (query.Any()) query.Update(row.Cells.Where(x => AnyColumn(toCheckColumns, x.Name)));
+                if (query.Any()) query.Update(row.Cells.Where(x => AnyColumn(updateColumns, x.Name)));
                 else query.Insert(row.Cells);
             }
         }

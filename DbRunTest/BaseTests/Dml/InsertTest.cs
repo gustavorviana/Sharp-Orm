@@ -1,7 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using SharpOrm;
 using System.Data.Common;
 using Xunit.Abstractions;
 
