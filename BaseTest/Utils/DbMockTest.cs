@@ -12,7 +12,6 @@ namespace BaseTest.Utils
     public class DbMockTest : QueryTestBase
     {
         protected MockConnection Connection => (MockConnection)fixture.Creator.GetConnection();
-        protected ConnectionManager Manager => fixture.Manager;
 
         public DbMockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
         {

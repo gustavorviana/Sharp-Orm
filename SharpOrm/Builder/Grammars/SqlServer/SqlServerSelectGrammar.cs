@@ -4,6 +4,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 {
     internal class SqlServerSelectGrammar : SqlServerGrammarBase
     {
+        private Version useNewPaginationAt = new Version(11, 0);
         protected SqlServerQueryConfig Config => Info.Config as SqlServerQueryConfig;
 
         protected bool HasOffset => Query.Offset is int offset && offset >= 0;
@@ -14,7 +15,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         public void BuildCount(Column column)
         {
-            if (!Config.UseOldPagination && column != null && Query.Distinct != column.IsAll())
+            if (!NeedObsoleteCount(column))
             {
                 builder.Add("SELECT ");
                 WriteCountColumn(column);
@@ -25,6 +26,11 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             builder.Add("SELECT COUNT(*) FROM (");
             ConfigureSelect(true, column, true);
             builder.Add(") AS [count]");
+        }
+
+        private bool NeedObsoleteCount(Column column)
+        {
+            return column == null || (Query.Distinct && column.IsAll()) || UseOldPagination();
         }
 
         private QueryBuilder WriteCountColumn(Column column)
@@ -105,7 +111,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private void ConfigureSelect(bool configureWhereParams, Column countColumn, bool isCount)
         {
-            if (HasOffset && Config.UseOldPagination) WriteSelectWithOldPagination(configureWhereParams, countColumn, isCount);
+            if (HasOffset && UseOldPagination()) WriteSelectWithOldPagination(configureWhereParams, countColumn, isCount);
             else WriteSelect(configureWhereParams, isCount);
         }
 
@@ -149,5 +155,12 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             builder.Add(") AS [grammar_rownum], ");
         }
 
+        private bool UseOldPagination()
+        {
+            if (Config.UseOldPagination == null)
+                return Query.Manager.GetDbVersion().Major < useNewPaginationAt.Major;
+
+            return Config.UseOldPagination == true;
+        }
     }
 }

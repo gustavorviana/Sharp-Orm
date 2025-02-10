@@ -8,6 +8,11 @@ namespace QueryTest
 {
     public class PaginationTest : DbMockFallbackTest
     {
+        public PaginationTest()
+        {
+            RegisterSqlServerVersion(Connection);
+        }
+
         [Fact]
         public virtual void Paginate()
         {

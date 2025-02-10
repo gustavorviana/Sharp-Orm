@@ -44,7 +44,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
-        public static Column All => (Column)"*";
+        public static readonly Column All = (Column)"*";
         #endregion
 
         /// <summary>

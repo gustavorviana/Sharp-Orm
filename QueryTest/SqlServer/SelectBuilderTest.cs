@@ -1,4 +1,5 @@
 ﻿using BaseTest.Fixtures;
+using BaseTest.Mock;
 using BaseTest.Models;
 using BaseTest.Utils;
 using QueryTest.Utils;
@@ -105,6 +106,8 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffset()
         {
+            RegisterSqlServerVersion((MockConnection)Manager.Connection);
+
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
@@ -116,6 +119,8 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffsetLimit()
         {
+            RegisterSqlServerVersion((MockConnection)Manager.Connection);
+
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id");
             query.Where("Id", 1);

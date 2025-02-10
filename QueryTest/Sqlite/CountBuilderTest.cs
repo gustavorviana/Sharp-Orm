@@ -139,5 +139,13 @@ namespace QueryTest.Sqlite
 
             QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\"", query.Grammar().Count());
         }
+
+        [Fact]
+        public void CountColumn()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            QueryAssert.Equal("SELECT COUNT(\"ColName\") FROM \"TestTable\"", query.Grammar().Count(new Column("ColName")));
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BaseTest.Fixtures;
+using BaseTest.Mock;
 using BaseTest.Models;
 using BaseTest.Utils;
 using QueryTest.Interfaces;
@@ -13,7 +14,7 @@ namespace QueryTest.SqlServer
     {
         public CountBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : base(output, connection)
         {
-
+            RegisterSqlServerVersion((MockConnection)connection.Manager.Connection);
         }
 
         [Fact]
@@ -137,6 +138,15 @@ namespace QueryTest.SqlServer
 
             var sqlExpression = query.Grammar().Count();
             QueryAssert.Equal("SELECT COUNT(*) FROM [TestTable]", sqlExpression);
+        }
+
+        [Fact]
+        public void CountColumn()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            var sqlExpression = query.Grammar().Count(new Column("ColName"));
+            QueryAssert.Equal("SELECT COUNT([ColName]) FROM [TestTable]", sqlExpression);
         }
     }
 }

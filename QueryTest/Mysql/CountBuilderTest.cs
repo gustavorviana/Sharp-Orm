@@ -133,5 +133,14 @@ namespace QueryTest.Mysql
             var sqlExpression = query.Grammar().Count();
             QueryAssert.Equal("SELECT COUNT(*) FROM `TestTable`", sqlExpression);
         }
+
+        [Fact]
+        public void CountColumn()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            var sqlExpression = query.Grammar().Count(new Column("ColName"));
+            QueryAssert.Equal("SELECT COUNT(`ColName`) FROM `TestTable`", sqlExpression);
+        }
     }
 }

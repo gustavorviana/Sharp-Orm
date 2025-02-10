@@ -13,4 +13,5 @@ public interface ICountBuilderTest
     void CountOffset();
     void CountJoin();
     void CountWithOrderBy();
+    void CountColumn();
 }

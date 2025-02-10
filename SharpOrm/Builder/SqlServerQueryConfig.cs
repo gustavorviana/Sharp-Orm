@@ -2,6 +2,8 @@
 using SharpOrm.Builder.Grammars.SqlServer;
 using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.SqlServer;
+using System;
+using System.Data.Common;
 
 namespace SharpOrm.Builder
 {
@@ -14,7 +16,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets or sets a value indicating whether to use old pagination without LIMIT and OFFSET, using only ROW_NUMBER().
         /// </summary>
-        public bool UseOldPagination { get; set; }
+        public bool? UseOldPagination { get; set; }
 
         protected internal override bool NativeUpsertRows => true;
 
@@ -58,6 +60,16 @@ namespace SharpOrm.Builder
         public override TableGrammar NewTableGrammar(TableSchema schema)
         {
             return new SqlServerTableGrammar(this, schema);
+        }
+
+        public override Version GetServerVersion(DbConnection connection)
+        {
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR)";
+                string strVersion = cmd.ExecuteScalar().ToString();
+                return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
+            }
         }
 
         /// <summary>

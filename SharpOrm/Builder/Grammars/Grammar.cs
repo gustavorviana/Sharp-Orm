@@ -37,7 +37,7 @@ namespace SharpOrm.Builder.Grammars
         private Column GetColumnToCount()
         {
             if (Query.Distinct)
-                return Info.Select.Length == 1 ? Info.Select[0] : null;
+                return Info.Select.Length == 1 ? Info.Select[0] : Column.All;
 
             if (Info.Select.Length > 1 || Info.Select.Any(c => c.IsAll()))
                 return Column.All;

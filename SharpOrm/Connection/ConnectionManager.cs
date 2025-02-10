@@ -333,6 +333,26 @@ namespace SharpOrm.Connection
             OnError?.Invoke(this, new ConnectionExceptionEventArgs(exception));
         }
 
+        public Version GetDbVersion()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+
+            if (creator != null)
+                return creator.GetServerVersion();
+
+            bool needClose = Connection.State == ConnectionState.Open;
+            try
+            {
+                return Config.GetServerVersion(Connection.OpenIfNeeded());
+            }
+            finally
+            {
+                if (needClose)
+                    Connection.Close();
+            }
+        }
+
         #region Transaction
         /// <summary>
         /// If there is a transaction, commit the database transaction.

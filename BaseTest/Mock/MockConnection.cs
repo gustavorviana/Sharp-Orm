@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using SharpOrm;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 
@@ -54,6 +55,12 @@ namespace BaseTest.Mock
         public void Reset()
         {
             this.OnQueryFallback = null!;
+        }
+
+        public MockConnection Register(string query, params Cell[] cells)
+        {
+            QueryReaders[query] = () => new MockDataReader(cells);
+            return this;
         }
 
         protected override DbCommand CreateDbCommand()

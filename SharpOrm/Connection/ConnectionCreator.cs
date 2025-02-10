@@ -9,6 +9,8 @@ namespace SharpOrm.Connection
     /// </summary>
     public abstract class ConnectionCreator : IDisposable
     {
+        private Version serverVersion;
+
         private bool _disposed;
         /// <summary>
         /// Indicates whether the ConnectionCreator object has been disposed.
@@ -44,6 +46,23 @@ namespace SharpOrm.Connection
         /// Safely disposes a database connection.
         /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
+
+        public Version GetServerVersion(bool forceRefresh = false)
+        {
+            if (serverVersion != null && !forceRefresh)
+                return serverVersion;
+
+            var conn = GetConnection();
+            conn.Open();
+            try
+            {
+                return serverVersion = Config.GetServerVersion(conn);
+            }
+            finally
+            {
+                SafeDisposeConnection(conn);
+            }
+        }
 
         #region IDisposable
 

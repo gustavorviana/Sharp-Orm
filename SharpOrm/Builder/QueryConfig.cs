@@ -2,6 +2,7 @@
 using SharpOrm.DataTranslation;
 using SharpOrm.SqlMethods;
 using System;
+using System.Data.Common;
 using System.Reflection;
 using System.Text;
 
@@ -165,6 +166,11 @@ namespace SharpOrm.Builder
             }
 
             return builder.Append(escapeChar).ToString();
+        }
+
+        public virtual Version GetServerVersion(DbConnection connection)
+        {
+            return new Version();
         }
     }
 }
