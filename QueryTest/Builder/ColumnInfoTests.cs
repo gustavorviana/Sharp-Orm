@@ -6,7 +6,7 @@ namespace QueryTest.Builder
 {
     public class ColumnInfoTests
     {
-        private static readonly TranslationRegistry Translation = new ();
+        private static readonly TranslationRegistry Translation = new();
         private static readonly TableInfo info = Translation.GetTable(typeof(TestClass));
 
         [Fact]

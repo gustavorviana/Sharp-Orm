@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 
 namespace SharpOrm
 {
@@ -26,7 +23,7 @@ namespace SharpOrm
             builder.AppendLine(Expressions[0].ToString());
 
             for (int i = 1; i < Expressions.Length; i++)
-            builder.AppendLine("\\").AppendLine(Expressions[i].ToString());
+                builder.AppendLine("\\").AppendLine(Expressions[i].ToString());
 
             return builder.ToString();
         }

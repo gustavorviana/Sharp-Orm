@@ -1,6 +1,4 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
-using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -619,7 +617,11 @@ namespace SharpOrm
         /// <returns>An object of type T representing the result of the insertion.</returns>
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
-            return query.Config.Translation.FromSql<T>(query.ExecuteScalar(query.GetGrammar().Insert(cells)));
+            using (var cmd = query.GetCommandBase())
+            {
+                cmd.ConfigureExpression(query.GetGrammar().Insert(cells));
+                return cmd.ExecuteScalar<T>();
+            }
         }
 
         /// <summary>

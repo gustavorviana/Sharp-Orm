@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;

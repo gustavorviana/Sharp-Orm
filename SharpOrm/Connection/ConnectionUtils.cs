@@ -1,4 +1,5 @@
-﻿using SharpOrm.Collections;
+﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
@@ -112,50 +113,10 @@ namespace SharpOrm.Connection
         /// <returns>The number of rows affected by the SQL query.</returns>
         public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
-            if (expression is SqlExpressionCollection expCollection)
-                return InternalExecuteNonQueryLot(manager, expCollection, token);
-
-            try
+            using (var cmd = new CommandBuilder(manager, token))
             {
-                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                token.ThrowIfCancellationRequested();
-                manager.SignalException(ex);
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
-        }
-
-        private static int InternalExecuteNonQueryLot(ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token)
-        {
-            if (expressions.Expressions.Length == 0)
-                return 0;
-
-            int result = 0;
-
-            try
-            {
-                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
-                    foreach (var exp in expressions.Expressions)
-                        result += cmd.SetExpression(exp).ExecuteNonQuery();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                token.ThrowIfCancellationRequested();
-                manager.SignalException(ex);
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
+                cmd.ConfigureExpression(expression);
+                return cmd.ExecuteNonQuery();
             }
         }
 
@@ -180,50 +141,19 @@ namespace SharpOrm.Connection
         /// <returns>The first column of the first row in the result set.</returns>
         public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
         {
-            if (expression is SqlExpressionCollection exCollection)
-                return ExecuteScalarLot<T>(manager, exCollection, token, registry);
-
-            try
+            using (var cmd = new CommandBuilder(manager, token))
             {
-                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteScalar<T>(registry);
-            }
-            catch (Exception ex)
-            {
-                token.ThrowIfCancellationRequested();
-                manager.SignalException(ex);
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
+                cmd.ConfigureExpression(expression);
+                return cmd.ExecuteScalar<T>(registry);
             }
         }
 
-        private static T ExecuteScalarLot<T>(this ConnectionManager manager, SqlExpressionCollection expressions, CancellationToken token, TranslationRegistry registry = null)
+        public static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
         {
-            if (expressions.Expressions.Length == 0)
-                return default(T);
-
-            try
+            using (var cmd = new CommandBuilder(manager, token))
             {
-                using (var cmd = manager.CreateCommand().SetCancellationToken(token))
-                {
-                    for (int i = 0; i < expressions.Expressions.Length - 1; i++)
-                        cmd.SetExpression(expressions.Expressions[i]).ExecuteNonQuery();
-
-                    return cmd.SetExpression(expressions.Expressions[expressions.Expressions.Length - 1]).ExecuteScalar<T>(registry);
-                }
-            }
-            catch (Exception ex)
-            {
-                token.ThrowIfCancellationRequested();
-                manager.SignalException(ex);
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
+                cmd.ConfigureExpression(expression);
+                return cmd.ExecuteScalar(registry);
             }
         }
 

@@ -330,7 +330,8 @@ namespace SharpOrm.Connection
 
         internal void SignalException(Exception exception)
         {
-            OnError?.Invoke(this, new ConnectionExceptionEventArgs(exception));
+            if (!(exception is OperationCanceledException))
+                OnError?.Invoke(this, new ConnectionExceptionEventArgs(exception));
         }
 
         public Version GetDbVersion()

@@ -148,7 +148,7 @@ namespace QueryTest
             var query = new Query("table");
 
             using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(30, cmd.CommandTimeout);
+            Assert.Equal(30, cmd.Timeout);
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace QueryTest
             };
 
             using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(120, cmd.CommandTimeout);
+            Assert.Equal(120, cmd.Timeout);
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace QueryTest
             var query = new Query("table", creator);
 
             using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(120, cmd.CommandTimeout);
+            Assert.Equal(120, cmd.Timeout);
         }
 
         [Theory]

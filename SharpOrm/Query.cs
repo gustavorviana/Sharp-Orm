@@ -804,7 +804,7 @@ namespace SharpOrm
         /// <inheritdoc/>
         public override int Delete()
         {
-            return this.Delete(false);
+            return Delete(false);
         }
 
         /// <summary>
@@ -814,10 +814,13 @@ namespace SharpOrm
         /// <returns>Number of deleted rows.</returns>
         public int Delete(bool force)
         {
+            ValidateReadonly();
+
             if (force || TableInfo.SoftDelete == null)
                 return base.Delete();
 
-            return this.ExecuteAndGetAffected(this.GetGrammar().SoftDelete(this.TableInfo.SoftDelete));
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -827,7 +830,10 @@ namespace SharpOrm
         /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
         public int Restore()
         {
-            return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
+            ValidateReadonly();
+
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
         }
 
         #region Where
@@ -1389,7 +1395,7 @@ namespace SharpOrm
             get => this._commandTimeout ?? this.Manager.CommandTimeout;
             set => this._commandTimeout = value;
         }
-        private OpenReader lastOpenReader = null;
+        private CommandBuilder lastOpenReader = null;
         #endregion
 
         #region Query
@@ -1689,18 +1695,22 @@ namespace SharpOrm
 
         #region DML SQL commands
 
-        public void Upsert(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
+        public int Upsert(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
         {
             ValidateReadonly();
-            ExecuteAndGetAffected(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns));
+
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns)) + cmd.ExecuteNonQuery();
         }
 
-        public void Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns)
+        public int Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns)
         {
             ValidateReadonly();
 
-            if (!Config.NativeUpsertRows) NonNativeUpsertRows(rows, toCheckColumns, updateColumns);
-            else ExecuteAndGetAffected(GetGrammar().Upsert(rows, toCheckColumns, updateColumns));
+            if (!Config.NativeUpsertRows) return NonNativeUpsertRows(rows, toCheckColumns, updateColumns);
+            else
+                using (var cmd = GetCommandBase())
+                    return cmd.ConfigureExpression(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + cmd.ExecuteNonQuery();
         }
 
         internal int NonNativeUpsertRows(Row[] rows, string[] toCheckColumns, string[] updateColumns)
@@ -1758,9 +1768,11 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
-            this.ValidateReadonly();
-            this.CheckIsSafeOperation();
-            return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
+            ValidateReadonly();
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().Update(cells)) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1775,7 +1787,7 @@ namespace SharpOrm
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            return TranslationUtils.TryNumeric(this.Insert(cells, true));
+            return TranslationUtils.TryNumeric(Insert(cells, true));
         }
 
         /// <summary>
@@ -1799,7 +1811,8 @@ namespace SharpOrm
         {
             this.ValidateReadonly();
 
-            return this.ExecuteAndGetAffected(this.GetGrammar().InsertQuery(queryBase, columnNames));
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().InsertQuery(queryBase, columnNames)) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1808,16 +1821,23 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
             if (columnNames == null || columnNames.Length == 0)
                 throw new InvalidOperationException("");
 
-            return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().InsertExpression(expression, columnNames)) + cmd.ExecuteNonQuery();
         }
 
         internal object Insert(IEnumerable<Cell> cells, bool returnsInsetionId)
         {
-            return this.ExecuteScalar(this.GetGrammar().Insert(cells, returnsInsetionId));
+            ValidateReadonly();
+
+            using (var cmd = GetCommandBase())
+            {
+                cmd.ConfigureExpression(GetGrammar().Insert(cells, returnsInsetionId));
+                return cmd.ExecuteScalar();
+            }
         }
 
         /// <summary>
@@ -1835,8 +1855,10 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            this.ValidateReadonly();
-            return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
+            ValidateReadonly();
+
+            using (var cmd = GetCommand(GetGrammar().BulkInsert(rows)))
+                return cmd.ExecuteAndRecordsAffected();
         }
 
         /// <summary>
@@ -1845,9 +1867,11 @@ namespace SharpOrm
         /// <returns>Number of deleted rows.</returns>
         public virtual int Delete()
         {
-            this.ValidateReadonly();
-            this.CheckIsSafeOperation();
-            return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
+            ValidateReadonly();
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommandBase())
+                return cmd.ConfigureExpression(GetGrammar().Delete()) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1857,7 +1881,7 @@ namespace SharpOrm
         public long Count()
         {
             this.ValidateReadonly();
-            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count()));
+            return Convert.ToInt64(GetCommand(GetGrammar().Count()).ExecuteScalar());
         }
 
         /// <summary>
@@ -1878,7 +1902,7 @@ namespace SharpOrm
         public long Count(Column column)
         {
             this.ValidateReadonly();
-            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count(column)));
+            return Convert.ToInt64(GetCommand(GetGrammar().Count(column)).ExecuteScalar());
         }
 
         /// <summary>
@@ -1926,15 +1950,10 @@ namespace SharpOrm
         /// <returns>An enumerable collection of the specified type.</returns>
         public virtual IEnumerable<T> GetEnumerable<T>()
         {
-            this.ValidateReadonly();
-            this.Token.ThrowIfCancellationRequested();
-            var grammar = this.Info.Config.NewGrammar(this);
+            ValidateReadonly();
+            Token.ThrowIfCancellationRequested();
 
-            return new DbCommandEnumerable<T>(this.GetCommand(grammar.Select()), this.Config.Translation, this.Manager.Management, this.Token)
-            {
-                DisposeCommand = true,
-                mode = Config.NestedMapMode
-            };
+            return GetCommand(Info.Config.NewGrammar(this).Select(), true).ExecuteEnumerable<T>(Config.Translation, true);
         }
 
         /// <summary>
@@ -1943,17 +1962,12 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
-            this.ValidateReadonly();
-            this.Token.ThrowIfCancellationRequested();
-            try
-            {
-                using (DbCommand cmd = this.GetCommand(this.GetGrammar().Select()))
-                    return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
-            }
-            finally
-            {
-                this.Manager?.CloseByEndOperation();
-            }
+            ValidateReadonly();
+            Token.ThrowIfCancellationRequested();
+
+            using (var cmd = GetCommand(GetGrammar().Select()))
+                return cmd.ExecuteArrayScalar<T>(Config.Translation);
+
         }
 
         /// <summary>
@@ -1964,7 +1978,9 @@ namespace SharpOrm
         public T ExecuteScalar<T>()
         {
             this.ValidateReadonly();
-            return this.Config.Translation.FromSql<T>(this.ExecuteScalar(this.GetGrammar().Select()));
+
+            using (var cmd = GetCommand(GetGrammar().Select()))
+                return cmd.ExecuteScalar<T>(Config.Translation);
         }
 
         /// <summary>
@@ -1974,7 +1990,9 @@ namespace SharpOrm
         public object ExecuteScalar()
         {
             this.ValidateReadonly();
-            return this.Config.Translation.FromSql(this.ExecuteScalar(this.GetGrammar().Select()));
+
+            using (var cmd = GetCommand(GetGrammar().Select()))
+                return cmd.ExecuteScalar(Config.Translation);
         }
 
         /// <summary>
@@ -1986,10 +2004,10 @@ namespace SharpOrm
             this.ValidateReadonly();
             this.Token.ThrowIfCancellationRequested();
 
-            if (this.lastOpenReader is OpenReader last)
+            if (this.lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()), this.Token)).reader;
+            return (lastOpenReader = GetCommand(GetGrammar().Select())).GetReader();
         }
 
         /// <summary>
@@ -2106,45 +2124,26 @@ namespace SharpOrm
             return this;
         }
 
-        protected internal object ExecuteScalar(SqlExpression expression)
+        internal CommandBuilder GetCommand(SqlExpression expression, bool leaveOpen = false)
         {
-            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteScalar());
+            var cmd = GetCommandBase(leaveOpen);
+
+            if (expression is SqlExpressionCollection expCollection) cmd.ConfigureLot(expCollection);
+            else cmd.SetExpression(expression);
+
+            return cmd;
         }
 
-        protected internal int ExecuteNonQuery(SqlExpression expression)
+        internal CommandBuilder GetCommandBase(bool leaveOpen = false)
         {
-            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteNonQuery());
-        }
+            var cmd = new CommandBuilder(Manager, leaveOpen, Token);
 
-        protected internal int ExecuteAndGetAffected(SqlExpression expression)
-        {
-            return this.SafeExecuteCommand(expression, cmd =>
-            {
-                using (var reader = cmd.ExecuteReader())
-                    return reader.RecordsAffected;
-            });
-        }
+            if (CommandTimeout > 0)
+                cmd.Timeout = CommandTimeout;
 
-        protected T SafeExecuteCommand<T>(SqlExpression expression, Func<DbCommand, T> func)
-        {
-            try
-            {
-                using (var cmd = this.GetCommand(expression))
-                    return func(cmd);
-            }
-            finally
-            {
-                this.Manager.CloseByEndOperation();
-            }
-        }
+            cmd.LogQuery = true;
 
-        protected internal DbCommand GetCommand(SqlExpression expression)
-        {
-            Grammar.QueryLogger?.Invoke(expression.ToString());
-            return this.Manager
-                .CreateCommand(this.CommandTimeout)
-                .SetExpression(expression)
-                .SetCancellationToken(this.Token);
+            return cmd;
         }
 
         /// <summary>
@@ -2184,7 +2183,7 @@ namespace SharpOrm
 
             this._disposed = true;
 
-            if (disposing && this.lastOpenReader is OpenReader last)
+            if (disposing && this.lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
             this.Manager?.CloseByDisposeChild();
@@ -2206,69 +2205,5 @@ namespace SharpOrm
         }
 
         #endregion
-
-        private class OpenReader : IDisposable
-        {
-            private bool _disposed;
-            private readonly DbCommand command;
-            public readonly DbDataReader reader;
-            private CancellationTokenRegistration token;
-
-            public OpenReader(DbCommand command, CancellationToken token)
-            {
-                this.command = command;
-                token.Register(this.CancelCommand);
-                this.reader = command.ExecuteReader();
-            }
-
-            private void CancelCommand()
-            {
-                SafeDispose(this.token);
-                try { this.command.Cancel(); } catch { }
-            }
-
-            #region IDisposable
-
-            public void Dispose()
-            {
-                if (this._disposed)
-                    return;
-
-                this.CancelCommand();
-
-                SafeDispose(this.reader);
-                SafeDispose(this.command);
-
-                this.Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-
-            private static void SafeDispose(IDisposable disposable)
-            {
-                if (disposable != null) try { disposable.Dispose(); } catch { }
-            }
-
-            ~OpenReader()
-            {
-                this.Dispose(false);
-            }
-
-            protected void Dispose(bool disposing)
-            {
-                if (this._disposed)
-                    return;
-
-                this._disposed = true;
-                this.CancelCommand();
-
-                if (!disposing)
-                    return;
-
-                try { this.reader.Dispose(); } catch { }
-                try { this.command.Dispose(); } catch { }
-            }
-
-            #endregion
-        }
     }
 }

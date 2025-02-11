@@ -82,7 +82,7 @@ namespace BaseTest.Mock
                         System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
                     }
 
-                    if (OnQueryFallback != null && OnQueryFallback(cmd) is MockDataReader reader)
+                    if (OnFallback(cmd) is MockDataReader reader)
                         return reader;
 
                     if (ThrowIfNoQuery)
@@ -94,6 +94,11 @@ namespace BaseTest.Mock
             };
 
             return cmd;
+        }
+
+        internal MockDataReader? OnFallback(MockCommand cmd)
+        {
+            return OnQueryFallback != null ? OnQueryFallback(cmd) : null;
         }
     }
 }

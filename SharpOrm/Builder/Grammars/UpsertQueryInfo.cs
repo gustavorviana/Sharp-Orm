@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder.Grammars
+﻿namespace SharpOrm.Builder.Grammars
 {
     public class UpsertQueryInfo : IReadonlyQueryInfo
     {

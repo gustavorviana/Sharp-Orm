@@ -209,7 +209,7 @@ namespace SharpOrm.Builder.Expressions
 
             return false;
         }
- 
+
         internal static IEnumerable<MemberInfo> GetMemberPath(MemberExpression memberExpression, bool allowNativeType)
         {
             if (!allowNativeType)

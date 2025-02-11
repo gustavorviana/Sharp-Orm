@@ -50,17 +50,25 @@ namespace SharpOrm
         /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen)
+        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
         {
             ISqlTranslation translation = (translationRegistry ?? TranslationRegistry.Default).GetFor(typeof(T));
             Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
-            using (var reader = cmd.ExecuteReader())
-                while (reader.Read())
-                    if (reader.IsDBNull(0)) yield return default;
-                    else yield return (T)translation.FromSqlValue(reader.GetValue(0), expectedType);
-
-            if (CanClose(management)) cmd.Connection.Close();
+            try
+            {
+                using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (reader.IsDBNull(0)) yield return default;
+                        else yield return (T)translation.FromSqlValue(reader.GetValue(0), expectedType);
+                    }
+            }
+            finally
+            {
+                if (CanClose(management)) cmd.Connection.Close();
+            }
         }
 
         internal static bool CanClose(ConnectionManagement management)

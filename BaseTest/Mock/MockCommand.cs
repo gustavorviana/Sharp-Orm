@@ -38,6 +38,12 @@ namespace BaseTest.Mock
 
         public override int ExecuteNonQuery()
         {
+            if (OnExecuteNonQuery == null)
+            {
+                ((MockConnection)DbConnection).OnFallback(this);
+                return -1;
+            }
+
             return OnExecuteNonQuery?.Invoke(this.CommandText) ?? -1;
         }
 
