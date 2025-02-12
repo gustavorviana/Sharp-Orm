@@ -4,7 +4,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 {
     internal class SqlServerGrammarBase : GrammarBase
     {
-        public SqlServerGrammarBase(GrammarBase owner) : base(owner)
+        public SqlServerGrammarBase(Query query) : base(query)
         {
         }
 

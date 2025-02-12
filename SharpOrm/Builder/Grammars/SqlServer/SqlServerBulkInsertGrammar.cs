@@ -1,25 +1,26 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpOrm.Builder.Grammars
+namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    public class InsertLotGrammar : InsertGrammar, IBulkInsertRow
+    public class SqlServerBulkInsertGrammar : InsertBaseGrammar, IBulkInsertGrammar
     {
-        public InsertLotGrammar(GrammarBase owner) : base(owner, true)
+        public SqlServerBulkInsertGrammar(Query query) : base(query, true)
         {
         }
 
-        public virtual void BuildBulkInsert(IEnumerable<Row> rows)
+        public virtual void Build(IEnumerable<Row> rows)
         {
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                BuildInsert(@enum.Current.Cells);
+                Build(@enum.Current.Cells);
 
                 while (InternalBulkInsert(@enum))
                 {

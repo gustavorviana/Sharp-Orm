@@ -1,13 +1,14 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SharpOrm.Builder.Grammars
 {
-    public abstract class GrammarBase : IGrammar
+    public abstract class GrammarBase : IGrammarBase
     {
-        QueryBuilder IGrammar.Builder => Builder;
+        QueryBuilder IGrammarBase.Builder => Builder;
 
         /// <summary>
         /// Gets the query Builder.
@@ -42,15 +43,20 @@ namespace SharpOrm.Builder.Grammars
             Query = owner.Query;
         }
 
-        public GrammarBase(GrammarBase owner, bool useLotQueryBuilder)
+        public GrammarBase(Query query, bool useLotQueryBuilder)
         {
-            Builder = new LotQueryBuilder(owner.Builder);
-            Query = owner.Query;
+            Builder = useLotQueryBuilder ? new LotQueryBuilder(query.Info) : new QueryBuilder(query.Info);
+            Query = query;
         }
 
         protected bool CanWriteOrderby()
         {
             return Info.Select.Length != 1 || !Info.Select[0].IsCount;
+        }
+
+        protected void SetParamInterceptor(Func<object, object> func)
+        {
+            Builder.paramInterceptor = func;
         }
 
         /// <summary>

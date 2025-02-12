@@ -1,4 +1,5 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder.Grammars.Interfaces;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -6,9 +7,9 @@ using System.Linq;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    internal class SqlServerUpdateGrammar : SqlServerGrammarBase
+    internal class SqlServerUpdateGrammar : SqlServerGrammarBase, IUpdateGrammar
     {
-        public SqlServerUpdateGrammar(GrammarBase owner) : base(owner)
+        public SqlServerUpdateGrammar(Query query) : base(query)
         {
         }
 

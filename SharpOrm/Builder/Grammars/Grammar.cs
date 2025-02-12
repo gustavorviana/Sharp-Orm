@@ -1,29 +1,44 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder.Grammars.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm.Builder.Grammars
 {
     /// <summary>
     /// Provides the base implementation for building SQL queries using a fluent interface.
     /// </summary>
-    public abstract class Grammar : GrammarBase
+    public abstract class Grammar
     {
+        protected Func<object, object> ParamInterceptor { get; set; }
+
+        #region Properties
+        /// <summary>
+        /// Gets the query.
+        /// </summary>
+        protected Query Query { get; }
+
+        /// <summary>
+        /// Gets the query information.
+        /// </summary>
+        public QueryInfo Info => Query.Info;
+
         /// <summary>
         /// Gets or sets the action to log the query.
         /// </summary>
         public static Action<string> QueryLogger { get; set; }
+        #endregion
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Grammar"/> class.
         /// </summary>
         /// <param name="query">The query.</param>
-        protected Grammar(Query query) : base(query)
+        protected Grammar(Query query)
         {
+            Query = query;
         }
-
-        #region DML
 
         /// <summary>
         /// Performs a record count in the database based on the current Query object configuration.
@@ -45,32 +60,22 @@ namespace SharpOrm.Builder.Grammars
             return Info.Select.FirstOrDefault();
         }
 
-        protected void SetParamInterceptor(Func<object, object> func)
-        {
-            Builder.paramInterceptor = func;
-        }
-
         /// <summary>
         /// Performs a record count in the database based on the current Query object configuration.
         /// </summary>
         /// <returns>The database command configured to perform the record count.</returns>
         public SqlExpression Count(Column column)
         {
-            return BuildExpression(() => ConfigureCount(column));
+            return BuildExpression(GetSelectGrammar(), x => x.BuildCount(column));
         }
-
-        /// <summary>
-        /// Defines the necessary configuration for count operation.
-        /// </summary>
-        protected abstract void ConfigureCount(Column column);
 
         /// <summary>
         /// Generates a SELECT statement and returns a DbCommand object to execute it.
         /// </summary>
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
-        public SqlExpression Select()
+        public SqlExpression Select(bool configureWhereParams = true)
         {
-            return BuildExpression(() => ConfigureSelect(true));
+            return BuildExpression(GetSelectGrammar(), x => x.BuildSelect(configureWhereParams));
         }
 
         /// <summary>
@@ -79,28 +84,14 @@ namespace SharpOrm.Builder.Grammars
         /// <returns></returns>
         public string SelectSqlOnly()
         {
-            Builder.Clear();
-            ConfigureSelect(false);
-            return Builder.ToExpression(true, false).ToString();
+            var grammar = GetSelectGrammar();
+            grammar.Builder.paramInterceptor = ParamInterceptor;
+
+            grammar.BuildSelect(false);
+            return grammar.Builder.ToExpression(true, false).ToString();
         }
 
-        /// <summary>
-        /// Gets the SQL expression for the SELECT statement.
-        /// </summary>
-        /// <returns>The SQL expression for the SELECT statement.</returns>
-        public SqlExpression GetSelectExpression()
-        {
-            Builder.Clear();
-            ConfigureSelect(false);
-            return Builder.ToExpression();
-        }
-
-        /// <summary>
-        /// This method is an abstract method that must be implemented by any subclass of Grammar.
-        /// It is responsible for configuring the SELECT query, including the SELECT statement and WHERE clause, if necessary.
-        /// </summary>
-        /// <param name="configureWhereParams">Indicates whether to configure the WHERE clause parameters.</param>
-        protected abstract void ConfigureSelect(bool configureWhereParams);
+        protected abstract ISelectGrammar GetSelectGrammar();
 
         /// <summary>
         /// Builds the insert query.
@@ -108,19 +99,9 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="query">The query.</param>
         /// <param name="columnNames">The column names.</param>
         /// <returns>The SQL expression for the insert query.</returns>
-        internal SqlExpression InsertQuery(QueryBase query, string[] columnNames)
+        public SqlExpression InsertQuery(QueryBase query, string[] columnNames)
         {
-            return BuildExpression(() => ConfigureInsertQuery(query, columnNames));
-        }
-
-        /// <summary>
-        /// Configures the insert query for a given table and columns.
-        /// </summary>
-        /// <param name="query">The query to be configured.</param>
-        /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected virtual void ConfigureInsertQuery(QueryBase query, string[] columnNames)
-        {
-            new InsertGrammar(this).BuildInsertQuery(query, columnNames);
+            return BuildExpression(GetInsertGrammar(), x => x.Build(query, columnNames));
         }
 
         /// <summary>
@@ -131,17 +112,7 @@ namespace SharpOrm.Builder.Grammars
         /// <returns>The SQL expression for the insert.</returns>
         public SqlExpression InsertExpression(SqlExpression expression, string[] columnNames)
         {
-            return BuildExpression(() => ConfigureInsertExpression(expression, columnNames));
-        }
-
-        /// <summary>
-        /// Configures the insert query for a given table and columns.
-        /// </summary>
-        /// <param name="query">The query to be configured.</param>
-        /// <param name="columnNames">The names of the columns to be inserted.</param>
-        protected virtual void ConfigureInsertExpression(SqlExpression expression, string[] columnNames)
-        {
-            new InsertGrammar(this).BuildInsertExpression(expression, columnNames);
+            return BuildExpression(GetInsertGrammar(), x => x.Build(expression, columnNames));
         }
 
         /// <summary>
@@ -150,15 +121,10 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="cells">An array of Cell objects representing the column names and values to be inserted.</param>
         public SqlExpression Insert(IEnumerable<Cell> cells, bool returnsInsetionId = true)
         {
-            return BuildExpression(() => ConfigureInsert(cells, returnsInsetionId));
+            return BuildExpression(GetInsertGrammar(), x => x.Build(cells, returnsInsetionId));
         }
 
-        /// <summary>
-        /// Configures the INSERT operation with the given cells to be inserted into the database table, and whether or not to get the generated ID.
-        /// </summary>
-        /// <param name="cells">The cells to be inserted.</param>
-        /// <param name="getGeneratedId">Whether or not to get the generated ID.</param>
-        protected abstract void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId);
+        protected abstract IInsertGrammar GetInsertGrammar();
 
         /// <summary>
         /// Executes a bulk insert operation with the given rows.
@@ -166,22 +132,10 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="rows">The rows to be inserted.</param>
         public SqlExpression BulkInsert(IEnumerable<Row> rows)
         {
-            return BuildExpression(GetBulkInsert(), (bulkInsert) => ConfigureBulkInsert(bulkInsert, rows));
+            return BuildExpression(GetBulkInsertGrammar(), x => x.Build(rows));
         }
 
-        protected virtual IBulkInsertRow GetBulkInsert()
-        {
-            return new InsertLotGrammar(this);
-        }
-
-        /// <summary>
-        /// Configures the INSERT statement for inserting multiple rows in a bulk operation.
-        /// </summary>
-        /// <param name="rows">The rows to be inserted.</param>
-        protected virtual void ConfigureBulkInsert(IBulkInsertRow bulkInsert, IEnumerable<Row> rows)
-        {
-            bulkInsert.BuildBulkInsert(rows);
-        }
+        protected abstract IBulkInsertGrammar GetBulkInsertGrammar();
 
         /// <summary>
         /// Builds and returns a database command object for executing an update operation based on the specified array of cells.
@@ -189,8 +143,51 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="cells">An array of cells containing the values to be updated.</param>
         public SqlExpression Update(IEnumerable<Cell> cells)
         {
-            return BuildExpression(() => ConfigureUpdate(cells));
+            return BuildExpression(GetUpdateGrammar(), x => x.Build(cells));
         }
+
+        public SqlExpression SoftDelete(SoftDeleteAttribute softDelete)
+        {
+            return BuildSoftDeleteExpression(ConfigureSoftDelete, softDelete, true);
+        }
+
+        public SqlExpression RestoreSoftDeleted(SoftDeleteAttribute softDelete)
+        {
+            return BuildSoftDeleteExpression(ConfigureRestoreSoftDelete, softDelete, false);
+        }
+
+        private SqlExpression BuildSoftDeleteExpression(Action<IUpdateGrammar, SoftDeleteAttribute> builderAction, SoftDeleteAttribute softDelete, bool isDelete)
+        {
+            var update = GetUpdateGrammar();
+            return BuildExpression(update, (grammar) =>
+            {
+                var originalSoftDelete = Query.Info.Where.softDelete;
+                var originalTrashed = Query.Info.Where.Trashed;
+                try
+                {
+                    Query.Info.Where.Trashed = isDelete ? Trashed.Except : Trashed.Only;
+                    Query.Info.Where.softDelete = softDelete;
+                    builderAction(grammar, softDelete);
+                }
+                finally
+                {
+                    Query.Info.Where.softDelete = originalSoftDelete;
+                    Query.Info.Where.Trashed = originalTrashed;
+                }
+            });
+        }
+
+        protected abstract IUpdateGrammar GetUpdateGrammar();
+
+        /// <summary>
+        /// Creates a DELETE command for deleting data from a table.
+        /// </summary>
+        public SqlExpression Delete()
+        {
+            return BuildExpression(GetDeleteGrammar(), x => x.Build());
+        }
+
+        protected abstract IDeleteGrammar GetDeleteGrammar();
 
         public SqlExpression Upsert(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
@@ -200,9 +197,8 @@ namespace SharpOrm.Builder.Grammars
             var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
             var source = new UpsertQueryInfo(sourceTableName, Query.Info.Config, "Source");
 
-            return BuildExpression(() => ConfigureUpsert(target, source, whereColumns, updateColumns, insertColumns));
+            return BuildExpression(GetUpsertGrammar(), x => x.Build(target, source, whereColumns, updateColumns, insertColumns));
         }
-
 
         public SqlExpression Upsert(IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
         {
@@ -210,92 +206,25 @@ namespace SharpOrm.Builder.Grammars
                 throw new InvalidOperationException("The comparison columns must be defined.");
 
             var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
-
-            return BuildExpression(() => ConfigureUpsert(target, rows, whereColumns, updateColumns));
+            return BuildExpression(GetUpsertGrammar(), x => x.Build(target, rows, whereColumns, updateColumns));
         }
 
-        protected virtual void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
-        {
-            throw new NotSupportedException($"The \"{GetConfigName()}\" configuration does not support upserting rows.");
-        }
+        protected abstract IUpsertGrammar GetUpsertGrammar();
 
-        protected virtual void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
-        {
-            throw new NotSupportedException($"The \"{GetConfigName()}\" configuration does not support upsert between tables.");
-        }
-
-        private string GetConfigName()
-        {
-            string fullName = Info.Config.GetType().Name;
-            if (fullName.EndsWith(nameof(QueryConfig)))
-                return fullName.Substring(0, fullName.Length - nameof(QueryConfig).Length);
-
-            return fullName;
-        }
-
-        /// <summary>
-        /// This method is used to configure an SQL UPDATE statement with the given cell array.
-        /// </summary>
-        /// <param name="cells">The cell array to be updated in the table.</param>
-        protected abstract void ConfigureUpdate(IEnumerable<Cell> cells);
-
-        /// <summary>
-        /// Creates a DELETE command for deleting data from a table.
-        /// </summary>
-        public SqlExpression Delete()
-        {
-            return BuildExpression(ConfigureDelete);
-        }
-
-        /// <summary>
-        /// This method is an abstract method which will be implemented by the derived classes. It is responsible for configuring a DELETE query command.
-        /// </summary>
-        protected abstract void ConfigureDelete();
-
-        public SqlExpression SoftDelete(SoftDeleteAttribute softDelete)
-        {
-            return BuildSoftDeleteExpression(ConfigureSoftDelete, softDelete, true);
-        }
-
-        protected virtual void ConfigureSoftDelete(SoftDeleteAttribute softDelete)
+        protected void ConfigureSoftDelete(IUpdateGrammar grammar, SoftDeleteAttribute softDelete)
         {
             if (softDelete == null)
                 throw new NotSupportedException("SotDelete is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
 
-            ConfigureUpdate(GetSoftDeleteColumns(softDelete, true));
+            grammar.Build(GetSoftDeleteColumns(softDelete, true));
         }
 
-        public SqlExpression RestoreSoftDeleted(SoftDeleteAttribute softDelete)
-        {
-            return BuildSoftDeleteExpression(ConfigureRestoreSoftDelete, softDelete, false);
-        }
-
-        protected virtual void ConfigureRestoreSoftDelete(SoftDeleteAttribute softDelete)
+        protected void ConfigureRestoreSoftDelete(IUpdateGrammar grammar, SoftDeleteAttribute softDelete)
         {
             if (softDelete == null)
                 throw new NotSupportedException("Restore is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
 
-            ConfigureUpdate(GetSoftDeleteColumns(softDelete, false));
-        }
-
-        private SqlExpression BuildSoftDeleteExpression(Action<SoftDeleteAttribute> builderAction, SoftDeleteAttribute softDelete, bool isDelete)
-        {
-            return BuildExpression(() =>
-            {
-                var originalSoftDelete = Query.Info.Where.softDelete;
-                var originalTrashed = Query.Info.Where.Trashed;
-                try
-                {
-                    Query.Info.Where.Trashed = isDelete ? Trashed.Except : Trashed.Only;
-                    Query.Info.Where.softDelete = softDelete;
-                    builderAction(softDelete);
-                }
-                finally
-                {
-                    Query.Info.Where.softDelete = originalSoftDelete;
-                    Query.Info.Where.Trashed = originalTrashed;
-                }
-            });
+            grammar.Build(GetSoftDeleteColumns(softDelete, false));
         }
 
         private Cell[] GetSoftDeleteColumns(SoftDeleteAttribute softDelete, bool deleted)
@@ -309,26 +238,12 @@ namespace SharpOrm.Builder.Grammars
             return cells;
         }
 
-        #endregion
-
-        private SqlExpression BuildExpression(Action builderAction)
+        protected SqlExpression BuildExpression<T>(T grammar, Action<T> action) where T : IGrammarBase
         {
-            Builder.Clear();
-            builderAction();
+            grammar.Builder.paramInterceptor = ParamInterceptor;
 
-            return Builder.ToExpression(true);
-        }
-
-        private SqlExpression BuildExpression<T>(T grammar, Action<T> builderAction) where T : IGrammar
-        {
-            builderAction(grammar);
-
-            return grammar.Builder.ToExpression(true);
-        }
-
-        protected QueryBaseInfo GetInfo(QueryBase query)
-        {
-            return query.Info;
+            action(grammar);
+            return grammar.Builder.ToExpression(true, true);
         }
     }
 }

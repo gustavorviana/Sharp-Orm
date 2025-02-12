@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using System.Collections.Generic;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
@@ -15,61 +16,22 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
         }
 
-        protected override void ConfigureDelete()
-        {
-            new SqlServerDeleteGrammar(this).Build();
-        }
+        protected override IDeleteGrammar GetDeleteGrammar()
+            => new SqlServerDeleteGrammar(Query);
 
-        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
-        {
-            new SqlServerUpdateGrammar(this).Build(cells);
-        }
+        protected override IUpdateGrammar GetUpdateGrammar()
+            => new SqlServerUpdateGrammar(Query);
 
-        protected override void ConfigureCount(Column column)
-        {
-            new SqlServerSelectGrammar(this).BuildCount(column);
-        }
+        protected override ISelectGrammar GetSelectGrammar()
+            => new SqlServerSelectGrammar(Query);
 
-        protected override void ConfigureSelect(bool configureWhereParams)
-        {
-            new SqlServerSelectGrammar(this).BuildSelect(configureWhereParams);
-        }
+        protected override IInsertGrammar GetInsertGrammar()
+            => new SqlServerInsertGrammar(Query);
 
-        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
-        {
-            new InsertGrammar(this).BuildInsert(cells);
+        protected override IUpsertGrammar GetUpsertGrammar()
+            => new SqlServerUpsertGrammar(Query);
 
-            if (getGeneratedId && Query.ReturnsInsetionId)
-                Builder.Add("; SELECT SCOPE_IDENTITY();");
-        }
-
-        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
-        {
-            new SqlServerUpsertGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
-        }
-
-        protected override void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
-        {
-            new SqlServerUpsertGrammar(this).Build(target, rows, whereColumns, updateColumns);
-        }
-
-        internal SqlExpression GetSelectFrom()
-        {
-            var grammar = new SqlServerSelectGrammar(this);
-
-            Builder.Clear();
-            grammar.WriteSelectFrom(true);
-            ApplyOrderBy();
-            grammar.WritePagination();
-
-            try
-            {
-                return Builder.ToExpression();
-            }
-            finally
-            {
-                Builder.Clear();
-            }
-        }
+        protected override IBulkInsertGrammar GetBulkInsertGrammar()
+            => new SqlServerBulkInsertGrammar(Query);
     }
 }

@@ -12,7 +12,7 @@ namespace SharpOrm.Builder
         private readonly BuilderCursor cacheCursor = new BuilderCursor();
         private bool useCacheCursor = false;
 
-        internal LotQueryBuilder(QueryBuilder builderBase) : base(builderBase)
+        internal LotQueryBuilder(IReadonlyQueryInfo info) : base(info)
         {
 
         }

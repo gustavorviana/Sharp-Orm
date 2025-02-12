@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder.Grammars.Mysql;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Builder.Grammars.Mysql;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         /// <param name="query">The query.</param>
         public SqliteGrammar(Query query) : base(query)
         {
-            Builder.paramInterceptor += (original) =>
+            ParamInterceptor += (original) =>
             {
                 if (original is DateTime date)
                     return date.ToString(DateTranslation.Format);
@@ -33,40 +34,30 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             return Info.Config.Translation.DbTimeZone;
         }
 
-        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
-        {
-            ThrowNotSupportedOperations("INSERT");
-            new InsertGrammar(this).BuildInsert(cells);
+        protected override IInsertGrammar GetInsertGrammar()
+            => new SqliteInsertGrammar(Query);
 
-            if (getGeneratedId && Query.ReturnsInsetionId)
-                Builder.Add("; SELECT last_insert_rowid();");
-        }
+        protected override ISelectGrammar GetSelectGrammar()
+            => new MysqlSelectGrammar(Query);
 
-        protected override void ConfigureDelete()
+        protected override IDeleteGrammar GetDeleteGrammar()
         {
-            ThrowNotSupportedOperations("DELETE");
+            ThrowNotSupportedOperations(Query, "DELETE");
             ValidateAlias();
 
-            new MysqlDeleteGrammar(this).Build();
+            return new MysqlDeleteGrammar(Query);
         }
 
-        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
+        protected override IUpdateGrammar GetUpdateGrammar()
         {
-            ThrowNotSupportedOperations("UPDATE");
+            ThrowNotSupportedOperations(Query, "UPDATE");
 
             ValidateAlias();
-            new MysqlUpdateGrammar(this).Build(cells); ;
+            return new MysqlUpdateGrammar(Query);
         }
 
-        protected override void ConfigureCount(Column column)
-        {
-            new MysqlSelectGrammar(this).BuildCount(column);
-        }
-
-        protected override void ConfigureSelect(bool configureWhereParams)
-        {
-            new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
-        }
+        protected override IUpsertGrammar GetUpsertGrammar()
+            => new SqliteUpsertGrammar(Query);
 
         private void ValidateAlias()
         {
@@ -74,65 +65,25 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
         }
 
-        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
+        internal static void ThrowNotSupportedOperations(Query query, string operationName)
         {
-            Builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
-            WriteColumns("", insertColumns);
-            Builder.Add(')');
-
-            Builder.Add(" SELECT ");
-            WriteColumns(source.Alias + '.', insertColumns);
-
-            Builder.AddFormat(" FROM {0}", source.GetFullName());
-            Builder.Add(" WHERE true ON CONFLICT(");
-            WriteColumns("", whereColumns);
-            Builder.Add(") SET ");
-
-            WriteColumn(source.Alias, updateColumns[0]);
-
-            for (int i = 1; i < updateColumns.Length; i++)
-            {
-                Builder.Add(", ");
-                WriteColumn(source.Alias, updateColumns[i]);
-            }
-        }
-
-        private void WriteColumn(string srcAlias, string column)
-        {
-            column = Info.Config.ApplyNomenclature(column);
-            Builder.AddFormat("{1}={0}.{1}", srcAlias, column);
-        }
-
-        private void WriteColumns(string prefix, string[] columns)
-        {
-            var column = Info.Config.ApplyNomenclature(columns[0]);
-            Builder.AddFormat("{0}{1}", prefix, column);
-
-            for (int i = 1; i < columns.Length; i++)
-            {
-                Builder.Add(", ");
-                column = Info.Config.ApplyNomenclature(columns[i]);
-
-                Builder.AddFormat("{0}{1}", prefix, column);
-            }
-        }
-
-        private void ThrowNotSupportedOperations(string operationName)
-        {
-            if (Query.Limit > 0)
+            if (query.Limit > 0)
                 throw new NotSupportedException($"SQLite does not support `Limit` with `{operationName}`.");
 
-            if (Query.Offset > 0)
+            if (query.Offset > 0)
                 throw new NotSupportedException($"SQLite does not support `Offset` with `{operationName}`.");
 
-            if (Info.Joins.Count > 0)
+            if (query.Info.Joins.Count > 0)
                 throw new NotSupportedException($"SQLite does not support `Joins` with `{operationName}`.");
 
-            if (!Info.Having.Empty)
+            if (!query.Info.Having.Empty)
                 throw new NotSupportedException($"SQLite does not support `Having` with `{operationName}`.");
 
-            if (Info.Orders.Length > 0)
+            if (query.Info.Orders.Length > 0)
                 throw new NotSupportedException($"SQLite does not support `Orders` with `{operationName}`.");
         }
+
+        protected override IBulkInsertGrammar GetBulkInsertGrammar()
+            => new BulkInsertGrammar(Query);
     }
 }

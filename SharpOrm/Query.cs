@@ -2161,7 +2161,7 @@ namespace SharpOrm
         /// <returns></returns>
         public SqlExpression ToSqlExpression()
         {
-            return GetGrammar().GetSelectExpression();
+            return GetGrammar().Select(false);
         }
 
         protected internal Grammar GetGrammar()

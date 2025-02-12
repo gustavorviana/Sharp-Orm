@@ -1,12 +1,13 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    internal class SqlServerUpsertGrammar : InsertGrammar, IUpsertGrammar
+    internal class SqlServerUpsertGrammar : InsertBaseGrammar, IUpsertGrammar
     {
-        public SqlServerUpsertGrammar(GrammarBase grammar) : base(grammar)
+        public SqlServerUpsertGrammar(Query query) : base(query)
         {
         }
 

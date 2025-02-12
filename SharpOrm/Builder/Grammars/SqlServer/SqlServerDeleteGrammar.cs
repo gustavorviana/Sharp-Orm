@@ -1,12 +1,13 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder.Grammars.Interfaces;
 using System;
 using System.Linq;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    internal class SqlServerDeleteGrammar : SqlServerGrammarBase
+    internal class SqlServerDeleteGrammar : SqlServerGrammarBase, IDeleteGrammar
     {
-        public SqlServerDeleteGrammar(GrammarBase owner) : base(owner)
+        public SqlServerDeleteGrammar(Query query) : base(query)
         {
         }
 

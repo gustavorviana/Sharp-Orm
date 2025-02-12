@@ -1,15 +1,16 @@
-﻿using System;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using System;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
-    internal class SqlServerSelectGrammar : SqlServerGrammarBase
+    internal class SqlServerSelectGrammar : SqlServerGrammarBase, ISelectGrammar
     {
         private Version useNewPaginationAt = new Version(11, 0);
         protected SqlServerQueryConfig Config => Info.Config as SqlServerQueryConfig;
 
         protected bool HasOffset => Query.Offset is int offset && offset >= 0;
 
-        public SqlServerSelectGrammar(GrammarBase owner) : base(owner)
+        public SqlServerSelectGrammar(Query query) : base(query)
         {
         }
 
@@ -161,6 +162,23 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 return Query.Manager.GetDbVersion().Major < useNewPaginationAt.Major;
 
             return Config.UseOldPagination == true;
+        }
+
+        internal SqlExpression GetSelectFrom()
+        {
+            Builder.Clear();
+            WriteSelectFrom(true);
+            ApplyOrderBy();
+            WritePagination();
+
+            try
+            {
+                return Builder.ToExpression();
+            }
+            finally
+            {
+                Builder.Clear();
+            }
         }
     }
 }

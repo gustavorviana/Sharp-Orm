@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using System;
 using System.Collections.Generic;
 
 namespace SharpOrm.Builder.Grammars.Mysql
@@ -10,7 +11,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
     {
         public MysqlGrammar(Query query) : base(query)
         {
-            Builder.paramInterceptor += (original) =>
+            ParamInterceptor += (original) =>
             {
                 if (original is DateTimeOffset offset)
                     return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo());
@@ -24,42 +25,22 @@ namespace SharpOrm.Builder.Grammars.Mysql
             return Info.Config.Translation.DbTimeZone;
         }
 
-        protected override void ConfigureInsert(IEnumerable<Cell> cells, bool getGeneratedId)
-        {
-            new InsertGrammar(this).BuildInsert(cells);
+        protected override IInsertGrammar GetInsertGrammar()
+            => new MysqlInsertGrammar(Query);
 
-            if (getGeneratedId && Query.ReturnsInsetionId)
-                Builder.Add("; SELECT LAST_INSERT_ID();");
-        }
+        protected override IDeleteGrammar GetDeleteGrammar()
+            => new MysqlDeleteGrammar(Query);
 
-        protected override void ConfigureDelete()
-        {
-            new MysqlDeleteGrammar(this).Build();
-        }
+        protected override IUpdateGrammar GetUpdateGrammar()
+            => new MysqlUpdateGrammar(Query);
 
-        protected override void ConfigureUpdate(IEnumerable<Cell> cells)
-        {
-            new MysqlUpdateGrammar(this).Build(cells);
-        }
+        protected override ISelectGrammar GetSelectGrammar()
+            => new MysqlSelectGrammar(Query);
 
-        protected override void ConfigureCount(Column column)
-        {
-            new MysqlSelectGrammar(this).BuildCount(column);
-        }
+        protected override IUpsertGrammar GetUpsertGrammar()
+            => new MysqlUpsertGrammar(Query);
 
-        protected override void ConfigureSelect(bool configureWhereParams)
-        {
-            new MysqlSelectGrammar(this).BuildSelect(configureWhereParams);
-        }
-
-        protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
-        {
-            new MysqlUpsertGrammar(this).Build(target, source, whereColumns, updateColumns, insertColumns);
-        }
-
-        protected override void ConfigureUpsert(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
-        {
-            new MysqlUpsertGrammar(this).Build(target, rows, whereColumns, updateColumns);
-        }
+        protected override IBulkInsertGrammar GetBulkInsertGrammar()
+            => new BulkInsertGrammar(Query);
     }
 }

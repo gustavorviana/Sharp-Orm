@@ -1,11 +1,12 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder.Grammars.Interfaces;
 using System.Linq;
 
 namespace SharpOrm.Builder.Grammars.Mysql
 {
-    internal class MysqlDeleteGrammar : MysqlGrammarBase
+    internal class MysqlDeleteGrammar : MysqlGrammarBase, IDeleteGrammar
     {
-        public MysqlDeleteGrammar(GrammarBase grammar) : base(grammar)
+        public MysqlDeleteGrammar(Query query) : base(query)
         {
         }
 

@@ -144,7 +144,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
             query.Add(" INTO [").Add(Name).Add("]");
 
-            var qGrammar = new SqlServerGrammar(Schema.BasedQuery);
+            var qGrammar = new SqlServerSelectGrammar(Schema.BasedQuery);
             query.Add(qGrammar.GetSelectFrom());
 
             return query.ToExpression();

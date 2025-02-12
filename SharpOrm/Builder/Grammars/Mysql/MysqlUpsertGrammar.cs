@@ -1,4 +1,5 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 
@@ -6,7 +7,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
 {
     internal class MysqlUpsertGrammar : InsertGrammar, IUpsertGrammar
     {
-        public MysqlUpsertGrammar(GrammarBase grammar) : base(grammar)
+        public MysqlUpsertGrammar(Query query) : base(query)
         {
         }
 
@@ -96,6 +97,11 @@ namespace SharpOrm.Builder.Grammars.Mysql
         {
             column = Info.Config.ApplyNomenclature(column);
             Builder.AddFormat("{1}={0}.{1}", srcAlias, column);
+        }
+
+        public override void Build(IEnumerable<Cell> cells, bool getGeneratedId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

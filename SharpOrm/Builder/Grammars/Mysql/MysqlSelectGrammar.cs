@@ -1,8 +1,10 @@
-﻿namespace SharpOrm.Builder.Grammars.Mysql
+﻿using SharpOrm.Builder.Grammars.Interfaces;
+
+namespace SharpOrm.Builder.Grammars.Mysql
 {
-    internal class MysqlSelectGrammar : MysqlGrammarBase
+    internal class MysqlSelectGrammar : MysqlGrammarBase, ISelectGrammar
     {
-        public MysqlSelectGrammar(GrammarBase grammar) : base(grammar)
+        public MysqlSelectGrammar(Query query) : base(query)
         {
         }
 

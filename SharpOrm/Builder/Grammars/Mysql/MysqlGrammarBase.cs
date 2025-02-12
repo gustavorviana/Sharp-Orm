@@ -2,7 +2,7 @@
 {
     public abstract class MysqlGrammarBase : GrammarBase
     {
-        public MysqlGrammarBase(GrammarBase grammar) : base(grammar)
+        public MysqlGrammarBase(Query query) : base(query)
         {
         }
 
