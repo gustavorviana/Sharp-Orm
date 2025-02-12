@@ -10,7 +10,7 @@ namespace SharpOrm.Builder.Grammars
         /// <summary>
         /// Gets the query builder.
         /// </summary>
-        protected QueryBuilder builder { get; set; }
+        protected QueryBuilder builder { get; private set; }
 
         /// <summary>
         /// Gets the query.
@@ -40,13 +40,10 @@ namespace SharpOrm.Builder.Grammars
             Query = owner.Query;
         }
 
-        public GrammarBase(GrammarBase owner, Func<Query, QueryBuilder> builderCall)
+        public GrammarBase(GrammarBase owner, bool useLotQueryBuilder)
         {
-            var interceptor = owner.builder.paramInterceptor;
-            owner.builder = builderCall(owner.Query);
-
-            owner.builder.paramInterceptor = interceptor;
-            this.builder = owner.builder;
+            owner.builder = useLotQueryBuilder ? new LotQueryBuilder(owner.builder) : owner.builder;
+            builder = owner.builder;
             Query = owner.Query;
         }
 

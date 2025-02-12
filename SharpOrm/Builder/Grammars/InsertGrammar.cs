@@ -7,7 +7,7 @@ namespace SharpOrm.Builder.Grammars
 {
     public class InsertGrammar : GrammarBase
     {
-        public InsertGrammar(GrammarBase owner) : base(owner, (query) => new LotQueryBuilder(query))
+        public InsertGrammar(GrammarBase owner) : base(owner, true)
         {
         }
 

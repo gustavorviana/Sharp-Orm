@@ -72,5 +72,22 @@ namespace QueryTest
 
             QueryAssert.Equal(query, expected, fallback);
         }
+
+        [Theory]
+        [InlineData(Trashed.With)]
+        [InlineData(Trashed.Only)]
+        [InlineData(Trashed.Except)]
+        public void InsertSoftDelete(Trashed trashed)
+        {
+            using var fallback = this.RegisterFallback(new Cell("Id", 1));
+            using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
+            query.WhereNot(x => x.Street, "First");
+            query.Insert(new SoftDeleteAddress(1)
+            {
+                City = "City"
+            });
+
+            QueryAssert.Equal(query, "INSERT INTO [SoftDeleteAddress] ([Deleted], [Id], [Name], [Street], [City]) VALUES (0, 1, NULL, NULL, @p1)", fallback);
+        }
     }
 }

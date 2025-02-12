@@ -5,14 +5,14 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    internal class LotQueryBuilder : QueryBuilder
+    public class LotQueryBuilder : QueryBuilder
     {
         private readonly List<SqlExpression> expressions = new List<SqlExpression>();
         private readonly BuilderCursor checkpointCursor = new BuilderCursor();
         private readonly BuilderCursor cacheCursor = new BuilderCursor();
         private bool useCacheCursor = false;
 
-        public LotQueryBuilder(Query query) : base(query)
+        internal LotQueryBuilder(QueryBuilder builderBase) : base(builderBase)
         {
 
         }

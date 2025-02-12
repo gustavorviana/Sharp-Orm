@@ -84,7 +84,17 @@ namespace SharpOrm.Builder
         public QueryBuilder(IReadonlyQueryInfo info)
         {
             this.info = info;
-            this.Parameters = new ReadOnlyCollection<object>(parameters);
+            Parameters = new ReadOnlyCollection<object>(parameters);
+        }
+
+        internal QueryBuilder(QueryBuilder builder)
+        {
+            info = builder.info;
+            Parameters = builder.Parameters;
+            paramInterceptor = builder.paramInterceptor;
+
+            softDelete = builder.softDelete;
+            Trashed = builder.Trashed;
         }
 
         /// <summary>
@@ -501,7 +511,6 @@ namespace SharpOrm.Builder
 
             if (Trashed != Trashed.With)
                 builder.Append(')');
-
 
             return new SqlExpression(builder.ToString(), parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
         }
