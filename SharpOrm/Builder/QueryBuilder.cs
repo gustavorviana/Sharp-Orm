@@ -77,6 +77,13 @@ namespace SharpOrm.Builder
         {
         }
 
+        internal QueryBuilder(QueryBuilder builder) : this(builder.info)
+        {
+            paramInterceptor = builder.paramInterceptor;
+
+            softDelete = builder.softDelete;
+            Trashed = builder.Trashed;
+        }
         /// <summary>
         /// Create an instance of <see cref="QueryBuilder"/> using <see cref="IReadonlyQueryInfo"/>.
         /// </summary>
@@ -87,15 +94,6 @@ namespace SharpOrm.Builder
             Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
-        internal QueryBuilder(QueryBuilder builder)
-        {
-            info = builder.info;
-            Parameters = builder.Parameters;
-            paramInterceptor = builder.paramInterceptor;
-
-            softDelete = builder.softDelete;
-            Trashed = builder.Trashed;
-        }
 
         /// <summary>
         /// Adds a <see cref="QueryBuilder"/> to this instance.
