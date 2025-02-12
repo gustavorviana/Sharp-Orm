@@ -8,9 +8,9 @@ namespace SharpOrm.Builder.Grammars
     public abstract class GrammarBase
     {
         /// <summary>
-        /// Gets the query builder.
+        /// Gets the query Builder.
         /// </summary>
-        protected QueryBuilder builder { get; private set; }
+        protected QueryBuilder Builder { get; private set; }
 
         /// <summary>
         /// Gets the query.
@@ -24,26 +24,26 @@ namespace SharpOrm.Builder.Grammars
 
         public GrammarBase(Query query)
         {
-            builder = new QueryBuilder(query);
+            Builder = new QueryBuilder(query);
             Query = query;
         }
 
         public GrammarBase(Query query, QueryBuilder builder)
         {
-            this.builder = builder;
+            this.Builder = builder;
             Query = query;
         }
 
         public GrammarBase(GrammarBase owner)
         {
-            builder = owner.builder;
+            Builder = owner.Builder;
             Query = owner.Query;
         }
 
         public GrammarBase(GrammarBase owner, bool useLotQueryBuilder)
         {
-            owner.builder = useLotQueryBuilder ? new LotQueryBuilder(owner.builder) : owner.builder;
-            builder = owner.builder;
+            owner.Builder = useLotQueryBuilder ? new LotQueryBuilder(owner.Builder) : owner.Builder;
+            Builder = owner.Builder;
             Query = owner.Query;
         }
 
@@ -72,13 +72,13 @@ namespace SharpOrm.Builder.Grammars
                 return;
 
             if (!writeOrderByFlag)
-                builder.Add(" ORDER BY ");
+                Builder.Add(" ORDER BY ");
 
             WriteColumnOrder(en.Current);
 
             while (en.MoveNext())
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 WriteColumnOrder(en.Current);
             }
         }
@@ -95,12 +95,12 @@ namespace SharpOrm.Builder.Grammars
             if (string.IsNullOrEmpty(join.Type))
                 join.Type = "INNER";
 
-            builder
+            Builder
                 .Add(' ')
                 .Add(join.Type)
                 .Add(" JOIN ");
             WriteTable(join);
-            builder.Add(" ON ");
+            Builder.Add(" ON ");
 
             WriteWhereContent(join.Info);
         }
@@ -111,8 +111,8 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="cell">The cell.</param>
         protected void WriteUpdateCell(Cell cell)
         {
-            builder.Add(FixColumnName(cell.Name)).Add(" = ");
-            builder.AddParameter(cell.Value);
+            Builder.Add(FixColumnName(cell.Name)).Add(" = ");
+            Builder.AddParameter(cell.Value);
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace SharpOrm.Builder.Grammars
 
         protected virtual void WriteTable(QueryBase query)
         {
-            builder.Add(GetTableName(query, true));
+            Builder.Add(GetTableName(query, true));
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SharpOrm.Builder.Grammars
 
         protected void WriteWhereContent(QueryBaseInfo info)
         {
-            builder.Add(info.Where.ToExpression(true));
+            Builder.Add(info.Where.ToExpression(true));
         }
 
         protected void WriteWhere(bool configureParameters)
@@ -171,9 +171,9 @@ namespace SharpOrm.Builder.Grammars
             if (Info.Where.Empty && Info.Where.Trashed == Trashed.With)
                 return;
 
-            builder.Add(" WHERE ");
+            Builder.Add(" WHERE ");
             if (configureParameters) WriteWhereContent(Info);
-            else builder.Add(Info.Where);
+            else Builder.Add(Info.Where);
         }
 
         /// <summary>
@@ -184,19 +184,19 @@ namespace SharpOrm.Builder.Grammars
             if (Info.GroupsBy.Length == 0)
                 return;
 
-            builder.Add(" GROUP BY ");
+            Builder.Add(" GROUP BY ");
             AddParams(Info.GroupsBy, null, false);
             if (Info.Having.Empty)
                 return;
 
             var havingParams = Info.Having.ToExpression(true, false);
 
-            builder
+            Builder
                 .Add(" HAVING ")
                 .AddAndReplace(
                     havingParams.ToString(),
                     '?',
-                    (count) => builder.AddParameter(havingParams.Parameters[count - 1])
+                    (count) => Builder.AddParameter(havingParams.Parameters[count - 1])
                 );
         }
 
@@ -216,10 +216,10 @@ namespace SharpOrm.Builder.Grammars
                 if (!en.MoveNext())
                     return;
 
-                builder.AddParameter(call(en.Current), allowAlias);
+                Builder.AddParameter(call(en.Current), allowAlias);
 
                 while (en.MoveNext())
-                    builder.Add(", ").AddParameter(call(en.Current), allowAlias);
+                    Builder.Add(", ").AddParameter(call(en.Current), allowAlias);
             }
         }
 
@@ -233,8 +233,8 @@ namespace SharpOrm.Builder.Grammars
                 return;
 
             WriteColumn(order.Column, false);
-            builder.Add(' ');
-            builder.Add(order.Order.ToString().ToUpper());
+            Builder.Add(' ');
+            Builder.Add(order.Order.ToString().ToUpper());
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="column">The column.</param>
         protected void WriteColumn(Column column, bool allowAlias = true)
         {
-            builder.Add(column.ToSafeExpression(Info.ToReadOnly(), allowAlias));
+            Builder.Add(column.ToSafeExpression(Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -285,7 +285,7 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="column">The column.</param>
         protected void WriteSelect(Column column)
         {
-            this.builder.AddExpression(column, true);
+            this.Builder.AddExpression(column, true);
         }
 
         protected bool IsMultipleTablesDeleteWithJoin()

@@ -10,7 +10,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
     {
         public MysqlGrammar(Query query) : base(query)
         {
-            builder.paramInterceptor += (original) =>
+            Builder.paramInterceptor += (original) =>
             {
                 if (original is DateTimeOffset offset)
                     return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo());
@@ -29,7 +29,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
             new InsertGrammar(this).BuildInsert(cells);
 
             if (getGeneratedId && Query.ReturnsInsetionId)
-                builder.Add("; SELECT LAST_INSERT_ID();");
+                Builder.Add("; SELECT LAST_INSERT_ID();");
         }
 
         protected override void ConfigureDelete()

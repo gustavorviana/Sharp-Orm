@@ -14,16 +14,16 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             ThrowDeleteJoinsNotSupported();
             ThrowOffsetNotSupported();
-            builder.Add("DELETE");
+            Builder.Add("DELETE");
             AddLimit();
 
             if (Query.IsNoLock() || Query.Info.Joins.Any())
-                builder.Add(' ').Add(TryGetTableAlias(Query));
+                Builder.Add(' ').Add(TryGetTableAlias(Query));
 
-            builder.Add(" FROM ").Add(GetTableName(true));
+            Builder.Add(" FROM ").Add(GetTableName(true));
 
             if (Query.IsNoLock())
-                builder.Add(" WITH (NOLOCK)");
+                Builder.Add(" WITH (NOLOCK)");
 
             ApplyJoins();
             WriteWhere(true);

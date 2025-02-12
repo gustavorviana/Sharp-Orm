@@ -9,7 +9,7 @@
         protected void AddLimit()
         {
             if (Query.Limit != null)
-                builder.Add(" LIMIT ").Add(Query.Limit);
+                Builder.Add(" LIMIT ").Add(Query.Limit);
         }
     }
 }

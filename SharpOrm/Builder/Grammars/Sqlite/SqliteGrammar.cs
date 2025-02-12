@@ -16,7 +16,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         /// <param name="query">The query.</param>
         public SqliteGrammar(Query query) : base(query)
         {
-            builder.paramInterceptor += (original) =>
+            Builder.paramInterceptor += (original) =>
             {
                 if (original is DateTime date)
                     return date.ToString(DateTranslation.Format);
@@ -39,7 +39,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             new InsertGrammar(this).BuildInsert(cells);
 
             if (getGeneratedId && Query.ReturnsInsetionId)
-                builder.Add("; SELECT last_insert_rowid();");
+                Builder.Add("; SELECT last_insert_rowid();");
         }
 
         protected override void ConfigureDelete()
@@ -76,23 +76,23 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
         protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
-            builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
+            Builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
             WriteColumns("", insertColumns);
-            builder.Add(')');
+            Builder.Add(')');
 
-            builder.Add(" SELECT ");
+            Builder.Add(" SELECT ");
             WriteColumns(source.Alias + '.', insertColumns);
 
-            builder.AddFormat(" FROM {0}", source.GetFullName());
-            builder.Add(" WHERE true ON CONFLICT(");
+            Builder.AddFormat(" FROM {0}", source.GetFullName());
+            Builder.Add(" WHERE true ON CONFLICT(");
             WriteColumns("", whereColumns);
-            builder.Add(") SET ");
+            Builder.Add(") SET ");
 
             WriteColumn(source.Alias, updateColumns[0]);
 
             for (int i = 1; i < updateColumns.Length; i++)
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 WriteColumn(source.Alias, updateColumns[i]);
             }
         }
@@ -100,20 +100,20 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         private void WriteColumn(string srcAlias, string column)
         {
             column = Info.Config.ApplyNomenclature(column);
-            builder.AddFormat("{1}={0}.{1}", srcAlias, column);
+            Builder.AddFormat("{1}={0}.{1}", srcAlias, column);
         }
 
         private void WriteColumns(string prefix, string[] columns)
         {
             var column = Info.Config.ApplyNomenclature(columns[0]);
-            builder.AddFormat("{0}{1}", prefix, column);
+            Builder.AddFormat("{0}{1}", prefix, column);
 
             for (int i = 1; i < columns.Length; i++)
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 column = Info.Config.ApplyNomenclature(columns[i]);
 
-                builder.AddFormat("{0}{1}", prefix, column);
+                Builder.AddFormat("{0}{1}", prefix, column);
             }
         }
 

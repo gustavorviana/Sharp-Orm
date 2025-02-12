@@ -19,14 +19,14 @@ namespace SharpOrm.Builder.Grammars.Mysql
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                builder.Add("UPDATE ").Add(GetTableName(false));
+                Builder.Add("UPDATE ").Add(GetTableName(false));
                 if (Info.Joins.Count > 0 && !string.IsNullOrEmpty(Info.TableName.Alias))
-                    builder.Add(' ').Add(FixTableName(Info.TableName.Alias));
+                    Builder.Add(' ').Add(FixTableName(Info.TableName.Alias));
 
                 ApplyJoins();
 
-                builder.Add(" SET ");
-                builder.AddJoin(WriteUpdateCell, ", ", en);
+                Builder.Add(" SET ");
+                Builder.AddJoin(WriteUpdateCell, ", ", en);
 
                 WriteWhere(true);
             }

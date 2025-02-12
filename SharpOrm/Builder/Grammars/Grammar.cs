@@ -47,7 +47,7 @@ namespace SharpOrm.Builder.Grammars
 
         protected void SetParamInterceptor(Func<object, object> func)
         {
-            builder.paramInterceptor = func;
+            Builder.paramInterceptor = func;
         }
 
         /// <summary>
@@ -79,9 +79,9 @@ namespace SharpOrm.Builder.Grammars
         /// <returns></returns>
         public string SelectSqlOnly()
         {
-            builder.Clear();
+            Builder.Clear();
             ConfigureSelect(false);
-            return builder.ToExpression(true, false).ToString();
+            return Builder.ToExpression(true, false).ToString();
         }
 
         /// <summary>
@@ -90,9 +90,9 @@ namespace SharpOrm.Builder.Grammars
         /// <returns>The SQL expression for the SELECT statement.</returns>
         public SqlExpression GetSelectExpression()
         {
-            builder.Clear();
+            Builder.Clear();
             ConfigureSelect(false);
-            return builder.ToExpression();
+            return Builder.ToExpression();
         }
 
         /// <summary>
@@ -308,10 +308,10 @@ namespace SharpOrm.Builder.Grammars
 
         private SqlExpression BuildExpression(Action builderAction)
         {
-            builder.Clear();
+            Builder.Clear();
             builderAction();
 
-            return builder.ToExpression(true);
+            return Builder.ToExpression(true);
         }
 
         protected QueryBaseInfo GetInfo(QueryBase query)

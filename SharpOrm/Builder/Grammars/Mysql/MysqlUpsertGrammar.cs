@@ -15,7 +15,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
             WriteInsert(target, insertColumns);
             WriteSelect(source, insertColumns);
             WriteOnDuplicate(target, source.Alias, updateColumns);
-            builder.Add(';');
+            Builder.Add(';');
         }
 
         public void Build(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
@@ -31,49 +31,49 @@ namespace SharpOrm.Builder.Grammars.Mysql
                 WriteInsert(target, insertColumns);
                 WriteRowSourceHeader(@enum, sourceAlias);
                 WriteOnDuplicate(target, sourceAlias, updateColumns);
-                builder.Add(';');
+                Builder.Add(';');
             }
         }
 
         private void WriteInsert(UpsertQueryInfo target, string[] insertColumns)
         {
-            builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
+            Builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
             WriteColumns("", insertColumns);
-            builder.Add(')');
+            Builder.Add(')');
         }
 
         private void WriteRowSourceHeader(IEnumerator<Row> rows, string alias)
         {
             string[] columnNames = rows.Current.ColumnNames;
-            builder.Add(" VALUES ");
+            Builder.Add(" VALUES ");
 
             AppendInsertCells(rows.Current.Cells);
 
             while (rows.MoveNext())
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 AppendInsertCells(rows.Current.Cells);
             }
 
-            builder.AddFormat(" AS {0}", alias);
+            Builder.AddFormat(" AS {0}", alias);
         }
 
         private void WriteSelect(UpsertQueryInfo source, string[] insertColumns)
         {
-            builder.Add(" SELECT ");
+            Builder.Add(" SELECT ");
             WriteColumns(source.Alias + '.', insertColumns);
-            builder.AddFormat(" FROM {0}", source.GetFullName());
+            Builder.AddFormat(" FROM {0}", source.GetFullName());
         }
 
         private void WriteOnDuplicate(UpsertQueryInfo target, string sourceAlias, string[] updateColumns)
         {
-            builder.Add(" ON DUPLICATE KEY UPDATE ");
+            Builder.Add(" ON DUPLICATE KEY UPDATE ");
 
             WriteColumn(sourceAlias, updateColumns[0]);
 
             for (int i = 1; i < updateColumns.Length; i++)
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 WriteColumn(sourceAlias, updateColumns[i]);
             }
         }
@@ -81,21 +81,21 @@ namespace SharpOrm.Builder.Grammars.Mysql
         private void WriteColumns(string prefix, string[] columns)
         {
             var column = Info.Config.ApplyNomenclature(columns[0]);
-            builder.AddFormat("{0}{1}", prefix, column);
+            Builder.AddFormat("{0}{1}", prefix, column);
 
             for (int i = 1; i < columns.Length; i++)
             {
-                builder.Add(", ");
+                Builder.Add(", ");
                 column = Info.Config.ApplyNomenclature(columns[i]);
 
-                builder.AddFormat("{0}{1}", prefix, column);
+                Builder.AddFormat("{0}{1}", prefix, column);
             }
         }
 
         private void WriteColumn(string srcAlias, string column)
         {
             column = Info.Config.ApplyNomenclature(column);
-            builder.AddFormat("{1}={0}.{1}", srcAlias, column);
+            Builder.AddFormat("{1}={0}.{1}", srcAlias, column);
         }
     }
 }

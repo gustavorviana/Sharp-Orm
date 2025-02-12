@@ -17,15 +17,15 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             if (!NeedObsoleteCount(column))
             {
-                builder.Add("SELECT ");
+                Builder.Add("SELECT ");
                 WriteCountColumn(column);
                 WriteSelectFrom(true);
                 return;
             }
 
-            builder.Add("SELECT COUNT(*) FROM (");
+            Builder.Add("SELECT COUNT(*) FROM (");
             ConfigureSelect(true, column, true);
-            builder.Add(") AS [count]");
+            Builder.Add(") AS [count]");
         }
 
         private bool NeedObsoleteCount(Column column)
@@ -35,21 +35,21 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private QueryBuilder WriteCountColumn(Column column)
         {
-            if (column.IsCount) return builder.AddExpression(column);
+            if (column.IsCount) return Builder.AddExpression(column);
 
             string countCol = column?.GetCountColumn();
             if (string.IsNullOrEmpty(countCol))
                 throw new NotSupportedException("The name of a column or '*' must be entered for counting.");
 
-            builder.Add("COUNT(");
+            Builder.Add("COUNT(");
             if (countCol == "*" || countCol.EndsWith(".*"))
-                return builder.Add("*)");
+                return Builder.Add("*)");
 
             if (Query.Distinct)
-                builder.Add("DISTINCT ");
+                Builder.Add("DISTINCT ");
 
             WriteSelect(column);
-            return builder.Add(')');
+            return Builder.Add(')');
         }
 
         public void BuildSelect(bool configureWhereParams)
@@ -60,21 +60,21 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private void WriteSelectWithOldPagination(bool configureWhereParams, Column countColunm, bool isCount)
         {
-            builder.Add("SELECT * FROM (");
+            Builder.Add("SELECT * FROM (");
             WriteRowNumber();
 
             if (countColunm == null) WriteSelectColumns();
             else WriteSelect(countColunm);
 
-            builder.Add(" FROM ").Add(GetTableName(true));
+            Builder.Add(" FROM ").Add(GetTableName(true));
 
             if (Query.IsNoLock())
-                builder.Add(" WITH (NOLOCK)");
+                Builder.Add(" WITH (NOLOCK)");
 
             ApplyJoins();
             WriteWhere(configureWhereParams);
             WriteGroupBy();
-            builder.Add(") ").Add(TryGetTableAlias(Query));
+            Builder.Add(") ").Add(TryGetTableAlias(Query));
 
             if (!isCount)
                 ApplyPagination();
@@ -83,7 +83,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         internal void WriteSelectFrom(bool configureWhereParams)
         {
-            builder.Add(" FROM ").Add(GetTableName(true));
+            Builder.Add(" FROM ").Add(GetTableName(true));
 
             WriteOptions();
             ApplyJoins();
@@ -97,16 +97,16 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 return;
 
             ValidateOffsetOrderBy();
-            builder.Add(" OFFSET ").Add(Query.Offset).Add(" ROWS");
+            Builder.Add(" OFFSET ").Add(Query.Offset).Add(" ROWS");
 
             if (Query.Limit >= 0)
-                builder.Add(" FETCH NEXT ").Add(Query.Limit).Add(" ROWS ONLY");
+                Builder.Add(" FETCH NEXT ").Add(Query.Limit).Add(" ROWS ONLY");
         }
 
         private void WriteOptions()
         {
             if (Query.IsNoLock())
-                builder.Add(" WITH (NOLOCK)");
+                Builder.Add(" WITH (NOLOCK)");
         }
 
         private void ConfigureSelect(bool configureWhereParams, Column countColumn, bool isCount)
@@ -117,15 +117,15 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private void WriteSelect(bool configureWhereParams, bool isCount)
         {
-            builder.Add("SELECT");
+            Builder.Add("SELECT");
 
             if (Query.Distinct)
-                builder.Add(" DISTINCT");
+                Builder.Add(" DISTINCT");
 
             if (!HasOffset && !isCount)
                 AddLimit();
 
-            builder.Add(' ');
+            Builder.Add(' ');
             WriteSelectColumns();
             WriteSelectFrom(configureWhereParams);
 
@@ -138,21 +138,21 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private void ApplyPagination()
         {
-            builder.Add(" WHERE [grammar_rownum] ");
+            Builder.Add(" WHERE [grammar_rownum] ");
 
             if (Query.Offset != null && Query.Limit != null)
-                builder.AddFormat("BETWEEN {0} AND {1}", Query.Offset + 1, Query.Offset + Query.Limit);
+                Builder.AddFormat("BETWEEN {0} AND {1}", Query.Offset + 1, Query.Offset + Query.Limit);
             else if (Query.Offset != null)
-                builder.Add("> ").Add(Query.Offset);
+                Builder.Add("> ").Add(Query.Offset);
         }
 
         private void WriteRowNumber()
         {
             ValidateOffsetOrderBy();
 
-            builder.Add("SELECT ROW_NUMBER() OVER(ORDER BY ");
+            Builder.Add("SELECT ROW_NUMBER() OVER(ORDER BY ");
             ApplyOrderBy(Info.Orders, true);
-            builder.Add(") AS [grammar_rownum], ");
+            Builder.Add(") AS [grammar_rownum], ");
         }
 
         private bool UseOldPagination()

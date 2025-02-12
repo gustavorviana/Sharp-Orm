@@ -13,9 +13,9 @@ namespace SharpOrm.Builder.Grammars.Mysql
         {
             ThrowOffsetNotSupported();
 
-            builder.Add("DELETE");
+            Builder.Add("DELETE");
             ApplyDeleteJoins();
-            builder.Add(" FROM ").Add(Info.TableName.GetName(true, Info.Config));
+            Builder.Add(" FROM ").Add(Info.TableName.GetName(true, Info.Config));
 
             ApplyJoins();
             WriteWhere(true);
@@ -34,7 +34,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
             if (!CanApplyDeleteJoins())
                 return;
 
-            builder
+            Builder
                 .Add(' ')
                 .Add(TryGetTableAlias(Query));
 
@@ -42,7 +42,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
                 return;
 
             foreach (var join in Info.Joins.Where(j => CanDeleteJoin(j.Info)))
-                builder.Add(", ").Add(TryGetTableAlias(join));
+                Builder.Add(", ").Add(TryGetTableAlias(join));
         }
 
         /// <summary>

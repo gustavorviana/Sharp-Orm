@@ -11,7 +11,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         protected void AddLimit()
         {
             if (Query.Limit is int limit && limit >= 0)
-                builder.Add(" TOP(").Add(limit).Add(')');
+                Builder.Add(" TOP(").Add(limit).Add(')');
         }
 
         protected override void WriteTable(QueryBase query)
@@ -22,7 +22,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         protected void WriteGrammarOptions(QueryBase query)
         {
-            SqlServerGrammarOptions.WriteTo(builder, query);
+            SqlServerGrammarOptions.WriteTo(Builder, query);
         }
 
         protected void ValidateOffsetOrderBy()

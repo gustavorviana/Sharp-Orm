@@ -40,7 +40,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             new InsertGrammar(this).BuildInsert(cells);
 
             if (getGeneratedId && Query.ReturnsInsetionId)
-                builder.Add("; SELECT SCOPE_IDENTITY();");
+                Builder.Add("; SELECT SCOPE_IDENTITY();");
         }
 
         protected override void ConfigureUpsert(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
@@ -57,18 +57,18 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             var grammar = new SqlServerSelectGrammar(this);
 
-            builder.Clear();
+            Builder.Clear();
             grammar.WriteSelectFrom(true);
             ApplyOrderBy();
             grammar.WritePagination();
 
             try
             {
-                return builder.ToExpression();
+                return Builder.ToExpression();
             }
             finally
             {
-                builder.Clear();
+                Builder.Clear();
             }
         }
     }

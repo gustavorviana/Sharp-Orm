@@ -20,17 +20,17 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                builder.Add("UPDATE ").Add(Info.Joins.Any() ? FixTableName(Info.TableName.ToString()) : GetTableName(false));
+                Builder.Add("UPDATE ").Add(Info.Joins.Any() ? FixTableName(Info.TableName.ToString()) : GetTableName(false));
                 AddLimit();
-                builder.Add(" SET ");
-                builder.AddJoin(WriteUpdateCell, ", ", en);
+                Builder.Add(" SET ");
+                Builder.AddJoin(WriteUpdateCell, ", ", en);
             }
 
             if (Info.Joins.Any() || Query.IsNoLock())
-                builder.Add(" FROM ").Add(GetTableName(true));
+                Builder.Add(" FROM ").Add(GetTableName(true));
 
             if (Query.IsNoLock())
-                builder.Add(" WITH (NOLOCK)");
+                Builder.Add(" WITH (NOLOCK)");
 
             ApplyJoins();
             WriteWhere(true);

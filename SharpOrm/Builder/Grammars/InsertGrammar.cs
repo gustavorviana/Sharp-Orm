@@ -14,20 +14,20 @@ namespace SharpOrm.Builder.Grammars
         public virtual void BuildInsertQuery(QueryBase query, string[] columnNames)
         {
             AppendInsertHeader(columnNames);
-            builder.AddAndReplace(
+            Builder.AddAndReplace(
                 query.ToString(),
                 '?',
-                (count) => builder.AddParameter(query.Info.Where.Parameters[count - 1])
+                (count) => Builder.AddParameter(query.Info.Where.Parameters[count - 1])
             );
         }
 
         public virtual void BuildInsertExpression(SqlExpression expression, string[] columnNames)
         {
             AppendInsertHeader(columnNames);
-            builder.AddAndReplace(
+            Builder.AddAndReplace(
                 expression.ToString(),
                 '?',
-                (count) => builder.AddParameter(expression.Parameters[count - 1])
+                (count) => Builder.AddParameter(expression.Parameters[count - 1])
             );
         }
 
@@ -42,13 +42,13 @@ namespace SharpOrm.Builder.Grammars
 
                 while (InternalBulkInsert(@enum))
                 {
-                    ((LotQueryBuilder)builder).Remove(0, 2);
-                    ((LotQueryBuilder)builder).SetCursor(0, 0);
+                    ((LotQueryBuilder)Builder).Remove(0, 2);
+                    ((LotQueryBuilder)Builder).SetCursor(0, 0);
 
                     AppendInsertHeader(@enum.Current.Cells.Select(c => c.Name).ToArray());
-                    builder.Add("VALUES ");
+                    Builder.Add("VALUES ");
 
-                    ((LotQueryBuilder)builder).RestoreCursor();
+                    ((LotQueryBuilder)Builder).RestoreCursor();
                 }
             }
         }
@@ -57,18 +57,18 @@ namespace SharpOrm.Builder.Grammars
         {
             while (@enum.MoveNext())
             {
-                ((LotQueryBuilder)builder).CreateSavePoint();
+                ((LotQueryBuilder)Builder).CreateSavePoint();
 
-                builder.Add(", ");
+                Builder.Add(", ");
                 AppendInsertCells(@enum.Current.Cells);
 
-                if (builder.Parameters.Count > Query.Config.InsertLimitParams)
+                if (Builder.Parameters.Count > Query.Config.InsertLimitParams)
                 {
-                    ((LotQueryBuilder)builder).BuildSavePoint();
+                    ((LotQueryBuilder)Builder).BuildSavePoint();
                     return true;
                 }
 
-                ((LotQueryBuilder)builder).ResetSavePoint();
+                ((LotQueryBuilder)Builder).ResetSavePoint();
             }
 
             return false;
@@ -77,24 +77,24 @@ namespace SharpOrm.Builder.Grammars
         public virtual void BuildInsert(IEnumerable<Cell> cells)
         {
             AppendInsertHeader(cells.Select(c => c.Name).ToArray());
-            builder.Add("VALUES ");
+            Builder.Add("VALUES ");
             AppendInsertCells(cells);
         }
 
         protected void AppendInsertHeader(string[] columns)
         {
             columns = columns.Select(Info.Config.ApplyNomenclature).ToArray();
-            builder.Add("INSERT INTO ").Add(GetTableName(false));
+            Builder.Add("INSERT INTO ").Add(GetTableName(false));
 
-            if (columns.Length > 0) builder.Add(" (").AddJoin(", ", columns).Add(") ");
-            else builder.Add(' ');
+            if (columns.Length > 0) Builder.Add(" (").AddJoin(", ", columns).Add(") ");
+            else Builder.Add(' ');
         }
 
         protected void AppendInsertCells(IEnumerable<Cell> cells)
         {
-            builder.Add('(');
+            Builder.Add('(');
             AppendCells(cells);
-            builder.Add(")");
+            Builder.Add(")");
         }
 
         /// <summary>
