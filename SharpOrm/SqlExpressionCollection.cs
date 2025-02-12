@@ -1,12 +1,23 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 
 namespace SharpOrm
 {
     public class SqlExpressionCollection : SqlExpression
     {
         public SqlExpression[] Expressions { get; }
+        private object[] _parms;
 
-        public new object[] Parameters => new object[0];
+        public new object[] Parameters
+        {
+            get
+            {
+                if (_parms == null)
+                    _parms = Expressions.Select(x => x.Parameters).Aggregate((current, next) => current.Concat(next).ToArray());
+
+                return _parms;
+            }
+        }
 
         public SqlExpressionCollection(SqlExpression[] expressions)
         {

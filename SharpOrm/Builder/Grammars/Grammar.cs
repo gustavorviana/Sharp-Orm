@@ -81,7 +81,7 @@ namespace SharpOrm.Builder.Grammars
         {
             builder.Clear();
             ConfigureSelect(false);
-            return builder.ToString();
+            return builder.ToExpression(true, false).ToString();
         }
 
         /// <summary>

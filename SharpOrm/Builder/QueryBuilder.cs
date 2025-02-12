@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -18,8 +19,8 @@ namespace SharpOrm.Builder
     public class QueryBuilder : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+        internal protected readonly StringBuilder query = new StringBuilder();
         private bool hasMemberColumn = false;
-        internal readonly StringBuilder query = new StringBuilder();
         /// <summary>
         /// A list of parameters for the SQL query.
         /// </summary>
@@ -154,8 +155,6 @@ namespace SharpOrm.Builder
         /// Adds a SQL query with parameters to the instance.
         /// </summary>
         /// <param name="query">The SQL query to be added.</param>
-        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
         public QueryBuilder AddAndReplace(string query, char toReplace, Func<int, string> func)
         {
@@ -167,8 +166,6 @@ namespace SharpOrm.Builder
         /// Adds a SQL query with parameters to the instance.
         /// </summary>
         /// <param name="query">The SQL query to be added.</param>
-        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
         public QueryBuilder AddAndReplace(string query, char toReplace, Action<int> call)
         {
@@ -227,8 +224,8 @@ namespace SharpOrm.Builder
         /// <returns>The updated <see cref="QueryBuilder"/> with the parameter added.</returns>
         protected virtual QueryBuilder InternalAddParam(object value)
         {
-            this.parameters.Add(value);
-            return this.Add("?");
+            parameters.Add(value);
+            return Add("?");
         }
 
         /// <summary>
@@ -339,7 +336,7 @@ namespace SharpOrm.Builder
         /// Adds raw text to the query.
         /// </summary>
         /// <param name="raw">The raw text to be added to the query.</param>
-        public QueryBuilder Add(string raw)
+        public virtual QueryBuilder Add(string raw)
         {
             this.query.Append(raw);
             return this;
@@ -363,17 +360,33 @@ namespace SharpOrm.Builder
         /// <param name="values">An enumerable collection of values to be joined and added to the query.</param>
         public QueryBuilder AddJoin<T>(string separator, IEnumerable<T> values)
         {
-            BuilderExt.AppendJoin(this.query, separator, values);
-            return this;
-        }
+            using (var en = values.GetEnumerator())
+            {
+                if (!en.MoveNext())
+                    return this;
 
+                Add(en.Current);
+
+                while (en.MoveNext())
+                    Add(separator).Add(en.Current);
+
+                return this;
+            }
+        }
 
         /// <summary>
         /// Adds multiple values to the query, joining them with a specified separator.
         /// </summary>
         public QueryBuilder AddJoin<T>(Action<T> callback, string separator, IEnumerator<T> en)
         {
-            this.query.AppendJoin(callback, separator, en);
+            callback(en.Current);
+
+            while (en.MoveNext())
+            {
+                Add(separator);
+                callback(en.Current);
+            }
+
             return this;
         }
 
@@ -462,14 +475,14 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return ToExpression(true, false).ToString();
+            return query.ToString();
         }
 
         /// <summary>
         /// Returns an <see cref="SqlExpression"/> representation of the query.
         /// </summary>
         /// <param name="info">The query information.</param>
-        public SqlExpression ToExpression(bool withDeferrer = false, bool throwOnDeferrerFail = true)
+        public virtual SqlExpression ToExpression(bool withDeferrer = false, bool throwOnDeferrerFail = true)
         {
             var builder = GetSafeStringBuilder();
             if (query.Length == 0)

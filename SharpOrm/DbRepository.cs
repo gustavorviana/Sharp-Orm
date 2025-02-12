@@ -348,7 +348,7 @@ namespace SharpOrm
         /// <returns>A DbCommand created from the QueryBuilder.</returns>
         protected DbCommand CreateCommand(QueryBuilder query)
         {
-            return this.CreateCommand(query.ToString(), query.Parameters);
+            return this.CreateCommand().SetExpression(query.ToExpression(true, true));
         }
 
         /// <summary>

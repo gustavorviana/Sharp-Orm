@@ -7,7 +7,7 @@ namespace SharpOrm.Builder.Grammars
 {
     public class InsertGrammar : GrammarBase
     {
-        public InsertGrammar(GrammarBase owner) : base(owner)
+        public InsertGrammar(GrammarBase owner) : base(owner, (query) => new LotQueryBuilder(query))
         {
         }
 
@@ -40,12 +40,38 @@ namespace SharpOrm.Builder.Grammars
 
                 BuildInsert(@enum.Current.Cells);
 
-                while (@enum.MoveNext())
+                while (InternalBulkInsert(@enum))
                 {
-                    builder.Add(", ");
-                    AppendInsertCells(@enum.Current.Cells);
+                    ((LotQueryBuilder)builder).Remove(0, 2);
+                    ((LotQueryBuilder)builder).SetCursor(0, 0);
+
+                    AppendInsertHeader(@enum.Current.Cells.Select(c => c.Name).ToArray());
+                    builder.Add("VALUES ");
+
+                    ((LotQueryBuilder)builder).RestoreCursor();
                 }
             }
+        }
+
+        private bool InternalBulkInsert(IEnumerator<Row> @enum)
+        {
+            while (@enum.MoveNext())
+            {
+                ((LotQueryBuilder)builder).CreateSavePoint();
+
+                builder.Add(", ");
+                AppendInsertCells(@enum.Current.Cells);
+
+                if (builder.Parameters.Count > Query.Config.InsertLimitParams)
+                {
+                    ((LotQueryBuilder)builder).BuildSavePoint();
+                    return true;
+                }
+
+                ((LotQueryBuilder)builder).ResetSavePoint();
+            }
+
+            return false;
         }
 
         public virtual void BuildInsert(IEnumerable<Cell> cells)

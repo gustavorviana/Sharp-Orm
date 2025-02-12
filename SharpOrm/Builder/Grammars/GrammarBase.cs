@@ -10,7 +10,7 @@ namespace SharpOrm.Builder.Grammars
         /// <summary>
         /// Gets the query builder.
         /// </summary>
-        protected QueryBuilder builder { get; }
+        protected QueryBuilder builder { get; set; }
 
         /// <summary>
         /// Gets the query.
@@ -37,6 +37,16 @@ namespace SharpOrm.Builder.Grammars
         public GrammarBase(GrammarBase owner)
         {
             builder = owner.builder;
+            Query = owner.Query;
+        }
+
+        public GrammarBase(GrammarBase owner, Func<Query, QueryBuilder> builderCall)
+        {
+            var interceptor = owner.builder.paramInterceptor;
+            owner.builder = builderCall(owner.Query);
+
+            owner.builder.paramInterceptor = interceptor;
+            this.builder = owner.builder;
             Query = owner.Query;
         }
 
@@ -182,12 +192,14 @@ namespace SharpOrm.Builder.Grammars
             if (Info.Having.Empty)
                 return;
 
+            var havingParams = Info.Having.ToExpression(true, false);
+
             builder
                 .Add(" HAVING ")
                 .AddAndReplace(
-                    Info.Having.ToString(),
+                    havingParams.ToString(),
                     '?',
-                    (count) => builder.AddParameter(Info.Having.Parameters[count - 1])
+                    (count) => builder.AddParameter(havingParams.Parameters[count - 1])
                 );
         }
 

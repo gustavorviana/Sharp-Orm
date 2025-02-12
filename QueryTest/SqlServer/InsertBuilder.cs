@@ -27,8 +27,8 @@ namespace QueryTest.SqlServer
             );
 
             QueryAssert.Equal(
-                expression,
-                new SqlExpression("INSERT INTO [TestTable] ([id], [name]) VALUES (1, ?), (2, ?), (3, ?), (4, ?), (5, ?)", "T1", "T2", "T3", "T4", "T5")
+                new SqlExpression("INSERT INTO [TestTable] ([id], [name]) VALUES (1, ?), (2, ?), (3, ?), (4, ?), (5, ?)", "T1", "T2", "T3", "T4", "T5"),
+                expression
             );
         }
 
@@ -164,6 +164,45 @@ namespace QueryTest.SqlServer
 
             var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT [Id], [Status] FROM [User] WHERE [id] = 1"), []);
             QueryAssert.Equal("INSERT INTO [TestTable] SELECT [Id], [Status] FROM [User] WHERE [id] = 1", sqlExpression);
+        }
+
+        [Fact]
+        public void InsertLotWithParamsLimit()
+        {
+            using var query = new Query(TestTableUtils.TABLE, GetManager(new ParamsSqlServerQueryConfig(10)));
+            var grammar = query.Grammar();
+            var rows = Tables.Address.RandomRows(7);
+
+            var sqlExpression = Assert.IsType<SqlExpressionCollection>(query.Grammar().BulkInsert(rows));
+
+            Assert.Equal(3, sqlExpression.Expressions.Length);
+
+            QueryAssert.Equal(
+                new SqlExpression("INSERT INTO [TestTable] ([id], [name], [street], [city]) VALUES (1, ?, ?, ?), (2, ?, ?, ?), (3, ?, ?, ?)",
+                ConvertRowsToObject(rows.Take(3))),
+                sqlExpression.Expressions[0]);
+
+            QueryAssert.Equal(
+                new SqlExpression("INSERT INTO [TestTable] ([id], [name], [street], [city]) VALUES (4, ?, ?, ?), (5, ?, ?, ?), (6, ?, ?, ?)",
+                ConvertRowsToObject(rows.Skip(3).Take(3))),
+                sqlExpression.Expressions[1]);
+
+            QueryAssert.Equal(
+                new SqlExpression("INSERT INTO [TestTable] ([id], [name], [street], [city]) VALUES (7, ?, ?, ?)",
+                ConvertRowsToObject(rows.Skip(6).Take(3))),
+                sqlExpression.Expressions[2]);
+
+        }
+
+        private static object[] ConvertRowsToObject(IEnumerable<Row> rows)
+        {
+            return rows.Select(x => x.Cells.Select(x => x.Value).Where(x => x is string))
+                .Aggregate((current, next) => current.Concat(next).ToArray()).ToArray();
+        }
+
+        private class ParamsSqlServerQueryConfig(int insertLimitParams) : SqlServerQueryConfig
+        {
+            protected internal override int InsertLimitParams { get; } = insertLimitParams;
         }
     }
 }
