@@ -166,16 +166,21 @@ namespace SharpOrm.Builder.Grammars
         /// <param name="rows">The rows to be inserted.</param>
         public SqlExpression BulkInsert(IEnumerable<Row> rows)
         {
-            return BuildExpression(() => ConfigureBulkInsert(rows));
+            return BuildExpression(GetBulkInsert(), (bulkInsert) => ConfigureBulkInsert(bulkInsert, rows));
+        }
+
+        protected virtual IBulkInsertRow GetBulkInsert()
+        {
+            return new InsertLotGrammar(this);
         }
 
         /// <summary>
         /// Configures the INSERT statement for inserting multiple rows in a bulk operation.
         /// </summary>
         /// <param name="rows">The rows to be inserted.</param>
-        protected virtual void ConfigureBulkInsert(IEnumerable<Row> rows)
+        protected virtual void ConfigureBulkInsert(IBulkInsertRow bulkInsert, IEnumerable<Row> rows)
         {
-            new InsertGrammar(this).BuildBulkInsert(rows);
+            bulkInsert.BuildBulkInsert(rows);
         }
 
         /// <summary>
@@ -312,6 +317,13 @@ namespace SharpOrm.Builder.Grammars
             builderAction();
 
             return Builder.ToExpression(true);
+        }
+
+        private SqlExpression BuildExpression<T>(T grammar, Action<T> builderAction) where T : IGrammar
+        {
+            builderAction(grammar);
+
+            return grammar.Builder.ToExpression(true);
         }
 
         protected QueryBaseInfo GetInfo(QueryBase query)

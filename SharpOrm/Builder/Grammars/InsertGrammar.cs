@@ -7,7 +7,11 @@ namespace SharpOrm.Builder.Grammars
 {
     public class InsertGrammar : GrammarBase
     {
-        public InsertGrammar(GrammarBase owner) : base(owner, true)
+        protected InsertGrammar(GrammarBase owner, bool useLotQueryBuilder) : base(owner, useLotQueryBuilder)
+        {
+        }
+
+        public InsertGrammar(GrammarBase owner) : base(owner)
         {
         }
 
@@ -29,49 +33,6 @@ namespace SharpOrm.Builder.Grammars
                 '?',
                 (count) => Builder.AddParameter(expression.Parameters[count - 1])
             );
-        }
-
-        public virtual void BuildBulkInsert(IEnumerable<Row> rows)
-        {
-            using (var @enum = rows.GetEnumerator())
-            {
-                if (!@enum.MoveNext())
-                    throw new InvalidOperationException(Messages.NoColumnsInserted);
-
-                BuildInsert(@enum.Current.Cells);
-
-                while (InternalBulkInsert(@enum))
-                {
-                    ((LotQueryBuilder)Builder).Remove(0, 2);
-                    ((LotQueryBuilder)Builder).SetCursor(0, 0);
-
-                    AppendInsertHeader(@enum.Current.Cells.Select(c => c.Name).ToArray());
-                    Builder.Add("VALUES ");
-
-                    ((LotQueryBuilder)Builder).RestoreCursor();
-                }
-            }
-        }
-
-        private bool InternalBulkInsert(IEnumerator<Row> @enum)
-        {
-            while (@enum.MoveNext())
-            {
-                ((LotQueryBuilder)Builder).CreateSavePoint();
-
-                Builder.Add(", ");
-                AppendInsertCells(@enum.Current.Cells);
-
-                if (Builder.Parameters.Count > Query.Config.InsertLimitParams)
-                {
-                    ((LotQueryBuilder)Builder).BuildSavePoint();
-                    return true;
-                }
-
-                ((LotQueryBuilder)Builder).ResetSavePoint();
-            }
-
-            return false;
         }
 
         public virtual void BuildInsert(IEnumerable<Cell> cells)

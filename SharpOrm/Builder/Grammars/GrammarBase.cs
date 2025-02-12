@@ -5,8 +5,10 @@ using System.Linq;
 
 namespace SharpOrm.Builder.Grammars
 {
-    public abstract class GrammarBase
+    public abstract class GrammarBase : IGrammar
     {
+        QueryBuilder IGrammar.Builder => Builder;
+
         /// <summary>
         /// Gets the query Builder.
         /// </summary>
@@ -42,8 +44,7 @@ namespace SharpOrm.Builder.Grammars
 
         public GrammarBase(GrammarBase owner, bool useLotQueryBuilder)
         {
-            owner.Builder = useLotQueryBuilder ? new LotQueryBuilder(owner.Builder) : owner.Builder;
-            Builder = owner.Builder;
+            Builder = new LotQueryBuilder(owner.Builder);
             Query = owner.Query;
         }
 
