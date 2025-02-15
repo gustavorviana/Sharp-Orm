@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -55,6 +56,11 @@ namespace SharpOrm
             this.countColunm = countColunm;
         }
 
+        public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, string countColumnName)
+        {
+            return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumnName));
+        }
+
         /// <summary>
         /// Creates a new instance of the <see cref="Pager{T}"/> class using a query builder.
         /// </summary>
@@ -66,6 +72,11 @@ namespace SharpOrm
         public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, string countColumnName)
         {
             return FromBuilder(builder, peerPage, currentPage, new Column(countColumnName));
+        }
+
+        public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, Column countColumn = null)
+        {
+            return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumn));
         }
 
         /// <summary>
@@ -89,6 +100,11 @@ namespace SharpOrm
 
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
 
+        public Task<Pager<T>> GoToPageAsync(int page)
+        {
+            return TaskUtils.Async(() => GoToPage(page));
+        }
+
         /// <summary>
         /// Navigates to the specified page.
         /// </summary>
@@ -97,23 +113,29 @@ namespace SharpOrm
         /// This value is one-based, meaning that the page count starts from 1.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified page number is out of range.</exception>
-        public void GoToPage(int page)
+        public Pager<T> GoToPage(int page)
         {
-            if (page < 1 || page > this.Pages)
+            if (page < 1 || page > Pages)
                 throw new ArgumentOutOfRangeException(nameof(page));
 
-            int lastPage = this.CurrentPage;
-            this.CurrentPage = page;
+            int lastPage = CurrentPage;
+            CurrentPage = page;
 
             try
             {
-                this.Refresh();
+                Refresh();
+                return this;
             }
             catch (Exception)
             {
-                this.CurrentPage = lastPage;
+                CurrentPage = lastPage;
                 throw;
             }
+        }
+
+        public Task<Pager<T>> SetPeerPageAsync(int value)
+        {
+            return TaskUtils.Async(() => SetPeerPage(value));
         }
 
         /// <summary>
@@ -121,27 +143,36 @@ namespace SharpOrm
         /// </summary>
         /// <param name="value">The number of items per page (one-based).</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified value is less than 1.</exception>
-        public void SetPeerPage(int value)
+        public Pager<T> SetPeerPage(int value)
         {
             if (value < 1)
                 throw new ArgumentOutOfRangeException(nameof(value));
 
-            this.peerPage = value;
-            this.RefreshPageCount();
+            peerPage = value;
+            RefreshPageCount();
 
-            if (this.CurrentPage > this.Pages)
-                this.CurrentPage = this.Pages;
+            if (CurrentPage > Pages)
+                CurrentPage = Pages;
 
-            this.RefreshItems();
+            RefreshItems();
+
+            return this;
+        }
+
+        public Task<Pager<T>> RefreshAsync()
+        {
+            return TaskUtils.Async(Refresh);
         }
 
         /// <summary>
         /// Refreshes the pager, updating the item collection and page count.
         /// </summary>
-        public void Refresh()
+        public Pager<T> Refresh()
         {
-            this.RefreshPageCount();
-            this.RefreshItems();
+            RefreshPageCount();
+            RefreshItems();
+
+            return this;
         }
 
         /// <summary>
@@ -149,8 +180,8 @@ namespace SharpOrm
         /// </summary>
         private void RefreshPageCount()
         {
-            this.Total = this.countColunm == null ? this.query.Count() : this.query.Count(this.countColunm);
-            this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
+            Total = countColunm == null ? query.Count() : query.Count(countColunm);
+            Pages = PageCalculator.CalcPages(Total, peerPage);
         }
 
         /// <summary>
@@ -158,15 +189,15 @@ namespace SharpOrm
         /// </summary>
         private void RefreshItems()
         {
-            this.query.Offset = this.peerPage * (this.CurrentPage - 1);
-            this.query.Limit = this.peerPage;
+            query.Offset = peerPage * (CurrentPage - 1);
+            query.Limit = peerPage;
 
-            this.items = this.GetItems().ToArray();
+            items = GetItems();
         }
 
-        protected virtual IEnumerable<T> GetItems()
+        protected virtual T[] GetItems()
         {
-            return this.query.GetEnumerable<T>();
+            return query.GetEnumerable<T>().ToArray();
         }
 
         #region IDisposable

@@ -40,6 +40,12 @@ namespace SharpOrm
             return new Cell(record.GetName(index), translation.FromSql(record[index]));
         }
 
+        internal static T GetValue<T>(this IDataReader reader, ISqlTranslation translation, Type expectedType)
+        {
+            if (reader.IsDBNull(0)) return default;
+            else return (T)translation.FromSqlValue(reader.GetValue(0), expectedType);
+        }
+
         internal static bool CanClose(this DbConnection connection, ConnectionManagement management)
         {
             return management == ConnectionManagement.CloseOnEndOperation && connection.IsOpen();

@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Builder
 {
@@ -16,6 +17,7 @@ namespace SharpOrm.Builder
         private bool disposed;
 
         private readonly bool leaveOpen = false;
+        private readonly TranslationRegistry registry;
         private readonly ConnectionManager manager;
         private readonly CancellationToken token;
         private readonly DbCommand command;
@@ -29,17 +31,33 @@ namespace SharpOrm.Builder
 
         public bool LogQuery { get; set; }
 
-        internal CommandBuilder(ConnectionManager manager, bool leaveOpen, CancellationToken token) : this(manager, token)
+        internal CommandBuilder(ConnectionManager manager, TranslationRegistry registry, bool leaveOpen) : this(manager, registry)
         {
             this.leaveOpen = leaveOpen;
         }
 
-        public CommandBuilder(ConnectionManager manager, CancellationToken token)
+        public CommandBuilder(ConnectionManager manager) : this(manager, null)
+        {
+        }
+
+        public CommandBuilder(ConnectionManager manager, TranslationRegistry registry)
         {
             this.manager = manager;
+            this.registry = registry ?? TranslationRegistry.Default;
 
-            command = manager.Connection.CreateCommand().SetCancellationToken(token);
+            command = manager.Connection.CreateCommand();
             command.Transaction = manager.Transaction;
+        }
+
+        public CommandBuilder SetCancellationToken(CancellationToken token)
+        {
+            command.SetCancellationToken(token);
+            return this;
+        }
+
+        public Task<int> ConfigureExpressionAsync(SqlExpression expression)
+        {
+            return TaskUtils.Async(() => ConfigureExpression(expression));
         }
 
         /// <summary>
@@ -78,6 +96,11 @@ namespace SharpOrm.Builder
             return result;
         }
 
+        public CommandBuilder SetExpression(string query, params object[] args)
+        {
+            return this.SetExpression(new SqlExpression(query, args));
+        }
+
         /// <summary>
         /// Sets the SQL expression for the command.
         /// </summary>
@@ -88,6 +111,11 @@ namespace SharpOrm.Builder
             Log(expression);
             command.SetExpression(expression);
             return this;
+        }
+
+        public async Task<int> ExecuteNonQueryAsync()
+        {
+            return (await OpenIfNeededAsync()).ExecuteNonQuery();
         }
 
         /// <summary>
@@ -105,7 +133,7 @@ namespace SharpOrm.Builder
         /// <typeparam name="T">The type of the elements in the returned collection.</typeparam>
         /// <param name="registry">Optional. The <see cref="TranslationRegistry"/> used for mapping query results, if provided.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
-        public DbCommandEnumerable<T> ExecuteEnumerable<T>(TranslationRegistry registry = null, bool disposeCommand = false)
+        public DbCommandEnumerable<T> ExecuteEnumerable<T>(bool disposeCommand = false)
         {
             return new DbCommandEnumerable<T>(OpenIfNeeded(), registry, manager.Management, token)
             {
@@ -115,28 +143,54 @@ namespace SharpOrm.Builder
             };
         }
 
+        public async Task<T> ExecuteScalarAsync<T>()
+        {
+            await OpenIfNeededAsync();
+            return registry.FromSql<T>(command.ExecuteScalar());
+        }
+
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set. All other columns and rows are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
-        public T ExecuteScalar<T>(TranslationRegistry registry = null)
+        public T ExecuteScalar<T>()
         {
             OpenIfNeeded();
-            return (registry ?? TranslationRegistry.Default).FromSql<T>(command.ExecuteScalar());
+            return registry.FromSql<T>(command.ExecuteScalar());
+        }
+
+        public async Task<object> ExecuteScalarAsync()
+        {
+            await OpenIfNeededAsync();
+
+            try
+            {
+                return registry.FromSql(command.ExecuteScalar());
+            }
+            catch (Exception ex)
+            {
+                token.ThrowIfCancellationRequested();
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set. All other columns and rows are ignored.
         /// </summary>
         /// <returns>The first column of the first row in the result set.</returns>
-        public object ExecuteScalar(TranslationRegistry registry = null)
+        public object ExecuteScalar()
         {
             OpenIfNeeded();
 
             try
             {
-                return (registry ?? TranslationRegistry.Default).FromSql(command.ExecuteScalar());
+                return registry.FromSql(command.ExecuteScalar());
             }
             catch (Exception ex)
             {
@@ -168,11 +222,29 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>An array of the first column of all rows in the result set.</returns>
-        public T[] ExecuteArrayScalar<T>(TranslationRegistry translationRegistry = null)
+        public async Task<T[]> ExecuteArrayScalarAsync<T>()
         {
             try
             {
-                return DbCommandExtension.ExecuteArrayScalar<T>(OpenIfNeeded(), translationRegistry, manager.Management, token).ToArray();
+                return await DbCommandExtension.ExecuteArrayScalarAsync<T>(await OpenIfNeededAsync(), registry, manager.Management, token);
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>An array of the first column of all rows in the result set.</returns>
+        public T[] ExecuteArrayScalar<T>()
+        {
+            try
+            {
+                return DbCommandExtension.ExecuteArrayScalar<T>(OpenIfNeeded(), registry, manager.Management, token);
             }
             catch (Exception ex)
             {
@@ -185,9 +257,21 @@ namespace SharpOrm.Builder
         /// Executes the query and returns the number of records affected.
         /// </summary>
         /// <returns>The number of records affected by the query.</returns>
-        public int ExecuteAndRecordsAffected()
+        public int ExecuteAndRecordsAffected(CommandBehavior behavior = CommandBehavior.Default)
         {
-            using (var reader = OpenIfNeeded().ExecuteReader())
+            using (var reader = OpenIfNeeded().ExecuteReader(behavior))
+                return reader.RecordsAffected;
+        }
+
+        /// <summary>
+        /// Executes the query and returns the number of records affected asynchronously with the specified command behavior.
+        /// </summary>
+        /// <param name="behavior">The behavior of the command execution.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of records affected.</returns>
+        public async Task<int> ExecuteAndRecordsAffectedAsync(CommandBehavior behavior = CommandBehavior.Default)
+        {
+            await OpenIfNeededAsync();
+            using (var reader = command.ExecuteReader(behavior))
                 return reader.RecordsAffected;
         }
 
@@ -205,6 +289,12 @@ namespace SharpOrm.Builder
         private DbCommand OpenIfNeeded()
         {
             manager.Connection.OpenIfNeeded();
+            return command;
+        }
+
+        private async Task<DbCommand> OpenIfNeededAsync()
+        {
+            await manager.Connection.OpenIfNeededAsync();
             return command;
         }
 

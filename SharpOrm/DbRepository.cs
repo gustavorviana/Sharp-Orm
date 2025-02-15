@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -109,6 +110,15 @@ namespace SharpOrm
         /// <summary>
         /// Begins a new database transaction.
         /// </summary>
+        public virtual Task BeginTransactionAsync()
+        {
+            return TaskUtils.Async(BeginTransaction);
+        }
+
+
+        /// <summary>
+        /// Begins a new database transaction.
+        /// </summary>
         public virtual void BeginTransaction()
         {
             this.ThrowIfDisposed();
@@ -120,6 +130,11 @@ namespace SharpOrm
                 throw new DatabaseException(Messages.TransactionOpen);
 
             this.Transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
+        }
+
+        public virtual Task CommitTransactionAsync()
+        {
+            return TaskUtils.Async(CommitTransaction);
         }
 
         /// <summary>
@@ -135,6 +150,11 @@ namespace SharpOrm
 
             this.Transaction.Commit();
             this.ClearTransaction();
+        }
+
+        public virtual Task RollbackTransactionAsync()
+        {
+            return TaskUtils.Async(RollbackTransaction);
         }
 
         /// <summary>
@@ -276,6 +296,12 @@ namespace SharpOrm
             return new QueryBuilder(this.Creator.Config, new DbName(table, alias, false));
         }
 
+        protected async Task<int> ExecuteNonQueryAsync(QueryBuilder query)
+        {
+            using (var cmd = new CommandBuilder(GetManager(), Translation))
+                return await cmd.ConfigureExpressionAsync(query.ToExpression()) + await cmd.ExecuteNonQueryAsync();
+        }
+
         /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
@@ -283,8 +309,16 @@ namespace SharpOrm
         /// <returns></returns>
         protected int ExecuteNonQuery(QueryBuilder query)
         {
-            using (var cmd = this.CreateCommand(query))
-                return cmd.ExecuteNonQuery();
+            using (var cmd = new CommandBuilder(GetManager(), Translation))
+            {
+                return cmd.ConfigureExpression(query.ToExpression()) + cmd.ExecuteNonQuery();
+            }
+        }
+
+        protected async Task<int> ExecuteNonQueryAsync(string query, params object[] args)
+        {
+            using (var cmd = new CommandBuilder(GetManager(), Translation).SetExpression(query, args))
+                return await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -298,6 +332,12 @@ namespace SharpOrm
                 return cmd.ExecuteNonQuery();
         }
 
+        protected async Task<int> ExecuteNonQueryAsync(string query)
+        {
+            using (var cmd = new CommandBuilder(GetManager(), Translation).SetExpression(query))
+                return await cmd.ExecuteNonQueryAsync();
+        }
+
         /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
@@ -309,6 +349,12 @@ namespace SharpOrm
                 return cmd.ExecuteNonQuery();
         }
 
+        protected async Task<T> ExecuteScalarAsync<T>(string query, params object[] args)
+        {
+            using (var cmd = new CommandBuilder(GetManager(), Translation).SetExpression(query, args))
+                return await cmd.ExecuteScalarAsync<T>();
+        }
+
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
         /// </summary>
@@ -316,17 +362,32 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         protected T ExecuteScalar<T>(string query, params object[] args)
         {
-            using (var cmd = this.CreateCommand(query, args))
-                return cmd.ExecuteScalar<T>(this.Creator.Config.Translation);
+            using (var cmd = new CommandBuilder(GetManager(), Translation).SetExpression(query, args))
+                return cmd.ExecuteScalar<T>();
+        }
+
+        protected async Task<T[]> ExecuteArrayScalarAsync<T>(string query, params object[] args)
+        {
+            return await CreateCommand(query, args).ExecuteArrayScalarAsync<T>(Creator.Config.Translation, Creator.Management);
         }
 
         /// <summary>
         /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        protected IEnumerable<T> ExecuteArrayScalar<T>(string query, params object[] args)
+        protected T[] ExecuteArrayScalar<T>(string query, params object[] args)
         {
-            return this.CreateCommand(query, args).ExecuteArrayScalar<T>(this.Creator.Config.Translation, this.Creator.Management);
+            return CreateCommand(query, args).ExecuteArrayScalar<T>(Creator.Config.Translation, Creator.Management);
+        }
+
+        protected Task<T[]> ExecuteArrayAsync<T>(string sql, params object[] args)
+        {
+            return TaskUtils.Async(() => ExecuteArray<T>(sql, args));
+        }
+
+        protected T[] ExecuteArray<T>(string sql, params object[] args)
+        {
+            return ExecuteEnumerable<T>(sql, args).ToArray();
         }
 
         /// <summary>
@@ -346,6 +407,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query">The QueryBuilder used to create the command.</param>
         /// <returns>A DbCommand created from the QueryBuilder.</returns>
+        [Obsolete("This method will be removed in version 4.0.")]
         protected DbCommand CreateCommand(QueryBuilder query)
         {
             return this.CreateCommand().SetExpression(query.ToExpression(true, true));
@@ -443,6 +505,12 @@ namespace SharpOrm
             };
             _connections.Add(connection);
             return connection;
+        }
+
+        protected Task<int> InsertAsync<T>(T value)
+        {
+            using (var query = this.Query<T>())
+                return query.InsertAsync(value);
         }
 
         protected int Insert<T>(T value)

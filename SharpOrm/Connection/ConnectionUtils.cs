@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Connection
 {
@@ -23,6 +24,49 @@ namespace SharpOrm.Connection
             {
                 if (connection.State == System.Data.ConnectionState.Closed)
                     connection.Open();
+
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                throw new Errors.DbConnectionException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Opens the database connection asynchronously if it is not already open.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The opened database connection.</returns>
+        /// <exception cref="Errors.DbConnectionException">Thrown when there is an error opening the connection.</exception>
+        public static async Task<DbConnection> OpenIfNeededAsync(this DbConnection connection)
+        {
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                    await connection.OpenAsync();
+
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                throw new Errors.DbConnectionException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Opens the database connection asynchronously with a cancellation token if it is not already open.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>The opened database connection.</returns>
+        /// <exception cref="Errors.DbConnectionException">Thrown when there is an error opening the connection.</exception>
+        public static async Task<DbConnection> OpenIfNeededAsync(this DbConnection connection, CancellationToken token)
+        {
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                    await connection.OpenAsync(token);
 
                 return connection;
             }
@@ -113,7 +157,7 @@ namespace SharpOrm.Connection
         /// <returns>The number of rows affected by the SQL query.</returns>
         public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
-            using (var cmd = new CommandBuilder(manager, token))
+            using (var cmd = new CommandBuilder(manager).SetCancellationToken(token))
             {
                 cmd.ConfigureExpression(expression);
                 return cmd.ExecuteNonQuery();
@@ -141,19 +185,19 @@ namespace SharpOrm.Connection
         /// <returns>The first column of the first row in the result set.</returns>
         public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
         {
-            using (var cmd = new CommandBuilder(manager, token))
+            using (var cmd = new CommandBuilder(manager, registry).SetCancellationToken(token))
             {
                 cmd.ConfigureExpression(expression);
-                return cmd.ExecuteScalar<T>(registry);
+                return cmd.ExecuteScalar<T>();
             }
         }
 
         public static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
         {
-            using (var cmd = new CommandBuilder(manager, token))
+            using (var cmd = new CommandBuilder(manager, registry).SetCancellationToken(token))
             {
                 cmd.ConfigureExpression(expression);
-                return cmd.ExecuteScalar(registry);
+                return cmd.ExecuteScalar();
             }
         }
 
