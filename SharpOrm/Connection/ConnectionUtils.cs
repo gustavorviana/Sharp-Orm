@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -76,6 +77,11 @@ namespace SharpOrm.Connection
             }
         }
 
+        public static Task<T[]> ExecuteArrayAsync<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteArray<T>(manager, sql, registry, token));
+        }
+
         /// <summary>
         /// Executes a SQL statement against a connection object and returns the result as an array of type <typeparamref name="T"/>.
         /// </summary>
@@ -89,6 +95,11 @@ namespace SharpOrm.Connection
         public static T[] ExecuteArray<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
         {
             return ExecuteArray<T>(manager, new SqlExpression(sql), registry, token);
+        }
+
+        public static Task<T[]> ExecuteArrayAsync<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteArray<T>(manager, expression, registry, token));
         }
 
         /// <summary>
@@ -136,6 +147,11 @@ namespace SharpOrm.Connection
             };
         }
 
+        public static Task<int> ExecuteNonQueryAsync(this ConnectionManager manager, string sql, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteNonQuery(manager, sql, token));
+        }
+
         /// <summary>
         /// Executes a SQL statement against a connection object and returns the number of rows affected.
         /// </summary>
@@ -146,6 +162,11 @@ namespace SharpOrm.Connection
         public static int ExecuteNonQuery(this ConnectionManager manager, string sql, CancellationToken token = default)
         {
             return ExecuteNonQuery(manager, new SqlExpression(sql), token);
+        }
+
+        public static Task<int> ExecuteNonQueryAsync(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteNonQuery(manager, expression, token));
         }
 
         /// <summary>
@@ -164,6 +185,11 @@ namespace SharpOrm.Connection
             }
         }
 
+        public static Task<T> ExecuteScalarAsync<T>(this ConnectionManager manager, string sql, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteScalar<T>(manager, sql, token));
+        }
+
         /// <summary>
         /// Executes the query and returns the first column of the first row in the result set. All other columns and rows are ignored.
         /// </summary>
@@ -175,6 +201,11 @@ namespace SharpOrm.Connection
         public static T ExecuteScalar<T>(this ConnectionManager manager, string sql, CancellationToken token = default)
         {
             return ExecuteScalar<T>(manager, new SqlExpression(sql), token);
+        }
+
+        public static Task<T> ExecuteScalarAsync<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
+        {
+            return TaskUtils.Async(() => ExecuteScalar<T>(manager, expression, token));
         }
 
         /// <summary>
@@ -190,6 +221,11 @@ namespace SharpOrm.Connection
                 cmd.SetExpression(expression);
                 return cmd.ExecuteScalar<T>();
             }
+        }
+
+        public static Task<object> ExecuteScalarAsync(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)
+        {
+            return TaskUtils.Async(() => ExecuteScalar(manager, expression, token));
         }
 
         public static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default, TranslationRegistry registry = null)

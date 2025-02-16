@@ -3,6 +3,7 @@ using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Builder
 {
@@ -163,6 +164,11 @@ namespace SharpOrm.Builder
             return new Query<T>(DbName, Manager);
         }
 
+        public Task<bool> ExistsAsync()
+        {
+            return TaskUtils.Async(Exists);
+        }
+
         /// <summary>
         /// Checks if table exists.
         /// </summary>
@@ -173,6 +179,12 @@ namespace SharpOrm.Builder
             return Exists(this.grammar, this.Manager);
         }
 
+        public async Task DropAsync()
+        {
+            await Manager.ExecuteNonQueryAsync(grammar.Drop());
+            this.dropped = true;
+        }
+
         /// <summary>
         /// Deletes the table from the database.
         /// </summary>
@@ -180,6 +192,11 @@ namespace SharpOrm.Builder
         {
             Manager.ExecuteNonQuery(grammar.Drop());
             this.dropped = true;
+        }
+
+        public Task TruncateAsync()
+        {
+            return Manager.ExecuteNonQueryAsync(grammar.Truncate());
         }
 
         public void Truncate()
