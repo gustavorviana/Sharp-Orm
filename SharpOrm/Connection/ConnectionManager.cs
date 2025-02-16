@@ -354,6 +354,21 @@ namespace SharpOrm.Connection
             }
         }
 
+        internal CommandBuilder GetCommand()
+        {
+            return new CommandBuilder(this);
+        }
+
+        internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry)
+        {
+            return new CommandBuilder(this, registry, false);
+        }
+
+        internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry, bool leaveOpen)
+        {
+            return new CommandBuilder(this, registry, leaveOpen);
+        }
+
         #region Transaction
         /// <summary>
         /// If there is a transaction, commit the database transaction.

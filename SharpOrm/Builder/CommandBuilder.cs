@@ -36,7 +36,7 @@ namespace SharpOrm.Builder
             this.leaveOpen = leaveOpen;
         }
 
-        public CommandBuilder(ConnectionManager manager) : this(manager, null)
+        internal CommandBuilder(ConnectionManager manager) : this(manager, null)
         {
         }
 
@@ -55,9 +55,9 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public Task<int> ConfigureExpressionAsync(SqlExpression expression)
+        public Task<int> SetExpressionWithAffectedRowsAsync(SqlExpression expression)
         {
-            return TaskUtils.Async(() => ConfigureExpression(expression));
+            return TaskUtils.Async(() => SetExpressionWithAffectedRows(expression));
         }
 
         /// <summary>
@@ -65,13 +65,32 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">The SQL expression to configure.</param>
         /// <returns>The number of affected rows, excluding the last expression in the collection.</returns>
-        public int ConfigureExpression(SqlExpression expression)
+        public int SetExpressionWithAffectedRows(SqlExpression expression)
+        {
+            if (expression is SqlExpressionCollection expCollection)
+                return ConfigureLotWithAffectedRows(expCollection);
+
+            SetExpression(expression);
+            return 0;
+        }
+
+        public Task<CommandBuilder> SetExpressionAsync(SqlExpression expression)
+        {
+            return TaskUtils.Async(() => SetExpression(expression));
+        }
+
+        /// <summary>
+        /// Configure an SQL expression.
+        /// </summary>
+        /// <param name="expression">The SQL expression to configure.</param>
+        /// <returns>The number of affected rows, excluding the last expression in the collection.</returns>
+        public CommandBuilder SetExpression(SqlExpression expression)
         {
             if (expression is SqlExpressionCollection expCollection)
                 return ConfigureLot(expCollection);
 
-            SetExpression(expression);
-            return 0;
+            InternalSetExpression(expression);
+            return this;
         }
 
         /// <summary>
@@ -79,7 +98,22 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="collection">The collection of SQL expressions to be executed.</param>
         /// <returns>The number of affected rows, excluding the last expression in the collection.</returns>
-        public int ConfigureLot(SqlExpressionCollection collection)
+        private CommandBuilder ConfigureLot(SqlExpressionCollection collection)
+        {
+            int total = collection.Expressions.Length;
+            if (total == 0)
+                return this;
+
+            OpenIfNeeded();
+
+            for (int i = 0; i < total - 1; i++)
+                command.SetExpression(collection.Expressions[i]).ExecuteNonQuery();
+
+            SetExpression(collection.Expressions[total - 1]);
+            return this;
+        }
+
+        private int ConfigureLotWithAffectedRows(SqlExpressionCollection collection)
         {
             int total = collection.Expressions.Length;
             if (total == 0)
@@ -89,16 +123,19 @@ namespace SharpOrm.Builder
 
             int result = 0;
             for (int i = 0; i < total - 1; i++)
-                result += command.SetExpression(collection.Expressions[i]).ExecuteNonQuery();
+            {
+                command.SetExpression(collection.Expressions[i]);
+                result += ExecuteWithRecordsAffected();
+            }
 
-            SetExpression(collection.Expressions[total - 1]);
+            InternalSetExpression(collection.Expressions[total - 1]);
 
             return result;
         }
 
         public CommandBuilder SetExpression(string query, params object[] args)
         {
-            return this.SetExpression(new SqlExpression(query, args));
+            return InternalSetExpression(new SqlExpression(query, args));
         }
 
         /// <summary>
@@ -106,7 +143,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">The SQL expression to set.</param>
         /// <returns>The current instance of <see cref="CommandBuilder"/>.</returns>
-        public CommandBuilder SetExpression(SqlExpression expression)
+        private CommandBuilder InternalSetExpression(SqlExpression expression)
         {
             Log(expression);
             command.SetExpression(expression);
@@ -115,7 +152,19 @@ namespace SharpOrm.Builder
 
         public async Task<int> ExecuteNonQueryAsync()
         {
-            return (await OpenIfNeededAsync()).ExecuteNonQuery();
+            try
+            {
+                return (await OpenIfNeededAsync()).ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
@@ -124,7 +173,19 @@ namespace SharpOrm.Builder
         /// <returns>The number of rows affected by the SQL query.</returns>
         public int ExecuteNonQuery()
         {
-            return OpenIfNeeded().ExecuteNonQuery();
+            try
+            {
+                return OpenIfNeeded().ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
@@ -145,8 +206,20 @@ namespace SharpOrm.Builder
 
         public async Task<T> ExecuteScalarAsync<T>()
         {
-            await OpenIfNeededAsync();
-            return registry.FromSql<T>(command.ExecuteScalar());
+            try
+            {
+                await OpenIfNeededAsync();
+                return registry.FromSql<T>(command.ExecuteScalar());
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
@@ -156,8 +229,20 @@ namespace SharpOrm.Builder
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            OpenIfNeeded();
-            return registry.FromSql<T>(command.ExecuteScalar());
+            try
+            {
+                OpenIfNeeded();
+                return registry.FromSql<T>(command.ExecuteScalar());
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         public async Task<object> ExecuteScalarAsync()
@@ -214,7 +299,15 @@ namespace SharpOrm.Builder
             if (reader != null)
                 SafeCancel();
 
-            return reader = OpenIfNeeded().ExecuteReader(behavior);
+            try
+            {
+                return reader = OpenIfNeeded().ExecuteReader(behavior);
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
         }
 
         /// <summary>
@@ -232,6 +325,10 @@ namespace SharpOrm.Builder
             {
                 manager.SignalException(ex);
                 throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
             }
         }
 
@@ -251,16 +348,32 @@ namespace SharpOrm.Builder
                 manager.SignalException(ex);
                 throw;
             }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
         /// Executes the query and returns the number of records affected.
         /// </summary>
         /// <returns>The number of records affected by the query.</returns>
-        public int ExecuteAndRecordsAffected(CommandBehavior behavior = CommandBehavior.Default)
+        public int ExecuteWithRecordsAffected(CommandBehavior behavior = CommandBehavior.Default)
         {
-            using (var reader = OpenIfNeeded().ExecuteReader(behavior))
-                return reader.RecordsAffected;
+            try
+            {
+                OpenIfNeeded();
+                return InternalExecuteWithRecordsAffected(behavior);
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
         }
 
         /// <summary>
@@ -268,11 +381,36 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="behavior">The behavior of the command execution.</param>
         /// <returns>A task representing the asynchronous operation, with the number of records affected.</returns>
-        public async Task<int> ExecuteAndRecordsAffectedAsync(CommandBehavior behavior = CommandBehavior.Default)
+        public async Task<int> ExecuteWithRecordsAffectedAsync(CommandBehavior behavior = CommandBehavior.Default)
         {
-            await OpenIfNeededAsync();
-            using (var reader = command.ExecuteReader(behavior))
-                return reader.RecordsAffected;
+            try
+            {
+                await OpenIfNeededAsync();
+                return InternalExecuteWithRecordsAffected(behavior);
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
+            finally
+            {
+                manager.CloseByEndOperation();
+            }
+        }
+
+        private int InternalExecuteWithRecordsAffected(CommandBehavior behavior)
+        {
+            try
+            {
+                using (var reader = command.ExecuteReader(behavior))
+                    return reader.RecordsAffected;
+            }
+            catch (Exception ex)
+            {
+                manager.SignalException(ex);
+                throw;
+            }
         }
 
         private void SafeCancel()

@@ -147,7 +147,7 @@ namespace QueryTest
         {
             var query = new Query("table");
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
+            using var cmd = query.GetCommand();
             Assert.Equal(30, cmd.Timeout);
         }
 
@@ -159,7 +159,7 @@ namespace QueryTest
                 CommandTimeout = 120
             };
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
+            using var cmd = query.GetCommand();
             Assert.Equal(120, cmd.Timeout);
         }
 
@@ -169,7 +169,7 @@ namespace QueryTest
             using var creator = new MultipleConnectionCreator<MockConnection>(new SqlServerQueryConfig(false) { CommandTimeout = 120 }, "");
             var query = new Query("table", creator);
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
+            using var cmd = query.GetCommand();
             Assert.Equal(120, cmd.Timeout);
         }
 

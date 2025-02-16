@@ -299,7 +299,7 @@ namespace SharpOrm
         protected async Task<int> ExecuteNonQueryAsync(QueryBuilder query)
         {
             using (var cmd = new CommandBuilder(GetManager(), Translation))
-                return await cmd.ConfigureExpressionAsync(query.ToExpression()) + await cmd.ExecuteNonQueryAsync();
+                return await cmd.SetExpressionWithAffectedRowsAsync(query.ToExpression()) + await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -311,7 +311,7 @@ namespace SharpOrm
         {
             using (var cmd = new CommandBuilder(GetManager(), Translation))
             {
-                return cmd.ConfigureExpression(query.ToExpression()) + cmd.ExecuteNonQuery();
+                return cmd.SetExpressionWithAffectedRows(query.ToExpression()) + cmd.ExecuteNonQuery();
             }
         }
 

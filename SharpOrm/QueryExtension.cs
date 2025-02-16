@@ -617,9 +617,9 @@ namespace SharpOrm
         /// <returns>An object of type T representing the result of the insertion.</returns>
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
-            using (var cmd = query.GetCommandBase())
+            using (var cmd = query.GetCommand())
             {
-                cmd.ConfigureExpression(query.GetGrammar().Insert(cells));
+                cmd.SetExpression(query.GetGrammar().Insert(cells));
                 return cmd.ExecuteScalar<T>();
             }
         }

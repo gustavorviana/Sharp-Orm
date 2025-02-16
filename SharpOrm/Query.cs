@@ -634,7 +634,7 @@ namespace SharpOrm
 
             Upsert(obj, toCheckColumns, updateColumns);
         }
-        
+
         /// <summary>
         /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
         /// </summary>
@@ -933,7 +933,7 @@ namespace SharpOrm
 
         public Task<int> DeleteAsync(bool force)
         {
-            return TaskUtils.Async(() =>  Delete(force));
+            return TaskUtils.Async(() => Delete(force));
         }
 
         /// <summary>
@@ -946,8 +946,8 @@ namespace SharpOrm
             if (force || TableInfo.SoftDelete == null)
                 return base.Delete();
 
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
         }
 
         public Task<int> RestoreAsync()
@@ -962,8 +962,9 @@ namespace SharpOrm
         /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
         public int Restore()
         {
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) +
+                    cmd.ExecuteNonQuery();
         }
 
         #region Where
@@ -1850,8 +1851,9 @@ namespace SharpOrm
             if (insertColumns == null || insertColumns.Length == 0)
                 throw new ArgumentNullException(nameof(insertColumns), "InsertColumns cannot be null or empty.");
 
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns)) +
+                    cmd.ExecuteNonQuery();
         }
 
         public Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null)
@@ -1903,8 +1905,8 @@ namespace SharpOrm
 
             if (!Config.NativeUpsertRows) return NonNativeUpsertRows(rows, toCheckColumns, updateColumns);
             else
-                using (var cmd = GetCommandBase())
-                    return cmd.ConfigureExpression(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + cmd.ExecuteNonQuery();
+                using (var cmd = GetCommand())
+                    return cmd.SetExpressionWithAffectedRows(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + cmd.ExecuteNonQuery();
         }
 
         internal int NonNativeUpsertRows(Row[] rows, string[] toCheckColumns, string[] updateColumns)
@@ -1978,8 +1980,9 @@ namespace SharpOrm
             ValidateReadonly();
             CheckIsSafeOperation();
 
-            using (var cmd = GetCommandBase())
-                return await cmd.ConfigureExpressionAsync(GetGrammar().Update(cells)) + await cmd.ExecuteNonQueryAsync();
+            using (var cmd = GetCommand())
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Update(cells)) +
+                    await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -1991,8 +1994,8 @@ namespace SharpOrm
         {
             CheckIsSafeOperation();
 
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().Update(cells)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Update(cells)) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -2047,8 +2050,8 @@ namespace SharpOrm
 
         public async Task<int> InsertAsync(QueryBase queryBase, params string[] columnNames)
         {
-            using (var cmd = GetCommandBase())
-                return await cmd.ConfigureExpressionAsync(GetGrammar().InsertQuery(queryBase, columnNames)) + await cmd.ExecuteNonQueryAsync();
+            using (var cmd = await GetCommand().SetExpressionAsync(GetGrammar().InsertQuery(queryBase, columnNames)))
+                return await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -2057,8 +2060,8 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public int Insert(QueryBase queryBase, params string[] columnNames)
         {
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().InsertQuery(queryBase, columnNames)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand().SetExpression(GetGrammar().InsertQuery(queryBase, columnNames)))
+                return cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -2070,26 +2073,26 @@ namespace SharpOrm
             if (columnNames == null || columnNames.Length == 0)
                 throw new InvalidOperationException("");
 
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().InsertExpression(expression, columnNames)) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand().SetExpression(GetGrammar().InsertExpression(expression, columnNames)))
+                return cmd.ExecuteNonQuery();
         }
 
         internal async Task<object> InsertAsync(IEnumerable<Cell> cells, bool returnsInsetionId)
         {
             ValidateReadonly();
 
-            using (var cmd = GetCommandBase())
+            using (var cmd = GetCommand())
             {
-                cmd.ConfigureExpression(GetGrammar().Insert(cells, returnsInsetionId));
+                cmd.SetExpression(GetGrammar().Insert(cells, returnsInsetionId));
                 return await cmd.ExecuteScalarAsync();
             }
         }
 
         internal object Insert(IEnumerable<Cell> cells, bool returnsInsetionId)
         {
-            using (var cmd = GetCommandBase())
+            using (var cmd = GetCommand())
             {
-                cmd.ConfigureExpression(GetGrammar().Insert(cells, returnsInsetionId));
+                cmd.SetExpression(GetGrammar().Insert(cells, returnsInsetionId));
                 return cmd.ExecuteScalar();
             }
         }
@@ -2118,8 +2121,9 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public async Task<int> BulkInsertAsync(IEnumerable<Row> rows)
         {
-            using (var cmd = GetCommand(GetGrammar().BulkInsert(rows)))
-                return await cmd.ExecuteAndRecordsAffectedAsync();
+            using (var cmd = GetCommand())
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().BulkInsert(rows)) +
+                    await cmd.ExecuteWithRecordsAffectedAsync();
         }
 
         /// <summary>
@@ -2128,8 +2132,8 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            using (var cmd = GetCommand(GetGrammar().BulkInsert(rows)))
-                return cmd.ExecuteAndRecordsAffected();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().BulkInsert(rows)) + cmd.ExecuteWithRecordsAffected();
         }
 
         /// <summary>
@@ -2141,8 +2145,9 @@ namespace SharpOrm
             ValidateReadonly();
             CheckIsSafeOperation();
 
-            using (var cmd = GetCommandBase())
-                return await cmd.ConfigureExpressionAsync(GetGrammar().Delete()) + await cmd.ExecuteNonQueryAsync();
+            using (var cmd = GetCommand())
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Delete()) +
+                    await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -2153,8 +2158,8 @@ namespace SharpOrm
         {
             CheckIsSafeOperation();
 
-            using (var cmd = GetCommandBase())
-                return cmd.ConfigureExpression(GetGrammar().Delete()) + cmd.ExecuteNonQuery();
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Delete()) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -2164,7 +2169,7 @@ namespace SharpOrm
         public async Task<long> CountAsync()
         {
             this.ValidateReadonly();
-            return Convert.ToInt64(await GetCommand(GetGrammar().Count()).ExecuteScalarAsync());
+            return Convert.ToInt64(await GetCommand().SetExpression(GetGrammar().Count()).ExecuteScalarAsync());
         }
 
         /// <summary>
@@ -2173,7 +2178,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            return Convert.ToInt64(GetCommand(GetGrammar().Count()).ExecuteScalar());
+            return Convert.ToInt64(GetCommand().SetExpression(GetGrammar().Count()).ExecuteScalar());
         }
 
         /// <summary>
@@ -2203,7 +2208,7 @@ namespace SharpOrm
         /// <returns></returns>
         public async Task<long> CountAsync(Column column)
         {
-            return Convert.ToInt64(await GetCommand(GetGrammar().Count(column)).ExecuteScalarAsync());
+            return Convert.ToInt64(await GetCommand().SetExpression(GetGrammar().Count(column)).ExecuteScalarAsync());
         }
 
         /// <summary>
@@ -2213,7 +2218,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
-            return Convert.ToInt64(GetCommand(GetGrammar().Count(column)).ExecuteScalar());
+            return Convert.ToInt64(GetCommand().SetExpression(GetGrammar().Count(column)).ExecuteScalar());
         }
 
         /// <summary>
@@ -2291,7 +2296,7 @@ namespace SharpOrm
         {
             Token.ThrowIfCancellationRequested();
 
-            return GetCommand(Info.Config.NewGrammar(this).Select(), true).ExecuteEnumerable<T>(true);
+            return GetCommand(true).SetExpression(Info.Config.NewGrammar(this).Select()).ExecuteEnumerable<T>(true);
         }
 
         /// <summary>
@@ -2302,7 +2307,7 @@ namespace SharpOrm
         {
             Token.ThrowIfCancellationRequested();
 
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return await cmd.ExecuteArrayScalarAsync<T>();
         }
 
@@ -2314,7 +2319,7 @@ namespace SharpOrm
         {
             Token.ThrowIfCancellationRequested();
 
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return cmd.ExecuteArrayScalar<T>();
 
         }
@@ -2326,7 +2331,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public async Task<T> ExecuteScalarAsync<T>()
         {
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return await cmd.ExecuteScalarAsync<T>();
         }
 
@@ -2337,7 +2342,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return cmd.ExecuteScalar<T>();
         }
 
@@ -2347,7 +2352,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public async Task<object> ExecuteScalarAsync()
         {
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return await cmd.ExecuteScalarAsync();
         }
 
@@ -2357,7 +2362,7 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            using (var cmd = GetCommand(GetGrammar().Select()))
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
                 return cmd.ExecuteScalar();
         }
 
@@ -2381,7 +2386,7 @@ namespace SharpOrm
             if (this.lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            return (lastOpenReader = GetCommand(GetGrammar().Select())).GetReader();
+            return (lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).GetReader();
         }
 
         /// <summary>
@@ -2492,21 +2497,11 @@ namespace SharpOrm
             return this;
         }
 
-        internal CommandBuilder GetCommand(SqlExpression expression, bool leaveOpen = false)
-        {
-            var cmd = GetCommandBase(leaveOpen);
-
-            if (expression is SqlExpressionCollection expCollection) cmd.ConfigureLot(expCollection);
-            else cmd.SetExpression(expression);
-
-            return cmd;
-        }
-
-        internal CommandBuilder GetCommandBase(bool leaveOpen = false)
+        internal CommandBuilder GetCommand(bool leaveOpen = false)
         {
             ValidateReadonly();
 
-            var cmd = new CommandBuilder(Manager, Config.Translation, leaveOpen);
+            var cmd = Manager.GetCommand(Config.Translation, leaveOpen);
             cmd.SetCancellationToken(Token);
 
             if (CommandTimeout > 0)

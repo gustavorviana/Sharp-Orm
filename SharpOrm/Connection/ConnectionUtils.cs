@@ -157,9 +157,9 @@ namespace SharpOrm.Connection
         /// <returns>The number of rows affected by the SQL query.</returns>
         public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
-            using (var cmd = new CommandBuilder(manager).SetCancellationToken(token))
+            using (var cmd = manager.GetCommand().SetCancellationToken(token))
             {
-                cmd.ConfigureExpression(expression);
+                cmd.SetExpression(expression);
                 return cmd.ExecuteNonQuery();
             }
         }
@@ -187,7 +187,7 @@ namespace SharpOrm.Connection
         {
             using (var cmd = new CommandBuilder(manager, registry).SetCancellationToken(token))
             {
-                cmd.ConfigureExpression(expression);
+                cmd.SetExpression(expression);
                 return cmd.ExecuteScalar<T>();
             }
         }
@@ -196,7 +196,7 @@ namespace SharpOrm.Connection
         {
             using (var cmd = new CommandBuilder(manager, registry).SetCancellationToken(token))
             {
-                cmd.ConfigureExpression(expression);
+                cmd.SetExpression(expression);
                 return cmd.ExecuteScalar();
             }
         }
