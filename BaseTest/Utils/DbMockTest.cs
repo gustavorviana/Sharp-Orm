@@ -27,11 +27,6 @@ namespace BaseTest.Utils
 
         }
 
-        protected ConnectionManager GetManager(QueryConfig config)
-        {
-            return new ConnectionManager(config, this.Connection);
-        }
-
         protected ConnectionManager GetManager(TranslationRegistry registry)
         {
             var config = this.Config.Clone();

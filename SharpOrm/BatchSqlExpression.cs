@@ -3,7 +3,7 @@ using System.Text;
 
 namespace SharpOrm
 {
-    public class SqlExpressionCollection : SqlExpression
+    public class BatchSqlExpression : SqlExpression
     {
         public SqlExpression[] Expressions { get; }
         private object[] _parms;
@@ -19,7 +19,7 @@ namespace SharpOrm
             }
         }
 
-        public SqlExpressionCollection(SqlExpression[] expressions)
+        public BatchSqlExpression(SqlExpression[] expressions)
         {
             this.Expressions = expressions;
         }

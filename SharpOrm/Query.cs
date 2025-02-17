@@ -2463,7 +2463,7 @@ namespace SharpOrm
             if (this.lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            return (lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).GetReader();
+            return (lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).ExecuteReader();
         }
 
         /// <summary>

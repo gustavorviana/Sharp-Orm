@@ -5,25 +5,25 @@ using System.Text;
 
 namespace SharpOrm.Builder
 {
-    public class LotQueryBuilder : QueryBuilder
+    public class BatchQueryBuilder : QueryBuilder
     {
         private readonly List<SqlExpression> expressions = new List<SqlExpression>();
         private readonly BuilderCursor checkpointCursor = new BuilderCursor();
         private readonly BuilderCursor cacheCursor = new BuilderCursor();
         private bool useCacheCursor = false;
 
-        internal LotQueryBuilder(IReadonlyQueryInfo info) : base(info)
+        internal BatchQueryBuilder(IReadonlyQueryInfo info) : base(info)
         {
 
         }
 
-        public LotQueryBuilder Remove(int index, int count)
+        public BatchQueryBuilder Remove(int index, int count)
         {
             query.Remove(index, count);
             return this;
         }
 
-        public LotQueryBuilder RestoreCursor()
+        public BatchQueryBuilder RestoreCursor()
         {
             useCacheCursor = false;
 
@@ -33,7 +33,7 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public LotQueryBuilder SetCursor(int textIndex, int paramsIndex)
+        public BatchQueryBuilder SetCursor(int textIndex, int paramsIndex)
         {
             useCacheCursor = true;
             cacheCursor.Text = textIndex;
@@ -42,14 +42,14 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public LotQueryBuilder CreateSavePoint()
+        public BatchQueryBuilder CreateSavePoint()
         {
             checkpointCursor.Params = parameters.Count;
             checkpointCursor.Text = query.Length;
             return this;
         }
 
-        public LotQueryBuilder BuildSavePoint()
+        public BatchQueryBuilder BuildSavePoint()
         {
             string checkpointText = GetCheckpointText();
             if (!string.IsNullOrEmpty(checkpointText))
@@ -63,7 +63,7 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        public LotQueryBuilder ResetSavePoint()
+        public BatchQueryBuilder ResetSavePoint()
         {
             checkpointCursor.Params = 0;
             checkpointCursor.Text = 0;
@@ -127,7 +127,7 @@ namespace SharpOrm.Builder
             if (expressions.Count == 1)
                 return expressions[0];
 
-            return new SqlExpressionCollection(expressions.ToArray());
+            return new BatchSqlExpression(expressions.ToArray());
         }
 
         private class BuilderCursor

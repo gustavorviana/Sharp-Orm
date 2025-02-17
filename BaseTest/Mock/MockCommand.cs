@@ -9,7 +9,7 @@ namespace BaseTest.Mock
     {
         private bool _cancelled = false;
         public bool Cancelled => this._cancelled;
-        public event EventHandler OnCancel;
+        public event EventHandler? OnCancel;
 
         [AllowNull]
         public Func<string, int> OnExecuteNonQuery;

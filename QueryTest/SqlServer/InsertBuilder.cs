@@ -173,7 +173,7 @@ namespace QueryTest.SqlServer
             var grammar = query.Grammar();
             var rows = Tables.Address.RandomRows(7);
 
-            var sqlExpression = Assert.IsType<SqlExpressionCollection>(query.Grammar().BulkInsert(rows));
+            var sqlExpression = Assert.IsType<BatchSqlExpression>(query.Grammar().BulkInsert(rows));
 
             Assert.Equal(3, sqlExpression.Expressions.Length);
 

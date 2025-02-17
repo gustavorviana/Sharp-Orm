@@ -45,7 +45,7 @@ namespace SharpOrm.Builder.Grammars
 
         public GrammarBase(Query query, bool useLotQueryBuilder)
         {
-            Builder = useLotQueryBuilder ? new LotQueryBuilder(query.Info) : new QueryBuilder(query.Info);
+            Builder = useLotQueryBuilder ? new BatchQueryBuilder(query.Info) : new QueryBuilder(query.Info);
             Query = query;
         }
 
