@@ -23,23 +23,44 @@ namespace SharpOrm.Builder
         private readonly DbCommand command;
         private DbDataReader reader;
 
+        /// <summary>
+        /// Gets or sets the command timeout.
+        /// </summary>
         public int Timeout
         {
             get => command.CommandTimeout;
             set => command.CommandTimeout = value;
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to log the query.
+        /// </summary>
         public bool LogQuery { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandBuilder"/> class with the specified manager, registry, and leaveOpen flag.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <param name="registry">The translation registry.</param>
+        /// <param name="leaveOpen">Indicates whether to leave the connection open.</param>
         internal CommandBuilder(ConnectionManager manager, TranslationRegistry registry, bool leaveOpen) : this(manager, registry)
         {
             this.leaveOpen = leaveOpen;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandBuilder"/> class with the specified manager.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
         internal CommandBuilder(ConnectionManager manager) : this(manager, null)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandBuilder"/> class with the specified manager and registry.
+        /// </summary>
+        /// <param name="manager">The connection manager.</param>
+        /// <param name="registry">The translation registry.</param>
         public CommandBuilder(ConnectionManager manager, TranslationRegistry registry)
         {
             this.manager = manager;
@@ -49,12 +70,22 @@ namespace SharpOrm.Builder
             command.Transaction = manager.Transaction;
         }
 
+        /// <summary>
+        /// Sets the cancellation token for the command.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The current instance of <see cref="CommandBuilder"/>.</returns>
         public CommandBuilder SetCancellationToken(CancellationToken token)
         {
             command.SetCancellationToken(token);
             return this;
         }
 
+        /// <summary>
+        /// Asynchronously sets the SQL expression and returns the number of affected rows.
+        /// </summary>
+        /// <param name="expression">The SQL expression to set.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public Task<int> SetExpressionWithAffectedRowsAsync(SqlExpression expression)
         {
             return TaskUtils.Async(() => SetExpressionWithAffectedRows(expression));

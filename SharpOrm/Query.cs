@@ -288,6 +288,73 @@ namespace SharpOrm
 
         #region DML SQL commands
 
+        /// <summary>
+        /// Asynchronously deletes rows from the database.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the numb
+        public override Task<int> DeleteAsync()
+        {
+            return TaskUtils.Async(Delete);
+        }
+
+        /// <inheritdoc/>
+        public override int Delete()
+        {
+            return Delete(false);
+        }
+
+        /// <summary>
+        /// Asynchronously deletes rows from the database, with an option to force deletion.
+        /// </summary>
+        /// <param name="force">If true, forces deletion even if soft delete is enabled; otherwise, performs a soft delete if applicable.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of deleted rows.</returns>
+        public Task<int> DeleteAsync(bool force)
+        {
+            return TaskUtils.Async(() => Delete(force));
+        }
+
+        /// <summary>
+        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
+        /// </summary>
+        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
+        /// <returns>Number of deleted rows.</returns>
+        public int Delete(bool force)
+        {
+            if (force || TableInfo.SoftDelete == null)
+                return base.Delete();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Asynchronously restores soft-deleted records in the database.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the number of restored rows.</returns>
+        public Task<int> RestoreAsync()
+        {
+            return TaskUtils.Async(Restore);
+        }
+
+        /// <summary>
+        /// Restore the values deleted using soft delete.
+        /// </summary>
+        /// <returns>Number of values restored.</returns>
+        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
+        public int Restore()
+        {
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) +
+                    cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
         public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage, Column countColumn)
         {
             return Pager<T>.FromBuilderAsync(this, peerPage, currentPage, countColumn);
@@ -305,6 +372,13 @@ namespace SharpOrm
             return Pager<T>.FromBuilder(this, peerPage, currentPage, countColumn);
         }
 
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
         public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage, string countColumnName)
         {
             return Pager<T>.FromBuilderAsync(this, peerPage, currentPage, countColumnName);
@@ -322,6 +396,12 @@ namespace SharpOrm
             return Pager<T>.FromBuilder(this, peerPage, currentPage, countColumnName);
         }
 
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
         public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage)
         {
             return Pager<T>.FromBuilderAsync(this, peerPage, currentPage);
@@ -347,6 +427,10 @@ namespace SharpOrm
             return base.GetEnumerable<T>();
         }
 
+        /// <summary>
+        /// Asynchronously retrieves the first result or the default value if no result is found.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the first result or the default value.</returns>
         public Task<T> FirstOrDefaultAsync()
         {
             return TaskUtils.Async(FirstOrDefault);
@@ -393,6 +477,11 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Asynchronously searches and returns the first occurrence of an object of type T that matches the values of the provided primary keys.
+        /// </summary>
+        /// <param name="primaryKeysValues">The values of the primary keys to search for.</param>
+        /// <returns>A task representing the asynchronous operation, with the first occurrence of an object of type T that matches the provided primary keys.</returns>
         public Task<T> FindAsync(params object[] primaryKeysValues)
         {
             return TaskUtils.Async(() => Find(primaryKeysValues));
@@ -919,53 +1008,6 @@ namespace SharpOrm
         }
 
         #endregion
-
-        public override Task<int> DeleteAsync()
-        {
-            return TaskUtils.Async(Delete);
-        }
-
-        /// <inheritdoc/>
-        public override int Delete()
-        {
-            return Delete(false);
-        }
-
-        public Task<int> DeleteAsync(bool force)
-        {
-            return TaskUtils.Async(() => Delete(force));
-        }
-
-        /// <summary>
-        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
-        /// </summary>
-        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
-        /// <returns>Number of deleted rows.</returns>
-        public int Delete(bool force)
-        {
-            if (force || TableInfo.SoftDelete == null)
-                return base.Delete();
-
-            using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
-        }
-
-        public Task<int> RestoreAsync()
-        {
-            return TaskUtils.Async(Restore);
-        }
-
-        /// <summary>
-        /// Restore the values deleted using soft delete.
-        /// </summary>
-        /// <returns>Number of values restored.</returns>
-        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
-        public int Restore()
-        {
-            using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) +
-                    cmd.ExecuteNonQuery();
-        }
 
         #region Where
 
@@ -1824,8 +1866,16 @@ namespace SharpOrm
 
         #endregion
 
-        #region DML SQL commands
+        #region DML SQL Commands
 
+        /// <summary>
+        /// Asynchronously inserts or updates a record in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="sourceName">The name of the source table.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public Task<int> UpsertAsync(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
         {
             return TaskUtils.Async(() => Upsert(sourceName, toCheckColumns, updateColumns, insertColumns));
@@ -1856,11 +1906,25 @@ namespace SharpOrm
                     cmd.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Asynchronously inserts or updates a row in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null)
         {
             return TaskUtils.Async(() => Upsert(row, toCheckColumns, updateColumns));
         }
 
+        /// <summary>
+        /// Inserts or updates a row in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the row or toCheckColumns are null or empty.</exception>
         public void Upsert(Row row, string[] toCheckColumns, string[] updateColumns = null)
         {
             if (row == null)
@@ -1877,6 +1941,13 @@ namespace SharpOrm
                 NonNativeUpsert(row, toCheckColumns, updateColumns);
         }
 
+        /// <summary>
+        /// Asynchronously inserts or updates multiple rows in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="rows">The rows to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null)
         {
             return TaskUtils.Async(() => Upsert(rows, toCheckColumns, updateColumns));
@@ -2048,6 +2119,12 @@ namespace SharpOrm
             return TranslationUtils.TryNumeric(this.Insert(cells, true));
         }
 
+        /// <summary>
+        /// Asynchronously inserts a new record into the database table using the specified query and column names.
+        /// </summary>
+        /// <param name="queryBase">The base query to use for the insert operation.</param>
+        /// <param name="columnNames">The names of the columns to insert values into.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> InsertAsync(QueryBase queryBase, params string[] columnNames)
         {
             using (var cmd = await GetCommand().SetExpressionAsync(GetGrammar().InsertQuery(queryBase, columnNames)))
