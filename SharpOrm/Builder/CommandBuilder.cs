@@ -155,7 +155,7 @@ namespace SharpOrm.Builder
             int result = 0;
             for (int i = 0; i < total - 1; i++)
             {
-                command.SetExpression(collection.Expressions[i]);
+                InternalSetExpression(collection.Expressions[i]);
                 result += InternalExecuteWithRecordsAffected(CommandBehavior.Default);
             }
 

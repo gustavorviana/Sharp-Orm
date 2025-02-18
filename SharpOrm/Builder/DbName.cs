@@ -59,6 +59,9 @@ namespace SharpOrm.Builder
             if (ReflectionUtils.IsDynamic(typeof(T)))
                 throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
 
+            if (registry == null)
+                registry = TranslationRegistry.Default;
+
             return new DbName(registry.GetTableName(typeof(T)), alias, false);
         }
 

@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder;
+﻿using BaseTest.Models;
+using SharpOrm.Builder;
 
 namespace QueryTest.Builder
 {
@@ -33,6 +34,14 @@ namespace QueryTest.Builder
         {
             _ = new DbName("Table", "My.Alias", false);
             _ = new DbName("Table", "#MyAlias", false);
+        }
+
+        [Fact]
+        public void GetNameOf()
+        {
+            var name = DbName.Of<Order>("");
+
+            Assert.Equal("Orders", name.Name);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace QueryTest.SqlServer
         public void ExistsTempTableTest()
         {
             var grammar = this.GetTableGrammar(new TableSchema("MyTable") { Temporary = true });
-            var expected = new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", grammar.Name.Name);
+            var expected = new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND id = object_id('tempdb..' + ?)", grammar.Name.Name);
             var current = grammar.Exists();
 
             Assert.Equal(expected, current);

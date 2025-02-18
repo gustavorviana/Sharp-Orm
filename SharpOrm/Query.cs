@@ -853,6 +853,13 @@ namespace SharpOrm
             }, type);
         }
 
+        public Query<T> Join<R>(string alias, string column1, string column2)
+        {
+            var dbName = DbName.Of<T>(alias, Config.Translation);
+            base.Join(dbName, x => x.WhereColumn(column1, column2), "INNER");
+            return this;
+        }
+
         /// <summary>
         /// Perform a INNER JOIN between this query and another table.
         /// </summary>

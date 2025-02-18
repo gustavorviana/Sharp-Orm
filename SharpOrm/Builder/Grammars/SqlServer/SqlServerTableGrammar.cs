@@ -153,7 +153,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         public override SqlExpression Exists()
         {
             if (Schema.Temporary)
-                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND object_id('tempdb..' + name) IS NOT NULL AND LEFT(name,LEN(name) - PATINDEX('%[^_]%', REVERSE(LEFT(name, LEN(name) - 12))) - 11) = ?", Name.Name);
+                return new SqlExpression("SELECT COUNT(*) FROM tempdb..sysobjects WHERE xtype = 'u' AND id = object_id('tempdb..' + ?)", Name.Name);
 
             var query = GetBuilder();
             query.Add("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE");

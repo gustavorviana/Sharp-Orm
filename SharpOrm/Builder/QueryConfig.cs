@@ -13,7 +13,10 @@ namespace SharpOrm.Builder
     /// </summary>
     public abstract class QueryConfig : ICloneable
     {
-        internal protected virtual int InsertLimitParams { get; } = 2100;
+        /// <summary>
+        /// Gets the maximum number of parameters allowed in a database query.
+        /// </summary>
+        public virtual int DbParamsLimit { get; } = 2099;
         internal protected virtual bool NativeUpsertRows { get; }
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.

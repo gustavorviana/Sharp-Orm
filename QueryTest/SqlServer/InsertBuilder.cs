@@ -202,7 +202,7 @@ namespace QueryTest.SqlServer
 
         private class ParamsSqlServerQueryConfig(int insertLimitParams) : SqlServerQueryConfig
         {
-            protected internal override int InsertLimitParams { get; } = insertLimitParams;
+            public override int DbParamsLimit { get; } = insertLimitParams;
         }
     }
 }

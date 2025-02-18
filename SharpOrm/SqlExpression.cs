@@ -63,9 +63,19 @@ namespace SharpOrm
         /// </summary>
         /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
         /// <param name="parameters">The parameters used in the SQL values.</param>
-        public SqlExpression(string value, params object[] parameters)
+        public SqlExpression(string value, params object[] parameters) : this(true, value, parameters)
         {
-            if (value.Count(c => c == '?') != parameters.Length)
+        }
+
+
+        /// <summary>
+        /// Initializes a new instance of the SqlExpression class with the provided SQL values string and parameters.
+        /// </summary>
+        /// <param name="value">The SQL values string (to signal an argument, use '?').</param>
+        /// <param name="parameters">The parameters used in the SQL values.</param>
+        internal SqlExpression(bool validateParams, string value, params object[] parameters)
+        {
+            if (validateParams && value.Count(c => c == '?') != parameters.Length)
                 throw new InvalidOperationException(Messages.OperationCannotBePerformedArgumentsMismatch);
 
             this.value = value;

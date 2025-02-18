@@ -53,7 +53,7 @@ namespace SharpOrm.Builder
         {
             string checkpointText = GetCheckpointText();
             if (!string.IsNullOrEmpty(checkpointText))
-                expressions.Add(new SqlExpression(checkpointText, GetCheckpointParams()));
+                expressions.Add(new SqlExpression(false, checkpointText, GetCheckpointParams()));
 
             ClearCheckpointParams();
             ClearCheckpointText();

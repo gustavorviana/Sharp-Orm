@@ -44,7 +44,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 Builder.Add(", ");
                 AppendInsertCells(@enum.Current.Cells);
 
-                if (Builder.Parameters.Count > Query.Config.InsertLimitParams)
+                if (Builder.Parameters.Count > Query.Config.DbParamsLimit)
                 {
                     ((BatchQueryBuilder)Builder).BuildSavePoint();
                     return true;
