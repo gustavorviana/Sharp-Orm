@@ -44,7 +44,7 @@ namespace SharpOrm.Builder
         /// <exception cref="ArgumentNullException">Thrown when the configuration or table name is null.</exception>
         public QueryInfo(QueryConfig config, DbName table) : base(config, table)
         {
-            this.Having = new QueryBuilder(this.ToReadOnly());
+            Having = new QueryBuilder(ToReadOnly());
         }
 
         /// <summary>
@@ -53,16 +53,16 @@ namespace SharpOrm.Builder
         /// <param name="info">The query information to load from.</param>
         internal void LoadFrom(QueryInfo info)
         {
-            this.Joins.Clear();
-            this.Where.Clear();
-            this.Having.Clear();
+            Joins.Clear();
+            Where.Clear();
+            Having.Clear();
 
-            info.Where.ApplyTo(this.Where);
-            this.Having.Add(info.Having);
-            this.Joins.AddRange(info.Joins);
-            this.Select = (Column[])info.Select.Clone();
-            this.GroupsBy = (Column[])info.GroupsBy.Clone();
-            this.Orders = (ColumnOrder[])info.Orders.Clone();
+            info.Where.ApplyTo(Where);
+            Having.Add(info.Having);
+            Joins.AddRange(info.Joins);
+            Select = (Column[])info.Select.Clone();
+            GroupsBy = (Column[])info.GroupsBy.Clone();
+            Orders = (ColumnOrder[])info.Orders.Clone();
         }
 
         /// <summary>
@@ -71,10 +71,10 @@ namespace SharpOrm.Builder
         /// <returns>True if the query is a count query; otherwise, false.</returns>
         internal bool IsCount()
         {
-            if (this.Select.Length != 1)
+            if (Select.Length != 1)
                 return false;
 
-            string select = this.Select[0].ToExpression(this.ToReadOnly()).ToString();
+            string select = Select[0].ToExpression(ToReadOnly()).ToString();
             return select.StartsWith("count(", StringComparison.OrdinalIgnoreCase);
         }
     }

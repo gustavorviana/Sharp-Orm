@@ -43,8 +43,8 @@ namespace SharpOrm
         /// </summary>
         public Trashed Trashed
         {
-            get => this.Info.Where.Trashed;
-            set => this.Info.Where.SetTrash(value, TableInfo);
+            get => Info.Where.Trashed;
+            set => Info.Where.SetTrash(value, TableInfo);
         }
 
         #region Query
@@ -137,11 +137,11 @@ namespace SharpOrm
         {
             ((IRootTypeMap)Info).RootType = typeof(T);
             TableInfo = manager.Config.Translation.GetTable(((IRootTypeMap)Info).RootType);
-            this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
-            this.ApplyValidations();
+            ValidateModelOnSave = manager.Config.ValidateModelOnSave;
+            ApplyValidations();
 
             if (TableInfo.SoftDelete != null)
-                this.Trashed = Trashed.Except;
+                Trashed = Trashed.Except;
         }
 
         private Query(DbName table, QueryConfig config) : base(table, config)
@@ -151,7 +151,7 @@ namespace SharpOrm
 
         private void ApplyValidations()
         {
-            this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
+            ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
         }
 
         private static string GetDbName(TranslationRegistry registry = null)
@@ -171,7 +171,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Asc, expression);
+            return OrderBy(SharpOrm.OrderBy.Asc, expression);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderByDesc(Expression<ColumnExpression<T>> expression)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Desc, expression);
+            return OrderBy(SharpOrm.OrderBy.Desc, expression);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
-            return (Query<T>)this.OrderBy(order, GetColumns(expression));
+            return (Query<T>)OrderBy(order, GetColumns(expression));
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace SharpOrm
 
         internal ExpressionColumn[] GetColumns(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, config);
+            var processor = new ExpressionProcessor<T>(Info, config);
             return processor.ParseColumns(expression).ToArray();
         }
 
@@ -344,7 +344,7 @@ namespace SharpOrm
         public int Restore()
         {
             using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete)) +
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(TableInfo.SoftDelete)) +
                     cmd.ExecuteNonQuery();
         }
 
@@ -442,16 +442,16 @@ namespace SharpOrm
         /// <returns></returns>
         public T FirstOrDefault()
         {
-            int? lastLimit = this.Limit;
-            this.Limit = 1;
+            int? lastLimit = Limit;
+            Limit = 1;
 
             try
             {
-                return this.GetEnumerable<T>().FirstOrDefault();
+                return GetEnumerable<T>().FirstOrDefault();
             }
             finally
             {
-                this.Limit = lastLimit;
+                Limit = lastLimit;
             }
         }
 
@@ -465,7 +465,7 @@ namespace SharpOrm
             {
                 FkLoaders fkLoaders = new FkLoaders(Manager, _fkToLoad, Token);
 
-                enumerable.fkQueue = fkLoaders;
+                enumerable._fkQueue = fkLoaders;
                 var list = enumerable.ToList();
                 fkLoaders.LoadForeigns();
 
@@ -473,7 +473,7 @@ namespace SharpOrm
             }
             finally
             {
-                this.Manager?.CloseByEndOperation();
+                Manager?.CloseByEndOperation();
             }
         }
 
@@ -494,8 +494,8 @@ namespace SharpOrm
         /// <returns>The first occurrence of an object of type T that matches the provided primary keys.</returns>
         public T Find(params object[] primaryKeysValues)
         {
-            using (var query = (Query<T>)this.Clone(false))
-                return this.WherePk(primaryKeysValues).FirstOrDefault();
+            using (var query = (Query<T>)Clone(false))
+                return WherePk(primaryKeysValues).FirstOrDefault();
         }
 
         /// <summary>
@@ -511,9 +511,9 @@ namespace SharpOrm
             ValidatePkVals(pkCols, primaryKeysValues);
 
             if (primaryKeysValues.Length == 1)
-                return (Query<T>)this.Where(pkCols[0].Name, primaryKeysValues[0]);
+                return (Query<T>)Where(pkCols[0].Name, primaryKeysValues[0]);
 
-            return (Query<T>)this.Where(query =>
+            return (Query<T>)Where(query =>
             {
                 for (var i = 0; i < primaryKeysValues.Length; i++)
                     query.Where(pkCols[i].Name, primaryKeysValues[i]);
@@ -535,7 +535,7 @@ namespace SharpOrm
         /// <returns></returns>
         public T[] Get()
         {
-            return this.GetEnumerable<T>().ToArray();
+            return GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -555,11 +555,11 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
 
-            var reader = this.GetObjectReader(true, true);
-            object result = this.Insert(reader.ReadCells(obj), this.ReturnsInsetionId && !reader.HasValidKey(obj));
-            this.SetPrimaryKey(obj, result);
+            var reader = GetObjectReader(true, true);
+            object result = Insert(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj));
+            SetPrimaryKey(obj, result);
             return TranslationUtils.TryNumeric(result);
         }
 
@@ -591,7 +591,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(params T[] objs)
         {
-            return this.BulkInsert((IEnumerable<T>)objs);
+            return BulkInsert((IEnumerable<T>)objs);
         }
 
         /// <summary>
@@ -610,7 +610,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            var reader = this.GetObjectReader(true, true);
+            var reader = GetObjectReader(true, true);
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
@@ -634,7 +634,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.Update(this.GetObjectReader(false, false).ReadCells(obj));
+            return base.Update(GetObjectReader(false, false).ReadCells(obj));
         }
 
         /// <summary>
@@ -660,7 +660,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return this.Update(this.GetObjectReader(false, false).Only(expression).ReadCells(obj));
+            return Update(GetObjectReader(false, false).Only(expression).ReadCells(obj));
         }
 
         /// <summary>
@@ -688,7 +688,7 @@ namespace SharpOrm
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var reader = this.GetObjectReader(false, false);
+            var reader = GetObjectReader(false, false);
             if (columns.Length > 0) reader.Only(columns);
 
             var toUpdate = reader.ReadCells(obj).ToArray();
@@ -717,7 +717,7 @@ namespace SharpOrm
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
         public void Upsert(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
@@ -807,15 +807,15 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
-            var name = new ExpressionProcessor<T>(this.Info, ExpressionConfig.None).GetTableName(table, out var member);
+            var name = new ExpressionProcessor<T>(Info, ExpressionConfig.None).GetTableName(table, out var member);
             var dbName = new DbName(name, alias);
 
             if (Info.Joins.Any(j => j.MemberInfo == member && j.Info.TableName == dbName))
                 throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
 
-            JoinQuery join = new JoinQuery(this.Info.Config, dbName, typeof(T)) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
+            JoinQuery join = new JoinQuery(Info.Config, dbName, typeof(T)) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
             join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
-            this.Info.Joins.Add(join);
+            Info.Joins.Add(join);
 
             return this;
         }
@@ -830,7 +830,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
         {
-            return (Query<T>)this.Join<C>(alias, column1, "=", column2);
+            return (Query<T>)Join<C>(alias, column1, "=", column2);
         }
 
         /// <summary>
@@ -847,7 +847,7 @@ namespace SharpOrm
         {
             var name = Config.Translation.GetTableName(typeof(C));
 
-            return (Query<T>)this.Join(new DbName(name, alias), q =>
+            return (Query<T>)Join(new DbName(name, alias), q =>
             {
                 q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
             }, type);
@@ -1123,7 +1123,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Where(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.Where(GetColumn(columnExp), operation, value);
+            Where(GetColumn(columnExp), operation, value);
             return this;
         }
 
@@ -1148,7 +1148,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.Where(GetColumn(columnExp), operation, GetColumn(column2Exp));
+            Where(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
@@ -1225,7 +1225,7 @@ namespace SharpOrm
         /// <param name="columnExp">The column expression to compare.</param>
         public Query<T> WhereNotNull(Expression<ColumnExpression<T>> columnExp)
         {
-            return (Query<T>)this.Where(GetColumn(columnExp), "IS NOT", null);
+            return (Query<T>)Where(GetColumn(columnExp), "IS NOT", null);
         }
 
         #region OR
@@ -1335,7 +1335,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.OrWhere(GetColumn(columnExp), operation, value);
+            OrWhere(GetColumn(columnExp), operation, value);
             return this;
         }
 
@@ -1360,7 +1360,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.OrWhere(GetColumn(columnExp), operation, GetColumn(column2Exp));
+            OrWhere(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
@@ -1441,7 +1441,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotNull(Expression<ColumnExpression<T>> columnExp)
         {
-            return (Query<T>)this.OrWhere(GetColumn(columnExp), "IS NOT", null);
+            return (Query<T>)OrWhere(GetColumn(columnExp), "IS NOT", null);
         }
 
         #endregion
@@ -1465,7 +1465,7 @@ namespace SharpOrm
 
         private Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.All);
             return processor.ParseColumn(column);
         }
 
@@ -1476,14 +1476,15 @@ namespace SharpOrm
         /// <returns>A new instance of the Query object with the same configuration.</returns>
         public override Query Clone(bool withWhere)
         {
-            Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
+            Query<T> query = new Query<T>(Info.TableName, Manager);
+            query.Token = Token;
 
             if (withWhere)
-                query.Info.LoadFrom(this.Info);
+                query.Info.LoadFrom(Info);
             else if (TableInfo.SoftDelete != null)
-                query.Info.Where.SetTrash(this.Trashed, TableInfo);
+                query.Info.Where.SetTrash(Trashed, TableInfo);
 
-            this.OnClone(query);
+            OnClone(query);
 
             return query;
         }
@@ -1495,7 +1496,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad.AddRange(this._fkToLoad);
+            query._fkToLoad.AddRange(_fkToLoad);
         }
 
         internal ObjectReader GetObjectReader(bool readPk, bool isCreate)
@@ -1503,11 +1504,11 @@ namespace SharpOrm
             if (_objReader == null)
             {
                 _objReader = new ObjectReader(TableInfo);
-                _objReader.ReadFk = this.Info.Config.LoadForeign;
+                _objReader.ReadFk = Info.Config.LoadForeign;
                 _objReader.Validate = true;
             }
 
-            _objReader.IgnoreTimestamps = this.IgnoreTimestamps;
+            _objReader.IgnoreTimestamps = IgnoreTimestamps;
             _objReader.IsCreate = isCreate;
             _objReader.ReadPk = readPk;
 
@@ -1528,7 +1529,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a value indicating whether the object has been disposed.
         /// </summary>
-        public bool Disposed => this._disposed;
+        public bool Disposed => _disposed;
 
         /// <summary>
         /// Indicate whether the database should return only distinct items.
@@ -1555,7 +1556,7 @@ namespace SharpOrm
         /// <summary>
         /// Settings used to build the SQL command.
         /// </summary>
-        public QueryConfig Config => this.Info.Config;
+        public QueryConfig Config => Info.Config;
         /// <summary>
         /// Connection manager of the query.
         /// </summary>
@@ -1571,8 +1572,8 @@ namespace SharpOrm
         /// </summary>
         public int CommandTimeout
         {
-            get => this._commandTimeout ?? this.Manager.CommandTimeout;
-            set => this._commandTimeout = value;
+            get => _commandTimeout ?? Manager.CommandTimeout;
+            set => _commandTimeout = value;
         }
         private CommandBuilder _lastOpenReader = null;
         #endregion
@@ -1654,7 +1655,7 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : this(table, manager.Config)
         {
-            this.Manager = manager;
+            Manager = manager;
         }
 
         internal Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
@@ -1677,9 +1678,9 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(columnNames), Messages.NoColumnsInserted);
 
             if (columnNames.Length == 1 && columnNames.First() == "*")
-                return this.Select(Column.All);
+                return Select(Column.All);
 
-            return this.Select(columnNames.Select(name => new Column(name)).ToArray());
+            return Select(columnNames.Select(name => new Column(name)).ToArray());
         }
 
         /// <summary>
@@ -1692,7 +1693,7 @@ namespace SharpOrm
             if (!columns.Any())
                 throw new ArgumentNullException(nameof(columns), Messages.NoColumnsInserted);
 
-            this.Info.Select = columns;
+            Info.Select = columns;
 
             return this;
         }
@@ -1710,7 +1711,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, string column1, string column2)
         {
-            return this.Join(table, q => q.WhereColumn(column1, column2));
+            return Join(table, q => q.WhereColumn(column1, column2));
         }
 
         /// <summary>
@@ -1724,7 +1725,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
-            return this.Join(table, q => q.WhereColumn(column1, operation, column2), type);
+            return Join(table, q => q.WhereColumn(column1, operation, column2), type);
         }
 
         /// <summary>
@@ -1737,7 +1738,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
-            return this.Join(new DbName(table), callback, type, grammarOptions);
+            return Join(new DbName(table), callback, type, grammarOptions);
         }
 
         /// <summary>
@@ -1749,7 +1750,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER")
         {
-            return this.Join(table, callback, type, this.GrammarOptions);
+            return Join(table, callback, type, GrammarOptions);
         }
 
         /// <summary>
@@ -1762,9 +1763,9 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
-            JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
+            JoinQuery join = new JoinQuery(Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
             callback(join);
-            this.Info.Joins.Add(join);
+            Info.Joins.Add(join);
             return this;
         }
 
@@ -1779,7 +1780,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query GroupBy(params string[] columnNames)
         {
-            return this.GroupBy(columnNames.Select(name => new Column(name)).ToArray());
+            return GroupBy(columnNames.Select(name => new Column(name)).ToArray());
         }
 
         /// <summary>
@@ -1789,7 +1790,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query GroupBy(params Column[] columns)
         {
-            this.Info.GroupsBy = columns;
+            Info.GroupsBy = columns;
 
             return this;
         }
@@ -1805,9 +1806,9 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Having(QueryCallback callback)
         {
-            var qBase = new QueryBase(this.Config, this.Info.TableName);
+            var qBase = new QueryBase(Config, Info.TableName);
             callback(qBase);
-            this.Info.Having.Add(qBase.Info.Where);
+            Info.Having.Add(qBase.Info.Where);
 
             return this;
         }
@@ -1823,7 +1824,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params string[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Asc, columns);
+            return OrderBy(SharpOrm.OrderBy.Asc, columns);
         }
 
         /// <summary>
@@ -1833,7 +1834,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderByDesc(params string[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Desc, columns);
+            return OrderBy(SharpOrm.OrderBy.Desc, columns);
         }
 
         /// <summary>
@@ -1844,7 +1845,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params string[] columns)
         {
-            return this.OrderBy(order, columns.Select(c => new Column(c)).ToArray());
+            return OrderBy(order, columns.Select(c => new Column(c)).ToArray());
         }
 
         /// <summary>
@@ -1855,7 +1856,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params Column[] columns)
         {
-            return this.OrderBy(columns.Select(c => new ColumnOrder(c, order)).ToArray());
+            return OrderBy(columns.Select(c => new ColumnOrder(c, order)).ToArray());
         }
 
         /// <summary>
@@ -1865,7 +1866,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
-            this.Info.Orders = orders.Where(x => x.Order != SharpOrm.OrderBy.None).ToArray();
+            Info.Orders = orders.Where(x => x.Order != SharpOrm.OrderBy.None).ToArray();
 
             return this;
         }
@@ -2026,11 +2027,11 @@ namespace SharpOrm
         /// <returns></returns>
         public async Task<int> UpdateAsync(params Cell[] cells)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
             if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-            return await this.UpdateAsync((IEnumerable<Cell>)cells);
+            return await UpdateAsync((IEnumerable<Cell>)cells);
         }
 
         /// <summary>
@@ -2040,11 +2041,11 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
             if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-            return this.Update((IEnumerable<Cell>)cells);
+            return Update((IEnumerable<Cell>)cells);
         }
 
         /// <summary>
@@ -2082,7 +2083,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public async Task<int> InsertAsync(params Cell[] cells)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
 
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
@@ -2110,9 +2111,9 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public async Task<int> InsertAsync(IEnumerable<Cell> cells)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
 
-            return TranslationUtils.TryNumeric(await this.InsertAsync(cells, true));
+            return TranslationUtils.TryNumeric(await InsertAsync(cells, true));
         }
 
         /// <summary>
@@ -2122,7 +2123,7 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            return TranslationUtils.TryNumeric(this.Insert(cells, true));
+            return TranslationUtils.TryNumeric(Insert(cells, true));
         }
 
         /// <summary>
@@ -2186,7 +2187,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public async Task<int> BulkInsertAsync(params Row[] rows)
         {
-            return await this.BulkInsertAsync((ICollection<Row>)rows);
+            return await BulkInsertAsync((ICollection<Row>)rows);
         }
 
         /// <summary>
@@ -2195,7 +2196,7 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(params Row[] rows)
         {
-            return this.BulkInsert((ICollection<Row>)rows);
+            return BulkInsert((ICollection<Row>)rows);
         }
 
         /// <summary>
@@ -2303,7 +2304,7 @@ namespace SharpOrm
         /// <returns></returns>
         public async Task<long> CountAsync(string columnName)
         {
-            return await this.CountAsync(new Column(columnName));
+            return await CountAsync(new Column(columnName));
         }
 
         /// <summary>
@@ -2313,7 +2314,7 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(string columnName)
         {
-            return this.Count(new Column(columnName));
+            return Count(new Column(columnName));
         }
 
         /// <summary>
@@ -2351,7 +2352,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Row[] ReadRows()
         {
-            return this.GetEnumerable<Row>().ToArray();
+            return GetEnumerable<Row>().ToArray();
         }
 
         /// <summary>
@@ -2369,16 +2370,16 @@ namespace SharpOrm
         /// <returns></returns>
         public Row FirstRow()
         {
-            int? lastLimit = this.Limit;
-            this.Limit = 1;
+            int? lastLimit = Limit;
+            Limit = 1;
 
             try
             {
-                return this.GetEnumerable<Row>().FirstOrDefault();
+                return GetEnumerable<Row>().FirstOrDefault();
             }
             finally
             {
-                this.Limit = lastLimit;
+                Limit = lastLimit;
             }
         }
 
@@ -2399,7 +2400,7 @@ namespace SharpOrm
         /// <returns>An collection of the specified type.</returns>
         public T[] Get<T>()
         {
-            return this.GetEnumerable<T>().ToArray();
+            return GetEnumerable<T>().ToArray();
         }
 
         /// <summary>
@@ -2496,7 +2497,7 @@ namespace SharpOrm
         /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
-            this.Token.ThrowIfCancellationRequested();
+            Token.ThrowIfCancellationRequested();
 
             if (_lastOpenReader is CommandBuilder last)
                 last.Dispose();
@@ -2514,22 +2515,23 @@ namespace SharpOrm
         /// <returns></returns>
         public object Clone()
         {
-            return this.Clone(true);
+            return Clone(true);
         }
 
         /// <summary>
         /// Clones the Query object.
         /// </summary>
-        /// <param name="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
+        /// <param name="withWhereJoin">Signals if the parameters of the "WHERE" should be copied.</param>
         /// <returns></returns>
-        public virtual Query Clone(bool withWhere)
+        public virtual Query Clone(bool withWhereJoin)
         {
-            Query query = new Query(this.Info.TableName, this.Manager);
+            Query query = new Query(Info.TableName, Manager);
+            query.Token = Token;
 
-            if (withWhere)
-                query.Info.LoadFrom(this.Info);
+            if (withWhereJoin)
+                query.Info.LoadFrom(Info);
 
-            this.OnClone(query);
+            OnClone(query);
 
             return query;
         }
@@ -2539,15 +2541,15 @@ namespace SharpOrm
         /// </summary>
         protected void CheckIsSafeOperation()
         {
-            if (this.Info.Config.OnlySafeModifications && this.Info.Where.Empty)
+            if (Info.Config.OnlySafeModifications && Info.Where.Empty)
                 throw new UnsafeDbOperation();
         }
 
         protected virtual void OnClone(Query cloned)
         {
-            cloned.Distinct = this.Distinct;
-            cloned.Limit = this.Limit;
-            cloned.Offset = this.Offset;
+            cloned.Distinct = Distinct;
+            cloned.Limit = Limit;
+            cloned.Offset = Offset;
         }
 
         #endregion
@@ -2591,7 +2593,7 @@ namespace SharpOrm
         {
             if (where is Query) throw new NotSupportedException($"Cannot add a {where.GetType().FullName} to the WHERE clause.");
 
-            this.Info.Where.Add(where.Info.Where);
+            Info.Where.Add(where.Info.Where);
 
             return this;
         }
@@ -2613,7 +2615,7 @@ namespace SharpOrm
 
         protected void ValidateReadonly()
         {
-            if (this.Manager is null)
+            if (Manager is null)
                 throw new InvalidOperationException("This query is read-only.");
         }
 
@@ -2637,14 +2639,14 @@ namespace SharpOrm
 
         protected internal Grammar GetGrammar()
         {
-            return this.Info.Config.NewGrammar(this);
+            return Info.Config.NewGrammar(this);
         }
 
         #region IDisposed
 
         ~Query()
         {
-            this.Dispose(false);
+            Dispose(false);
         }
 
         protected virtual void Dispose(bool disposing)

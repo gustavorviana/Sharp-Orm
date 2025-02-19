@@ -119,10 +119,12 @@ namespace QueryTest
         [Fact]
         public void Clone()
         {
+            var token = new CancellationToken(true);
             var original = new Query("table alias")
             {
                 Limit = 1,
                 Offset = 3,
+                Token = token,
                 Distinct = true
             };
 
@@ -140,6 +142,7 @@ namespace QueryTest
             Assert.Equal(original.Limit, clone.Limit);
             Assert.Equal(original.Offset, clone.Offset);
             Assert.Equal(original.Distinct, clone.Distinct);
+            Assert.Equal(token, clone.Token);
         }
 
         [Fact]

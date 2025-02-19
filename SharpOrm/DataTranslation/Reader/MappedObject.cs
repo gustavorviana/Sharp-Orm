@@ -55,7 +55,6 @@ namespace SharpOrm.DataTranslation.Reader
             return Create(record, type, NestedMode.Attribute, enqueueable, registry);
         }
 
-
         /// <summary>
         /// Creates an <see cref="IMappedObject"/> for the specified type.
         /// </summary>
