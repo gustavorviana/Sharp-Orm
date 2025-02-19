@@ -61,10 +61,10 @@ namespace QueryTest.SqlServer
         public void DeleteJoins()
         {
             using var query = new Query(TestTableUtils.TABLE + " t1");
-            query.JoinToDelete("t2").Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
+            query.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
             query.Where("t2.Id", 1);
 
-            Assert.Throws<NotSupportedException>(query.Grammar().Delete);
+            Assert.Throws<NotSupportedException>(() => query.Grammar().DeleteIncludingJoins(["t2"]));
         }
 
         [Fact]

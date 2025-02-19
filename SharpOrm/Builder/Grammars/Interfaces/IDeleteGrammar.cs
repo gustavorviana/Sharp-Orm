@@ -3,5 +3,7 @@
     public interface IDeleteGrammar : IGrammarBase
     {
         void Build();
+
+        void BuildIncludingJoins(DbName[] joinNames);
     }
 }

@@ -187,6 +187,34 @@ namespace SharpOrm.Builder.Grammars
             return BuildExpression(GetDeleteGrammar(), x => x.Build());
         }
 
+        public SqlExpression DeleteIncludingJoins(string[] tables)
+        {
+            if (tables.Length == 0)
+                throw new ArgumentNullException(nameof(tables));
+
+            var deleteNames = tables.Select(GetJoinName).ToArray();
+
+            return BuildExpression(GetDeleteGrammar(), x => x.BuildIncludingJoins(deleteNames));
+        }
+
+        private DbName GetJoinName(string name)
+        {
+            var join = Info
+                .Joins
+                .FirstOrDefault(
+                    x => x
+                    .Info
+                    .TableName
+                    .TryGetAlias()
+                    .Equals(name, StringComparison.OrdinalIgnoreCase)
+                );
+
+            if (join == null)
+                throw new InvalidOperationException($"Join with the specified name '{name}' was not found.");
+
+            return join.Info.TableName;
+        }
+
         protected abstract IDeleteGrammar GetDeleteGrammar();
 
         public SqlExpression Upsert(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)

@@ -15,7 +15,9 @@ namespace SharpOrm.Builder.Grammars.Mysql
             ThrowOffsetNotSupported();
 
             Builder.Add("DELETE");
-            ApplyDeleteJoins();
+            if (Query.Info.Joins.Count > 0)
+                Builder.Add(' ').Add(TryGetAlias(Query));
+
             Builder.Add(" FROM ").Add(Info.TableName.GetName(true, Info.Config));
 
             ApplyJoins();
@@ -27,32 +29,29 @@ namespace SharpOrm.Builder.Grammars.Mysql
             AddLimit();
         }
 
-        /// <summary>
-        /// Applies the delete joins to the query.
-        /// </summary>
-        protected void ApplyDeleteJoins()
+        public virtual void BuildIncludingJoins(DbName[] joinNames)
         {
-            if (!CanApplyDeleteJoins())
-                return;
+            ThrowOffsetNotSupported();
 
-            Builder
-                .Add(' ')
-                .Add(TryGetTableAlias(Query));
+            Builder.Add("DELETE");
+            ApplyDeleteJoins(joinNames);
+            Builder.Add(" FROM ").Add(Info.TableName.GetName(true, Info.Config));
 
-            if (!IsMultipleTablesDeleteWithJoin())
-                return;
+            ApplyJoins();
+            WriteWhere(true);
 
-            foreach (var join in Info.Joins.Where(j => CanDeleteJoin(j.Info)))
-                Builder.Add(", ").Add(TryGetTableAlias(join));
+            if (CanWriteOrderby())
+                ApplyOrderBy();
+
+            AddLimit();
         }
 
-        /// <summary>
-        /// Determines whether delete joins can be applied.
-        /// </summary>
-        /// <returns>True if delete joins can be applied; otherwise, false.</returns>
-        protected virtual bool CanApplyDeleteJoins()
+        private void ApplyDeleteJoins(DbName[] joinNames)
         {
-            return Info.Joins.Any();
+            Builder.Add(' ').Add(TryGetAlias(Query));
+
+            foreach (var join in joinNames)
+                Builder.Add(", ").Add(TryGetAlias(join));
         }
     }
 }

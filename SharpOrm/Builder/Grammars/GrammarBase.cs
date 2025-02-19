@@ -254,21 +254,6 @@ namespace SharpOrm.Builder.Grammars
         }
 
         /// <summary>
-        /// Determines whether the join can be deleted.
-        /// </summary>
-        /// <param name="info">The query information.</param>
-        /// <returns>True if the join can be deleted; otherwise, false.</returns>
-        protected bool CanDeleteJoin(QueryBaseInfo info)
-        {
-            string name = info.TableName.TryGetAlias(this.Info.Config);
-            foreach (var jName in this.Query.deleteJoins)
-                if (jName.Equals(name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-            return false;
-        }
-
-        /// <summary>
         /// Tries to get the table alias for the query.
         /// </summary>
         /// <param name="query">The query.</param>
@@ -276,6 +261,16 @@ namespace SharpOrm.Builder.Grammars
         protected string TryGetTableAlias(QueryBase query)
         {
             return query.Info.TableName.TryGetAlias(query.Info.Config);
+        }
+
+        protected string TryGetAlias(QueryBase query)
+        {
+            return query.Info.TableName.TryGetAlias(Info.Config);
+        }
+
+        protected string TryGetAlias(DbName name)
+        {
+            return name.TryGetAlias(Info.Config);
         }
 
         /// <summary>
@@ -295,11 +290,6 @@ namespace SharpOrm.Builder.Grammars
             this.Builder.AddExpression(column, true);
         }
 
-        protected bool IsMultipleTablesDeleteWithJoin()
-        {
-            return Query.deleteJoins?.Any() ?? false;
-        }
-
         protected void ThrowOffsetNotSupported()
         {
             if (Query.Offset.HasValue && Query.Offset.Value > 0)
@@ -309,19 +299,19 @@ namespace SharpOrm.Builder.Grammars
         protected void ThrowLimitNotSupported()
         {
             if (Query.Limit.HasValue && Query.Limit.Value > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.OffsetNotSupported);
+                throw new NotSupportedException(Messages.Grammar.OffsetNotSupported);
         }
 
         protected void ThrowJoinNotSupported()
         {
             if (Query.Info.Joins.Count > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.JoinNotSupported);
+                throw new NotSupportedException(Messages.Grammar.JoinNotSupported);
         }
 
         protected void ThrowOrderNotSupported()
         {
             if (Query.Info.Orders.Length > 0)
-                throw new NotSupportedException(Messages.GrammarMessage.OrderByNotSupported);
+                throw new NotSupportedException(Messages.Grammar.OrderByNotSupported);
         }
     }
 }

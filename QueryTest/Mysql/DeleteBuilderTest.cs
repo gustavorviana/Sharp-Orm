@@ -61,10 +61,10 @@ namespace QueryTest.Mysql
         public void DeleteJoins()
         {
             using var query = new Query(TestTableUtils.TABLE + " t1");
-            query.JoinToDelete("t2").Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
+            query.Join("Table2 t2", "t2.Id", "=", "t1.T2Id");
             query.Where("t2.Id", 1);
 
-            QueryAssert.Equal("DELETE `t1`, `t2` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE `t1`, `t2` FROM `TestTable` `t1` INNER JOIN `Table2` `t2` ON `t2`.`Id` = `t1`.`T2Id` WHERE `t2`.`Id` = 1", query.Grammar().DeleteIncludingJoins(["t2"]));
         }
 
         [Fact]

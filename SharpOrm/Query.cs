@@ -1521,7 +1521,6 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable, IGrammarOptions, IDisposable
     {
         #region Properties
-        internal string[] deleteJoins = null;
         private bool _disposed = false;
 
         protected internal new QueryInfo Info => (QueryInfo)base.Info;
@@ -1575,7 +1574,7 @@ namespace SharpOrm
             get => this._commandTimeout ?? this.Manager.CommandTimeout;
             set => this._commandTimeout = value;
         }
-        private CommandBuilder lastOpenReader = null;
+        private CommandBuilder _lastOpenReader = null;
         #endregion
 
         #region Query
@@ -2235,6 +2234,38 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously deletes rows from the database, including those from joined tables.
+        /// </summary>
+        /// <param name="tables">The names of the tables to include in the delete operation. These should be the same names used in .Join.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of deleted rows.</returns>
+        /// <remarks>
+        /// This function is not compatible with all databases.
+        /// </remarks>
+        public Task<int> DeleteIncludingJoinsAsync(params string[] tables)
+        {
+            return TaskUtils.Async(() => DeleteIncludingJoins(tables));
+        }
+
+        /// <summary>
+        /// Deletes rows from the database, including those from joined tables.
+        /// </summary>
+        /// <param name="tables">The names of the tables to include in the delete operation. These should be the same names used in .Join.</param>
+        /// <returns>The number of deleted rows.</returns>
+        /// <remarks>
+        /// This function is not compatible with all databases.
+        /// </remarks>
+        public int DeleteIncludingJoins(params string[] tables)
+        {
+            if (tables == null || tables.Length == 0)
+                throw new ArgumentNullException(nameof(tables));
+
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().DeleteIncludingJoins(tables)) + cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Removes rows from database
         /// </summary>
         /// <returns>Number of deleted rows.</returns>
@@ -2252,7 +2283,7 @@ namespace SharpOrm
         /// <returns></returns>
         public async Task<long> CountAsync()
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
             return Convert.ToInt64(await GetCommand().SetExpression(GetGrammar().Count()).ExecuteScalarAsync());
         }
 
@@ -2467,26 +2498,10 @@ namespace SharpOrm
         {
             this.Token.ThrowIfCancellationRequested();
 
-            if (this.lastOpenReader is CommandBuilder last)
+            if (_lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            return (lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).ExecuteReader();
-        }
-
-        /// <summary>
-        /// Indicate that the rows from the joined tables that matched the criteria should also be removed when executing <see cref="Delete"/>.
-        /// </summary>
-        /// <param name="tables">Names of the tables (or aliases if used) whose rows should be removed.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        [Obsolete("This method will be removed in version 3.x.")]
-        public Query JoinToDelete(params string[] tables)
-        {
-            if (tables == null || tables.Length == 0)
-                throw new ArgumentNullException(nameof(tables));
-
-            this.deleteJoins = tables.Select(this.Config.ApplyNomenclature).ToArray();
-            return this;
+            return (_lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).ExecuteReader();
         }
 
         #endregion
@@ -2634,16 +2649,16 @@ namespace SharpOrm
 
         protected virtual void Dispose(bool disposing)
         {
-            if (this._disposed)
+            if (_disposed)
                 return;
 
-            this._disposed = true;
+            _disposed = true;
 
-            if (disposing && this.lastOpenReader is CommandBuilder last)
+            if (disposing && _lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            this.Manager?.CloseByDisposeChild();
-            this.lastOpenReader = null;
+            Manager?.CloseByDisposeChild();
+            _lastOpenReader = null;
         }
 
         /// <summary>
@@ -2652,10 +2667,10 @@ namespace SharpOrm
         /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
         public void Dispose()
         {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
 
-            this.Dispose(true);
+            Dispose(true);
 
             GC.SuppressFinalize(this);
         }

@@ -1,5 +1,6 @@
 ﻿using SharpOrm;
 using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Linq;
 
@@ -13,7 +14,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         public void Build()
         {
-            ThrowDeleteJoinsNotSupported();
             ThrowOffsetNotSupported();
             Builder.Add("DELETE");
             AddLimit();
@@ -30,10 +30,9 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             WriteWhere(true);
         }
 
-        protected void ThrowDeleteJoinsNotSupported()
+        public void BuildIncludingJoins(DbName[] joinNames)
         {
-            if (IsMultipleTablesDeleteWithJoin())
-                throw new NotSupportedException("Delete operations on multiple tables with JOINs are not supported in SQL Server. Please execute separate DELETE statements for each table.");
+            throw new NotSupportedException(Messages.Grammar.SqlServer.DeleteIncludingJoinsNotSupported);
         }
     }
 }

@@ -96,9 +96,12 @@ namespace SharpOrm.Builder
         /// <returns>The alias of the object, if set; otherwise, returns the name of the object.</returns>
         public string TryGetAlias(QueryConfig config)
         {
-            return string.IsNullOrEmpty(this.Alias) ?
-                config.ApplyNomenclature(this.Name) :
-                config.ApplyNomenclature(this.Alias);
+            return config.ApplyNomenclature(TryGetAlias());
+        }
+
+        public string TryGetAlias()
+        {
+            return string.IsNullOrEmpty(Alias) ? Name : Alias;
         }
 
         /// <summary>

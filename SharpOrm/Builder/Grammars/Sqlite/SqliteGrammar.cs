@@ -45,7 +45,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             ThrowNotSupportedOperations(Query, "DELETE");
             ValidateAlias();
 
-            return new MysqlDeleteGrammar(Query);
+            return new SqLiteDeleteGrammar(Query);
         }
 
         protected override IUpdateGrammar GetUpdateGrammar()
@@ -85,5 +85,17 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
         protected override IBulkInsertGrammar GetBulkInsertGrammar()
             => new BulkInsertGrammar(Query);
+
+        private class SqLiteDeleteGrammar : MysqlDeleteGrammar
+        {
+            public SqLiteDeleteGrammar(Query query) : base(query)
+            {
+            }
+
+            public override void BuildIncludingJoins(DbName[] joinNames)
+            {
+                throw new NotSupportedException($"SQLite does not support `DELETE` with `Joins`.");
+            }
+        }
     }
 }
