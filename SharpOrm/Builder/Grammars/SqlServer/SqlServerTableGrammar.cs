@@ -29,7 +29,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 throw new NotSupportedException("The table name cannot end with '_'.");
 
             if (!Schema.Temporary)
-                return new DbName(Schema.Name, "");
+                return new DbName(Schema.Name, string.Empty);
 
             if (Schema.Name.Contains("."))
                 throw new NotSupportedException("A temporary table cannot contain '.' in its name.");
@@ -37,9 +37,9 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             if (Schema.Name.Length > 115)
                 throw new InvalidOperationException("The table name must contain up to 115 characters.");
 
-            if (isTempName) return new DbName(Schema.Name, "", false);
+            if (isTempName) return new DbName(Schema.Name, string.Empty, false);
 
-            return new DbName(string.Concat("#", Schema.Name), "");
+            return new DbName(string.Concat("#", Schema.Name), string.Empty);
         }
 
         public override SqlExpression Create()
@@ -72,7 +72,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetSqlDataType(column);
-            string identity = column.AutoIncrement ? string.Concat(" IDENTITY(", seed, ",", step, ")") : "";
+            string identity = column.AutoIncrement ? string.Concat(" IDENTITY(", seed, ",", step, ")") : string.Empty;
             string nullable = column.AllowDBNull ? "NULL" : "NOT NULL";
 
             return string.Concat(columnName, " ", dataType, identity, " ", nullable);

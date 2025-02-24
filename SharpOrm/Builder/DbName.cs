@@ -85,7 +85,7 @@ namespace SharpOrm.Builder
         internal static DbName FromPossibleEmptyName(string name)
         {
             if (string.IsNullOrEmpty(name))
-                return new DbName("", "", false);
+                return new DbName(string.Empty, string.Empty, false);
 
             return new DbName(name);
         }

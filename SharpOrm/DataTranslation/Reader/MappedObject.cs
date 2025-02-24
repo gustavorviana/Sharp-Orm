@@ -75,7 +75,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (registry.GetManualMap(type) is TableInfo table)
                 return new MappedManualObj(table, registry, record);
 
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(registry, record, "");
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(registry, record, string.Empty);
         }
 
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
@@ -108,12 +108,12 @@ namespace SharpOrm.DataTranslation.Reader
         private void MapNested(ColumnInfo column, IDataRecord record, string prefix)
         {
             if (IsValidNested(column))
-                MapChild(record, column, prefix);
+                MapChild(record, column, string.IsNullOrEmpty(column.MapNested?.Prefix) ? prefix : column.MapNested.Prefix);
         }
 
         private bool IsValidNested(ColumnInfo column)
         {
-            return column.MapNested ||
+            return column.MapNested != null ||
                 (nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
         }
 
@@ -139,7 +139,7 @@ namespace SharpOrm.DataTranslation.Reader
         private void AddIfValidId(IDataRecord record, List<MappedColumn> columns, string name, ColumnInfo column)
         {
             int index = record.GetIndexOf(name);
-            if (index >= 0)
+            if (index != -1)
                 columns.Add(new MappedColumn(column, index));
         }
 

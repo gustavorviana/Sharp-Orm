@@ -8,5 +8,6 @@ namespace SharpOrm
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class MapNestedAttribute : Attribute
     {
+        public string Prefix { get; set; }
     }
 }

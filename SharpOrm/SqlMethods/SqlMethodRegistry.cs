@@ -38,7 +38,7 @@ namespace SharpOrm.SqlMethods
         private SqlExpression GetNativeTypeExpression(IReadonlyQueryInfo info, SqlMember member, bool forcePrefix)
         {
             if (member.IsStatic || member.Member.MemberType == System.Reflection.MemberTypes.Method)
-                return new SqlExpression("");
+                return new SqlExpression(string.Empty);
 
             return new DeferredMemberColumn(info, member.GetInfo(), forcePrefix);
         }

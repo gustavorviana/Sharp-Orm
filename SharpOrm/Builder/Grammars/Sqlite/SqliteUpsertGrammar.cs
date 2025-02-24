@@ -14,7 +14,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         public void Build(UpsertQueryInfo target, UpsertQueryInfo source, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
             Builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
-            WriteColumns("", insertColumns);
+            WriteColumns(string.Empty, insertColumns);
             Builder.Add(')');
 
             Builder.Add(" SELECT ");
@@ -22,7 +22,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
             Builder.AddFormat(" FROM {0}", source.GetFullName());
             Builder.Add(" WHERE true ON CONFLICT(");
-            WriteColumns("", whereColumns);
+            WriteColumns(string.Empty, whereColumns);
             Builder.Add(") SET ");
 
             WriteColumn(source.Alias, updateColumns[0]);

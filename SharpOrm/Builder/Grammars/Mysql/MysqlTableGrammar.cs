@@ -89,7 +89,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetMySqlDataType(column);
-            string autoIncrement = column.AutoIncrement ? " AUTO_INCREMENT" : "";
+            string autoIncrement = column.AutoIncrement ? " AUTO_INCREMENT" : string.Empty;
             string nullable = column.AllowDBNull ? "DEFAULT NULL" : "NOT NULL";
 
             return string.Concat(columnName, " ", dataType, " ", nullable, autoIncrement);

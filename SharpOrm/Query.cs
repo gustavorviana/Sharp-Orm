@@ -524,9 +524,9 @@ namespace SharpOrm
         /// Asynchronously gets all available results.
         /// </summary>
         /// <returns>A task representing the asynchronous operation, with an array of results.</returns>
-        public async Task<T[]> GetAsync()
+        public Task<T[]> GetAsync()
         {
-            return await TaskUtils.Async(Get);
+            return TaskUtils.Async(Get);
         }
 
         /// <summary>
@@ -543,9 +543,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="obj">The object to insert.</param>
         /// <returns>A task representing the asynchronous operation, with the ID of the inserted row.</returns>
-        public async Task<int> InsertAsync(T obj)
+        public Task<int> InsertAsync(T obj)
         {
-            return await TaskUtils.Async(() => Insert(obj));
+            return TaskUtils.Async(() => Insert(obj));
         }
 
         /// <summary>
@@ -580,9 +580,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="objs">The objects to insert.</param>
         /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
-        public async Task<int> BulkInsertAsync(params T[] objs)
+        public Task<int> BulkInsertAsync(params T[] objs)
         {
-            return await TaskUtils.Async(() => BulkInsert(objs));
+            return TaskUtils.Async(() => BulkInsert(objs));
         }
 
         /// <summary>
@@ -599,9 +599,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="objs">The objects to insert.</param>
         /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
-        public async Task<int> BulkInsertAsync(IEnumerable<T> objs)
+        public Task<int> BulkInsertAsync(IEnumerable<T> objs)
         {
-            return await TaskUtils.Async(() => BulkInsert(objs));
+            return TaskUtils.Async(() => BulkInsert(objs));
         }
 
         /// <summary>
@@ -619,9 +619,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="obj">The object to update.</param>
         /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
-        public async Task<int> UpdateAsync(T obj)
+        public Task<int> UpdateAsync(T obj)
         {
-            return await TaskUtils.Async(() => Update(obj));
+            return TaskUtils.Async(() => Update(obj));
         }
 
         /// <summary>
@@ -643,9 +643,9 @@ namespace SharpOrm
         /// <param name="obj">The object to update.</param>
         /// <param name="expression">Expression to retrieve the properties that should be saved.</param>
         /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
-        public async Task<int> UpdateAsync(T obj, Expression<ColumnExpression<T>> expression)
+        public Task<int> UpdateAsync(T obj, Expression<ColumnExpression<T>> expression)
         {
-            return await TaskUtils.Async(() => Update(obj, expression));
+            return TaskUtils.Async(() => Update(obj, expression));
         }
 
         /// <summary>
@@ -669,9 +669,9 @@ namespace SharpOrm
         /// <param name="obj">The object to update.</param>
         /// <param name="columns">The columns to update.</param>
         /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
-        public async Task<int> UpdateAsync(T obj, params string[] columns)
+        public Task<int> UpdateAsync(T obj, params string[] columns)
         {
-            return await TaskUtils.Async(() => Update(obj, columns));
+            return TaskUtils.Async(() => Update(obj, columns));
         }
 
         /// <summary>
@@ -704,9 +704,9 @@ namespace SharpOrm
         /// <param name="obj">The object to insert or update.</param>
         /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
-        public async Task UpsertAsync(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
+        public Task UpsertAsync(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
         {
-            await TaskUtils.Async(() => Upsert(obj, toCheckColumnsExp, updateColumnsExp));
+            return TaskUtils.Async(() => Upsert(obj, toCheckColumnsExp, updateColumnsExp));
         }
 
         /// <summary>
@@ -730,9 +730,9 @@ namespace SharpOrm
         /// <param name="obj">The object to insert or update.</param>
         /// <param name="toCheckColumns">The columns to check for existing records.</param>
         /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
-        public async Task UpsertAsync(T obj, string[] toCheckColumns, params string[] updateColumns)
+        public Task UpsertAsync(T obj, string[] toCheckColumns, params string[] updateColumns)
         {
-            await TaskUtils.Async(() => Upsert(obj, toCheckColumns, updateColumns));
+            return TaskUtils.Async(() => Upsert(obj, toCheckColumns, updateColumns));
         }
 
         /// <summary>
@@ -1527,7 +1527,7 @@ namespace SharpOrm
         protected internal new QueryInfo Info => (QueryInfo)base.Info;
 
         /// <summary>
-        /// Gets a value indicating whether the object has been disposed.
+        /// Gets a value indicating whether the object has been _disposed.
         /// </summary>
         public bool Disposed => _disposed;
 
@@ -2155,7 +2155,7 @@ namespace SharpOrm
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
             if (columnNames == null || columnNames.Length == 0)
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
             using (var cmd = GetCommand().SetExpression(GetGrammar().InsertExpression(expression, columnNames)))
                 return cmd.ExecuteNonQuery();
@@ -2666,7 +2666,7 @@ namespace SharpOrm
         /// <summary>
         /// Releases all resources used by the object.
         /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has already been _disposed.</exception>
         public void Dispose()
         {
             if (_disposed)

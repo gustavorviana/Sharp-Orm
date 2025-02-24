@@ -104,7 +104,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         private void WriteNotMatchedColumns(string sourceAlias, string[] insertColumns)
         {
             Builder.Add(" WHEN NOT MATCHED THEN INSERT (");
-            WriteInsertColumns("", insertColumns);
+            WriteInsertColumns(string.Empty, insertColumns);
             Builder.Add(") VALUES (");
             WriteInsertColumns($"{sourceAlias}.", insertColumns);
             Builder.Add(");");

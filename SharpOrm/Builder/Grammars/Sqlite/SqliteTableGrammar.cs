@@ -23,9 +23,9 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         protected override DbName LoadName()
         {
             if (Schema.Temporary && !Schema.Name.StartsWith("temp_"))
-                return new DbName(string.Concat("temp_", Schema.Name), "");
+                return new DbName(string.Concat("temp_", Schema.Name), string.Empty);
 
-            return new DbName(Schema.Name, "");
+            return new DbName(Schema.Name, string.Empty);
         }
 
         public override SqlExpression Create()

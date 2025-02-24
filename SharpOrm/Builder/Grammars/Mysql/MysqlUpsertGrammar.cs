@@ -39,7 +39,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
         private void WriteInsert(UpsertQueryInfo target, string[] insertColumns)
         {
             Builder.AddFormat("INSERT INTO {0} (", Info.Config.ApplyNomenclature(target.TableName.Name));
-            WriteColumns("", insertColumns);
+            WriteColumns(string.Empty, insertColumns);
             Builder.Add(')');
         }
 

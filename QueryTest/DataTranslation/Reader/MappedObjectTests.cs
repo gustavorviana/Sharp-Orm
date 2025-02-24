@@ -53,6 +53,26 @@ namespace QueryTest.DataTranslation.Reader
         }
 
         [Fact]
+        public void MapNestedWithPrefixTest()
+        {
+            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [WithAliasRootNestedObject]", GetPrefixedNestedObjectReader);
+
+            using var query = new Query<WithAliasRootNestedObject>(Manager);
+            var obj = query.FirstOrDefault();
+
+            Assert.NotNull(obj);
+            Assert.NotNull(obj.Child1);
+
+            Assert.Null(obj.Child2);
+
+            Assert.Equal(11, obj.Id);
+            Assert.Equal(32, obj.Child1.ChildId);
+            Assert.Equal(4, obj.Child1.Id);
+            Assert.Equal("Value Child 1", obj.Child1.Value);
+            Assert.Empty(obj.StrArray);
+        }
+
+        [Fact]
         public void MapAllAsNestedTest()
         {
             Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetNestedObjectReader);
@@ -88,14 +108,32 @@ namespace QueryTest.DataTranslation.Reader
             );
         }
 
+        private static MockDataReader GetPrefixedNestedObjectReader()
+        {
+            return new MockDataReader(
+                new Cell("Id", 11),
+                new Cell("Child_Id", 32),
+                new Cell("WithPrefixChild1_Id", 4),
+                new Cell("Child2_Id", 5),
+                new Cell("WithPrefixChild1_Value", "Value Child 1"),
+                new Cell("Child2_Value", "Value Child 2")
+            );
+        }
+
         #region Classes
+
+        private class WithAliasRootNestedObject : RootNestedObject
+        {
+            [MapNested(Prefix = "WithPrefix")]
+            public override ChildNesteddObject? Child1 { get => base.Child1; set => base.Child1 = value; }
+        }
 
         private class RootNestedObject
         {
             public int Id { get; set; }
             [MapNested]
-            public ChildNesteddObject? Child1 { get; set; }
-            public ChildNesteddObject? Child2 { get; set; }
+            public virtual ChildNesteddObject? Child1 { get; set; }
+            public virtual ChildNesteddObject? Child2 { get; set; }
 
             public string[] StrArray { get; set; } = [];
         }

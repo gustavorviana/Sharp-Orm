@@ -62,9 +62,9 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool IsNative { get; }
 
-        public bool MapNested { get; }
-
         public string PropName => this.column?.Name;
+
+        public MapNestedAttribute MapNested { get; }
 
         private Type _validType = null;
         #endregion
@@ -93,7 +93,7 @@ namespace SharpOrm.Builder
             column = member;
             Translation = translation ?? registry.GetFor(Type);
             IsNative = TranslationUtils.IsNative(type, false);
-            MapNested = member.GetCustomAttribute<MapNestedAttribute>() != null;
+            MapNested = member.GetCustomAttribute<MapNestedAttribute>();
 
             ForeignInfo = GetForeign();
 
