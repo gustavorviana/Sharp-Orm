@@ -82,7 +82,7 @@ namespace SharpOrm.DataTranslation.Reader
             this.CreateInstance();
 
             foreach (var item in this.columns)
-                if (item.Index >= 0)
+                if (item.Index != -1)
                     item.Set(record[item.Index]);
 
             return this.root.Instance;

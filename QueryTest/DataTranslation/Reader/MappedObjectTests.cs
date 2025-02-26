@@ -113,9 +113,9 @@ namespace QueryTest.DataTranslation.Reader
             return new MockDataReader(
                 new Cell("Id", 11),
                 new Cell("Child_Id", 32),
-                new Cell("WithPrefixChild1_Id", 4),
+                new Cell("WithPrefixId", 4),
                 new Cell("Child2_Id", 5),
-                new Cell("WithPrefixChild1_Value", "Value Child 1"),
+                new Cell("WithPrefixValue", "Value Child 1"),
                 new Cell("Child2_Value", "Value Child 2")
             );
         }

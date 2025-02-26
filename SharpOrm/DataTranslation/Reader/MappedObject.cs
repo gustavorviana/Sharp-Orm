@@ -94,9 +94,6 @@ namespace SharpOrm.DataTranslation.Reader
             if (!Type.IsArray)
                 objectActivator = new ObjectActivator(Type, record, registry);
 
-            if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
-                prefix += '_';
-
             foreach (var column in registry.GetTable(this.Type).Columns)
                 if (column.ForeignInfo != null) AddIfValidId(record, fkColumns, column.ForeignInfo.ForeignKey, column);
                 else if (NeedMapAsValue(column)) AddIfValidId(record, columns, GetName(column, prefix), column);
@@ -107,8 +104,22 @@ namespace SharpOrm.DataTranslation.Reader
 
         private void MapNested(ColumnInfo column, IDataRecord record, string prefix)
         {
-            if (IsValidNested(column))
-                MapChild(record, column, string.IsNullOrEmpty(column.MapNested?.Prefix) ? prefix : column.MapNested.Prefix);
+            if (!IsValidNested(column))
+                return;
+
+            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable, nestedMode) { parentColumn = column, parent = this }
+                    .Map(registry, record, GetColumnPrefix(column, prefix)));
+        }
+
+        private static string GetColumnPrefix(ColumnInfo column, string prefix)
+        {
+            if (!string.IsNullOrEmpty(column.MapNested?.Prefix))
+                return column.MapNested.Prefix;
+
+            if (string.IsNullOrEmpty(prefix))
+                return column.Name + '_';
+
+            return prefix;
         }
 
         private bool IsValidNested(ColumnInfo column)
@@ -120,12 +131,6 @@ namespace SharpOrm.DataTranslation.Reader
         private bool IsRootType(ColumnInfo column)
         {
             return column.Type == Type;
-        }
-
-        private void MapChild(IDataRecord record, ColumnInfo column, string prefix)
-        {
-            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable, nestedMode) { parentColumn = column, parent = this }
-                    .Map(registry, record, prefix + column.Name));
         }
 
         private static bool NeedMapAsValue(ColumnInfo column)

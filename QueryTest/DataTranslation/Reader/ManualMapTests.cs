@@ -5,6 +5,7 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
+using System.ComponentModel.DataAnnotations.Schema;
 using Xunit.Abstractions;
 using static QueryTest.DataTranslation.Reader.ObjectActivatorTests;
 
@@ -145,6 +146,80 @@ namespace QueryTest.DataTranslation.Reader
 
             Assert.Equal(Guid.Parse(custom_id), actual.Custom.Id);
             Assert.Equal(custom_status, actual.Custom.Status);
+        }
+
+        [Fact]
+        public void MapNestedWithPrefixTest()
+        {
+            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetPrefixedNestedObjectReader);
+
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<RootNestedObject>(reg);
+            tm.Property(x => x.Id, "Id");
+            tm.Prefix(x => x.Child1, "WithPrefix");
+            tm.Build();
+
+            var mockConfig = Config.Clone();
+            mockConfig.Translation = reg;
+
+            using var q = new Query<RootNestedObject>(GetManager(mockConfig));
+            var obj = q.FirstOrDefault();
+
+            Assert.NotNull(obj);
+            Assert.NotNull(obj.Child1);
+            //Assert.NotNull(obj.Child2);
+
+            var colLevel = Column.FromExp<RootNestedObject>(x => x.Child1!.Id, reg).Name;
+
+            Assert.Equal(11, obj.Id);
+            Assert.Equal(4, obj.Child1.Id);
+            Assert.Equal(32, obj.Child1.ChildId);
+            Assert.Equal("Value Child 1", obj.Child1.Value);
+            Assert.Equal(444, obj.Child1.SubNested!.Id);
+
+            Assert.Equal(11, obj.Id);
+            //Assert.Equal(5, obj.Child2.Id);
+            //Assert.Equal(32, obj.Child2.ChildId);
+            //Assert.Equal(555, obj.Child2.SubNested!.Id);
+        }
+
+        private static MockDataReader GetPrefixedNestedObjectReader()
+        {
+            return new MockDataReader(
+                new Cell("Id", 11),
+                new Cell("WithPrefixId", 4),
+                new Cell("Child2_Id", 5),
+                new Cell("child_id", 32),
+                new Cell("WithPrefixValue", "Value Child 1"),
+                new Cell("Child2_Value", "Value Child 2"),
+                new Cell("Child2_SubNested_Id", 555),
+                new Cell("WithPrefixSubNested_Id", 444)
+            );
+        }
+
+        private class RootNestedObject
+        {
+            public int Id { get; set; }
+
+            public virtual ChildNestedObject? Child1 { get; set; }
+            //public virtual ChildNestedObject? Child2 { get; set; }
+        }
+
+        private class ChildNestedObject
+        {
+            public int Id { get; set; }
+
+            [Column("child_id")]
+            public int ChildId { get; set; }
+
+            public string? Value { get; set; }
+
+            public ChildNestedObject2? SubNested { get; set; }
+        }
+
+        private class ChildNestedObject2
+        {
+            public int Id { get; set; }
         }
 
         private class DynamicMappedTable

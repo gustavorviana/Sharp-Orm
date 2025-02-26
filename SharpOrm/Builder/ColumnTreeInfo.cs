@@ -9,8 +9,6 @@ namespace SharpOrm.Builder
 {
     internal class ColumnTreeInfo : ColumnInfo
     {
-        internal new MemberInfo column => base.column;
-
         internal MemberInfo[] Path { get; }
         internal string ParentPath { get; }
 

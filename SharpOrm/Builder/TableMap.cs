@@ -122,19 +122,34 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped property.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
+            return GetColumnFromExpression(expression, true, out _)?.GetColumn() ?? throw new ArgumentOutOfRangeException();
+        }
+
+        /// <summary>
+        /// Maps a nested property with a specified prefix.
+        /// </summary>
+        /// <param name="prefix">The prefix to use for the nested property.</param>
+        /// <returns></returns>
+        public TableMap<T> Prefix(Expression<Func<T, object>> expression, string prefix)
+        {
+            GetColumnFromExpression(expression, false, out _).prefix = prefix;
+            return this;
+        }
+
+        private MemberTreeNode GetColumnFromExpression(Expression<Func<T, object>> expression, bool needNative, out MemberTreeNode root)
+        {
             var path = PropertyPathVisitor.GetPropertyPaths(expression);
             if (path.Count == 0) throw new ArgumentOutOfRangeException(nameof(expression), "At least one field must be selected.");
 
-            var root = this.Nodes.FirstOrDefault(x => x.Member == path[0]) ?? throw new ArgumentOutOfRangeException();
-
+            root = this.Nodes.FirstOrDefault(x => x.Member == path[0]) ?? throw new ArgumentOutOfRangeException();
             if (path.Count > 1)
-                return root.InternalFindChild(path, 1).GetColumn() ?? throw new ArgumentOutOfRangeException();
+                return root.InternalFindChild(path, 1);
 
             Type memberType = ReflectionUtils.GetMemberType(root.Member);
-            if (!IsNative(memberType))
+            if (needNative && !IsNative(memberType))
                 throw new InvalidOperationException($"It is not possible to map the member \"{root.Member}\" of type \"{memberType}\".");
 
-            return root.GetColumn();
+            return root;
         }
 
         private static bool IsNative(Type type)
@@ -150,7 +165,7 @@ namespace SharpOrm.Builder
             {
                 root.Add(child.Member);
 
-                foreach (var result in child.BuildTree(root, Registry))
+                foreach (var result in child.BuildTree(root, Registry, null))
                     yield return result;
 
                 root.RemoveAt(root.Count - 1);
