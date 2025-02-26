@@ -13,7 +13,6 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         private readonly object _readLock = new object();
         internal readonly TranslationRegistry registry;
         private ObjectReader reader = null;
@@ -75,10 +74,10 @@ namespace SharpOrm.Builder
 
         private IEnumerable<ColumnInfo> GetColumns()
         {
-            foreach (var prop in this.Type.GetProperties(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var prop in this.Type.GetProperties(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in this.Type.GetFields(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var field in this.Type.GetFields(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, field);
         }
 

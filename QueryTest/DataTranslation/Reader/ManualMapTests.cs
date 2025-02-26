@@ -67,7 +67,7 @@ namespace QueryTest.DataTranslation.Reader
             };
 
             var cells = table.GetObjCells(instance, true, false).ToArray();
-            Assert.False(cells.Any(c => c.Name == nameof(TestClass.MyId)));
+            Assert.DoesNotContain(cells, c => c.Name == nameof(TestClass.MyId));
             Assert.Equal(4, cells.Length);
         }
 
@@ -149,6 +149,62 @@ namespace QueryTest.DataTranslation.Reader
         }
 
         [Fact]
+        public void MapNestedTest()
+        {
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            tm.MapNested(x => x.Child1, "WithPrefix");
+            tm.Build();
+
+            Assert.Equal("Id", tm.GetColumn(x => x.Id).Name);
+            Assert.Equal("WithPrefixId", tm.GetColumn(x => x.Child1!.Id)?.Name);
+            Assert.Equal("child_id", tm.GetColumn(x => x.Child1!.ChildId)?.Name);
+            Assert.Equal("WithPrefixValue", tm.GetColumn(x => x.Child1!.Value)?.Name);
+
+            Assert.Null(tm.GetColumn(x => x.Child1!.SubNested));
+            Assert.Null(tm.GetColumn(x => x.Child2));
+        }
+
+        [Fact]
+        public void MapSubNestedTest()
+        {
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            tm.MapNested(x => x.Child1, "WithPrefix", true);
+            tm.Build();
+
+            Assert.Equal("Id", tm.GetColumn(x => x.Id).Name);
+            Assert.Equal("WithPrefixId", tm.GetColumn(x => x.Child1!.Id)?.Name);
+            Assert.Equal("child_id", tm.GetColumn(x => x.Child1!.ChildId)?.Name);
+            Assert.Equal("WithPrefixValue", tm.GetColumn(x => x.Child1!.Value)?.Name);
+
+            Assert.Equal("WithPrefixSubNested_Id", tm.GetColumn(x => x.Child1!.SubNested!.Id)?.Name);
+            Assert.Null(tm.GetColumn(x => x.Child2));
+        }
+
+
+        [Fact]
+        public void MapManualNestedTest()
+        {
+            var reg = new TranslationRegistry();
+            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            tm.Property(x => x.Id, "RootId");
+            tm.Property(x => x.Child1!.Id, "Child1MappedId");
+            tm.Property(x => x.Child1!.ChildId, "Child1MappedChildId");
+            tm.Property(x => x.Child1!.Value, "Child1MappedValue");
+            tm.Property(x => x.Child1!.SubNested!.Id, "Child1SubNestedId");
+            tm.Build();
+
+            Assert.Equal("RootId", tm.GetColumn(x => x.Id).Name);
+            Assert.Equal("Child1MappedId", tm.GetColumn(x => x.Child1!.Id)?.Name);
+            Assert.Equal("Child1MappedChildId", tm.GetColumn(x => x.Child1!.ChildId)?.Name);
+            Assert.Equal("Child1MappedValue", tm.GetColumn(x => x.Child1!.Value)?.Name);
+
+            Assert.Equal("Child1SubNestedId", tm.GetColumn(x => x.Child1!.SubNested!.Id)?.Name);
+            Assert.Null(tm.GetColumn(x => x.Child2));
+        }
+
+        [Fact]
         public void MapNestedWithPrefixTest()
         {
             Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetPrefixedNestedObjectReader);
@@ -156,7 +212,7 @@ namespace QueryTest.DataTranslation.Reader
             var reg = new TranslationRegistry();
             var tm = new TableMap<RootNestedObject>(reg);
             tm.Property(x => x.Id, "Id");
-            tm.Prefix(x => x.Child1, "WithPrefix");
+            tm.MapNested(x => x.Child1, "WithPrefix");
             tm.Build();
 
             var mockConfig = Config.Clone();
@@ -167,9 +223,7 @@ namespace QueryTest.DataTranslation.Reader
 
             Assert.NotNull(obj);
             Assert.NotNull(obj.Child1);
-            //Assert.NotNull(obj.Child2);
-
-            var colLevel = Column.FromExp<RootNestedObject>(x => x.Child1!.Id, reg).Name;
+            Assert.NotNull(obj.Child2);
 
             Assert.Equal(11, obj.Id);
             Assert.Equal(4, obj.Child1.Id);
@@ -178,9 +232,9 @@ namespace QueryTest.DataTranslation.Reader
             Assert.Equal(444, obj.Child1.SubNested!.Id);
 
             Assert.Equal(11, obj.Id);
-            //Assert.Equal(5, obj.Child2.Id);
-            //Assert.Equal(32, obj.Child2.ChildId);
-            //Assert.Equal(555, obj.Child2.SubNested!.Id);
+            Assert.Equal(5, obj.Child2.Id);
+            Assert.Equal(32, obj.Child2.ChildId);
+            Assert.Equal(555, obj.Child2.SubNested!.Id);
         }
 
         private static MockDataReader GetPrefixedNestedObjectReader()
@@ -202,7 +256,7 @@ namespace QueryTest.DataTranslation.Reader
             public int Id { get; set; }
 
             public virtual ChildNestedObject? Child1 { get; set; }
-            //public virtual ChildNestedObject? Child2 { get; set; }
+            public virtual ChildNestedObject? Child2 { get; set; }
         }
 
         private class ChildNestedObject

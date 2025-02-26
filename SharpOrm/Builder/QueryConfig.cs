@@ -151,9 +151,7 @@ namespace SharpOrm.Builder
         /// <param name="target">The target instance to copy the properties to.</param>
         protected void CopyTo(QueryConfig target)
         {
-            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-            foreach (var prop in this.GetType().GetProperties(flags))
+            foreach (var prop in this.GetType().GetProperties(Bindings.Instance))
                 if (prop.CanRead && prop.CanWrite)
                     ReflectionUtils.CopyPropTo(this, target, prop);
         }

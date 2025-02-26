@@ -1,7 +1,10 @@
 ﻿using SharpOrm.DataTranslation;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace SharpOrm.Builder
 {
@@ -18,16 +21,37 @@ namespace SharpOrm.Builder
             this.Member = member;
         }
 
-        internal MemberTreeNode InternalFindChild(IList<MemberInfo> members, int offset)
+        internal MemberTreeNode GetOrAdd(MemberInfo member)
         {
-            if (members.Count <= offset) return null;
+            var children = Children.FirstOrDefault(x => x.Member == member);
+            if (children != null)
+                return children;
 
-            var member = members[offset];
-            foreach (var node in this.Children)
-                if (members.Count == offset + 1 && node.Member == member) return node;
-                else if (node.Member == member) return node.InternalFindChild(members, offset + 1);
+            children = new MemberTreeNode(member);
+            Children.Add(children);
+            return children;
+        }
 
-            return null;
+        internal MemberTreeNode MapChildren(MemberInfo member, bool nested)
+        {
+            var type = ReflectionUtils.GetMemberType(member);
+
+            foreach (var property in type.GetProperties(Bindings.PublicInstance))
+                if (ColumnInfo.CanWork(property))
+                    if (IsNative(property.PropertyType)) Children.Add(new MemberTreeNode(property));
+                    else Children.Add(new MemberTreeNode(property).MapChildren(property, nested));
+
+            foreach (var field in type.GetFields(Bindings.PublicInstance))
+                if (ColumnInfo.CanWork(field))
+                    if (IsNative(field.FieldType)) Children.Add(new MemberTreeNode(field));
+                    else Children.Add(new MemberTreeNode(field).MapChildren(field, nested));
+
+            return this;
+        }
+
+        internal static bool IsNative(Type type)
+        {
+            return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
         internal ColumnMapInfo GetColumn()

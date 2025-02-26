@@ -13,7 +13,6 @@ namespace SharpOrm.Builder
     /// <typeparam name="T">The type to be mapped to the table.</typeparam>
     public class TableMap<T>
     {
-        private static readonly BindingFlags Binding = BindingFlags.Instance | BindingFlags.Public;
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
         private TableInfo table;
 
@@ -42,43 +41,29 @@ namespace SharpOrm.Builder
         /// </summary>
         public TranslationRegistry Registry { get; }
 
+        public TableMap(QueryConfig config) : this(config.Translation, config.NestedMapMode)
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TableMap{T}"/> class.
         /// Automatically maps the properties and fields of the specified type <typeparamref name="T"/>.
         /// </summary>
         /// <param name="registry">The translation registry to be used for the mapping.</param>
-        public TableMap(TranslationRegistry registry)
+        public TableMap(TranslationRegistry registry, NestedMode nestedMode = NestedMode.All)
         {
             this.Name = typeof(T).Name;
             this.Registry = registry;
 
-            foreach (var property in typeof(T).GetProperties(Binding))
+            foreach (var property in typeof(T).GetProperties(Bindings.PublicInstance))
                 if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
-                    else this.Nodes.Add(Map(property));
+                    if (MemberTreeNode.IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
+                    else if (nestedMode == NestedMode.All) this.Nodes.Add(new MemberTreeNode(property).MapChildren(property, true));
 
-            foreach (var field in typeof(T).GetFields(Binding))
+            foreach (var field in typeof(T).GetFields(Bindings.PublicInstance))
                 if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
-                    else this.Nodes.Add(Map(field));
-        }
-
-        private MemberTreeNode Map(MemberInfo member)
-        {
-            var rootNode = new MemberTreeNode(member);
-            var type = ReflectionUtils.GetMemberType(member);
-
-            foreach (var property in type.GetProperties(Binding))
-                if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) rootNode.Children.Add(new MemberTreeNode(property));
-                    else rootNode.Children.Add(Map(property));
-
-            foreach (var field in type.GetFields(Binding))
-                if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) rootNode.Children.Add(new MemberTreeNode(field));
-                    else rootNode.Children.Add(Map(field));
-
-            return rootNode;
+                    if (MemberTreeNode.IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
+                    else if (nestedMode == NestedMode.All) this.Nodes.Add(new MemberTreeNode(field).MapChildren(field, true));
         }
 
         public TableMap<T> SoftDelete(string column, string dateColumn = null)
@@ -122,7 +107,7 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped property.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
-            return GetColumnFromExpression(expression, true, out _)?.GetColumn() ?? throw new ArgumentOutOfRangeException();
+            return GetColumnFromExpression(expression, true, out _)?.GetColumn() ?? throw new InvalidOperationException("Invalid column mapping expression.");
         }
 
         /// <summary>
@@ -130,9 +115,11 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="prefix">The prefix to use for the nested property.</param>
         /// <returns></returns>
-        public TableMap<T> Prefix(Expression<Func<T, object>> expression, string prefix)
+        public TableMap<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
         {
-            GetColumnFromExpression(expression, false, out _).prefix = prefix;
+            var column = GetColumnFromExpression(expression, false, out _);
+            column.MapChildren(column.Member, subNested);
+            column.prefix = prefix;
             return this;
         }
 
@@ -141,20 +128,20 @@ namespace SharpOrm.Builder
             var path = PropertyPathVisitor.GetPropertyPaths(expression);
             if (path.Count == 0) throw new ArgumentOutOfRangeException(nameof(expression), "At least one field must be selected.");
 
-            root = this.Nodes.FirstOrDefault(x => x.Member == path[0]) ?? throw new ArgumentOutOfRangeException();
-            if (path.Count > 1)
-                return root.InternalFindChild(path, 1);
+            root = GetOrAddRoot(path[0]);
+            if (path.Count != 1)
+                return GetNode(root, path);
 
-            Type memberType = ReflectionUtils.GetMemberType(root.Member);
-            if (needNative && !IsNative(memberType))
-                throw new InvalidOperationException($"It is not possible to map the member \"{root.Member}\" of type \"{memberType}\".");
-
+            ValidateNonNative(needNative, root);
             return root;
         }
 
-        private static bool IsNative(Type type)
+        private static MemberTreeNode GetNode(MemberTreeNode node, List<MemberInfo> path)
         {
-            return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
+            for (int i = 1; i < path.Count; i++)
+                node = node.GetOrAdd(path[i]);
+
+            return node;
         }
 
         internal IEnumerable<ColumnTreeInfo> GetFields()
@@ -172,6 +159,24 @@ namespace SharpOrm.Builder
             }
         }
 
+        private static void ValidateNonNative(bool needNative, MemberTreeNode root)
+        {
+            Type memberType = ReflectionUtils.GetMemberType(root.Member);
+            if (needNative && !MemberTreeNode.IsNative(memberType))
+                throw new InvalidOperationException($"It is not possible to map the member \"{root.Member}\" of type \"{memberType}\".");
+        }
+
+        private MemberTreeNode GetOrAddRoot(MemberInfo member)
+        {
+            var root = Nodes.FirstOrDefault(x => x.Member == member);
+            if (root != null)
+                return root;
+
+            root = new MemberTreeNode(member);
+            Nodes.Add(root);
+            return root;
+        }
+
         /// <summary>
         /// Builds the table mapping and registers it with the translation registry.
         /// </summary>
@@ -182,6 +187,14 @@ namespace SharpOrm.Builder
             if (this.table != null) return this.table;
 
             return this.table = this.Registry.AddTableMap(this);
+        }
+
+        public Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
+        {
+            if (table == null)
+                throw new Exception("Table not built yet.");
+
+            return Column.FromExp(columnExpression, Registry);
         }
 
         private class PropertyPathVisitor : ExpressionVisitor

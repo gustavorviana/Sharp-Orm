@@ -160,10 +160,14 @@ namespace SharpOrm
         public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression, TranslationRegistry registry)
         {
             var member = ExpressionUtils<T>.GetColumnMember(columnExpression, out var rootType);
-            if (registry.GetTable(rootType) is TableInfo table)
-                return new MemberInfoColumn(member, table.GetColumn(member).Name);
+            if (!(registry.GetTable(rootType) is TableInfo table))
+                return new MemberInfoColumn(member);
 
-            return new MemberInfoColumn(member);
+            string name = table.GetColumn(member)?.Name;
+            if (string.IsNullOrEmpty(name))
+                return null;
+
+            return new MemberInfoColumn(member, name);
         }
 
         /// <summary>
