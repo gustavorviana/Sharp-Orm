@@ -14,6 +14,7 @@ namespace SharpOrm.DataTranslation
         private readonly NativeSqlTranslation native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
         private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
+        private JsonTranslationBase _jsonTranslation = new JsonTranslation();
 
         public static TranslationRegistry Default
         {
@@ -25,6 +26,12 @@ namespace SharpOrm.DataTranslation
         /// Custom value translators.
         /// </summary>
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
+
+        public JsonTranslationBase JsonTranslation
+        {
+            get => _jsonTranslation;
+            set => _jsonTranslation = value ?? throw new ArgumentNullException(nameof(JsonTranslation));
+        }
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
@@ -187,6 +194,9 @@ namespace SharpOrm.DataTranslation
             if (member.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
 
+            if (member.GetCustomAttribute<JsonAttribute>(true) != null)
+                return _jsonTranslation;
+
             return null;
         }
 
@@ -282,7 +292,8 @@ namespace SharpOrm.DataTranslation
                 GuidFormat = GuidFormat,
                 TimeZone = TimeZone,
                 Translators = Translators,
-                EnumSerialization = EnumSerialization
+                EnumSerialization = EnumSerialization,
+                JsonTranslation = JsonTranslation
             };
         }
     }

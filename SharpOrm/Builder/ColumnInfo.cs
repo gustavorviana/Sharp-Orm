@@ -66,6 +66,8 @@ namespace SharpOrm.Builder
 
         public MapNestedAttribute MapNested { get; }
 
+        public bool IsJson { get; }
+
         private Type _validType = null;
         #endregion
 
@@ -94,7 +96,7 @@ namespace SharpOrm.Builder
             Translation = translation ?? registry.GetFor(Type);
             IsNative = TranslationUtils.IsNative(type, false);
             MapNested = member.GetCustomAttribute<MapNestedAttribute>();
-
+            IsJson = member.GetCustomAttribute<JsonAttribute>() != null;
             ForeignInfo = GetForeign();
 
             ColumnAttribute colAttr = GetAttribute<ColumnAttribute>();
