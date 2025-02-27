@@ -11,16 +11,15 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     public class TranslationRegistry : IEquatable<TranslationRegistry>, ICloneable
     {
+        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
-        private readonly List<TableInfo> manualMapped = new List<TableInfo>();
+        private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
 
         public static TranslationRegistry Default
         {
             get => _default;
             set => _default = value ?? throw new ArgumentNullException(nameof(Default));
         }
-
-        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
 
         /// <summary>
         /// Custom value translators.
@@ -183,7 +182,7 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         /// <param name="member"></param>
         /// <returns></returns>
-        public static ISqlTranslation GetOf(MemberInfo member)
+        public ISqlTranslation GetOf(MemberInfo member)
         {
             if (member.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
@@ -194,14 +193,14 @@ namespace SharpOrm.DataTranslation
         internal TableInfo AddTableMap<T>(TableMap<T> map)
         {
             var type = typeof(T);
-            if (manualMapped.Any(x => x.Type == type))
+            if (_manualMapped.Any(x => x.Type == type))
                 throw new InvalidOperationException("The type has already been mapped.");
 
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
 
             var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
-            manualMapped.Add(table);
+            _manualMapped.Add(table);
             return table;
         }
 
@@ -230,7 +229,7 @@ namespace SharpOrm.DataTranslation
 
         internal TableInfo GetManualMap(Type type)
         {
-            return manualMapped.FirstOrDefault(x => x.Type == type);
+            return _manualMapped.FirstOrDefault(x => x.Type == type);
         }
 
         #region IEquatable
@@ -273,17 +272,17 @@ namespace SharpOrm.DataTranslation
 
         #endregion
 
-        object ICloneable.Clone() => this.Clone();
+        object ICloneable.Clone() => Clone();
 
         public TranslationRegistry Clone()
         {
-
             return new TranslationRegistry
             {
                 DbTimeZone = DbTimeZone,
                 GuidFormat = GuidFormat,
                 TimeZone = TimeZone,
-                Translators = Translators
+                Translators = Translators,
+                EnumSerialization = EnumSerialization
             };
         }
     }

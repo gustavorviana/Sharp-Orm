@@ -74,7 +74,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="fieldInfo">The field information.</param>
-        public ColumnInfo(TranslationRegistry registry, FieldInfo fieldInfo) : this(fieldInfo, fieldInfo.FieldType, registry, TranslationRegistry.GetOf(fieldInfo))
+        public ColumnInfo(TranslationRegistry registry, FieldInfo fieldInfo) : this(fieldInfo, fieldInfo.FieldType, registry, registry.GetOf(fieldInfo))
         {
         }
 
@@ -83,7 +83,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="propertyInfo">The property information.</param>
-        public ColumnInfo(TranslationRegistry registry, PropertyInfo propertyInfo) : this(propertyInfo, propertyInfo.PropertyType, registry, TranslationRegistry.GetOf(propertyInfo))
+        public ColumnInfo(TranslationRegistry registry, PropertyInfo propertyInfo) : this(propertyInfo, propertyInfo.PropertyType, registry, registry.GetOf(propertyInfo))
         {
         }
 

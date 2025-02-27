@@ -107,7 +107,7 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped property.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
-            return GetColumnFromExpression(expression, true, out _)?.GetColumn() ?? throw new InvalidOperationException("Invalid column mapping expression.");
+            return GetColumnFromExpression(expression, true, out _)?.GetColumn(Registry) ?? throw new InvalidOperationException("Invalid column mapping expression.");
         }
 
         /// <summary>

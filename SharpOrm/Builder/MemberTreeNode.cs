@@ -10,7 +10,7 @@ namespace SharpOrm.Builder
 {
     internal class MemberTreeNode
     {
-        private ColumnMapInfo columnInfo;
+        private ColumnMapInfo _columnInfo;
 
         public List<MemberTreeNode> Children { get; } = new List<MemberTreeNode>();
         public MemberInfo Member { get; }
@@ -18,7 +18,7 @@ namespace SharpOrm.Builder
 
         public MemberTreeNode(MemberInfo member)
         {
-            this.Member = member;
+            Member = member;
         }
 
         internal MemberTreeNode GetOrAdd(MemberInfo member)
@@ -54,21 +54,21 @@ namespace SharpOrm.Builder
             return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
         }
 
-        internal ColumnMapInfo GetColumn()
+        internal ColumnMapInfo GetColumn(TranslationRegistry registry)
         {
-            if (this.columnInfo != null) return this.columnInfo;
-            return this.columnInfo = new ColumnMapInfo(this.Member);
+            if (_columnInfo != null) return _columnInfo;
+            return _columnInfo = new ColumnMapInfo(Member, registry);
         }
 
         internal IEnumerable<ColumnTreeInfo> BuildTree(List<MemberInfo> root, TranslationRegistry registry, string prefix, bool isRootPrefix = false)
         {
-            if (this.Children.Count == 0)
+            if (Children.Count == 0)
             {
-                yield return this.Build(root, registry, GetValidName(root, prefix, this, isRootPrefix));
+                yield return Build(root, registry, GetValidName(root, prefix, this, isRootPrefix));
                 yield break;
             }
 
-            foreach (var child in this.Children)
+            foreach (var child in Children)
             {
                 root.Add(child.Member);
 
@@ -103,12 +103,12 @@ namespace SharpOrm.Builder
 
         private ColumnTreeInfo Build(List<MemberInfo> path, TranslationRegistry registry, string fullName)
         {
-            this.GetColumn().builded = true;
+            GetColumn(registry).builded = true;
 
-            if (string.IsNullOrEmpty(columnInfo._name))
-                columnInfo._name = fullName;
+            if (string.IsNullOrEmpty(_columnInfo._name))
+                _columnInfo._name = fullName;
 
-            return new ColumnTreeInfo(path, columnInfo, registry);
+            return new ColumnTreeInfo(path, _columnInfo, registry);
         }
     }
 }
