@@ -2616,7 +2616,7 @@ namespace SharpOrm
         protected void ValidateReadonly()
         {
             if (Manager is null)
-                throw new InvalidOperationException("This query is read-only.");
+                throw new InvalidOperationException(Messages.Query.ReadOnly);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,19 +46,19 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(name));
 
             if (!IsValid(name, '.', '_', '#'))
-                throw new InvalidOperationException("The name contains one or more invalid characters.");
+                throw new InvalidOperationException(Messages.Name.InvalidNameChars);
         }
 
         public static void ValidateAlias(string alias)
         {
             if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
-                throw new InvalidOperationException("The alias contains one or more invalid characters.");
+                throw new InvalidOperationException(Messages.Name.InvalidAliasChars);
         }
 
         public static DbName Of<T>(string alias, TranslationRegistry registry = null)
         {
             if (ReflectionUtils.IsDynamic(typeof(T)))
-                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
+                throw new NotSupportedException(Messages.DynamicNotSupported);
 
             if (registry == null)
                 registry = TranslationRegistry.Default;
@@ -76,7 +77,7 @@ namespace SharpOrm.Builder
 
             var splits = fullName.Split(' ');
             if (splits.Length > 3)
-                throw new ArgumentException("Table name is invalid.");
+                throw new ArgumentException(Messages.Name.InvalidTableName);
 
             this.Name = splits[0];
             this.Alias = GetAlias(splits);

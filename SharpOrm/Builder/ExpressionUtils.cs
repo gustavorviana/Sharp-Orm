@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Expressions;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -53,7 +54,7 @@ namespace SharpOrm.Builder
             if (expression.Body is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression mExp2)
                 return mExp2;
 
-            throw new ArgumentException("The provided expression is not valid.");
+            throw new ArgumentException(Messages.Expressions.Invalid);
         }
     }
 }

@@ -2,6 +2,7 @@
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -69,7 +70,7 @@ namespace SharpOrm.Collections
         private void CheckRun()
         {
             if (_hasFirstRun)
-                throw new InvalidOperationException("IEnumerable can be executed only once.");
+                throw new InvalidOperationException(Messages.EnumerableCanExecuteOnce);
 
             _hasFirstRun = true;
             _command.Connection.OpenIfNeeded();

@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace SharpOrm.Builder
             set
             {
                 if (this.table != null)
-                    throw new InvalidOperationException("It is not possible to change the table name after it has been created.");
+                    throw new InvalidOperationException(Messages.TableMap.CannotChangeAfterBuild);
 
                 this._name = value;
             }
@@ -107,7 +108,7 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped property.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
-            return GetColumnFromExpression(expression, true, out _)?.GetColumn(Registry) ?? throw new InvalidOperationException("Invalid column mapping expression.");
+            return GetColumnFromExpression(expression, true, out _)?.GetColumn(Registry) ?? throw new InvalidOperationException(Messages.Expressions.Invalid);
         }
 
         /// <summary>
@@ -192,7 +193,7 @@ namespace SharpOrm.Builder
         public Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
         {
             if (table == null)
-                throw new Exception("Table not built yet.");
+                throw new Exception(Messages.TableMap.NotBuilded);
 
             return Column.FromExp(columnExpression, Registry);
         }
@@ -209,7 +210,7 @@ namespace SharpOrm.Builder
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
-                throw new ArgumentException("Only properties and fields are supported in this operation.");
+                throw new ArgumentException(Messages.Expressions.OnlyFieldsAndproerties);
             }
 
             public static List<MemberInfo> GetPropertyPaths<K>(Expression<Func<K, object>> expression)

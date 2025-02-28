@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +68,7 @@ namespace SharpOrm
         public static Cell Sum(string column, object value)
         {
             if (!TranslationUtils.IsNumeric(value.GetType()))
-                throw new ArgumentException("Only numeric types are allowed.");
+                throw new ArgumentException(Messages.Cell.NumericOnly);
 
             return new Cell(column, SqlExpression.Make(column, "+", value.ToString()));
         }
@@ -82,7 +83,7 @@ namespace SharpOrm
         public static Cell Subtract(string column, object value)
         {
             if (!TranslationUtils.IsNumeric(value.GetType()))
-                throw new ArgumentException("Only numeric types are allowed.");
+                throw new ArgumentException(Messages.Cell.NumericOnly);
 
             return new Cell(column, SqlExpression.Make(column, "-", value.ToString()));
         }

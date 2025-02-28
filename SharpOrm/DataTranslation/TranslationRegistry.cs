@@ -1,8 +1,10 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm.DataTranslation
 {
@@ -194,10 +196,10 @@ namespace SharpOrm.DataTranslation
         {
             var type = typeof(T);
             if (_manualMapped.Any(x => x.Type == type))
-                throw new InvalidOperationException("The type has already been mapped.");
+                throw new InvalidOperationException(Messages.TableMap.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
-                throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
+                throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));
 
             var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
             _manualMapped.Add(table);

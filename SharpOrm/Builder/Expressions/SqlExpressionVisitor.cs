@@ -28,7 +28,7 @@ namespace SharpOrm.Builder.Expressions
         public SqlMember Visit(Expression expression, string memberName = null)
         {
             if (expression == null)
-                throw new ArgumentNullException("expression");
+                throw new ArgumentNullException(nameof(expression));
 
             expression = UnwrapUnaryExpression(expression);
 
@@ -147,7 +147,7 @@ namespace SharpOrm.Builder.Expressions
                 return list;
             }
 
-            throw new InvalidOperationException("Invalid expression structure");
+            throw new InvalidOperationException(Messages.Expressions.Invalid);
         }
 
         private object VisitMethodArgument(Expression expression)
@@ -158,8 +158,7 @@ namespace SharpOrm.Builder.Expressions
             expression = UnwrapUnaryExpression(expression);
 
             if (!(expression is MemberExpression memberExp))
-                throw new NotSupportedException(
-                    string.Format("Argument expression type {0} is not supported", expression.GetType().Name));
+                throw new NotSupportedException(string.Format(Messages.Expressions.ArgumentNotSupported, expression.GetType().Name));
 
             return GetMethodArgValue(memberExp);
         }
@@ -173,8 +172,7 @@ namespace SharpOrm.Builder.Expressions
             if (ReflectionUtils.TryGetValue(memberExp.Member, target, out var value))
                 return value;
 
-            throw new NotSupportedException(
-                string.Format("Member type {0} is not supported", memberExp.Member.GetType().Name));
+            throw new NotSupportedException(string.Format(Messages.Expressions.MemberNotSupported, memberExp.Member.GetType().Name));
         }
 
         private object GetMethodColumn(MemberExpression memberExp)
@@ -228,7 +226,7 @@ namespace SharpOrm.Builder.Expressions
                 return;
 
             string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
-            throw new InvalidOperationException($"It's not possible to load the {mType} '{member.Name}' because its type is incompatible.");
+            throw new InvalidOperationException(string.Format(Messages.Expressions.LoadIncompatible, mType, member.Name));
         }
     }
 }

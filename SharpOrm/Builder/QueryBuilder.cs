@@ -105,7 +105,7 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(builder));
 
             if (this.Equals(builder))
-                throw new InvalidOperationException("The same instance cannot be passed as a parameter.");
+                throw new InvalidOperationException(Messages.Query.SelfInstanceNotSupported);
 
             return this.Add(builder.query.ToString()).AddParameters(builder.Parameters);
         }
@@ -152,7 +152,7 @@ namespace SharpOrm.Builder
         public QueryBuilder Add(string query, bool allowAlias, params object[] parameters)
         {
             if (query.Count(c => c == '?') != parameters.Length)
-                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+                throw new InvalidOperationException(Messages.Query.ExpressionParamsNotMath);
 
             this.query.AppendAndReplace(query, '?', count => this.AddParameter(parameters[count - 1], true));
 
@@ -309,7 +309,7 @@ namespace SharpOrm.Builder
             if (column is string strColumn)
             {
                 if (string.IsNullOrEmpty(strColumn))
-                    throw new Exception(Messages.EmptyColumnName);
+                    throw new Exception(Messages.Query.EmptyColumnName);
 
                 return this.Add(this.info.Config.ApplyNomenclature(strColumn));
             }
@@ -323,7 +323,7 @@ namespace SharpOrm.Builder
             if (column is SqlExpression exp)
                 return this.Add(exp);
 
-            throw new NotSupportedException("The column type is not supported.");
+            throw new NotSupportedException(Messages.Query.ColumnTypeNotsupported);
         }
 
         private bool TryDeferredExpression(ref object column, bool allowAlias)
@@ -529,7 +529,7 @@ namespace SharpOrm.Builder
         internal void SetTrash(Trashed visibility, TableInfo table)
         {
             if (visibility != Trashed.With && table.SoftDelete == null)
-                throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");
+                throw new NotSupportedException(Messages.Query.ClassNotSupportSoftDelete);
 
             this.Trashed = visibility;
             this.softDelete = table.SoftDelete;

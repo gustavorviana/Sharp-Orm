@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 using System.Data;
 using System.Linq;
 using System.Text;
@@ -85,7 +86,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
         private string GetColumnDefinition(DataColumn column)
         {
             if (column.ColumnName.Contains("."))
-                throw new InvalidOperationException("The column name cannot contain \".\"");
+                throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetMySqlDataType(column);

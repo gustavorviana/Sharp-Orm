@@ -1,5 +1,6 @@
 ﻿using SharpOrm;
 using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -210,7 +211,7 @@ namespace SharpOrm.Builder.Grammars
                 );
 
             if (join == null)
-                throw new InvalidOperationException($"Join with the specified name '{name}' was not found.");
+                throw new InvalidOperationException(string.Join(Messages.Query.JoinNotFound, name));
 
             return join.Info.TableName;
         }
@@ -220,7 +221,7 @@ namespace SharpOrm.Builder.Grammars
         public SqlExpression Upsert(DbName sourceTableName, string[] whereColumns, string[] updateColumns, string[] insertColumns)
         {
             if (whereColumns.Length == 0)
-                throw new InvalidOperationException("The comparison columns must be defined.");
+                throw new InvalidOperationException(Messages.Query.ComparisionColumnMustBeSet);
 
             var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
             var source = new UpsertQueryInfo(sourceTableName, Query.Info.Config, "Source");
@@ -231,7 +232,7 @@ namespace SharpOrm.Builder.Grammars
         public SqlExpression Upsert(IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
         {
             if (whereColumns.Length == 0)
-                throw new InvalidOperationException("The comparison columns must be defined.");
+                throw new InvalidOperationException(Messages.Query.ComparisionColumnMustBeSet);
 
             var target = new UpsertQueryInfo(Query.Info.TableName, Query.Info.Config, "Target");
             return BuildExpression(GetUpsertGrammar(), x => x.Build(target, rows, whereColumns, updateColumns));
@@ -242,7 +243,7 @@ namespace SharpOrm.Builder.Grammars
         protected void ConfigureSoftDelete(IUpdateGrammar grammar, SoftDeleteAttribute softDelete)
         {
             if (softDelete == null)
-                throw new NotSupportedException("SotDelete is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
+                throw new NotSupportedException(string.Join(Messages.Query.SoftNotSupported, "Sot delete"));
 
             grammar.Build(GetSoftDeleteColumns(softDelete, true));
         }
@@ -250,7 +251,7 @@ namespace SharpOrm.Builder.Grammars
         protected void ConfigureRestoreSoftDelete(IUpdateGrammar grammar, SoftDeleteAttribute softDelete)
         {
             if (softDelete == null)
-                throw new NotSupportedException("Restore is not supported, the object must be configured with the SoftDeleteAttribute attribute.");
+                throw new NotSupportedException(message: string.Join(Messages.Query.SoftNotSupported, "Restore"));
 
             grammar.Build(GetSoftDeleteColumns(softDelete, false));
         }

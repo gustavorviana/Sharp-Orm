@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -184,7 +185,7 @@ namespace SharpOrm.Builder
         private void CheckBuilded()
         {
             if (this.builded)
-                throw new InvalidOperationException("It is not possible to alter the column; it has already been built.");
+                throw new InvalidOperationException(Messages.TableMap.ColumnAlreadyMapped);
         }
     }
 }

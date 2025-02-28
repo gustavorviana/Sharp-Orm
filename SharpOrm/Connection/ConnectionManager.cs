@@ -39,7 +39,7 @@ namespace SharpOrm.Connection
             set
             {
                 if (this.Transaction != null)
-                    throw new InvalidOperationException("It's not possible to alter the connection management when a transaction is being used.");
+                    throw new InvalidOperationException(Messages.Manager.MananementLockedByTransaction);
 
                 this.management = value;
             }
@@ -285,8 +285,8 @@ namespace SharpOrm.Connection
         /// <exception cref="InvalidOperationException">Thrown if there is already an open transaction.</exception>
         public ConnectionManager BeginTransaction(IsolationLevel isolationLevel)
         {
-            if (this.Transaction != null)
-                throw new InvalidOperationException("There is already an open transaction.");
+            if (Transaction != null)
+                throw new InvalidOperationException(Messages.Manager.TransactionAlreadyOpen);
 
             if (this.creator != null)
                 return new ConnectionManager(this.creator, this.creator.GetConnection().OpenIfNeeded().BeginTransaction()).CopyOptionsFrom(this, false);
