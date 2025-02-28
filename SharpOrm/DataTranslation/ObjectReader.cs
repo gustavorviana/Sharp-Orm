@@ -2,6 +2,7 @@
 using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -122,14 +123,14 @@ namespace SharpOrm.DataTranslation
             if (owner is IDictionary<string, object> dict)
                 return this.ReadDictCells(dict);
 
-            return this.ReadObjectCells(owner);
+            return this.ReadObjectCells(new ValidationContext(owner));
         }
 
-        private IEnumerable<Cell> ReadObjectCells(object owner)
+        private IEnumerable<Cell> ReadObjectCells(ValidationContext context)
         {
             for (int i = 0; i < table.Columns.Length; i++)
             {
-                var cell = this.GetCell(owner, table.Columns[i]);
+                var cell = this.GetCell(context, table.Columns[i]);
                 if (cell != null) yield return cell;
             }
 
@@ -140,22 +141,22 @@ namespace SharpOrm.DataTranslation
                 yield return new Cell(this.table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 
-        private Cell GetCell(object owner, ColumnInfo column)
+        private Cell GetCell(ValidationContext context, ColumnInfo column)
         {
-            if (!this.IsAllowedName(column.Name)) return null;
+            if (!IsAllowedName(column.Name)) return null;
             if (column.ForeignInfo != null)
             {
                 if (this.CanReadFk(column))
-                    return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                    return new Cell(column.ForeignInfo.ForeignKey, GetFkValue(context.ObjectInstance, column.GetRaw(context.ObjectInstance), column));
 
                 return null;
             }
 
-            object value = ProcessValue(column, owner);
+            object value = ProcessValue(column, context.ObjectInstance);
             if (column.Key && !this.CanReadKey(value))
                 return null;
 
-            if (this.Validate) column.ValidateValue(value);
+            if (Validate) column.ValidateValue(context, value);
             return new Cell(column.Name, value);
         }
 

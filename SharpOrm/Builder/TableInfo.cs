@@ -1,6 +1,7 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Linq.Expressions;
@@ -90,13 +91,15 @@ namespace SharpOrm.Builder
         {
             if (columns.Length == 0)
             {
-                this.Validate(owner);
+                Validate(owner);
                 return;
             }
 
-            foreach (var column in this.Columns)
+            var context = new ValidationContext(owner);
+
+            foreach (var column in Columns)
                 if (columns.ContainsIgnoreCase(column.Name))
-                    column.Validate(owner);
+                    column.Validate(context);
         }
 
         /// <summary>
@@ -105,7 +108,9 @@ namespace SharpOrm.Builder
         /// <param name="owner"></param>
         public void Validate(object owner)
         {
-            foreach (var item in this.Columns) item.Validate(owner);
+            var context = new ValidationContext(owner);
+
+            foreach (var item in Columns) item.Validate(context);
         }
 
         /// <summary>

@@ -205,10 +205,10 @@ namespace SharpOrm.Builder
 
         protected Type GetValidValueType()
         {
-            if (this._validType == null)
-                this._validType = TranslationRegistry.GetValidTypeFor(this.Type);
+            if (_validType == null)
+                _validType = TranslationRegistry.GetValidTypeFor(Type);
 
-            return this._validType;
+            return _validType;
         }
 
         /// <summary>
@@ -217,7 +217,17 @@ namespace SharpOrm.Builder
         /// <param name="owner">Object whose property/field is to be validated.</param>
         public void Validate(object owner)
         {
-            this.ValidateValue(this.Get(owner));
+            ValidateValue(Get(owner));
+        }
+
+        /// <summary>
+        /// Validates the value of the specified owner object within the given validation context.
+        /// </summary>
+        /// <param name="context">The validation context.</param>
+        /// <param name="owner">The owner object whose value is to be validated.</param>
+        public void Validate(ValidationContext context)
+        {
+            ValidateValue(context, Get(context.ObjectInstance));
         }
 
         /// <summary>
@@ -231,6 +241,20 @@ namespace SharpOrm.Builder
 
             for (int i = 0; i < Validations.Length; i++)
                 Validations[i].Validate(value, this.Name);
+        }
+
+        /// <summary>
+        /// Validate the inserted value according to the attributes applied to the property/field.
+        /// </summary>
+        /// <param name="context">The validation context.</param>
+        /// <param name="value">Value to be validated.</param>
+        public void ValidateValue(ValidationContext context, object value)
+        {
+            if (value == DBNull.Value)
+                value = null;
+
+            for (int i = 0; i < Validations.Length; i++)
+                Validations[i].Validate(value, context);
         }
 
         public override string ToString()
