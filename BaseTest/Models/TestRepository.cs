@@ -4,27 +4,23 @@ using System.Data.Common;
 
 namespace BaseTest.Models
 {
-    public class TestRepository : DbRepository
+    public class TestRepository(ConnectionCreator creator) : DbRepository(false)
     {
-        protected override ConnectionCreator Creator { get; }
-        public TestRepository(ConnectionCreator creator) : base(false)
-        {
-            this.Creator = creator;
-        }
+        protected override ConnectionCreator Creator { get; } = creator;
 
         public DbTransaction? GetTransaction()
         {
-            return this.Transaction?.Transaction;
+            return Transaction?.Transaction;
         }
 
         public DbConnection? GetConnection()
         {
-            return this.GetManager()?.Connection;
+            return GetManager()?.Connection;
         }
 
         public Query GetQuery()
         {
-            return this.Query("Test");
+            return Query("Test");
         }
     }
 }

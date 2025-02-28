@@ -8,7 +8,7 @@ namespace BaseTest.Mock
     public class MockCommand : DbCommand
     {
         private bool _cancelled = false;
-        public bool Cancelled => this._cancelled;
+        public bool Cancelled => _cancelled;
         public event EventHandler? OnCancel;
 
         [AllowNull]
@@ -32,8 +32,8 @@ namespace BaseTest.Mock
 
         public override void Cancel()
         {
-            this._cancelled = true;
-            this.OnCancel?.Invoke(this, EventArgs.Empty);
+            _cancelled = true;
+            OnCancel?.Invoke(this, EventArgs.Empty);
         }
 
         public override int ExecuteNonQuery()
@@ -44,12 +44,12 @@ namespace BaseTest.Mock
                 return -1;
             }
 
-            return OnExecuteNonQuery?.Invoke(this.CommandText) ?? -1;
+            return OnExecuteNonQuery?.Invoke(CommandText) ?? -1;
         }
 
         public override object ExecuteScalar()
         {
-            var reader = this.GetReader();
+            var reader = GetReader();
             if (reader.Size == 0)
                 return DBNull.Value;
 
@@ -68,12 +68,12 @@ namespace BaseTest.Mock
 
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
-            return this.GetReader();
+            return GetReader();
         }
 
         private MockDataReader GetReader()
         {
-            var reader = this.OnGetReader?.Invoke(this);
+            var reader = OnGetReader?.Invoke(this);
             if (reader == null)
                 return new MockDataReader(i => null!, 0);
 

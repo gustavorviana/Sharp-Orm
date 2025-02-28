@@ -13,7 +13,7 @@ namespace QueryTest
         [InlineData(Trashed.Except, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
         public void DeleteWithDate(Trashed trashed, string expected)
         {
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query<SoftDeleteDateAddress> { Trashed = trashed };
             query.Delete();
 
@@ -26,7 +26,7 @@ namespace QueryTest
         [InlineData(Trashed.Except, "UPDATE [SoftDeleteAddress] SET [deleted] = 1 WHERE [deleted] = 0")]
         public void Delete(Trashed trashed, string expected)
         {
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
             query.Delete();
 
@@ -39,7 +39,7 @@ namespace QueryTest
         [InlineData(Trashed.Except, "UPDATE [SoftDeleteAddress] SET [Name] = @p1 WHERE [deleted] = 0")]
         public void Update(Trashed trashed, string expected)
         {
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
             query.Update(new Cell("Name", "Test"));
 
@@ -52,7 +52,7 @@ namespace QueryTest
         [InlineData(Trashed.Except, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 0")]
         public void Select(Trashed trashed, string expected)
         {
-            using var fallback = this.RegisterFallback(new Cell("Id", 1));
+            using var fallback = RegisterFallback(new Cell("Id", 1));
             using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
             query.Get();
 
@@ -65,7 +65,7 @@ namespace QueryTest
         [InlineData(Trashed.Except, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 0 AND ([Street] != @p1)")]
         public void SelectWhere(Trashed trashed, string expected)
         {
-            using var fallback = this.RegisterFallback(new Cell("Id", 1));
+            using var fallback = RegisterFallback(new Cell("Id", 1));
             using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
             query.WhereNot(x => x.Street, "First");
             query.Get();
@@ -79,7 +79,7 @@ namespace QueryTest
         [InlineData(Trashed.Except)]
         public void InsertSoftDelete(Trashed trashed)
         {
-            using var fallback = this.RegisterFallback(new Cell("Id", 1));
+            using var fallback = RegisterFallback(new Cell("Id", 1));
             using var query = new Query<SoftDeleteAddress> { Trashed = trashed };
             query.WhereNot(x => x.Street, "First");
             query.Insert(new SoftDeleteAddress(1)

@@ -15,49 +15,49 @@ namespace BaseTest.Mock
             if (value is not DbParameter param)
                 return -1;
 
-            this._params.Add(param);
+            _params.Add(param);
 
-            return this.IndexOf(value);
+            return IndexOf(value);
         }
 
         public override void AddRange(Array values)
         {
             if (values is IEnumerable<DbParameter> dbParams)
-                this._params.AddRange(dbParams);
+                _params.AddRange(dbParams);
         }
 
         public override void Clear()
         {
-            this._params.Clear();
+            _params.Clear();
         }
 
         public override bool Contains(object value)
         {
-            return value is DbParameter dp && this._params.Contains(dp);
+            return value is DbParameter dp && _params.Contains(dp);
         }
 
         public override bool Contains(string value)
         {
-            return this._params.Any(c => c.ParameterName == value);
+            return _params.Any(c => c.ParameterName == value);
         }
 
         public override void CopyTo(Array array, int index)
         {
             if (array is DbParameter[] pArray)
-                this._params.CopyTo(pArray, index);
+                _params.CopyTo(pArray, index);
         }
 
-        public override IEnumerator GetEnumerator() => this._params.GetEnumerator();
+        public override IEnumerator GetEnumerator() => _params.GetEnumerator();
 
         public override int IndexOf(object value)
         {
-            return value is DbParameter param ? this._params.IndexOf(param) : -1;
+            return value is DbParameter param ? _params.IndexOf(param) : -1;
         }
 
         public override int IndexOf(string parameterName)
         {
-            for (int i = 0; i < this._params.Count; i++)
-                if (this._params[i].ParameterName == parameterName)
+            for (int i = 0; i < _params.Count; i++)
+                if (_params[i].ParameterName == parameterName)
                     return i;
 
             return -1;
@@ -66,7 +66,7 @@ namespace BaseTest.Mock
         public override void Insert(int index, object value)
         {
             if (value is DbParameter param)
-                this._params.Insert(index, param);
+                _params.Insert(index, param);
         }
 
         public override void Remove(object value)
@@ -74,37 +74,37 @@ namespace BaseTest.Mock
             if (value is not DbParameter param)
                 return;
 
-            this._params.Remove(param);
+            _params.Remove(param);
         }
 
         public override void RemoveAt(int index)
         {
-            this._params.RemoveAt(index);
+            _params.RemoveAt(index);
         }
 
         public override void RemoveAt(string parameterName)
         {
-            this._params.RemoveAt(this.IndexOf(parameterName));
+            _params.RemoveAt(IndexOf(parameterName));
         }
 
         protected override DbParameter GetParameter(int index)
         {
-            return this._params[index];
+            return _params[index];
         }
 
         protected override DbParameter GetParameter(string parameterName)
         {
-            return this._params.FirstOrDefault(p => p.ParameterName == parameterName)!;
+            return _params.FirstOrDefault(p => p.ParameterName == parameterName)!;
         }
 
         protected override void SetParameter(int index, DbParameter value)
         {
-            this._params[index] = value;
+            _params[index] = value;
         }
 
         protected override void SetParameter(string parameterName, DbParameter value)
         {
-            this._params[this.IndexOf(parameterName)] = value;
+            _params[IndexOf(parameterName)] = value;
         }
     }
 }

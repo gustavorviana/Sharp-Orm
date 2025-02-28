@@ -46,30 +46,30 @@ namespace BaseTest.Utils
             {
                 this.connection = connection;
 
-                connection.OnQueryFallback += (this.fallback = this.RegisterFallback(fallback));
+                connection.OnQueryFallback += (this.fallback = RegisterFallback(fallback));
             }
 
             private Func<MockCommand, MockDataReader> RegisterFallback(Func<MockCommand, MockDataReader>? fallback)
             {
                 if (fallback == null) return cmd =>
                 {
-                    this.parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
-                    this.builder.AppendLine(cmd.CommandText);
+                    parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
+                    builder.AppendLine(cmd.CommandText);
                     return new MockDataReader();
                 };
 
                 return cmd =>
                 {
-                    this.parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
-                    this.builder.AppendLine(cmd.CommandText);
+                    parameters.AddRange(cmd.Parameters.OfType<DbParameter>());
+                    builder.AppendLine(cmd.CommandText);
                     return fallback(cmd);
                 };
             }
 
             public void Clear()
             {
-                this.builder.Clear();
-                this.parameters.Clear();
+                builder.Clear();
+                parameters.Clear();
             }
 
             public void Dispose()
@@ -81,17 +81,17 @@ namespace BaseTest.Utils
 
             public DbParameter[] GetParameters()
             {
-                return [.. this.parameters];
+                return [.. parameters];
             }
 
             public override string ToString()
             {
-                return this.builder.ToString().TrimEnd();
+                return builder.ToString().TrimEnd();
             }
 
             public SqlExpression ToExpression(IReadonlyQueryInfo info)
             {
-                return new(this.ToString());
+                return new(ToString());
             }
         }
     }

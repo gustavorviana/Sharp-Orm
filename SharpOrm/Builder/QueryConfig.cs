@@ -3,7 +3,6 @@ using SharpOrm.DataTranslation;
 using SharpOrm.SqlMethods;
 using System;
 using System.Data.Common;
-using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder

@@ -117,7 +117,7 @@ namespace QueryTest.SqlServer
                     "INSERT INTO [TestTable] ([Id], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status]) VALUES (1, ?, NULL, ?, 2.1, ?, 1); SELECT SCOPE_IDENTITY();",
                     table.Name,
                     table.CreatedAt,
-                    table.CustomId?.ToString(this.Translation.GuidFormat)
+                    table.CustomId?.ToString(Translation.GuidFormat)
                 ),
                 sqlExpression
             );

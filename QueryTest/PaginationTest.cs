@@ -16,8 +16,8 @@ namespace QueryTest
         [Fact]
         public virtual void Paginate()
         {
-            this.ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
-            this.ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
+            ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
+            ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
 
             using var query = new Query(TestTableUtils.TABLE).OrderBy("Id");
             using var pager = query.PaginateRows(8, 1);
@@ -32,10 +32,10 @@ namespace QueryTest
         [Fact]
         public void PaginateDistinct()
         {
-            this.ConfigureCount(4, "SELECT COUNT(DISTINCT [name]) FROM [TestTable]");
-            this.ConfigureTestTable(4, "SELECT DISTINCT [name] FROM [TestTable] ORDER BY [name] ASC OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+            ConfigureCount(4, "SELECT COUNT(DISTINCT [name]) FROM [TestTable]");
+            ConfigureTestTable(4, "SELECT DISTINCT [name] FROM [TestTable] ORDER BY [name] ASC OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
 
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy(TestTableUtils.NAME)
                 .Select(TestTableUtils.NAME)
@@ -51,8 +51,8 @@ namespace QueryTest
         [Fact]
         public void PaginateOrderBy()
         {
-            this.ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
-            this.ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
+            ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
+            ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
 
             using var query = new Query(TestTableUtils.TABLE).OrderBy("Id");
             using var pager = query.PaginateRows(8, 1);
@@ -67,10 +67,10 @@ namespace QueryTest
         [Fact]
         public virtual void GotoPage()
         {
-            this.ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
-            this.ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
+            ConfigureCount(10, "SELECT COUNT(*) FROM [TestTable]");
+            ConfigureTestTable(8, "SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY");
 
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query<TestTable>().OrderBy("Id");
             using var pager = query.PaginateRows(8, 1);
             pager.GoToPage(2);
@@ -82,8 +82,8 @@ namespace QueryTest
         public void PaginateDistinctColumn()
         {
             var faker = new Faker();
-            this.ConfigureCount(4, "SELECT COUNT(DISTINCT name) FROM [TestTable]");
-            this.Connection.QueryReaders["SELECT DISTINCT [name] FROM [TestTable] ORDER BY [name] ASC OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY"] =
+            ConfigureCount(4, "SELECT COUNT(DISTINCT name) FROM [TestTable]");
+            Connection.QueryReaders["SELECT DISTINCT [name] FROM [TestTable] ORDER BY [name] ASC OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY"] =
                 () => new MockDataReader(x => new Row(new Cell("name", faker.Name.FullName())), 4);
 
             using var query = new Query<TestTable>();
@@ -110,12 +110,12 @@ namespace QueryTest
 
             var customer = fakeCustomer.Generate();
 
-            this.ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] WHERE [customer_id] = 2");
-            this.Connection.QueryReaders["SELECT * FROM [Orders] WHERE [customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
+            ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] WHERE [customer_id] = 2");
+            Connection.QueryReaders["SELECT * FROM [Orders] WHERE [customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
                 () => new MockDataReader(i => Row.Parse(order), 1);
-            this.Connection.QueryReaders["SELECT TOP(1) * FROM [Customers] WHERE [Id] = " + customer.Id] = () => new MockDataReader(i => Row.Parse(customer), 1);
+            Connection.QueryReaders["SELECT TOP(1) * FROM [Customers] WHERE [Id] = " + customer.Id] = () => new MockDataReader(i => Row.Parse(customer), 1);
 
-            using var fallback = this.RegisterFallback();
+            using var fallback = RegisterFallback();
             using var query = new Query<Order>();
             query.AddForeign(o => o.Customer).OrderBy("Id").Where("customer_id", 2);
 
@@ -129,12 +129,12 @@ namespace QueryTest
 
         private void ConfigureCount(int value, string query)
         {
-            this.Connection.QueryReaders[query] = () => new MockDataReader(new Cell("COUNT(*)", value));
+            Connection.QueryReaders[query] = () => new MockDataReader(new Cell("COUNT(*)", value));
         }
 
         private void ConfigureTestTable(int items, string query)
         {
-            this.Connection.QueryReaders[query] = () => MockDataReader.FromFaker(TestTableUtils.Faker(), items);
+            Connection.QueryReaders[query] = () => MockDataReader.FromFaker(TestTableUtils.Faker(), items);
         }
     }
 }

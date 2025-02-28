@@ -15,7 +15,7 @@ namespace QueryTest.SqlServer
         public void SoftDeleteWithDate()
         {
             using var query = new Query<SoftDeleteDateAddress>();
-            var tableInfo = this.Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
+            var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
 
             QueryAssert.Equal($"UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = ? WHERE [deleted] = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
         }
@@ -24,7 +24,7 @@ namespace QueryTest.SqlServer
         public void RestoreSoftDeletedWithDate()
         {
             using var query = new Query<SoftDeleteDateAddress>();
-            var tableInfo = this.Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
+            var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
 
             var result = query.Grammar().RestoreSoftDeleted(tableInfo.SoftDelete);
             QueryAssert.Equal($"UPDATE [SoftDeleteDateAddress] SET [deleted] = 0, [deleted_at] = NULL WHERE [deleted] = 1", result);
@@ -34,7 +34,7 @@ namespace QueryTest.SqlServer
         public void SoftDelete()
         {
             using var query = new Query<SoftDeleteAddress>();
-            var tableInfo = this.Config.Translation.GetTable(typeof(SoftDeleteAddress));
+            var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteAddress));
 
             QueryAssert.Equal($"UPDATE [SoftDeleteAddress] SET [deleted] = 1 WHERE [deleted] = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
         }
@@ -43,7 +43,7 @@ namespace QueryTest.SqlServer
         public void RestoreSoftDeleted()
         {
             using var query = new Query<SoftDeleteAddress>();
-            var tableInfo = this.Config.Translation.GetTable(typeof(SoftDeleteAddress));
+            var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteAddress));
 
             var result = query.Grammar().RestoreSoftDeleted(tableInfo.SoftDelete);
             QueryAssert.Equal($"UPDATE [SoftDeleteAddress] SET [deleted] = 0 WHERE [deleted] = 1", result);

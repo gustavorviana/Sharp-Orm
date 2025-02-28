@@ -2,7 +2,6 @@
 using SharpOrm.Builder.Grammars.Mysql;
 using SharpOrm.DataTranslation;
 using System;
-using System.Collections.Generic;
 
 namespace SharpOrm.Builder.Grammars.Sqlite
 {

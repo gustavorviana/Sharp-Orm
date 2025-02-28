@@ -1,7 +1,6 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SharpOrm.Builder.Grammars.Sqlite
 {

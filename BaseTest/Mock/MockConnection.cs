@@ -34,17 +34,17 @@ namespace BaseTest.Mock
 
         public override void ChangeDatabase(string databaseName)
         {
-            this.database = databaseName;
+            database = databaseName;
         }
 
         public override void Close()
         {
-            this.state = ConnectionState.Closed;
+            state = ConnectionState.Closed;
         }
 
         public override void Open()
         {
-            this.state = ConnectionState.Open;
+            state = ConnectionState.Open;
         }
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -54,7 +54,7 @@ namespace BaseTest.Mock
 
         public void Reset()
         {
-            this.OnQueryFallback = null!;
+            OnQueryFallback = null!;
         }
 
         public MockConnection Register(string query, params Cell[] cells)
@@ -74,7 +74,7 @@ namespace BaseTest.Mock
                     var now = DateTime.Now;
                     try
                     {
-                        if (this.QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
+                        if (QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
                             return readerCall().SetCommand(cmd);
                     }
                     finally

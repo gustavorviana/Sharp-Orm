@@ -28,8 +28,8 @@ namespace BaseTest.Fixtures
 
             if (disposing)
             {
-                this.Manager.Dispose();
-                this.Creator.Dispose();
+                Manager.Dispose();
+                Creator.Dispose();
             }
 
             disposed = true;

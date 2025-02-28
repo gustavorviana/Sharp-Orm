@@ -1,6 +1,4 @@
-﻿using static SharpOrm.Msg.Messages;
-
-namespace SharpOrm.Msg
+﻿namespace SharpOrm.Msg
 {
     internal static partial class Messages
     {

@@ -1,6 +1,4 @@
-﻿using SharpOrm;
-using SharpOrm.Builder.Grammars.Interfaces;
-using System.Linq;
+﻿using SharpOrm.Builder.Grammars.Interfaces;
 
 namespace SharpOrm.Builder.Grammars.Mysql
 {

@@ -186,7 +186,7 @@ namespace QueryTest
 
             using (RegisterFallback(new Cell("Id", id)))
             {
-                var manager = this.GetManager(this.Config.Clone());
+                var manager = GetManager(Config.Clone());
                 manager.Config.ApplyGeneratedKey = applyGeneratedKey;
 
                 using var query = new Query<Order>(manager);
@@ -205,7 +205,7 @@ namespace QueryTest
 
             using (RegisterFallback(new Cell("Id", DBNull.Value)))
             {
-                var manager = this.GetManager(this.Config.Clone());
+                var manager = GetManager(Config.Clone());
                 manager.Config.ApplyGeneratedKey = true;
 
                 using var query = new Query<Order>(manager);

@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
-using System.Collections.Generic;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {

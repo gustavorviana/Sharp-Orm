@@ -12,7 +12,7 @@ namespace DbRunTest.Fixtures
 
         protected override ConnectionCreator MakeConnectionCreator()
         {
-            var info = this.GetMap();
+            var info = GetMap();
             return new MultipleConnectionCreator<Conn>(info.GetConfig(), info.ConnString);
         }
 
@@ -29,7 +29,7 @@ namespace DbRunTest.Fixtures
         {
             var info = ConnectionMap.Get(typeof(Conn));
 
-            this.dbInicializer ??= info.Inicializer;
+            dbInicializer ??= info.Inicializer;
 
             return info;
         }

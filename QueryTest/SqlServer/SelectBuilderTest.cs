@@ -30,7 +30,7 @@ namespace QueryTest.SqlServer
         [InlineData("table.*", "[table].*")]
         public void FixColumnName(string raw, string expected)
         {
-            Assert.Equal(expected, this.Config.ApplyNomenclature(raw));
+            Assert.Equal(expected, Config.ApplyNomenclature(raw));
         }
 
         [Fact]

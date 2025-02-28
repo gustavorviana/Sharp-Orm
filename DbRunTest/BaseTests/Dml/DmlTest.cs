@@ -123,14 +123,14 @@ namespace DbRunTest.BaseTests.Dml
 
         protected ConnectionManager GetUnsafeManager()
         {
-            this.unsafeFixture ??= new UnsafeDbFixture<T>();
-            return this.unsafeFixture.Manager;
+            unsafeFixture ??= new UnsafeDbFixture<T>();
+            return unsafeFixture.Manager;
         }
 
         protected QueryConfig GetUnsafeConfig()
         {
-            this.unsafeFixture ??= new UnsafeDbFixture<T>();
-            return this.unsafeFixture.Manager.Config;
+            unsafeFixture ??= new UnsafeDbFixture<T>();
+            return unsafeFixture.Manager.Config;
         }
 
         protected override void Dispose(bool disposing)
@@ -138,8 +138,8 @@ namespace DbRunTest.BaseTests.Dml
             ClearTables([.. tablesToReset]);
             tablesToReset.Clear();
 
-            this.unsafeFixture?.Dispose();
-            this.unsafeFixture = null!;
+            unsafeFixture?.Dispose();
+            unsafeFixture = null!;
 
             base.Dispose(disposing);
         }

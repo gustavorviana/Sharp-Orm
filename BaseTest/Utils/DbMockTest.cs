@@ -29,10 +29,10 @@ namespace BaseTest.Utils
 
         protected ConnectionManager GetManager(TranslationRegistry registry)
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.Translation = registry;
 
-            return new ConnectionManager(config, this.Connection);
+            return new ConnectionManager(config, Connection);
         }
 
         public static MockDataReader GetReader(params Cell[] cells)

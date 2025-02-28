@@ -12,7 +12,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void Delete()
         {
-            using var query = NewQuery(this.GetUnsafeManager(), TestTableUtils.TABLE);
+            using var query = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
             query.Delete();
             query.BulkInsert(TestTableUtils.NewRow(1, "A"), TestTableUtils.NewRow(2, "B"));
 

@@ -22,7 +22,7 @@ namespace BaseTest.Utils
 
         internal IEnumerable<ExpressionColumn> ParseColumns<T>(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            return this.GetProcessor<T>(config).ParseColumns(expression);
+            return GetProcessor<T>(config).ParseColumns(expression);
         }
 
         protected static QueryInfo GetQueryInfo<T>(QueryConfig config, DbName name = default)
