@@ -3,11 +3,20 @@ using System.Text;
 
 namespace SharpOrm
 {
+    /// <summary>
+    /// Represents a batch of SQL expressions.
+    /// </summary>
     public class BatchSqlExpression : SqlExpression
     {
+        /// <summary>
+        /// Gets the SQL expressions in the batch.
+        /// </summary>
         public SqlExpression[] Expressions { get; }
         private object[] _parms;
 
+        /// <summary>
+        /// Gets the parameters used in the SQL expressions.
+        /// </summary>
         public new object[] Parameters
         {
             get
@@ -19,11 +28,19 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the BatchSqlExpression class with the provided SQL expressions.
+        /// </summary>
+        /// <param name="expressions">The SQL expressions in the batch.</param>
         public BatchSqlExpression(SqlExpression[] expressions)
         {
             this.Expressions = expressions;
         }
 
+        /// <summary>
+        /// Returns the SQL expressions as a string.
+        /// </summary>
+        /// <returns>The SQL expressions as a string.</returns>
         public override string ToString()
         {
             if (Expressions.Length == 0)

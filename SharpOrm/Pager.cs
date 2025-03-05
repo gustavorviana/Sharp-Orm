@@ -48,6 +48,13 @@ namespace SharpOrm
         public T this[int index] => items[index];
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Pager{T}"/> class.
+        /// </summary>
+        /// <param name="query">The query to use for retrieving data.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="page">The current page number.</param>
+        /// <param name="countColunm">The column used to count the number of items.</param>
         protected Pager(Query query, int peerPage, int page, Column countColunm)
         {
             this.query = query;
@@ -56,6 +63,14 @@ namespace SharpOrm
             this.countColunm = countColunm;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class asynchronously using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
         public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, string countColumnName)
         {
             return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumnName));
@@ -74,6 +89,14 @@ namespace SharpOrm
             return FromBuilder(builder, peerPage, currentPage, new Column(countColumnName));
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class asynchronously using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
         public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, Column countColumn = null)
         {
             return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumn));
@@ -96,10 +119,19 @@ namespace SharpOrm
             return list;
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator for the collection.</returns>
         public IEnumerator<T> GetEnumerator() => this.items.AsEnumerable().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
 
+        /// <summary>
+        /// Navigates to the specified page asynchronously.
+        /// </summary>
+        /// <param name="page">The one-based page number to navigate to.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
         public Task<Pager<T>> GoToPageAsync(int page)
         {
             return TaskUtils.Async(() => GoToPage(page));
@@ -133,6 +165,11 @@ namespace SharpOrm
             }
         }
 
+        /// <summary>
+        /// Sets the number of items to display per page asynchronously.
+        /// </summary>
+        /// <param name="value">The number of items per page (one-based).</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
         public Task<Pager<T>> SetPeerPageAsync(int value)
         {
             return TaskUtils.Async(() => SetPeerPage(value));
@@ -159,6 +196,10 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Refreshes the pager asynchronously, updating the item collection and page count.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
         public Task<Pager<T>> RefreshAsync()
         {
             return TaskUtils.Async(Refresh);
@@ -195,6 +236,10 @@ namespace SharpOrm
             items = GetItems();
         }
 
+        /// <summary>
+        /// Retrieves the items for the current page.
+        /// </summary>
+        /// <returns>An array of items for the current page.</returns>
         protected virtual T[] GetItems()
         {
             return query.GetEnumerable<T>().ToArray();
@@ -218,6 +263,9 @@ namespace SharpOrm
             disposed = true;
         }
 
+        /// <summary>
+        /// Finalizes the pager instance, releasing resources.
+        /// </summary>
         ~Pager()
         {
             Dispose(disposing: false);
