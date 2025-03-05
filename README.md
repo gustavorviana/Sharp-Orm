@@ -87,6 +87,23 @@ using(Query<User> query = new Query<User>())
 }
 ```
 
+### Sample code with Query T
+
+```CSharp
+using SharpOrm;
+using SharpOrm.Builder;
+
+using(Query<User> query = new Query<User>())
+{
+    query.Select(x => new { x.Id, x.Name, FirstName = x.Name });
+    //Or
+    query.Select(x => x.Name);
+
+    query.Where(x => x.Id, 1);
+    query.FirstOrDefault();
+}
+```
+
 ## Inserting values
 
 It is possible to use a C# object with the same structure as the database or use Cell to insert the values.
