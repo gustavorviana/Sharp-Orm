@@ -106,7 +106,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffset()
         {
-            RegisterSqlServerVersion((MockConnection)Manager.Connection);
+            SetMockConnectionVersion();
 
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id").Offset = 1;
@@ -119,7 +119,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffsetLimit()
         {
-            RegisterSqlServerVersion((MockConnection)Manager.Connection);
+            SetMockConnectionVersion();
 
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id");

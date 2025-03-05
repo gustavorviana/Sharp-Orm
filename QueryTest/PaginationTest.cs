@@ -10,7 +10,7 @@ namespace QueryTest
     {
         public PaginationTest()
         {
-            RegisterSqlServerVersion(Connection);
+            SetMockConnectionVersion();
         }
 
         [Fact]

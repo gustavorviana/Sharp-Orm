@@ -10,11 +10,11 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class CountBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqlServerQueryConfig>>, ICountBuilderTest
+    public class CountBuilderTest : DbMockTest, IClassFixture<MockFixture<SqlServerQueryConfig>>, ICountBuilderTest
     {
         public CountBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : base(output, connection)
         {
-            RegisterSqlServerVersion((MockConnection)connection.Manager.Connection);
+            SetMockConnectionVersion();
         }
 
         [Fact]

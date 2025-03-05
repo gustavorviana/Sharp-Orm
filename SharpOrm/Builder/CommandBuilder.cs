@@ -104,6 +104,11 @@ namespace SharpOrm.Builder
             return 0;
         }
 
+        /// <summary>
+        /// Asynchronously sets the SQL expression.
+        /// </summary>
+        /// <param name="expression">The SQL expression to set.</param>
+        /// <returns>A task representing the asynchronous operation, with the current instance of <see cref="CommandBuilder"/>.</returns>
         public Task<CommandBuilder> SetExpressionAsync(SqlExpression expression)
         {
             return TaskUtils.Async(() => SetExpression(expression));
@@ -163,6 +168,12 @@ namespace SharpOrm.Builder
             return result;
         }
 
+        /// <summary>
+        /// Sets the SQL expression for the command using the provided query and arguments.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>The current instance of <see cref="CommandBuilder"/>.</returns>
         public CommandBuilder SetExpression(string query, params object[] args)
         {
             return InternalSetExpression(new SqlExpression(query, args));
@@ -184,10 +195,13 @@ namespace SharpOrm.Builder
         {
             try
             {
-                return (await OpenIfNeededAsync()).ExecuteNonQuery();
+                var result = (await OpenIfNeededAsync()).ExecuteNonQuery();
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -205,10 +219,13 @@ namespace SharpOrm.Builder
         {
             try
             {
-                return OpenIfNeeded().ExecuteNonQuery();
+                var result = OpenIfNeeded().ExecuteNonQuery();
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -239,10 +256,13 @@ namespace SharpOrm.Builder
             try
             {
                 await OpenIfNeededAsync();
-                return registry.FromSql<T>(command.ExecuteScalar());
+                var result = registry.FromSql<T>(command.ExecuteScalar());
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -262,10 +282,13 @@ namespace SharpOrm.Builder
             try
             {
                 OpenIfNeeded();
-                return registry.FromSql<T>(command.ExecuteScalar());
+                var result = registry.FromSql<T>(command.ExecuteScalar());
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -281,9 +304,11 @@ namespace SharpOrm.Builder
 
             try
             {
-                return registry.FromSql(command.ExecuteScalar());
+                var result = registry.FromSql(command.ExecuteScalar());
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
@@ -305,9 +330,12 @@ namespace SharpOrm.Builder
 
             try
             {
-                return registry.FromSql(command.ExecuteScalar());
+                var result = registry.FromSql(command.ExecuteScalar());
+
+                token.ThrowIfCancellationRequested();
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
@@ -327,14 +355,20 @@ namespace SharpOrm.Builder
         public DbDataReader ExecuteReader(CommandBehavior behavior = CommandBehavior.Default)
         {
             if (reader != null)
-                SafeCancel();
+                command.SafeCancel();
+
+            token.ThrowIfCancellationRequested();
 
             try
             {
-                return reader = OpenIfNeeded().ExecuteReader(behavior);
+                reader = OpenIfNeeded().ExecuteReader(behavior);
+                token.ThrowIfCancellationRequested();
+
+                return reader;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -353,6 +387,7 @@ namespace SharpOrm.Builder
             }
             catch (Exception ex)
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -375,6 +410,7 @@ namespace SharpOrm.Builder
             }
             catch (Exception ex)
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -410,10 +446,14 @@ namespace SharpOrm.Builder
             try
             {
                 using (var reader = command.ExecuteReader(behavior))
+                {
+                    token.ThrowIfCancellationRequested();
                     return reader.RecordsAffected;
+                }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                token.ThrowIfCancellationRequested();
                 manager.SignalException(ex);
                 throw;
             }
@@ -421,11 +461,6 @@ namespace SharpOrm.Builder
             {
                 manager.CloseByEndOperation();
             }
-        }
-
-        private void SafeCancel()
-        {
-            try { command.Cancel(); } catch { }
         }
 
         private void Log(SqlExpression expression)
@@ -453,7 +488,8 @@ namespace SharpOrm.Builder
                 return;
 
             if (!leaveOpen)
-                SafeCancel();
+                command.SafeCancel();
+
             if (disposing)
             {
                 try { reader?.Dispose(); } catch { }

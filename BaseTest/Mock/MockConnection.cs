@@ -28,9 +28,15 @@ namespace BaseTest.Mock
 
         public override string DataSource => "Src";
 
-        public override string ServerVersion => "1.0";
+        private string _version = "1.0";
+        public override string ServerVersion => _version;
 
         public override ConnectionState State => state;
+
+        public void SetVersion(Version version)
+        {
+            _version = version.ToString();
+        }
 
         public override void ChangeDatabase(string databaseName)
         {

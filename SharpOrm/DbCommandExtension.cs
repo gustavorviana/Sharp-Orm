@@ -4,6 +4,7 @@ using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -39,13 +40,23 @@ namespace SharpOrm
             CancellationTokenRegistration registry = default;
             registry = token.Register(() =>
             {
-                try { command.Cancel(); } catch { }
+                command.SafeCancel();
                 registry.Dispose();
             });
 
             command.Disposed += (sender, e) => registry.Dispose();
 
             return command;
+        }
+
+        internal static void SafeCancel(this DbCommand command)
+        {
+            try
+            {
+                if (command.Connection.State != ConnectionState.Closed)
+                    command.Cancel();
+            }
+            catch { }
         }
 
         /// <summary>

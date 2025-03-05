@@ -1,6 +1,5 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Mock;
-using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -51,14 +50,15 @@ namespace BaseTest.Utils
             return new ConnectionManager(config ?? Config, Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
         }
 
-        protected void RegisterSqlServerVersion(MockConnection connection, Version? version = null)
+        protected void SetMockConnectionVersion(Version? version = null)
         {
+            if (Manager.Connection is not MockConnection connection)
+                throw new ArgumentException("Current connection must be of type \"MockConnection\".");
+
             if (version == null)
-                version = new Version("11.0.0.0");
+                version = new Version(11, 0);
 
-            string query = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR)";
-            connection.Register(query, new Cell("Version", version.ToString()));
+            connection.SetVersion(version);
         }
-
     }
 }
