@@ -62,16 +62,6 @@ namespace SharpOrm.Builder
             return new SqlServerTableGrammar(this, schema);
         }
 
-        public override Version GetServerVersion(DbConnection connection)
-        {
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR)";
-                string strVersion = cmd.ExecuteScalar().ToString();
-                return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
-            }
-        }
-
         /// <summary>
         /// creates a connection line for the local connection: Data Source=localhost\SQLEXPRESS;Initial Catalog={catalog};Integrated Security=True;
         /// </summary>

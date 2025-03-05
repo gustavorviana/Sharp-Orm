@@ -16,7 +16,12 @@ namespace SharpOrm.Builder
         /// Gets the maximum number of parameters allowed in a database query.
         /// </summary>
         public virtual int DbParamsLimit { get; } = 2099;
+
+        /// <summary>
+        /// Indicates whether the DBMS supports native upsert rows.
+        /// </summary>
         internal protected virtual bool NativeUpsertRows { get; }
+
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
         /// </summary>
@@ -37,6 +42,9 @@ namespace SharpOrm.Builder
         /// </summary>
         public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
 
+        /// <summary>
+        /// Registry of SQL methods.
+        /// </summary>
         public virtual SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
 
         /// <summary>
@@ -93,12 +101,20 @@ namespace SharpOrm.Builder
             RegisterMethods();
         }
 
+        /// <summary>
+        /// Create a new instance with specified methods.
+        /// </summary>
+        /// <param name="safeModificationsOnly">Signal whether only safe modifications should be made.</param>
+        /// <param name="methods">The SQL method registry.</param>
         protected QueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods)
         {
             this.OnlySafeModifications = safeModificationsOnly;
             this.Methods = methods;
         }
 
+        /// <summary>
+        /// Registers SQL methods.
+        /// </summary>
         protected virtual void RegisterMethods()
         {
 
@@ -107,15 +123,15 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Fix table name, column and alias for SQL.
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">The name to apply nomenclature to.</param>
+        /// <returns>The fixed name.</returns>
         public virtual string ApplyNomenclature(string name) => name;
 
         /// <summary>
         /// Creates a new grammar object.
         /// </summary>
         /// <param name="query">Query for grammar.</param>
-        /// <returns></returns>
+        /// <returns>A new grammar object.</returns>
         public abstract Grammar NewGrammar(Query query);
 
         /// <summary>
@@ -155,6 +171,12 @@ namespace SharpOrm.Builder
                     ReflectionUtils.CopyPropTo(this, target, prop);
         }
 
+        /// <summary>
+        /// Escapes a string for use in a SQL query using the specified escape character.
+        /// </summary>
+        /// <param name="value">The string to escape.</param>
+        /// <param name="escapeChar">The character to use for escaping.</param>
+        /// <returns>The escaped string.</returns>
         protected static string BasicEscapeString(string value, char escapeChar)
         {
             StringBuilder builder = new StringBuilder(value.Length + 2).Append(escapeChar);
@@ -169,9 +191,20 @@ namespace SharpOrm.Builder
             return builder.Append(escapeChar).ToString();
         }
 
+        /// <summary>
+        /// Gets the server version from the database connection.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The server version.</returns>
         public virtual Version GetServerVersion(DbConnection connection)
         {
-            return new Version();
+            return ParseVersionString(connection.ServerVersion);
+        }
+
+        protected Version ParseVersionString(string strVersion)
+        {
+            strVersion = StringUtils.GetNumericValue(strVersion);
+            return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
         }
     }
 }

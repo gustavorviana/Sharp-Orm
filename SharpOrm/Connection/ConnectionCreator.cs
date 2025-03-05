@@ -47,6 +47,11 @@ namespace SharpOrm.Connection
         /// </summary>
         public abstract void SafeDisposeConnection(DbConnection connection);
 
+        /// <summary>
+        /// Gets the server version.
+        /// </summary>
+        /// <param name="forceRefresh">If true, forces a refresh of the server version.</param>
+        /// <returns>The server version.</returns>
         public Version GetServerVersion(bool forceRefresh = false)
         {
             if (serverVersion != null && !forceRefresh)

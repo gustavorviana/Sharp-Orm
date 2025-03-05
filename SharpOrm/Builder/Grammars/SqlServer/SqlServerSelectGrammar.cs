@@ -159,7 +159,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         private bool UseOldPagination()
         {
             if (Config.UseOldPagination == null)
-                return Query.Manager.GetDbVersion().Major < useNewPaginationAt.Major;
+                return Query.Manager.GetServerVersion().Major < useNewPaginationAt.Major;
 
             return Config.UseOldPagination == true;
         }

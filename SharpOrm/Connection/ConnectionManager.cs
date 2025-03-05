@@ -334,7 +334,7 @@ namespace SharpOrm.Connection
                 OnError?.Invoke(this, new ConnectionExceptionEventArgs(exception));
         }
 
-        public Version GetDbVersion()
+        public Version GetServerVersion()
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
