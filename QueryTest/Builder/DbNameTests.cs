@@ -1,5 +1,6 @@
 ﻿using BaseTest.Models;
 using SharpOrm.Builder;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QueryTest.Builder
 {
@@ -42,6 +43,19 @@ namespace QueryTest.Builder
             var name = DbName.Of<Order>("");
 
             Assert.Equal("Orders", name.Name);
+        }
+
+        [Fact]
+        public void GetNameWithSchemaOf()
+        {
+            var name = DbName.Of<Product>("");
+
+            Assert.Equal("Orders.Product", name.Name);
+        }
+
+        [Table("Product", Schema = "Orders")]
+        private class Product
+        {
         }
     }
 }

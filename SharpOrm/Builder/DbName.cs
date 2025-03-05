@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
 
         public static void ValidateAlias(string alias)
         {
-            if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
+            if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' '))
                 throw new InvalidOperationException(Messages.Name.InvalidAliasChars);
         }
 
