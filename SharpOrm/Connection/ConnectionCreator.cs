@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using System;
+using System.Data;
 using System.Data.Common;
 
 namespace SharpOrm.Connection
@@ -7,7 +8,7 @@ namespace SharpOrm.Connection
     /// <summary>
     /// Responsible for creating and configuring database connections. Doc: https://github.com/gustavorviana/Sharp-Orm/wiki/Connection-Creators
     /// </summary>
-    public abstract class ConnectionCreator : IDisposable
+    public abstract class ConnectionCreator : IDisposable, ICloneable
     {
         private Version serverVersion;
 
@@ -16,6 +17,11 @@ namespace SharpOrm.Connection
         /// Indicates whether the ConnectionCreator object has been disposed.
         /// </summary>
         public bool Disposed => this._disposed;
+
+        /// <summary>
+        /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
+        /// </summary>
+        public bool AutoCommit { get; set; }
 
         /// <summary>
         /// Open the connection by calling the <see cref="GetConnection"/> function.
@@ -68,6 +74,29 @@ namespace SharpOrm.Connection
                 SafeDisposeConnection(conn);
             }
         }
+
+        /// <summary>
+        /// Gets a ConnectionManager instance for managing database connections.
+        /// </summary>
+        /// <returns>A new instance of ConnectionManager.</returns>
+        public ConnectionManager GetManager()
+        {
+            return new ConnectionManager(this);
+        }
+
+        /// <summary>
+        /// Retrieves a <see cref="ConnectionManager"/> instance to manage database connections, initializing a transaction with the specified isolation level.
+        /// </summary>
+        /// <param name="isolationLevel">The isolation level for the transaction.</param>
+        /// <returns>A new instance of ConnectionManager.</returns>
+        public ConnectionManager GetManager(IsolationLevel isolationLevel)
+        {
+            return new ConnectionManager(this, isolationLevel);
+        }
+
+        object ICloneable.Clone() => Clone();
+
+        public abstract ConnectionCreator Clone();
 
         #region IDisposable
 

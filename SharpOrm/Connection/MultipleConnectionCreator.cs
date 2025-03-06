@@ -32,8 +32,8 @@ namespace SharpOrm.Connection
         /// <param name="connectionString">The connection string for the database.</param>
         public MultipleConnectionCreator(QueryConfig config, string connectionString)
         {
-            this._connectionString = connectionString;
-            this.Config = config;
+            _connectionString = connectionString;
+            Config = config;
         }
 
         /// <summary>
@@ -41,11 +41,11 @@ namespace SharpOrm.Connection
         /// </summary>
         public override DbConnection GetConnection()
         {
-            this.ThrowIfDisposed();
-            var connection = new T { ConnectionString = this._connectionString };
+            ThrowIfDisposed();
+            var connection = new T { ConnectionString = _connectionString };
 
-            this.connections.Add(connection);
-            return this.AutoOpenConnection ? connection.OpenIfNeeded() : connection;
+            connections.Add(connection);
+            return AutoOpenConnection ? connection.OpenIfNeeded() : connection;
         }
 
         /// <summary>
@@ -66,8 +66,16 @@ namespace SharpOrm.Connection
         {
             base.Dispose(disposing);
 
-            if (disposing) this.connections.Dispose();
-            else this.connections.Clear();
+            if (disposing) connections.Dispose();
+            else connections.Clear();
+        }
+
+        public override ConnectionCreator Clone()
+        {
+            return new MultipleConnectionCreator<T>(Config, _connectionString)
+            {
+                AutoOpenConnection = AutoOpenConnection
+            };
         }
     }
 }

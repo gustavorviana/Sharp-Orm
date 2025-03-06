@@ -15,7 +15,7 @@ namespace DbRunTest.SqlServer
             var version = new Version("16.0");
             using var connection = Manager.Connection.OpenIfNeeded();
 
-            Assert.True(version <= Config.GetServerVersion(connection));
+            Assert.True(version <= connection.GetVersion());
         }
     }
 }

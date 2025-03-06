@@ -15,7 +15,7 @@ namespace DbRunTest.Sqlite
             var version = new Version("3.46.1");
             using var connection = Manager.Connection.OpenIfNeeded();
 
-            Assert.Equal(version, Config.GetServerVersion(connection));
+            Assert.Equal(version, connection.GetVersion());
         }
     }
 }

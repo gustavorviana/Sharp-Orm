@@ -16,67 +16,76 @@ namespace SharpOrm.Connection
     {
         private readonly object _lock = new object();
         private readonly string _connectionString;
-        private DbConnection connection;
+        private DbConnection _connection;
 
         public SingleConnectionCreator(QueryConfig config, string connectionString)
         {
-            this._connectionString = connectionString;
-            this.Config = config;
+            _connectionString = connectionString;
+            Config = config;
         }
 
         public override DbConnection GetConnection()
         {
-            this.ThrowIfDisposed();
-            lock (this._lock)
+            ThrowIfDisposed();
+            lock (_lock)
             {
-                if (connection == null)
+                if (_connection == null)
                 {
-                    connection = new T { ConnectionString = _connectionString };
-                    connection.Disposed += OnConnectionDisposed;
+                    _connection = new T { ConnectionString = _connectionString };
+                    _connection.Disposed += OnConnectionDisposed;
                 }
 
-                return this.AutoOpenConnection ? connection.OpenIfNeeded() : connection;
+                return AutoOpenConnection ? _connection.OpenIfNeeded() : _connection;
             }
         }
 
         private void OnConnectionDisposed(object sender, EventArgs e)
         {
-            this.connection = null;
+            _connection = null;
         }
 
         public override void SafeDisposeConnection(DbConnection connection)
         {
-            if (connection != null && this.connection == connection)
-                this.CloseConnection(false);
+            if (connection != null && _connection == connection)
+                CloseConnection(false);
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            this.CloseConnection(true);
+            CloseConnection(true);
 
             try
             {
                 if (disposing)
-                    this.connection?.Dispose();
+                    _connection?.Dispose();
             }
             catch
             { }
 
-            this.connection = null;
+            _connection = null;
         }
 
         private void CloseConnection(bool forceClose)
         {
-            if (this.connection == null)
+            if (_connection == null)
                 return;
 
             try
             {
-                if (forceClose || (this.Management != ConnectionManagement.LeaveOpen && this.connection.IsOpen()))
-                    this.connection.Close();
+                if (forceClose || (Management != ConnectionManagement.LeaveOpen && _connection.IsOpen()))
+                    _connection.Close();
             }
             catch (Exception) { }
+        }
+
+        public override ConnectionCreator Clone()
+        {
+            return new SingleConnectionCreator<T>(Config, _connectionString)
+            {
+                AutoOpenConnection = AutoOpenConnection,
+                Management = Management
+            };
         }
     }
 }

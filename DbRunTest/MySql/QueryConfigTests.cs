@@ -15,7 +15,7 @@ namespace DbRunTest.MySql
             var version = new Version("8.0");
             using var connection = Manager.Connection.OpenIfNeeded();
 
-            Assert.True(version <= Config.GetServerVersion(connection));
+            Assert.True(version <= connection.GetVersion());
         }
     }
 }

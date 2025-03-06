@@ -88,17 +88,26 @@ namespace DbRunTest
         }
 
         [Fact]
-        public void OpenTransactionTest()
+        public void NoTransaction()
         {
-            ConnectionCreator.Default = Creator;
             using var noTransaction = new ConnectionManager(false);
             Assert.Equal(ConnectionManagement.CloseOnEndOperation, noTransaction.Management);
             Assert.NotNull(noTransaction.Connection);
             Assert.Null(noTransaction.Transaction);
+        }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OpenTransactionTest(bool autoCommit)
+        {
+            ConnectionCreator.Default = Creator.Clone();
+            ConnectionCreator.Default.AutoCommit = autoCommit;
+
+            using var noTransaction = new ConnectionManager(false);
             using var transaction = noTransaction.BeginTransaction();
-            Assert.True(transaction.isMyTransaction);
-            Assert.Equal(ConnectionManagement.CloseOnDispose, transaction.Management);
+            Assert.True(transaction._isMyTransaction);
+            Assert.Equal(ConnectionManagement.CloseOnManagerDispose, transaction.Management);
             Assert.NotNull(transaction.Connection);
             Assert.NotNull(transaction.Transaction);
         }
@@ -108,8 +117,8 @@ namespace DbRunTest
         {
             ConnectionCreator.Default = Creator;
             using var transaction = new ConnectionManager(true);
-            Assert.Equal(ConnectionManagement.CloseOnDispose, transaction.Management);
-            Assert.True(transaction.isMyTransaction);
+            Assert.Equal(ConnectionManagement.CloseOnManagerDispose, transaction.Management);
+            Assert.True(transaction._isMyTransaction);
             Assert.NotNull(transaction.Connection);
             Assert.NotNull(transaction.Transaction);
         }
@@ -121,7 +130,7 @@ namespace DbRunTest
             using var conn = Creator.GetConnection();
             using var transaction = new ConnectionManager(Creator.Config, conn.OpenIfNeeded().BeginTransaction());
             Assert.Equal(ConnectionManagement.LeaveOpen, transaction.Management);
-            Assert.False(transaction.isMyTransaction);
+            Assert.False(transaction._isMyTransaction);
             Assert.NotNull(transaction.Connection);
             Assert.NotNull(transaction.Transaction);
         }

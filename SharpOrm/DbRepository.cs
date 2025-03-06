@@ -28,6 +28,11 @@ namespace SharpOrm
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
         /// <summary>
+        /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
+        /// </summary>
+        protected bool AutoCommit => Creator?.AutoCommit ?? false;
+
+        /// <summary>
         /// Gets the connection manager for the current transaction.
         /// </summary>
         protected ConnectionManager Transaction { get; private set; }
@@ -129,7 +134,7 @@ namespace SharpOrm
             if (this.Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            this.Transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
+            Transaction = new ConnectionManager(Creator, true) { CommandTimeout = CommandTimeout, _autoCommit = AutoCommit };
         }
 
         public virtual Task CommitTransactionAsync()
