@@ -342,10 +342,10 @@ namespace SharpOrm.Connection
             if (creator != null)
                 return creator.GetServerVersion();
 
-            bool needClose = Connection.State == ConnectionState.Open;
+            bool needClose = Connection.State != ConnectionState.Open;
             try
             {
-                return Config.GetServerVersion(Connection.OpenIfNeeded());
+                return Connection.OpenIfNeeded().GetVersion();
             }
             finally
             {

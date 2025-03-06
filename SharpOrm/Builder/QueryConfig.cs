@@ -190,21 +190,5 @@ namespace SharpOrm.Builder
 
             return builder.Append(escapeChar).ToString();
         }
-
-        /// <summary>
-        /// Gets the server version from the database connection.
-        /// </summary>
-        /// <param name="connection">The database connection.</param>
-        /// <returns>The server version.</returns>
-        public virtual Version GetServerVersion(DbConnection connection)
-        {
-            return ParseVersionString(connection.ServerVersion);
-        }
-
-        protected Version ParseVersionString(string strVersion)
-        {
-            strVersion = StringUtils.GetNumericValue(strVersion);
-            return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
-        }
     }
 }

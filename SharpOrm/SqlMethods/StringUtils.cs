@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -37,6 +38,12 @@ namespace SharpOrm.SqlMethods
             }
 
             return builder.ToString();
+        }
+
+        internal static Version ParseVersionString(string strVersion)
+        {
+            strVersion = StringUtils.GetNumericValue(strVersion);
+            return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
         }
 
         private static bool CanAddDot(StringBuilder builder)

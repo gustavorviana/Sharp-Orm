@@ -58,10 +58,10 @@ namespace SharpOrm.Connection
                 return serverVersion;
 
             var conn = GetConnection();
-            conn.Open();
+            conn.OpenIfNeeded();
             try
             {
-                return serverVersion = Config.GetServerVersion(conn);
+                return serverVersion = conn.GetVersion();
             }
             finally
             {

@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Collections;
 using SharpOrm.DataTranslation;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -31,6 +32,16 @@ namespace SharpOrm.Connection
             {
                 throw new Errors.DbConnectionException(ex);
             }
+        }
+
+        /// <summary>
+        /// Gets the server version from the database connection.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The server version.</returns>
+        internal static Version GetVersion(this DbConnection connection)
+        {
+            return StringUtils.ParseVersionString(connection.ServerVersion);
         }
 
         /// <summary>
