@@ -2,6 +2,7 @@
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
+using SharpOrm.Msg;
 using System;
 using System.Threading.Tasks;
 
@@ -134,7 +135,7 @@ namespace SharpOrm.Builder
             this.isLocalManager = manager == null;
 
             if (!this.Exists())
-                throw new DatabaseException($"The table '{grammar.Name}' was not found.");
+                throw new DatabaseException(string.Format(Messages.Table.TableNotFound, grammar.Name));
         }
 
         private DbTable(TableGrammar grammar, ConnectionManager manager)
@@ -246,7 +247,7 @@ namespace SharpOrm.Builder
         private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
         {
             if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
-                throw new InvalidOperationException($"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\".");
+                throw new InvalidOperationException(Messages.Table.InvalidEmpTableConnection);
         }
         #endregion
 

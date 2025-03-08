@@ -68,7 +68,7 @@ namespace SharpOrm
         public static Cell Sum(string column, object value)
         {
             if (!TranslationUtils.IsNumeric(value.GetType()))
-                throw new ArgumentException(Messages.Cell.NumericOnly);
+                throw new ArgumentException(Messages.NumericOnly);
 
             return new Cell(column, SqlExpression.Make(column, "+", value.ToString()));
         }
@@ -83,7 +83,7 @@ namespace SharpOrm
         public static Cell Subtract(string column, object value)
         {
             if (!TranslationUtils.IsNumeric(value.GetType()))
-                throw new ArgumentException(Messages.Cell.NumericOnly);
+                throw new ArgumentException(Messages.NumericOnly);
 
             return new Cell(column, SqlExpression.Make(column, "-", value.ToString()));
         }

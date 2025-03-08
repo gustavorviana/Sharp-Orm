@@ -20,5 +20,17 @@
 
         public const string DynamicNotSupported = "Dynamic types are not supported in this operation.";
         public const string ConfigMustBeNotNull = "The query configuration cannot be null.";
+
+        public const string TableManagementNotSupported = "{0} does not support creating/editing/removing tables.";
+
+        public const string QueryConfigNotSupportOperation = "{0} does not support this operation.";
+
+        public const string CannotConvertTo = "\"{0}\" cannot be converted to {1}.";
+
+        public const string TypeNotSupported = "Type \"{0}\" is not supported";
+
+        public const string NumericOnly = "Only numeric types are allowed.";
+
+        public const string InvalidCountColumn = "The name of a column or '*' must be entered for counting.";
     }
 }

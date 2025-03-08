@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -50,7 +51,7 @@ namespace SharpOrm.Builder
         internal TableInfo(Type type, TranslationRegistry registry)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
-                throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
+                throw new InvalidOperationException(Messages.Table.InvalidType);
 
             this.Type = type;
             this.registry = registry;
@@ -139,7 +140,7 @@ namespace SharpOrm.Builder
         public object GetValue(object owner, string name)
         {
             if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))
-                throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
+                throw new KeyNotFoundException(string.Format(Messages.Table.KeyNotFound, name, Type.FullName));
 
             return col.Get(owner);
         }
@@ -147,7 +148,7 @@ namespace SharpOrm.Builder
         internal object GetValue(object owner, MemberInfo column)
         {
             if (!(this.Columns.FirstOrDefault(c => c.column == column) is ColumnInfo col))
-                throw new KeyNotFoundException($"The key '{column.Name}' does not exist in the object '{this.Type.FullName}'.");
+                throw new KeyNotFoundException(string.Format(Messages.Table.KeyNotFound, column.Name, this.Type.FullName));
 
             return col.Get(owner);
         }

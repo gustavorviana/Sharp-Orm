@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
@@ -40,7 +41,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
             string countCol = column?.GetCountColumn();
             if (string.IsNullOrEmpty(countCol))
-                throw new NotSupportedException("The name of a column or '*' must be entered for counting.");
+                throw new NotSupportedException(Messages.InvalidCountColumn);
 
             Builder.Add("COUNT(");
             if (countCol == "*" || countCol.EndsWith(".*"))

@@ -22,7 +22,7 @@ namespace SharpOrm.Builder
             rootClass = paths.Last().DeclaringType;
             var member = paths.First();
             if (member.IsDefined(typeof(NotMappedAttribute)))
-                throw new InvalidOperationException($"It is not possible to retrieve the column {member.DeclaringType.FullName}.{member.Name}, it was defined as unmapped.");
+                throw new InvalidOperationException(string.Format(Messages.Table.GetUnmappedColumn, $"{member.DeclaringType.FullName}.{member.Name}"));
 
             return member;
         }

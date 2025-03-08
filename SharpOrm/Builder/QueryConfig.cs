@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.Grammars;
 using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using SharpOrm.SqlMethods;
 using System;
 using System.Data.Common;
@@ -142,7 +143,7 @@ namespace SharpOrm.Builder
         /// <exception cref="NotSupportedException">Thrown when the derived class does not support creating/editing/removing tables.</exception>
         public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
-            throw new NotSupportedException($"{this.GetType().FullName} does not support creating/editing/removing tables.");
+            throw new NotSupportedException(string.Format(Messages.TableManagementNotSupported, GetType().FullName));
         }
 
         /// <summary>

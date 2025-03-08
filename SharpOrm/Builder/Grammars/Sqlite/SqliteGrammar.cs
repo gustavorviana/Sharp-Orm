@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
 using SharpOrm.Builder.Grammars.Mysql;
 using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 
 namespace SharpOrm.Builder.Grammars.Sqlite
@@ -61,25 +62,25 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         private void ValidateAlias()
         {
             if (!string.IsNullOrEmpty(Info.TableName.Alias))
-                throw new NotSupportedException("SQLite does not support executing a DELETE with a table alias.");
+                throw new NotSupportedException(Messages.Sqlite.DeleteWithAliasNotSupported);
         }
 
         internal static void ThrowNotSupportedOperations(Query query, string operationName)
         {
             if (query.Limit > 0)
-                throw new NotSupportedException($"SQLite does not support `Limit` with `{operationName}`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "Limit", operationName));
 
             if (query.Offset > 0)
-                throw new NotSupportedException($"SQLite does not support `Offset` with `{operationName}`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "Offset", operationName));
 
             if (query.Info.Joins.Count > 0)
-                throw new NotSupportedException($"SQLite does not support `Joins` with `{operationName}`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "Joins", operationName));
 
             if (!query.Info.Having.Empty)
-                throw new NotSupportedException($"SQLite does not support `Having` with `{operationName}`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "Having", operationName));
 
             if (query.Info.Orders.Length > 0)
-                throw new NotSupportedException($"SQLite does not support `Orders` with `{operationName}`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "Orders", operationName));
         }
 
         protected override IBulkInsertGrammar GetBulkInsertGrammar()
@@ -93,7 +94,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
             public override void BuildIncludingJoins(DbName[] joinNames)
             {
-                throw new NotSupportedException($"SQLite does not support `DELETE` with `Joins`.");
+                throw new NotSupportedException(string.Format(Messages.Sqlite.OperationNotSupported, "DELETE", "Joins"));
             }
         }
     }

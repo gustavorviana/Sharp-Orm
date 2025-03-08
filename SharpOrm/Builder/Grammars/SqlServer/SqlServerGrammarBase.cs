@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
@@ -28,7 +29,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         protected void ValidateOffsetOrderBy()
         {
             if (Info.Orders.Length == 0)
-                throw new InvalidOperationException($"You cannot use {nameof(Query)}.{nameof(Query.Offset)} without defining a sort column.");
+                throw new InvalidOperationException(Messages.SqlServer.OffsetWithSortNotSuported);
         }
     }
 }

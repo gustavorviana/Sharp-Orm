@@ -2591,7 +2591,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query Where(QueryBase where)
         {
-            if (where is Query) throw new NotSupportedException($"Cannot add a {where.GetType().FullName} to the WHERE clause.");
+            if (where is Query) throw new NotSupportedException(string.Format(Messages.Query.InvalidWhereValue, where.GetType().FullName));
 
             Info.Where.Add(where.Info.Where);
 

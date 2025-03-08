@@ -31,7 +31,7 @@ namespace SharpOrm.Builder
             set
             {
                 if (this.table != null)
-                    throw new InvalidOperationException(Messages.TableMap.CannotChangeAfterBuild);
+                    throw new InvalidOperationException(Messages.Table.CannotChangeAfterBuild);
 
                 this._name = value;
             }
@@ -164,7 +164,7 @@ namespace SharpOrm.Builder
         {
             Type memberType = ReflectionUtils.GetMemberType(root.Member);
             if (needNative && !MemberTreeNode.IsNative(memberType))
-                throw new InvalidOperationException($"It is not possible to map the member \"{root.Member}\" of type \"{memberType}\".");
+                throw new InvalidOperationException(string.Format(Messages.Table.MemberTypeNotSupported, root.Member, memberType));
         }
 
         private MemberTreeNode GetOrAddRoot(MemberInfo member)
@@ -193,7 +193,7 @@ namespace SharpOrm.Builder
         public Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
         {
             if (table == null)
-                throw new Exception(Messages.TableMap.NotBuilded);
+                throw new Exception(Messages.Table.NotBuilded);
 
             return Column.FromExp(columnExpression, Registry);
         }

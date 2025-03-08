@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -23,19 +24,19 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             bool isTempName = Schema.Name.StartsWith("#");
             if (isTempName && !Schema.Temporary)
-                throw new InvalidOperationException("The table name cannot start with '#'.");
+                throw new InvalidOperationException(string.Format(Messages.Query.FirstCharInvalid, "#"));
 
             if (Schema.Name.EndsWith("_"))
-                throw new NotSupportedException("The table name cannot end with '_'.");
+                throw new NotSupportedException(string.Format(Messages.Query.FirstCharInvalid,"_"));
 
             if (!Schema.Temporary)
                 return new DbName(Schema.Name, string.Empty);
 
             if (Schema.Name.Contains("."))
-                throw new NotSupportedException("A temporary table cannot contain '.' in its name.");
+                throw new NotSupportedException(Messages.SqlServer.InvalidTempTableName);
 
             if (Schema.Name.Length > 115)
-                throw new InvalidOperationException("The table name must contain up to 115 characters.");
+                throw new InvalidOperationException(Messages.SqlServer.SchemaNameOverflow);
 
             if (isTempName) return new DbName(Schema.Name, string.Empty, false);
 
@@ -60,7 +61,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         private string GetColumnDefinition(DataColumn column)
         {
             if (column.ColumnName.Contains("."))
-                throw new InvalidOperationException("The column name cannot contain \".\"");
+                throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
             long seed = column.AutoIncrementSeed;
             if (seed <= 0)
@@ -129,7 +130,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             if (dataType == typeof(Guid))
                 return "UNIQUEIDENTIFIER";
 
-            throw new ArgumentException($"Unsupported data type: {dataType.Name}");
+            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
         }
 
         private SqlExpression CreateBased()

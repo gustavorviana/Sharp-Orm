@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Linq;
@@ -34,7 +35,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 return CreateBased();
 
             if (GetPrimaryKeys().Length > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
-                throw new InvalidOperationException("It is not possible to have more than one primary key column when there is an AUTOINCREMENT column.");
+                throw new InvalidOperationException(Messages.Sqlite.MultiplePrimaryKeyWithAutoIncrementError);
 
             var query = GetCreateTableQuery()
                  .Add('(')
@@ -49,7 +50,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         private string GetColumnDefinition(DataColumn column)
         {
             if (column.ColumnName.Contains("."))
-                throw new InvalidOperationException("The column name cannot contain \".\"");
+                throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
             string dataType = GetSqliteDataType(column);
@@ -94,7 +95,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             if (dataType == typeof(Guid))
                 return string.Concat("TEXT(", GetGuidSize(), ")");
 
-            throw new ArgumentException($"Unsupported data type: {dataType.Name}");
+            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
         }
 
         protected override void WritePk(QueryBuilder query)
@@ -104,7 +105,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 return;
 
             if (pks.Count(x => x.AutoIncrement) > 1)
-                throw new NotSupportedException("There is no support for more than one column with autoincrement.");
+                throw new NotSupportedException(Messages.Sqlite.MultipleAutoIncrementError);
 
             query.Add(",PRIMARY KEY (").AddJoin(",", pks.Select(BuildAutoIncrement)).Add(')');
         }

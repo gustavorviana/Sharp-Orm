@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 
@@ -35,7 +36,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
         public void Build(UpsertQueryInfo target, IEnumerable<Row> rows, string[] whereColumns, string[] updateColumns)
         {
-            throw new NotSupportedException($"The \"Sqlite\" does not support bulk upsert rows.");
+            throw new NotSupportedException(string.Format(Messages.Sqlite.NotSupported, "bulk upsert rows"));
         }
 
         private void WriteColumn(string srcAlias, string column)

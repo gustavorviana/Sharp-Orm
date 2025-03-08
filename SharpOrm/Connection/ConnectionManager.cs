@@ -39,7 +39,7 @@ namespace SharpOrm.Connection
             set
             {
                 if (Transaction != null)
-                    throw new InvalidOperationException(Messages.Manager.MananementLockedByTransaction);
+                    throw new InvalidOperationException(Messages.Connection.ManagementLockedByTransaction);
 
                 _management = value;
             }
@@ -297,7 +297,7 @@ namespace SharpOrm.Connection
         public ConnectionManager BeginTransaction(IsolationLevel isolationLevel)
         {
             if (Transaction != null)
-                throw new InvalidOperationException(Messages.Manager.TransactionAlreadyOpen);
+                throw new InvalidOperationException(Messages.Connection.TransactionAlreadyOpen);
 
             if (creator != null)
                 return new ConnectionManager(creator, creator.GetConnection().OpenIfNeeded().BeginTransaction(), true).CopyOptionsFrom(this, false);
@@ -434,7 +434,7 @@ namespace SharpOrm.Connection
         public static void ExecuteTransaction(TransactionAction call)
         {
             if (!(ConnectionCreator.Default is ConnectionCreator creator))
-                throw new InvalidOperationException($"It's not possible to start a transaction without setting a value for {nameof(ConnectionCreator)}.{nameof(ConnectionCreator.Default)}.");
+                throw new InvalidOperationException(Messages.Connection.SetDefaultConnectionToStaticTransaction);
 
             var manager = new ConnectionManager(creator, creator.GetConnection().OpenIfNeeded().BeginTransaction(), true);
 

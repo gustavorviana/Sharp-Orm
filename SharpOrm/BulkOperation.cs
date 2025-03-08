@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace SharpOrm
         public BulkOperation(Query target, Row[] tempValues, int? lotInsert)
         {
             if (!target.Info.Config.CanUpdateJoin)
-                throw new NotSupportedException($"{target.Info.Config.GetType()} does not support this operation.");
+                throw new NotSupportedException(string.Format(Messages.QueryConfigNotSupportOperation, target.Info.Config.GetType()));
 
             this.token = target.Token;
             this.tempColumns = tempValues[0].ColumnNames;

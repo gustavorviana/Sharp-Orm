@@ -21,6 +21,9 @@
             public const string ColumnNotSuportDot = "The column name cannot contain \".\"";
 
             public const string ReadOnly = "This query is read-only.";
+            public const string FirstCharInvalid = "The table name cannot start with '{0}'.";
+
+            public const string InvalidWhereValue = "Cannot add a {0} to the WHERE clause.";
         }
     }
 }

@@ -148,7 +148,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
             if (dataType == typeof(Guid))
                 return string.Concat("CHAR(", GetGuidSize(), ")");
 
-            throw new ArgumentException($"Unsupported data type: {dataType.Name}");
+            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
         }
 
         private string GetStringType(int maxSize)

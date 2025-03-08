@@ -104,7 +104,7 @@ namespace SharpOrm.DataTranslation
             if (GetFor(expectedType) is ISqlTranslation conversor)
                 return conversor.ToSqlValue(value, expectedType);
 
-            throw new NotSupportedException($"Type \"{expectedType.FullName}\" is not supported");
+            throw new NotSupportedException(string.Format(Messages.TypeNotSupported, expectedType.FullName));
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace SharpOrm.DataTranslation
         {
             var type = typeof(T);
             if (_manualMapped.Any(x => x.Type == type))
-                throw new InvalidOperationException(Messages.TableMap.AlreadyMapped);
+                throw new InvalidOperationException(Messages.Table.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));

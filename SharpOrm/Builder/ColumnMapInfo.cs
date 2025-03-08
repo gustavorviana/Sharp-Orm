@@ -185,7 +185,7 @@ namespace SharpOrm.Builder
         private void CheckBuilded()
         {
             if (this.builded)
-                throw new InvalidOperationException(Messages.TableMap.ColumnAlreadyMapped);
+                throw new InvalidOperationException(Messages.Table.ColumnAlreadyMapped);
         }
     }
 }
