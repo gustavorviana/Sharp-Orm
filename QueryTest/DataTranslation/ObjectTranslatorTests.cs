@@ -18,6 +18,19 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
+        public void EmptyStringToNull()
+        {
+            var translation = new TranslationRegistry
+            {
+                EmptyStringToNull = true,
+            };
+
+            Assert.Null(translation.ToSql(""));
+            Assert.NotNull(translation.ToSql("Value"));
+            Assert.NotNull(translation.ToSql(Guid.NewGuid()));
+        }
+
+        [Fact]
         public void TestInvalidFields()
         {
             TableInfo table = Translation.GetTable(typeof(InvalidFields));
@@ -95,6 +108,15 @@ namespace QueryTest.DataTranslation
 
             TestAssert.EqualDate(now, registry.FromSql(TimeZoneInfo.ConvertTimeToUtc(now), typeof(DateTime)), "DateTime.Now failed.");
             TestAssert.EqualDate(TimeZoneInfo.ConvertTimeFromUtc(utcNow, TimeZoneInfo.Local), registry.FromSql(utcNow, typeof(DateTime)), "DateTime.UtcNow failed.");
+        }
+
+        [Fact]
+        public void ParseStringDateFromDb()
+        {
+            var registry = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc, TimeZone = TimeZoneInfo.Utc };
+            var now = DateTime.UtcNow;
+
+            TestAssert.EqualDate(now, registry.FromSql(now.ToString(DateTranslation.Format), typeof(DateTime)), "DateTime.Now failed.");
         }
 
         [Fact]

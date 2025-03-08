@@ -4,7 +4,7 @@ namespace SharpOrm.Connection
 {
     public class ConnectionExceptionEventArgs : EventArgs
     {
-        private Exception Exception { get; }
+        public Exception Exception { get; }
 
         public ConnectionExceptionEventArgs(Exception exception)
         {

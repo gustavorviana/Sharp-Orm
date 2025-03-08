@@ -44,6 +44,11 @@ namespace SharpOrm.DataTranslation
             set => dateTranslation.CodeTimeZone = value;
         }
 
+        /// <summary>
+        /// Indicates whether empty strings should be converted to null values.
+        /// </summary>
+        public bool EmptyStringToNull { get; set; }
+
         public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type) || dateTranslation.CanWork(type);
 
         /// <summary>
@@ -120,16 +125,36 @@ namespace SharpOrm.DataTranslation
             if (value is bool vBool)
                 return vBool ? 1 : 0;
 
-            if (numericTranslation.CanWork(type))
+            if (IsNumeric(value, type))
                 return numericTranslation.ToSqlValue(value, type);
 
             if (binaryTranslator.CanWork(type))
                 return binaryTranslator.ToSqlValue(value, type);
 
-            if (dateTranslation.CanWork(type) || value is string strVal && strVal.Length > 0)
-                return dateTranslation.ToSqlValue(value, type);
+            if (dateTranslation.CanWork(type))
+            {
+                value = dateTranslation.ToSqlValue(value, type);
+                if (value?.GetType() != typeof(string))
+                    return value;
+            }
 
-            return value?.ToString();
+            return StringToSql(value);
+        }
+
+        private static bool IsNumeric(object value, Type type)
+        {
+            return numericTranslation.CanWork(type) && (!(value is string strVal) || TranslationUtils.IsNumericString(strVal));
+        }
+
+        private string StringToSql(object value)
+        {
+            if (!(value is string strValue))
+                return value.ToString();
+
+            if (EmptyStringToNull && string.IsNullOrEmpty(strValue))
+                return null;
+
+            return strValue;
         }
 
         private object SerializeEnum(object value)

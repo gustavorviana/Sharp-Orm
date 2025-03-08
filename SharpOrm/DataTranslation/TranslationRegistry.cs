@@ -23,6 +23,15 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Indicates whether empty strings should be converted to null values.
+        /// </summary>
+        public bool EmptyStringToNull
+        {
+            get => native.EmptyStringToNull;
+            set => native.EmptyStringToNull = value;
+        }
+
+        /// <summary>
         /// Custom value translators.
         /// </summary>
         public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];

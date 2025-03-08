@@ -11,9 +11,6 @@ namespace SharpOrm.DataTranslation
             if (value.GetType() == expectedType)
                 return value;
 
-            if (value is string strVal && !TranslationUtils.IsNumericString(strVal))
-                return value;
-
             if (expectedType == typeof(int))
                 return Convert.ToInt32(value);
 
