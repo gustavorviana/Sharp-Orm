@@ -27,7 +27,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 throw new InvalidOperationException(string.Format(Messages.Query.FirstCharInvalid, "#"));
 
             if (Schema.Name.EndsWith("_"))
-                throw new NotSupportedException(string.Format(Messages.Query.FirstCharInvalid,"_"));
+                throw new NotSupportedException(string.Format(Messages.Query.FirstCharInvalid, "_"));
 
             if (!Schema.Temporary)
                 return new DbName(Schema.Name, string.Empty);

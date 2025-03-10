@@ -2,8 +2,6 @@
 using SharpOrm.Builder.Grammars.SqlServer;
 using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.SqlServer;
-using System;
-using System.Data.Common;
 
 namespace SharpOrm.Builder
 {
