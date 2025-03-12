@@ -845,9 +845,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
         {
-            var name = Config.Translation.GetTableName(typeof(C));
-
-            return (Query<T>)Join(new DbName(name, alias), q =>
+            return (Query<T>)Join(DbName.Of<C>(alias, Config.Translation), q =>
             {
                 q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
             }, type);
@@ -855,7 +853,7 @@ namespace SharpOrm
 
         public Query<T> Join<R>(string alias, string column1, string column2)
         {
-            var dbName = DbName.Of<T>(alias, Config.Translation);
+            var dbName = DbName.Of<R>(alias, Config.Translation);
             base.Join(dbName, x => x.WhereColumn(column1, column2), "INNER");
             return this;
         }

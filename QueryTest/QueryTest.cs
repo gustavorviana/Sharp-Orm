@@ -259,5 +259,25 @@ namespace QueryTest
             Assert.NotNull(result);
             Assert.Equal(expected.ToString(), query.ToString());
         }
+
+        [Fact]
+        public void JoinT()
+        {
+            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] [addr] ON [addr].[id] = [c].[address_id]";
+            var query = new Query<Customer>("c");
+            query.Join<Address>("addr", "addr.id", "c.address_id");
+
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
+
+        [Fact]
+        public void JoinTExpression()
+        {
+            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] ON [Address].[Id] = [c].[address_id]";
+            var query = new Query<Customer>("c");
+            query.Join(x => x.Address!, x => x.Id, x => x.AddressId);
+
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
     }
 }
