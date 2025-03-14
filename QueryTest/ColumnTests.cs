@@ -1,4 +1,5 @@
 ﻿using SharpOrm;
+using SharpOrm.Builder;
 
 namespace QueryTest
 {
@@ -48,6 +49,50 @@ namespace QueryTest
         {
             Assert.False(Column.TryParse(name, alias, out var column));
             Assert.Null(column);
+        }
+
+        [Theory]
+        [InlineData("Latin1.General.BIN")]
+        [InlineData("Latin1 General BIN")]
+        public void InvalidCollate(string name)
+        {
+            var column = new Column("Column", "alias")
+            {
+                Collate = name
+            };
+
+            Assert.Throws<InvalidCollateNameException>(() => column.ToExpression(GetInfo()));
+        }
+
+        [Theory]
+        [InlineData("Latin1_General_BIN")]
+        [InlineData("utf8_unicode_ci")]
+        public void CollateTest(string name)
+        {
+            var column = new Column("Column", "alias")
+            {
+                Collate = name
+            };
+
+            Assert.Equal($"[Column] COLLATE {name}", column.ToExpression(GetInfo(), false).ToString());
+        }
+
+        [Theory]
+        [InlineData("Latin1_General_BIN")]
+        [InlineData("utf8_unicode_ci")]
+        public void CollateWithAliasTest(string name)
+        {
+            var column = new Column("Column", "alias")
+            {
+                Collate = name
+            };
+
+            Assert.Equal($"[Column] COLLATE {name} AS [alias]", column.ToExpression(GetInfo()).ToString());
+        }
+
+        private static ReadonlyQueryInfo GetInfo()
+        {
+            return new ReadonlyQueryInfo(new SqlServerQueryConfig(), new DbName("Table"));
         }
     }
 }

@@ -22,6 +22,11 @@ namespace SharpOrm
         public virtual string Name { get; protected set; }
 
         /// <summary>
+        /// Gets or sets the collation of the column.
+        /// </summary>
+        public string Collate { get; set; }
+
+        /// <summary>
         /// Gets or sets the alias of the column.
         /// </summary>
         public string Alias { get; set; }
@@ -164,12 +169,26 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            builder.Append(info.Config.ApplyNomenclature(this.Name));
+            builder.Append(info.Config.ApplyNomenclature(Name));
 
-            if (alias && !string.IsNullOrEmpty(this.Alias))
-                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(this.Alias));
+            if (UseCollate())
+                builder.Append(" COLLATE ").Append(Collate);
+
+            if (alias && !string.IsNullOrEmpty(Alias))
+                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(Alias));
 
             return (SqlExpression)builder;
+        }
+
+        private bool UseCollate()
+        {
+            if (string.IsNullOrEmpty(Collate))
+                return false;
+
+            if (!DbName.IsValid(Collate))
+                throw new InvalidCollateNameException(Collate);
+
+            return true;
         }
 
         public static explicit operator Column(string rawColumn)

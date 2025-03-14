@@ -51,7 +51,7 @@ namespace SharpOrm.Builder
 
         internal static bool IsValidName(string name)
         {
-            return IsValid(name, '.', '_', '#');
+            return IsValid(name, '.', '#');
         }
 
         public static void ValidateAlias(string alias)
@@ -62,7 +62,7 @@ namespace SharpOrm.Builder
 
         internal static bool IsValidAlias(string alias)
         {
-            return IsValid(alias, '.', '_', ' ');
+            return IsValid(alias, '.', ' ');
         }
 
         public static DbName Of<T>(string alias, TranslationRegistry registry = null)
@@ -147,7 +147,7 @@ namespace SharpOrm.Builder
 
         internal static bool IsValid(string content, params char[] allowed)
         {
-            return content.All(c => char.IsLetterOrDigit(c) || allowed.Contains(c));
+            return content.All(c => char.IsLetterOrDigit(c) || c == '_' || allowed.Contains(c));
         }
 
         #region IEquatable
