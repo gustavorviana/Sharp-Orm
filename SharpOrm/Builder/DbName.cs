@@ -45,14 +45,24 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            if (!IsValid(name, '.', '_', '#'))
+            if (!IsValidName(name))
                 throw new InvalidOperationException(Messages.Name.InvalidNameChars);
+        }
+
+        internal static bool IsValidName(string name)
+        {
+            return IsValid(name, '.', '_', '#');
         }
 
         public static void ValidateAlias(string alias)
         {
-            if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' '))
+            if (!string.IsNullOrEmpty(alias) && !IsValidAlias(alias))
                 throw new InvalidOperationException(Messages.Name.InvalidAliasChars);
+        }
+
+        internal static bool IsValidAlias(string alias)
+        {
+            return IsValid(alias, '.', '_', ' ');
         }
 
         public static DbName Of<T>(string alias, TranslationRegistry registry = null)
@@ -135,7 +145,7 @@ namespace SharpOrm.Builder
             return string.IsNullOrEmpty(this.Alias) ? this.Name : this.Alias;
         }
 
-        private static bool IsValid(string content, params char[] allowed)
+        internal static bool IsValid(string content, params char[] allowed)
         {
             return content.All(c => char.IsLetterOrDigit(c) || allowed.Contains(c));
         }

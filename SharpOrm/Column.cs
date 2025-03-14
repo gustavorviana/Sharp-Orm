@@ -106,6 +106,43 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Tries to parse the specified name into a Column object.
+        /// </summary>
+        /// <param name="name">The name to parse.</param>
+        /// <param name="column">When this method returns, contains <see cref="Column"/> if the parse operation succeeded, or null if the parse failed.</param>
+        /// <returns>true if the name was successfully parsed; otherwise, false.</returns>
+        public static bool TryParse(string name, out Column column)
+        {
+            if (string.IsNullOrEmpty(name) || !DbName.IsValidName(name))
+            {
+                column = null;
+                return false;
+            }
+
+            column = new Column(name, "");
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to parse the specified name and alias into a Column object.
+        /// </summary>
+        /// <param name="name">The name to parse.</param>
+        /// <param name="alias">The alias to parse.</param>
+        /// <param name="column">When this method returns, contains <see cref="Column"/> if the parse operation succeeded, or null if the parse failed.</param>
+        /// <returns>true if the name and alias were successfully parsed; otherwise, false.</returns>
+        public static bool TryParse(string name, string alias, out Column column)
+        {
+            if (string.IsNullOrEmpty(name) || !DbName.IsValidName(name) || string.IsNullOrEmpty(alias) || !DbName.IsValidAlias(alias))
+            {
+                column = null;
+                return false;
+            }
+
+            column = new Column(name, alias);
+            return true;
+        }
+
+        /// <summary>
         /// Converts the column to a <see cref="SqlExpression"/> based on the provided query information.
         /// </summary>
         /// <param name="info">The query information.</param>
