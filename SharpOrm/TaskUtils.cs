@@ -22,6 +22,7 @@ namespace SharpOrm
 #endif
             }
         }
+
         public static Task Async(Action callback)
         {
             try

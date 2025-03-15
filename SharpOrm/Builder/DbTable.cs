@@ -4,6 +4,7 @@ using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using SharpOrm.Msg;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharpOrm.Builder
@@ -134,7 +135,7 @@ namespace SharpOrm.Builder
             _grammar = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = false });
             _isLocalManager = manager == null;
 
-            if (!this.Exists())
+            if (!Exists())
                 throw new DatabaseException(string.Format(Messages.Table.TableNotFound, _grammar.Name));
         }
 
@@ -169,9 +170,9 @@ namespace SharpOrm.Builder
         /// Asynchronously checks if the table exists.
         /// </summary>
         /// <returns>A task representing the asynchronous operation, with a boolean result indicating whether the table exists.</returns>
-        public Task<bool> ExistsAsync()
+        public async Task<bool> ExistsAsync(CancellationToken token = default)
         {
-            return TaskUtils.Async(Exists);
+            return await Manager.ExecuteScalarAsync<int>(_grammar.Exists(), token: token) > 0;
         }
 
         /// <summary>
@@ -188,9 +189,9 @@ namespace SharpOrm.Builder
         /// Asynchronously deletes the table from the database.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task DropAsync()
+        public async Task DropAsync(CancellationToken token = default)
         {
-            await Manager.ExecuteNonQueryAsync(_grammar.Drop());
+            await Manager.ExecuteNonQueryAsync(_grammar.Drop(), token);
             _dropped = true;
         }
 
@@ -207,9 +208,9 @@ namespace SharpOrm.Builder
         /// Asynchronously truncates the table.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public Task TruncateAsync()
+        public async Task TruncateAsync(CancellationToken token = default)
         {
-            return Manager.ExecuteNonQueryAsync(_grammar.Truncate());
+            await Manager.ExecuteNonQueryAsync(_grammar.Truncate(), token);
         }
 
         /// <summary>
@@ -245,6 +246,22 @@ namespace SharpOrm.Builder
                 manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }),
                 manager
             );
+        }
+
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="manager"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static async Task<bool> ExistsAsync(string name, bool isTemp = false, ConnectionManager manager = null, CancellationToken token = default)
+        {
+            if (manager is null)
+                throw new ArgumentNullException(nameof(manager));
+
+            var expression = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }).Exists();
+            return await manager.ExecuteScalarAsync<int>(expression, token: token) > 0;
         }
 
         /// <summary>
