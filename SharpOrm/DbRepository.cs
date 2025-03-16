@@ -28,6 +28,11 @@ namespace SharpOrm
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
         /// <summary>
+        /// Event that occurs when an error happens in the ConnectionManager.
+        /// </summary>
+        public event EventHandler<ConnectionExceptionEventArgs> OnError;
+
+        /// <summary>
         /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
         /// </summary>
         protected bool AutoCommit => Creator?.AutoCommit ?? false;
@@ -563,7 +568,7 @@ namespace SharpOrm
                 if (useActiveTransaction && this.Transaction != null)
                     return this.Transaction;
 
-                return GetExistingManager() ?? this.GetNewManager();
+                return GetExistingManager() ?? GetNewManager();
             }
         }
 
@@ -586,19 +591,36 @@ namespace SharpOrm
             {
                 CommandTimeout = this.CommandTimeout
             };
+
+            if (OnError != null)
+                connection.OnError += OnError;
+
             _connections.Add(connection);
             return connection;
         }
 
+        /// <summary>
+        /// Asynchronously inserts a value of type T into the database.
+        /// </summary>
+        /// <typeparam name="T">The type of the value to insert.</typeparam>
+        /// <param name="value">The value to insert.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected.</returns>
         protected Task<int> InsertAsync<T>(T value, CancellationToken token)
         {
-            using (var query = this.Query<T>())
+            using (var query = Query<T>())
                 return query.InsertAsync(value, token);
         }
 
+        /// <summary>  
+        /// Inserts a value of type T into the database.  
+        /// </summary>  
+        /// <typeparam name="T">The type of the value to insert.</typeparam>  
+        /// <param name="value">The value to insert.</param>  
+        /// <returns>The number of rows affected.</returns>  
         protected int Insert<T>(T value)
         {
-            using (var query = this.Query<T>())
+            using (var query = Query<T>())
                 return query.Insert(value);
         }
 

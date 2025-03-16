@@ -14,6 +14,9 @@ namespace SharpOrm.Connection
     public class ConnectionManager : IDisposableWithEvent
     {
         #region Fields/Properties
+        /// <summary>
+        /// Event that occurs when an error happens in the ConnectionManager.
+        /// </summary>
         public event EventHandler<ConnectionExceptionEventArgs> OnError;
 
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
