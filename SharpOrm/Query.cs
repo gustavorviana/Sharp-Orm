@@ -1633,6 +1633,7 @@ namespace SharpOrm
             get => _commandTimeout ?? Manager.CommandTimeout;
             set => _commandTimeout = value;
         }
+
         private CommandBuilder _lastOpenReader = null;
         #endregion
 
@@ -2716,7 +2717,7 @@ namespace SharpOrm
         /// <returns>A Query instance for method chaining.</returns>
         public Query Exists(string table, QueryCallback callback)
         {
-            var query = Query.ReadOnly(table);
+            var query = Query.ReadOnly(table, Info.Config);
             query.Limit = 1;
             query.Where(callback);
             base.Exists(query);
@@ -2731,7 +2732,7 @@ namespace SharpOrm
         /// <returns>A Query instance for method chaining.</returns>
         public Query OrExists(string table, QueryCallback callback)
         {
-            var query = Query.ReadOnly(table);
+            var query = Query.ReadOnly(table, Info.Config);
             query.Limit = 1;
             query.Where(callback);
             base.OrExists(query);
@@ -2810,8 +2811,8 @@ namespace SharpOrm
 
             _disposed = true;
 
-            if (disposing && _lastOpenReader is CommandBuilder last)
-                last.Dispose();
+            if (disposing)
+                _lastOpenReader?.Dispose();
 
             Manager?.CloseByDisposeChild();
             _lastOpenReader = null;
