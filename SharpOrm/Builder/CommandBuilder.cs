@@ -257,7 +257,7 @@ namespace SharpOrm.Builder
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public DbCommandEnumerable<T> ExecuteEnumerable<T>(bool disposeCommand = true)
         {
-            return new DbCommandEnumerable<T>(OpenIfNeeded(), registry, manager.Management, tokenSource.Token)
+            return new DbCommandEnumerable<T>(command, registry, manager.Management, tokenSource.Token)
             {
                 DisposeCommand = disposeCommand,
                 manager = manager,
