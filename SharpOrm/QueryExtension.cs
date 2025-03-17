@@ -590,6 +590,7 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="cells">An array of cells to be inserted into the database.</param>
         /// <returns>An object of type T representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static T Insert<T>(this Query query, params Cell[] cells)
         {
             return Insert<T>(query, (IEnumerable<Cell>)cells);
@@ -603,6 +604,7 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="obj">The object to be inserted into the database.</param>
         /// <returns>An object of type R representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
             return Insert<R>(query, query.GetObjectReader(true, true).ReadCells(obj));
@@ -615,6 +617,7 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="cells">The collection of cells to be inserted into the database.</param>
         /// <returns>An object of type T representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
             using (var cmd = query.GetCommand())
