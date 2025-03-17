@@ -269,9 +269,14 @@ namespace SharpOrm
         {
             StringBuilder builder = new StringBuilder("Column(");
 
-            if (this.expression != null) builder.Append(this.expression.ToString());
-            else if (string.IsNullOrEmpty(this.Alias)) builder.Append(this.Name);
-            else builder.AppendFormat("{0} AS {1}", this.Name.Trim(), this.Alias.Trim());
+            if (expression != null) builder.Append(expression.ToString());
+            else if (string.IsNullOrEmpty(Alias)) builder.Append(Name.Trim());
+
+            if (UseCollate())
+                builder.Append(" COLLATE ").Append(Collate);
+
+            if (expression == null)
+                builder.AppendFormat(" AS {0}", Alias.Trim());
 
             return builder.Append(")").ToString();
         }
