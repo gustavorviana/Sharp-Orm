@@ -19,7 +19,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets or sets the columns to group by.
         /// </summary>
-        public Column[] GroupsBy { get; set; } = new Column[0];
+        public Column[] GroupsBy { get; set; } = DotnetUtils.EmptyArray<Column>();
 
         /// <summary>
         /// Gets the list of join queries.
@@ -29,7 +29,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets or sets the columns to order by.
         /// </summary>
-        public ColumnOrder[] Orders { get; set; } = new ColumnOrder[0];
+        public ColumnOrder[] Orders { get; set; } = DotnetUtils.EmptyArray<ColumnOrder>();
 
         /// <summary>
         /// Gets or sets the columns to select.

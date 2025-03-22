@@ -40,7 +40,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Custom mapping of columns in the database.
         /// </summary>
-        public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
+        public ColumnTypeMap[] CustomColumnTypes { get; set; } = DotnetUtils.EmptyArray<ColumnTypeMap>();
 
         /// <summary>
         /// Registry of SQL methods.

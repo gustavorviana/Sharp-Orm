@@ -15,7 +15,7 @@ namespace SharpOrm
         #region Properties/Fields
         private readonly Column countColunm;
         protected readonly Query query;
-        private T[] items = new T[0];
+        private T[] items = DotnetUtils.EmptyArray<T>();
 
         private int peerPage;
         private bool disposed;
@@ -259,7 +259,7 @@ namespace SharpOrm
             if (disposing)
                 this.query.Dispose();
 
-            this.items = new T[0];
+            this.items = DotnetUtils.EmptyArray<T>();
             disposed = true;
         }
 

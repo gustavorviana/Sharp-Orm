@@ -34,7 +34,7 @@ namespace SharpOrm.DataTranslation
         /// <summary>
         /// Custom value translators.
         /// </summary>
-        public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
+        public ISqlTranslation[] Translators { get; set; } = DotnetUtils.EmptyArray<ISqlTranslation>();
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.

@@ -26,7 +26,7 @@ namespace SharpOrm.Builder.Expressions
 
             this.declaringType = declaringType;
             Member = member;
-            Childs = childs ?? new SqlMemberInfo[0];
+            Childs = childs ?? DotnetUtils.EmptyArray<SqlMemberInfo>();
             IsStatic = false;
             Alias = GetAlias(Name, alias, childs, IsNativeType);
         }

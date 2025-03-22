@@ -16,7 +16,7 @@ namespace SharpOrm.Builder.Expressions
 
         public DeferredMemberColumn(IReadonlyQueryInfo queryInfo, SqlPropertyInfo member, bool needPrefix)
         {
-            Parameters = new object[0];
+            Parameters = DotnetUtils.EmptyArray<object>();
             this.needPrefix = needPrefix;
             this.queryInfo = queryInfo;
             this.member = member;
