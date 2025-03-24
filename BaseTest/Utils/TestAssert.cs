@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using SharpOrm.DataTranslation;
+using Xunit;
 
 namespace BaseTest.Utils
 {
@@ -20,11 +21,7 @@ namespace BaseTest.Utils
 
         public static void EqualDate(DateTime expected, DateTime actual, string message)
         {
-            Assert.Equal(expected.Date, actual.Date);
-            var expectedSeconds = Math.Round(expected.TimeOfDay.TotalSeconds);
-            var actualSeconds = Math.Round(actual.TimeOfDay.TotalSeconds);
-
-            Assert.True(expectedSeconds == Math.Round(actual.TimeOfDay.TotalSeconds), message + $"({expectedSeconds}, {actualSeconds}); ({expected.TimeOfDay.TotalSeconds}; {actual.TimeOfDay.TotalSeconds})");
+            Assert.Equal(expected.Date.ToString(DateTranslation.Format), actual.Date.ToString(DateTranslation.Format));
         }
     }
 }

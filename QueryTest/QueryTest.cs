@@ -119,10 +119,12 @@ namespace QueryTest
         [Fact]
         public void Clone()
         {
+            var token = new CancellationToken(true);
             var original = new Query("table alias")
             {
                 Limit = 1,
                 Offset = 3,
+                Token = token,
                 Distinct = true
             };
 
@@ -140,6 +142,7 @@ namespace QueryTest
             Assert.Equal(original.Limit, clone.Limit);
             Assert.Equal(original.Offset, clone.Offset);
             Assert.Equal(original.Distinct, clone.Distinct);
+            Assert.Equal(token, clone.Token);
         }
 
         [Fact]
@@ -147,8 +150,8 @@ namespace QueryTest
         {
             var query = new Query("table");
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(30, cmd.CommandTimeout);
+            using var cmd = query.GetCommand();
+            Assert.Equal(30, cmd.Timeout);
         }
 
         [Fact]
@@ -159,8 +162,8 @@ namespace QueryTest
                 CommandTimeout = 120
             };
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(120, cmd.CommandTimeout);
+            using var cmd = query.GetCommand();
+            Assert.Equal(120, cmd.Timeout);
         }
 
         [Fact]
@@ -169,8 +172,8 @@ namespace QueryTest
             using var creator = new MultipleConnectionCreator<MockConnection>(new SqlServerQueryConfig(false) { CommandTimeout = 120 }, "");
             var query = new Query("table", creator);
 
-            using var cmd = query.GetCommand(new SqlExpression(""));
-            Assert.Equal(120, cmd.CommandTimeout);
+            using var cmd = query.GetCommand();
+            Assert.Equal(120, cmd.Timeout);
         }
 
         [Theory]
@@ -183,7 +186,7 @@ namespace QueryTest
 
             using (RegisterFallback(new Cell("Id", id)))
             {
-                var manager = this.GetManager(this.Config.Clone());
+                var manager = GetManager(Config.Clone());
                 manager.Config.ApplyGeneratedKey = applyGeneratedKey;
 
                 using var query = new Query<Order>(manager);
@@ -202,7 +205,7 @@ namespace QueryTest
 
             using (RegisterFallback(new Cell("Id", DBNull.Value)))
             {
-                var manager = this.GetManager(this.Config.Clone());
+                var manager = GetManager(Config.Clone());
                 manager.Config.ApplyGeneratedKey = true;
 
                 using var query = new Query<Order>(manager);
@@ -225,6 +228,56 @@ namespace QueryTest
             // Assert
             Assert.NotNull(result);
             QueryAssert.Equal(query, expected, result.Info.Select.FirstOrDefault().ToSafeExpression(query.Info, false));
+        }
+
+
+        [Fact]
+        public void QueryToStringShowDeferrerColumn()
+        {
+            // Arrange
+            var expected = "SELECT [City] FROM [Address] WHERE [Name] LIKE ?";
+            var query = new Query<Address>();
+
+            // Act
+            var result = query.Select(x => x.City).WhereContains(x => x.Name, "Mr.");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
+
+        [Fact]
+        public void Should_Success_Query_ToString_With_Invalid_Select_Column_Test()
+        {
+            var expected = "SELECT ! FROM [Customers] WHERE [Name] LIKE ?";
+            var query = new Query<Customer>();
+
+            // Act
+            var result = query.Select(x => x.Address!.Id).WhereContains(x => x.Name, "Mr.");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
+
+        [Fact]
+        public void JoinT()
+        {
+            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] [addr] ON [addr].[id] = [c].[address_id]";
+            var query = new Query<Customer>("c");
+            query.Join<Address>("addr", "addr.id", "c.address_id");
+
+            Assert.Equal(expected.ToString(), query.ToString());
+        }
+
+        [Fact]
+        public void JoinTExpression()
+        {
+            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] ON [Address].[Id] = [c].[address_id]";
+            var query = new Query<Customer>("c");
+            query.Join(x => x.Address!, x => x.Id, x => x.AddressId);
+
+            Assert.Equal(expected.ToString(), query.ToString());
         }
     }
 }

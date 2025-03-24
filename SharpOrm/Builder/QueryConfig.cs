@@ -1,7 +1,8 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using SharpOrm.SqlMethods;
 using System;
-using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder
@@ -11,6 +12,16 @@ namespace SharpOrm.Builder
     /// </summary>
     public abstract class QueryConfig : ICloneable
     {
+        /// <summary>
+        /// Gets the maximum number of parameters allowed in a database query.
+        /// </summary>
+        public virtual int DbParamsLimit { get; } = 2099;
+
+        /// <summary>
+        /// Indicates whether the DBMS supports native upsert rows.
+        /// </summary>
+        internal protected virtual bool NativeUpsertRows { get; }
+
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
         /// </summary>
@@ -29,8 +40,11 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Custom mapping of columns in the database.
         /// </summary>
-        public ColumnTypeMap[] CustomColumnTypes { get; set; } = new ColumnTypeMap[0];
+        public ColumnTypeMap[] CustomColumnTypes { get; set; } = DotnetUtils.EmptyArray<ColumnTypeMap>();
 
+        /// <summary>
+        /// Registry of SQL methods.
+        /// </summary>
         public virtual SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
 
         /// <summary>
@@ -64,6 +78,11 @@ namespace SharpOrm.Builder
         public bool EscapeStrings { get; set; }
 
         /// <summary>
+        /// Gets or sets the mode for mapping nested objects.
+        /// </summary>
+        public NestedMode NestedMapMode { get; set; } = NestedMode.Attribute;
+
+        /// <summary>
         /// Create an instance that allows only safe modifications.
         /// </summary>
         public QueryConfig() : this(true)
@@ -82,12 +101,20 @@ namespace SharpOrm.Builder
             RegisterMethods();
         }
 
+        /// <summary>
+        /// Create a new instance with specified methods.
+        /// </summary>
+        /// <param name="safeModificationsOnly">Signal whether only safe modifications should be made.</param>
+        /// <param name="methods">The SQL method registry.</param>
         protected QueryConfig(bool safeModificationsOnly, SqlMethodRegistry methods)
         {
             this.OnlySafeModifications = safeModificationsOnly;
             this.Methods = methods;
         }
 
+        /// <summary>
+        /// Registers SQL methods.
+        /// </summary>
         protected virtual void RegisterMethods()
         {
 
@@ -96,15 +123,15 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Fix table name, column and alias for SQL.
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">The name to apply nomenclature to.</param>
+        /// <returns>The fixed name.</returns>
         public virtual string ApplyNomenclature(string name) => name;
 
         /// <summary>
         /// Creates a new grammar object.
         /// </summary>
         /// <param name="query">Query for grammar.</param>
-        /// <returns></returns>
+        /// <returns>A new grammar object.</returns>
         public abstract Grammar NewGrammar(Query query);
 
         /// <summary>
@@ -115,7 +142,7 @@ namespace SharpOrm.Builder
         /// <exception cref="NotSupportedException">Thrown when the derived class does not support creating/editing/removing tables.</exception>
         public virtual TableGrammar NewTableGrammar(TableSchema schema)
         {
-            throw new NotSupportedException($"{this.GetType().FullName} does not support creating/editing/removing tables.");
+            throw new NotSupportedException(string.Format(Messages.TableManagementNotSupported, GetType().FullName));
         }
 
         /// <summary>
@@ -139,13 +166,17 @@ namespace SharpOrm.Builder
         /// <param name="target">The target instance to copy the properties to.</param>
         protected void CopyTo(QueryConfig target)
         {
-            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-            foreach (var prop in this.GetType().GetProperties(flags))
+            foreach (var prop in this.GetType().GetProperties(Bindings.Instance))
                 if (prop.CanRead && prop.CanWrite)
                     ReflectionUtils.CopyPropTo(this, target, prop);
         }
 
+        /// <summary>
+        /// Escapes a string for use in a SQL query using the specified escape character.
+        /// </summary>
+        /// <param name="value">The string to escape.</param>
+        /// <param name="escapeChar">The character to use for escaping.</param>
+        /// <returns>The escaped string.</returns>
         protected static string BasicEscapeString(string value, char escapeChar)
         {
             StringBuilder builder = new StringBuilder(value.Length + 2).Append(escapeChar);

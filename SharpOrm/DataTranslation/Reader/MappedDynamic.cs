@@ -6,7 +6,7 @@ using System.Dynamic;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
-    /// Represents a dynamically mapped object from a database reader.
+    /// Represents a dynamically mapped object from a database record.
     /// </summary>
     public class MappedDynamic : IMappedObject
     {
@@ -15,39 +15,39 @@ namespace SharpOrm.DataTranslation.Reader
         /// <summary>
         /// Initializes a new instance of the <see cref="MappedDynamic"/> class.
         /// </summary>
-        /// <param name="reader">The database reader.</param>
+        /// <param name="record">The database record.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
-        public MappedDynamic(IDataReader reader, TranslationRegistry registry = null)
+        public MappedDynamic(IDataRecord record, TranslationRegistry registry = null)
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
-            for (int i = 0; i < reader.FieldCount; i++)
-                columns.Add(new DbColumnReader(registry, reader.GetName(i), reader.GetFieldType(i)));
+            for (int i = 0; i < record.FieldCount; i++)
+                columns.Add(new DbColumnReader(registry, record.GetName(i), record.GetFieldType(i)));
         }
 
         /// <summary>
-        /// Reads data from the database reader and maps it to a dynamic object.
+        /// Reads data from the database record and maps it to a dynamic object.
         /// </summary>
-        /// <param name="reader">The database reader.</param>
+        /// <param name="record">The database record.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>A dynamic object containing the mapped data.</returns>
-        public static dynamic Read(IDataReader reader, TranslationRegistry registry = null)
+        public static dynamic Read(IDataRecord record, TranslationRegistry registry = null)
         {
-            return new MappedDynamic(reader, registry).Read(reader);
+            return new MappedDynamic(record, registry).Read(record);
         }
 
         /// <summary>
-        /// Reads data from the database reader and maps it to a dynamic object.
+        /// Reads data from the database record and maps it to a dynamic object.
         /// </summary>
-        /// <param name="reader">The database reader.</param>
+        /// <param name="record">The database record.</param>
         /// <returns>A dynamic object containing the mapped data.</returns>
-        public dynamic Read(IDataReader reader)
+        public dynamic Read(IDataRecord record)
         {
             var dObject = new ExpandoObject();
 
             for (int i = 0; i < columns.Count; i++)
-                this.columns[i].ReadTo(dObject, reader, i);
+                this.columns[i].ReadTo(dObject, record, i);
 
             return dObject;
         }
@@ -65,17 +65,17 @@ namespace SharpOrm.DataTranslation.Reader
                 this.name = name;
             }
 
-            public void ReadTo(IDictionary<string, object> target, IDataReader reader, int index)
+            public void ReadTo(IDictionary<string, object> target, IDataRecord record, int index)
             {
-                target[this.name] = this.Read(reader, index);
+                target[this.name] = this.Read(record, index);
             }
 
-            public object Read(IDataReader reader, int index)
+            public object Read(IDataRecord record, int index)
             {
                 if (translation == null)
-                    return reader[index];
+                    return record[index];
 
-                return translation.FromSqlValue(reader[index], type);
+                return translation.FromSqlValue(record[index], type);
             }
         }
     }

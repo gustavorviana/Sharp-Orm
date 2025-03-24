@@ -2,38 +2,57 @@
 using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace SharpOrm.DataTranslation
 {
+    /// <summary>
+    /// Class responsible for reading objects and translating them into rows.
+    /// </summary>
     public class ObjectReader
     {
         #region Fields
-        private string[] columns =
-#if NET46_OR_GREATER || NET5_0_OR_GREATER 
-                Array.Empty<string>();
-#else
-                new string[0];
-#endif
+        private string[] columns = DotnetUtils.EmptyArray<string>();
 
         private bool needContains;
 
         private readonly TableInfo table;
         #endregion
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to read primary keys.
+        /// </summary>
         public bool ReadPk { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to read foreign keys.
+        /// </summary>
         public bool ReadFk { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to validate the object.
+        /// </summary>
         public bool Validate { get; set; }
 
         private readonly bool hasUpdateColumn;
         private readonly bool hasCreateColumn;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to ignore timestamp columns.
+        /// </summary>
         public bool IgnoreTimestamps { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the object is being created.
+        /// </summary>
         public bool IsCreate { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ObjectReader"/> class.
+        /// </summary>
+        /// <param name="table">The table information.</param>
         public ObjectReader(TableInfo table)
         {
             this.table = table;
@@ -41,38 +60,57 @@ namespace SharpOrm.DataTranslation
             this.hasCreateColumn = !string.IsNullOrEmpty(table.Timestamp?.CreatedAtColumn);
         }
 
-        [Obsolete]
-        public ObjectReader Only<T>(params Expression<ColumnExpression<T>>[] calls)
+        /// <summary>
+        /// Creates an <see cref="ObjectReader"/> for the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the object.</typeparam>
+        /// <param name="registry">The translation registry.</param>
+        /// <returns>An <see cref="ObjectReader"/> for the specified type.</returns>
+        public static ObjectReader OfType<T>(TranslationRegistry registry)
         {
-            this.needContains = true;
-            return this.SetProps(calls);
+            return new ObjectReader(registry.GetTable(typeof(T)));
         }
 
+        /// <summary>
+        /// Configures the <see cref="ObjectReader"/> to only read the specified columns.
+        /// </summary>
+        /// <typeparam name="T">The type of the object.</typeparam>
+        /// <param name="expression">The expression specifying the columns to read.</param>
+        /// <returns>The configured <see cref="ObjectReader"/>.</returns>
         public ObjectReader Only<T>(Expression<ColumnExpression<T>> expression)
         {
             this.needContains = true;
             return this.SetExpression(expression);
         }
 
+        /// <summary>
+        /// Configures the <see cref="ObjectReader"/> to only read the specified columns.
+        /// </summary>
+        /// <param name="columns">The columns to read.</param>
+        /// <returns>The configured <see cref="ObjectReader"/>.</returns>
         public ObjectReader Only(params string[] columns)
         {
             this.needContains = true;
             return this.SetColumns(columns);
         }
 
+        /// <summary>
+        /// Configures the <see cref="ObjectReader"/> to exclude the specified columns.
+        /// </summary>
+        /// <param name="columns">The columns to exclude.</param>
+        /// <returns>The configured <see cref="ObjectReader"/>.</returns>
         public ObjectReader Except(params string[] columns)
         {
             this.needContains = false;
             return this.SetColumns(columns);
         }
 
-        [Obsolete]
-        public ObjectReader Except<T>(params Expression<ColumnExpression<T>>[] calls)
-        {
-            this.needContains = false;
-            return this.SetProps(calls);
-        }
-
+        /// <summary>
+        /// Configures the <see cref="ObjectReader"/> to exclude the specified columns.
+        /// </summary>
+        /// <typeparam name="T">The type of the object.</typeparam>
+        /// <param name="expression">The expression specifying the columns to exclude.</param>
+        /// <returns>The configured <see cref="ObjectReader"/>.</returns>
         public ObjectReader Except<T>(Expression<ColumnExpression<T>> expression)
         {
             this.needContains = false;
@@ -86,33 +124,28 @@ namespace SharpOrm.DataTranslation
             );
         }
 
-        private ObjectReader SetProps<T>(Expression<ColumnExpression<T>>[] calls)
-        {
-            return this.SetColumns(calls.Select(x => ColumnInfo.GetName(ExpressionUtils<T>.GetMemberExpression(x).Member)).ToArray());
-        }
-
         private ObjectReader SetColumns(string[] columns)
         {
-            this.columns = columns ??
-#if NET5_0_OR_GREATER
-            Array.Empty<string>();
-#else
-                new string[0];
-#endif
+            this.columns = columns ?? DotnetUtils.EmptyArray<string>();
             return this;
         }
 
+        /// <summary>
+        /// Reads a row from the specified object.
+        /// </summary>
+        /// <param name="owner">The object to read.</param>
+        /// <returns>A <see cref="Row"/> representing the object.</returns>
         public Row ReadRow(object owner)
         {
-            return new Row(this.ReadCells(owner).ToArray());
+            return new Row(ReadCells(owner).ToArray());
         }
 
         #region ExpandoObject
         private IEnumerable<Cell> ReadDictCells(IDictionary<string, object> owner)
         {
-            foreach (var item in owner)
-                if (IsAllowedName(item.Key) || (this.IsKey(item.Key) && this.UsePk(item.Value)))
-                    yield return new Cell(item.Key, item.Value);
+            return owner
+                .Where(item => IsAllowedName(item.Key) || (this.IsKey(item.Key) && this.UsePk(item.Value)))
+                .Select(item => new Cell(item.Key, item.Value));
         }
 
         private bool IsKey(string name)
@@ -122,69 +155,101 @@ namespace SharpOrm.DataTranslation
 
         private bool UsePk(object value)
         {
-            return this.ReadPk && !TranslationUtils.IsInvalidPk(value);
+            return ReadPk && !TranslationUtils.IsInvalidPk(value);
         }
         #endregion
 
+        /// <summary>
+        /// Determines whether the specified object has a valid key.
+        /// </summary>
+        /// <param name="owner">The object to check.</param>
+        /// <returns>True if the object has a valid key; otherwise, false.</returns>
         public bool HasValidKey(object owner)
         {
-            foreach (var column in this.table.Columns)
-                if (column.Key && this.CanReadKey(ProcessValue(column, owner)))
-                    return true;
-
-            return false;
+            return table.Columns.Any(column => column.Key && !TranslationUtils.IsInvalidPk(ProcessValue(column, owner)));
         }
 
         #region ObjectReader
+
+        /// <summary>  
+        /// Gets the names of the columns that are allowed to be read.  
+        /// </summary>  
+        /// <returns>An array of column names.</returns>  
+        public string[] GetColumnNames()
+        {
+            List<string> names = new List<string>();
+            names.AddRange(table.Columns.Where(column => CanRead(column) && !IsTimeStamps(column.Name)).Select(x => x.Name));
+            if (IgnoreTimestamps)
+                return names.ToArray();
+
+            if (hasCreateColumn && IsCreate)
+                names.Add(table.Timestamp.CreatedAtColumn);
+
+            if (hasUpdateColumn)
+                names.Add(table.Timestamp.UpdatedAtColumn);
+
+            return names.ToArray();
+        }
+
+        /// <summary>
+        /// Reads the cells from the specified object.
+        /// </summary>
+        /// <param name="owner">The object to read.</param>
+        /// <returns>An enumerable of cells representing the object.</returns>
         public IEnumerable<Cell> ReadCells(object owner)
         {
             if (owner is IDictionary<string, object> dict)
-                return this.ReadDictCells(dict);
+                return ReadDictCells(dict);
 
-            return this.ReadObjectCells(owner);
+            return ReadObjectCells(new ValidationContext(owner));
         }
 
-        private IEnumerable<Cell> ReadObjectCells(object owner)
+        private IEnumerable<Cell> ReadObjectCells(ValidationContext context)
         {
             for (int i = 0; i < table.Columns.Length; i++)
             {
-                var cell = this.GetCell(owner, table.Columns[i]);
+                if (!CanRead(table.Columns[i]) || IsTimeStamps(table.Columns[i].Name))
+                    continue;
+
+                var cell = GetCell(context, table.Columns[i]);
                 if (cell != null) yield return cell;
             }
 
-            if (this.hasCreateColumn && this.IsCreate)
-                yield return new Cell(this.table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
+            if (hasCreateColumn && IsCreate)
+                yield return new Cell(table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
 
-            if (this.hasUpdateColumn)
-                yield return new Cell(this.table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
+            if (hasUpdateColumn)
+                yield return new Cell(table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 
-        private Cell GetCell(object owner, ColumnInfo column)
+        private Cell GetCell(ValidationContext context, ColumnInfo column)
         {
-            if (!this.IsAllowedName(column.Name)) return null;
             if (column.ForeignInfo != null)
-            {
-                if (this.CanReadFk(column))
-                    return new Cell(column.ForeignInfo.ForeignKey, this.GetFkValue(owner, column.GetRaw(owner), column));
+                return new Cell(column.ForeignInfo.ForeignKey, GetFkValue(context.ObjectInstance, column.GetRaw(context.ObjectInstance), column));
 
-                return null;
-            }
-
-            object value = ProcessValue(column, owner);
-            if (column.Key && !this.CanReadKey(value))
+            object value = ProcessValue(column, context.ObjectInstance);
+            if (column.Key && TranslationUtils.IsInvalidPk(value))
                 return null;
 
-            if (this.Validate) column.ValidateValue(value);
+            if (Validate) column.ValidateValue(context, value);
             return new Cell(column.Name, value);
+        }
+
+        private bool CanRead(ColumnInfo column)
+        {
+            if (!IsAllowedName(column.Name) || (column.Key && !ReadPk))
+                return false;
+
+            return column.ForeignInfo == null || CanReadFk(column);
         }
 
         private object ProcessValue(ColumnInfo column, object owner)
         {
             object obj = column.Get(owner);
-            if (!this.ReadFk || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
+            if (!ReadFk || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
-            return this.table.registry.GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return table.registry.GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
         }
 
         private object GetFkValue(object owner, object value, ColumnInfo fkColumn)
@@ -210,28 +275,19 @@ namespace SharpOrm.DataTranslation
 
         protected bool IsAllowedName(string name)
         {
-            if (this.IsTimeStamps(name)) return false;
-
-            return this.columns.Length == 0 ||
-            this.columns.Any(x => x.Equals(name, StringComparison.OrdinalIgnoreCase)) == this.needContains;
+            return columns.Length == 0 ||
+            columns.Any(x => x.Equals(name, StringComparison.OrdinalIgnoreCase)) == needContains;
         }
 
-        private bool IsTimeStamps(string name)
+        public bool IsTimeStamps(string name)
         {
-            if (this.IgnoreTimestamps) return false;
-
-            return (this.hasUpdateColumn && name.Equals(this.table.Timestamp.UpdatedAtColumn, StringComparison.OrdinalIgnoreCase)) ||
-                (this.hasCreateColumn && name.Equals(this.table.Timestamp.CreatedAtColumn, StringComparison.OrdinalIgnoreCase));
+            return (hasUpdateColumn && name.Equals(table.Timestamp.UpdatedAtColumn, StringComparison.OrdinalIgnoreCase)) ||
+                (hasCreateColumn && name.Equals(table.Timestamp.CreatedAtColumn, StringComparison.OrdinalIgnoreCase));
         }
 
         private bool CanReadFk(ColumnInfo column)
         {
-            return this.ReadFk && !this.table.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
-        }
-
-        protected bool CanReadKey(object value)
-        {
-            return this.ReadPk && !TranslationUtils.IsInvalidPk(value);
+            return ReadFk && !table.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

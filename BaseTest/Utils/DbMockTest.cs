@@ -11,8 +11,7 @@ namespace BaseTest.Utils
 {
     public class DbMockTest : QueryTestBase
     {
-        protected MockConnection Connection => (MockConnection)this.fixture.Creator.GetConnection();
-        protected ConnectionManager Manager => this.fixture.Manager;
+        protected MockConnection Connection => (MockConnection)fixture.Creator.GetConnection();
 
         public DbMockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
         {
@@ -28,17 +27,12 @@ namespace BaseTest.Utils
 
         }
 
-        protected ConnectionManager GetManager(QueryConfig config)
-        {
-            return new ConnectionManager(config, this.Connection);
-        }
-
         protected ConnectionManager GetManager(TranslationRegistry registry)
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.Translation = registry;
 
-            return new ConnectionManager(config, this.Connection);
+            return new ConnectionManager(config, Connection);
         }
 
         public static MockDataReader GetReader(params Cell[] cells)

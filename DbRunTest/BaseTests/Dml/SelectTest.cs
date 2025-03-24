@@ -37,10 +37,10 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void SelectUtcDateTime()
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
 
-            using var query = NewQuery<TestTable>(this.GetManager(config));
+            using var query = NewQuery<TestTable>(GetManager(config));
 
             DateTime date = DateTime.Now.RemoveMiliseconds();
             query.Insert(new TestTable { Id = 1, Name = "", CreatedAt = date, Number = 0, CustomStatus = Status.Success });
@@ -62,10 +62,10 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void SelectUtcDateTimeOffset()
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.Translation = new TranslationRegistry { DbTimeZone = TimeZoneInfo.Utc };
 
-            using var query = NewQuery<TestTable>(this.GetManager(config));
+            using var query = NewQuery<TestTable>(GetManager(config));
 
             var date = DateTimeOffset.Now.RemoveMiliseconds();
             query.Insert(new Cell("Id", 1), new Cell("Name", ""), new Cell("record_created", date), new Cell("number", 0), new Cell("custom_status", 0));
@@ -92,7 +92,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void SelectDistinct()
         {
-            this.ClearTables([TestTableUtils.TABLE]);
+            ClearTables([TestTableUtils.TABLE]);
             const int Id = 1;
             const string Name = "User 1";
             using var query = NewQuery(TestTableUtils.TABLE);
@@ -177,7 +177,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void SelectInvalidColumn()
         {
-            var config = this.Config.Clone();
+            var config = Config.Clone();
             config.LoadForeign = true;
             using var query = NewQuery<Customer>(GetManager(config));
             Assert.Throws<InvalidOperationException>(() => query.AddForeign(f => f.Address.Street));
@@ -186,7 +186,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void DeepSelect()
         {
-            var config = this.GetUnsafeConfig();
+            var config = GetUnsafeConfig();
             config.LoadForeign = true;
             const uint Id = 1;
             const int Addr = 1;
@@ -244,7 +244,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void ExecuteArrayScalar()
         {
-            using var q = NewQuery(this.GetUnsafeManager(), TestTableUtils.TABLE);
+            using var q = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
             q.Delete();
             InsertRows(5);
             q.Select("Name");
@@ -257,7 +257,7 @@ namespace DbRunTest.BaseTests.Dml
         public void ExecuteArrayScalarConvertion()
         {
             InsertRows(5);
-            using var q = NewQuery(this.GetUnsafeManager(), TestTableUtils.TABLE);
+            using var q = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
             q.Select("Id");
 
             var names = q.ExecuteArrayScalar<string>();
@@ -268,9 +268,9 @@ namespace DbRunTest.BaseTests.Dml
         public void SelectJoin()
         {
             ConfigureInitialCustomerAndOrder();
-            using var qOrder = new Query<Order>(this.Creator);
+            using var qOrder = new Query<Order>(Creator);
 
-            qOrder.Join<Customer>("c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
+            qOrder.Join("Customers c", q => q.WhereColumn("c.id", "orders.customer_id").Where("c.Email", "!=", "Test"));
             qOrder.Where("c.name", "Ronaldo");
             Assert.NotNull(qOrder.FirstOrDefault());
         }

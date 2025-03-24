@@ -1,4 +1,6 @@
-﻿using SharpOrm.DataTranslation.Reader;
+﻿using SharpOrm.Connection;
+using SharpOrm.DataTranslation.Reader;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,6 +36,7 @@ namespace SharpOrm.Collections
     /// </summary>
     internal class DbObjectEnumerator : IEnumerator, IDisposable
     {
+        internal ConnectionManager manager;
         /// <summary>
         /// Gets the cancellation token.
         /// </summary>
@@ -58,7 +61,7 @@ namespace SharpOrm.Collections
         public DbObjectEnumerator(DbDataReader reader, IMappedObject map, CancellationToken token)
         {
             if (reader.IsClosed)
-                throw new InvalidOperationException($"It is not possible to use a closed {nameof(DbDataReader)}.");
+                throw new InvalidOperationException(Messages.Connection.UsingClosedReader);
 
             this.reader = reader;
             this.Token = token;
@@ -92,11 +95,11 @@ namespace SharpOrm.Collections
             {
                 current = next ? map.Read(reader) : null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 current = null;
                 Token.ThrowIfCancellationRequested();
-
+                manager?.SignalException(ex);
                 throw;
             }
 

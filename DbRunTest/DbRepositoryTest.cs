@@ -12,7 +12,7 @@ namespace DbRunTest
         [Fact]
         public void MultipleCommit()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
 
             repo.BeginTransaction();
             Assert.Throws<DatabaseException>(repo.BeginTransaction);
@@ -24,7 +24,7 @@ namespace DbRunTest
         [Fact]
         public void MultipleRollback()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
 
             repo.BeginTransaction();
             Assert.Throws<DatabaseException>(repo.BeginTransaction);
@@ -36,7 +36,7 @@ namespace DbRunTest
         [Fact]
         public void MultipleCallBack()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
             repo.RunTransaction(() =>
             {
                 var transaction = repo.GetTransaction();
@@ -52,11 +52,11 @@ namespace DbRunTest
         [Fact]
         public void ExternalTransaction()
         {
-            var conn = this.Creator.GetConnection();
+            var conn = Creator.GetConnection();
             try
             {
                 using var transaction = conn.BeginTransaction();
-                using var repo = new TestRepository(this.Creator);
+                using var repo = new TestRepository(Creator);
                 repo.SetTransaction(transaction);
 
                 Assert.Equal(transaction, repo.GetTransaction());
@@ -69,14 +69,14 @@ namespace DbRunTest
             }
             finally
             {
-                this.Creator.SafeDisposeConnection(conn);
+                Creator.SafeDisposeConnection(conn);
             }
         }
 
         [Fact]
         public void CreateCommandWithTransaction()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
             repo.RunTransaction(() =>
             {
                 using var cmd1 = repo.CreateCommand("");
@@ -90,7 +90,7 @@ namespace DbRunTest
         [Fact]
         public void QueryTransaction()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
             var query = repo.GetQuery();
 
             Assert.Null(query.Manager.Transaction);
@@ -107,7 +107,7 @@ namespace DbRunTest
         [Fact]
         public void ConnectionDisposeCleanTest()
         {
-            using var repo = new TestRepository(this.Creator);
+            using var repo = new TestRepository(Creator);
 
             for (int i = 0; i < 5; i++)
                 repo.GetConnection()?.Dispose();

@@ -22,6 +22,11 @@ namespace SharpOrm
         public virtual string Name { get; protected set; }
 
         /// <summary>
+        /// Gets or sets the collation of the column.
+        /// </summary>
+        public string Collate { get; set; }
+
+        /// <summary>
         /// Gets or sets the alias of the column.
         /// </summary>
         public string Alias { get; set; }
@@ -44,7 +49,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets a column representing all columns with the wildcard (*).
         /// </summary>
-        public static Column All => (Column)"*";
+        public static readonly Column All = (Column)"*";
         #endregion
 
         /// <summary>
@@ -106,6 +111,43 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Tries to parse the specified name into a Column object.
+        /// </summary>
+        /// <param name="name">The name to parse.</param>
+        /// <param name="column">When this method returns, contains <see cref="Column"/> if the parse operation succeeded, or null if the parse failed.</param>
+        /// <returns>true if the name was successfully parsed; otherwise, false.</returns>
+        public static bool TryParse(string name, out Column column)
+        {
+            if (string.IsNullOrEmpty(name) || !DbName.IsValidName(name))
+            {
+                column = null;
+                return false;
+            }
+
+            column = new Column(name, "");
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to parse the specified name and alias into a Column object.
+        /// </summary>
+        /// <param name="name">The name to parse.</param>
+        /// <param name="alias">The alias to parse.</param>
+        /// <param name="column">When this method returns, contains <see cref="Column"/> if the parse operation succeeded, or null if the parse failed.</param>
+        /// <returns>true if the name and alias were successfully parsed; otherwise, false.</returns>
+        public static bool TryParse(string name, string alias, out Column column)
+        {
+            if (string.IsNullOrEmpty(name) || !DbName.IsValidName(name) || string.IsNullOrEmpty(alias) || !DbName.IsValidAlias(alias))
+            {
+                column = null;
+                return false;
+            }
+
+            column = new Column(name, alias);
+            return true;
+        }
+
+        /// <summary>
         /// Converts the column to a <see cref="SqlExpression"/> based on the provided query information.
         /// </summary>
         /// <param name="info">The query information.</param>
@@ -127,12 +169,26 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            builder.Append(info.Config.ApplyNomenclature(this.Name));
+            builder.Append(info.Config.ApplyNomenclature(Name));
 
-            if (alias && !string.IsNullOrEmpty(this.Alias))
-                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(this.Alias));
+            if (UseCollate())
+                builder.Append(" COLLATE ").Append(Collate);
+
+            if (alias && !string.IsNullOrEmpty(Alias))
+                builder.Append(" AS ").Append(info.Config.ApplyNomenclature(Alias));
 
             return (SqlExpression)builder;
+        }
+
+        private bool UseCollate()
+        {
+            if (string.IsNullOrEmpty(Collate))
+                return false;
+
+            if (!DbName.IsValid(Collate))
+                throw new InvalidCollateNameException(Collate);
+
+            return true;
         }
 
         public static explicit operator Column(string rawColumn)
@@ -160,10 +216,14 @@ namespace SharpOrm
         public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression, TranslationRegistry registry)
         {
             var member = ExpressionUtils<T>.GetColumnMember(columnExpression, out var rootType);
-            if (registry.GetTable(rootType) is TableInfo table)
-                return new MemberInfoColumn(member, table.GetColumn(member).Name);
+            if (!(registry.GetTable(rootType) is TableInfo table))
+                return new MemberInfoColumn(member);
 
-            return new MemberInfoColumn(member);
+            string name = table.GetColumn(member)?.Name;
+            if (string.IsNullOrEmpty(name))
+                return null;
+
+            return new MemberInfoColumn(member, name);
         }
 
         /// <summary>
@@ -209,9 +269,14 @@ namespace SharpOrm
         {
             StringBuilder builder = new StringBuilder("Column(");
 
-            if (this.expression != null) builder.Append(this.expression.ToString());
-            else if (string.IsNullOrEmpty(this.Alias)) builder.Append(this.Name);
-            else builder.AppendFormat("{0} AS {1}", this.Name.Trim(), this.Alias.Trim());
+            if (expression != null) builder.Append(expression.ToString());
+            else if (string.IsNullOrEmpty(Alias)) builder.Append(Name.Trim());
+
+            if (UseCollate())
+                builder.Append(" COLLATE ").Append(Collate);
+
+            if (expression == null)
+                builder.AppendFormat(" AS {0}", Alias.Trim());
 
             return builder.Append(")").ToString();
         }

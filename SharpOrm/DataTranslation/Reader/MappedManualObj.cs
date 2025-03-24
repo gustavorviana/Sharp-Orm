@@ -8,7 +8,7 @@ using System.Text;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
-    /// Represents an object that can be mapped from a database reader.
+    /// Represents an object that can be mapped from a database record.
     /// </summary>
     internal class MappedManualObj : IMappedObject
     {
@@ -24,28 +24,28 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
         #endregion
 
-        public static MappedManualObj FromMap<T>(TableMap<T> map, IDataReader reader)
+        public static MappedManualObj FromMap<T>(TableMap<T> map, IDataRecord record)
         {
-            return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, reader);
+            return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, record);
         }
 
-        internal MappedManualObj(TableInfo table, TranslationRegistry registry, IDataReader reader) : this(table.Type, (IEnumerable<ColumnTreeInfo>)table.Columns, registry, reader)
+        internal MappedManualObj(TableInfo table, TranslationRegistry registry, IDataRecord record) : this(table.Type, (IEnumerable<ColumnTreeInfo>)table.Columns, registry, record)
         {
 
         }
 
-        private MappedManualObj(Type type, IEnumerable<ColumnTreeInfo> columns, TranslationRegistry registry, IDataReader reader)
+        private MappedManualObj(Type type, IEnumerable<ColumnTreeInfo> columns, TranslationRegistry registry, IDataRecord record)
         {
             root = new InstanceMap(type);
             this.registry = registry;
 
             foreach (var column in columns)
-                this.Map(column, reader);
+                this.Map(column, record);
         }
 
-        private void Map(ColumnTreeInfo column, IDataReader reader)
+        private void Map(ColumnTreeInfo column, IDataRecord record)
         {
-            this.columns.Add(new MappedColumn(this.BuildInstanceTree(column), column, reader.GetIndexOf(column.Name)));
+            this.columns.Add(new MappedColumn(this.BuildInstanceTree(column), column, record.GetIndexOf(column.Name)));
         }
 
         private InstanceMap BuildInstanceTree(ColumnTreeInfo field)
@@ -77,13 +77,13 @@ namespace SharpOrm.DataTranslation.Reader
             return map;
         }
 
-        public object Read(IDataReader reader)
+        public object Read(IDataRecord record)
         {
             this.CreateInstance();
 
             foreach (var item in this.columns)
-                if (item.Index >= 0)
-                    item.Set(reader[item.Index]);
+                if (item.Index != -1)
+                    item.Set(record[item.Index]);
 
             return this.root.Instance;
         }

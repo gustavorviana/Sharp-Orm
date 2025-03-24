@@ -1,6 +1,8 @@
-﻿using SharpOrm.Connection;
+﻿using SharpOrm.Builder;
+using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,17 +17,20 @@ namespace SharpOrm.Collections
     /// <typeparam name="T">The type of the objects to enumerate.</typeparam>
     public class DbCommandEnumerable<T> : IEnumerable<T>
     {
-        private readonly ConnectionManagement management;
-        private readonly TranslationRegistry translation;
-        private readonly CancellationToken token;
-        private readonly DbCommand command;
-        internal IFkQueue fkQueue;
-        private bool hasFirstRun;
+        private readonly ConnectionManagement _management;
+        private readonly TranslationRegistry _translation;
+        internal NestedMode mode = NestedMode.Attribute;
+        private readonly CancellationToken _token;
+        private readonly DbCommand _command;
+        internal IFkQueue _fkQueue;
+        private bool _hasFirstRun;
 
         /// <summary>
         /// Gets or sets a value indicating whether to dispose the command after execution.
         /// </summary>
         public bool DisposeCommand { get; set; } = true;
+
+        internal ConnectionManager manager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbCommandEnumerable{T}"/> class.
@@ -36,10 +41,12 @@ namespace SharpOrm.Collections
         /// <param name="token">The cancellation token.</param>
         public DbCommandEnumerable(DbCommand command, TranslationRegistry translation, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
         {
-            this.translation = translation;
-            this.management = management;
-            this.command = command;
-            this.token = token;
+            _translation = translation;
+            _management = management;
+            _command = command;
+            _token = token;
+
+            _command.SetCancellationToken(token);
         }
 
         /// <summary>
@@ -48,30 +55,30 @@ namespace SharpOrm.Collections
         /// <returns>An enumerator for the collection.</returns>
         public IEnumerator<T> GetEnumerator()
         {
-            this.CheckRun();
-            var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator<T>(reader, this.CreateMappedObj(reader), token));
+            CheckRun();
+            var reader = _command.ExecuteReader();
+            return RegisterDispose(new DbObjectEnumerator<T>(reader, CreateMappedObj(reader), _token) { manager = manager });
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            this.CheckRun();
-            var reader = command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator(reader, this.CreateMappedObj(reader), token));
+            CheckRun();
+            var reader = _command.ExecuteReader();
+            return RegisterDispose(new DbObjectEnumerator(reader, CreateMappedObj(reader), _token) { manager = manager });
         }
 
         private void CheckRun()
         {
-            if (this.hasFirstRun)
-                throw new InvalidOperationException("IEnumerable can be executed only once.");
+            if (_hasFirstRun)
+                throw new InvalidOperationException(Messages.EnumerableCanExecuteOnce);
 
-            this.hasFirstRun = true;
-            command.Connection.OpenIfNeeded();
+            _hasFirstRun = true;
+            _command.Connection.OpenIfNeeded();
         }
 
         private IMappedObject CreateMappedObj(DbDataReader reader)
         {
-            return MappedObject.Create(reader, typeof(T), this.fkQueue, translation);
+            return MappedObject.Create(reader, typeof(T), mode, _fkQueue, _translation);
         }
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator
@@ -80,13 +87,13 @@ namespace SharpOrm.Collections
             {
                 try
                 {
-                    if (this.CanClose()) this.command.Connection.Close();
+                    if (CanClose()) _command.Connection.Close();
                 }
                 catch
                 { }
 
-                if (this.DisposeCommand)
-                    try { this.command.Dispose(); } catch { }
+                if (DisposeCommand)
+                    try { _command.Dispose(); } catch { }
             };
 
             return instance;
@@ -94,7 +101,7 @@ namespace SharpOrm.Collections
 
         private bool CanClose()
         {
-            return this.command.Transaction == null && this.command.Connection.IsOpen() && (this.management == ConnectionManagement.CloseOnEndOperation || this.management == ConnectionManagement.CloseOnDispose);
+            return _command.Transaction == null && _command.Connection.IsOpen() && (_management == ConnectionManagement.CloseOnEndOperation || _management == ConnectionManagement.CloseOnDispose);
         }
     }
 }

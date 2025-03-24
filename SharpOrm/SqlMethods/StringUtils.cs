@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -23,6 +24,30 @@ namespace SharpOrm.SqlMethods
             {
                 builder.Remove(Index, Length).Insert(Index, ToReplace);
             }
+        }
+
+        internal static string GetNumericValue(string value)
+        {
+            StringBuilder builder = new StringBuilder(value.Length);
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (char.IsDigit(c) || (c == '.' && CanAddDot(builder)))
+                    builder.Append(c);
+            }
+
+            return builder.ToString();
+        }
+
+        internal static Version ParseVersionString(string strVersion)
+        {
+            strVersion = StringUtils.GetNumericValue(strVersion);
+            return !string.IsNullOrEmpty(strVersion) && Version.TryParse(strVersion, out var version) ? version : new Version();
+        }
+
+        private static bool CanAddDot(StringBuilder builder)
+        {
+            return builder.Length > 0 && builder[builder.Length - 1] != '.';
         }
 
         public static string ReplaceAll(this string value, params KeyValuePair<string, string>[] replaces)

@@ -1,5 +1,4 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -556,24 +555,6 @@ namespace SharpOrm
         /// <typeparam name="T"></typeparam>
         /// <param name="query"></param>
         /// <param name="obj"></param>
-        /// <param name="calls">Calls to retrieve the names of the properties.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
-        [Obsolete("Use \"UpdateExcept(T, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public static int UpdateExcept<T>(this Query<T> query, T obj, params Expression<ColumnExpression<T>>[] calls)
-        {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-
-            return query.Update(query.GetObjectReader(false, false).Except(calls).ReadCells(obj));
-        }
-
-        /// <summary>
-        /// Update the row of a table, ignoring the values of the properties.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="query"></param>
-        /// <param name="obj"></param>
         /// <param name="expression">Expression to retrieve the names of the properties.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Launched when obj is null or columnsToIgnore is null or has no columns.</exception>
@@ -609,6 +590,7 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="cells">An array of cells to be inserted into the database.</param>
         /// <returns>An object of type T representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static T Insert<T>(this Query query, params Cell[] cells)
         {
             return Insert<T>(query, (IEnumerable<Cell>)cells);
@@ -622,6 +604,7 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="obj">The object to be inserted into the database.</param>
         /// <returns>An object of type R representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
             return Insert<R>(query, query.GetObjectReader(true, true).ReadCells(obj));
@@ -634,9 +617,14 @@ namespace SharpOrm
         /// <param name="query">The query object used to execute the insertion.</param>
         /// <param name="cells">The collection of cells to be inserted into the database.</param>
         /// <returns>An object of type T representing the result of the insertion.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static T Insert<T>(this Query query, IEnumerable<Cell> cells)
         {
-            return query.Config.Translation.FromSql<T>(query.ExecuteScalar(query.GetGrammar().Insert(cells)));
+            using (var cmd = query.GetCommand())
+            {
+                cmd.SetExpression(query.GetGrammar().Insert(cells));
+                return cmd.ExecuteScalar<T>();
+            }
         }
 
         /// <summary>
@@ -688,55 +676,6 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
-        /// </summary>
-        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
-        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
-        /// <param name="obj">The object of type T to be inserted or updated.</param>
-        /// <param name="toCheckColumnsExp">Column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, Expression<ColumnExpression<T>> toCheckColumnsExp)
-        {
-            var toCheckColumns = query.GetColumns(toCheckColumnsExp, ExpressionConfig.New);
-
-            using (query = (Query<T>)query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, query.TableInfo.GetValue(obj, column.memberInfo));
-
-                if (query.Any()) query.Update(obj);
-                else query.Insert(obj);
-            }
-        }
-
-        /// <summary>
-        /// Inserts or updates a record of type T using the provided query, object, and columns to check for upserting.
-        /// </summary>
-        /// <typeparam name="T">The type of the record to insert or update.</typeparam>
-        /// <param name="query">The Query&lt;T&gt; object representing the database query.</param>
-        /// <param name="obj">The object of type T to be inserted or updated.</param>
-        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new record if it doesn't exist or updates an existing record if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert<T>(this Query<T> query, T obj, string[] toCheckColumns)
-        {
-            if (toCheckColumns.Length < 1)
-                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
-
-            using (query = (Query<T>)query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, query.TableInfo.GetValue(obj, column));
-
-                if (query.Any()) query.Update(obj);
-                else query.Insert(obj);
-            }
-        }
-
-        /// <summary>
         /// Performs a bulk delete operation on a collection of values in the query.
         /// </summary>
         /// <param name="query">The query object to perform the delete operation on.</param>
@@ -776,30 +715,6 @@ namespace SharpOrm
         {
             using (var bulk = new BulkOperation(query, values, insertLot))
                 return bulk.Update(comparationColumns);
-        }
-
-        /// <summary>
-        /// Inserts or updates a row using the provided query, row data, and columns to check for upserting.
-        /// </summary>
-        /// <param name="query">The Query object representing the database query.</param>
-        /// <param name="row">The Row object containing the row data to be inserted or updated.</param>
-        /// <param name="toCheckColumns">An array of column names to check for upserting.</param>
-        /// <remarks>
-        /// This method inserts a new row if it doesn't exist or updates an existing row if it matches the specified columns.
-        /// </remarks>
-        public static void Upsert(this Query query, Row row, string[] toCheckColumns)
-        {
-            if (toCheckColumns.Length < 1)
-                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
-
-            using (query = query.Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, row[column]);
-
-                if (query.Any()) query.Update(row.Cells);
-                else query.Insert(row.Cells);
-            }
         }
 
         #region Join
@@ -909,13 +824,13 @@ namespace SharpOrm
         /// <summary>
         /// Retrieves the index of the specified column from the data reader, ignoring the case of the column name.
         /// </summary>
-        /// <param name="reader">The data reader to retrieve the column index from.</param>
+        /// <param name="record">The data record to retrieve the column index from.</param>
         /// <param name="name">The name of the column to find the index of.</param>
         /// <returns>The index of the specified column, or -1 if the column is not found.</returns>
-        public static int GetIndexOf(this IDataReader reader, string name)
+        public static int GetIndexOf(this IDataRecord record, string name)
         {
-            for (int i = 0; i < reader.FieldCount; i++)
-                if (reader.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < record.FieldCount; i++)
+                if (record.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;

@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Errors;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Linq;
@@ -472,7 +473,7 @@ namespace SharpOrm.Builder
             if (arg is SqlExpression || arg is ISqlExpressible || arg is DateTime || arg is DateTimeOffset || arg is TimeSpan || arg.GetType().IsPrimitive || arg is Enum)
                 return this.Info.Where.AddParameter(arg);
 
-            throw new InvalidOperationException("The column type is invalid. Only the following types can be used: SqlExpression, ISqlExpressible, DateTime, DateTimeOffset, TimeSpan, numbers or Enum.");
+            throw new InvalidOperationException(Messages.Query.ColumnsMustSuportAnyOfTypes);
         }
 
         internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
@@ -512,7 +513,7 @@ namespace SharpOrm.Builder
         {
             if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
             if (!AvailableOperations.ContainsIgnoreCase(operation))
-                throw new DatabaseException("Invalid SQL operation: " + operation);
+                throw new DatabaseException(string.Format(Messages.Query.InvalidOperation, operation));
         }
 
         /// <summary>

@@ -57,5 +57,42 @@ namespace BaseTest.Utils
                     .RuleFor(x => x.CustomStatus, f => f.PickRandom<Status>());
             }
         }
+
+        public static class Address
+        {
+            public const string TABLE = "address";
+
+            public const string ID = "id";
+            public const string NAME = "name";
+            public const string STREET = "street";
+            public const string CITY = "city";
+
+            public static Row[] RandomRows(int quantity)
+            {
+                return Faker()
+                    .Generate(quantity)
+                    .Select(x => NewRow(x.Id, x.Name, x.Street, x.City))
+                    .ToArray();
+            }
+
+            public static Row NewRow(int? id, string name, string street, string city)
+            {
+                return new Row(
+                new Cell(ID, id),
+                    new Cell(NAME, name),
+                    new Cell(STREET, street),
+                    new Cell(CITY, city)
+                );
+            }
+
+            public static Faker<Models.Address> Faker()
+            {
+                return new Faker<Models.Address>()
+                    .CustomInstantiator(x => new Models.Address(x.IndexFaker + 1))
+                    .RuleFor(x => x.Name, f => f.Name.FullName())
+                    .RuleFor(x => x.Street, f => f.Address.StreetAddress())
+                    .RuleFor(x => x.City, f => f.Address.City());
+            }
+        }
     }
 }

@@ -9,9 +9,6 @@ namespace BaseTest.Utils
 {
     public abstract class DbTestBase : QueryTestBase
     {
-        protected ConnectionManager Manager => fixture.Manager;
-        public ConnectionCreator Creator => fixture.Creator;
-
         public DbTestBase(DbFixtureBase connection) : base(connection)
         {
         }
@@ -48,16 +45,6 @@ namespace BaseTest.Utils
         protected virtual void OnUseTable(string name)
         {
 
-        }
-
-        protected ConnectionManager GetManager(QueryConfig? config = null)
-        {
-            return config == null ? Manager : NewConnectionManager(config);
-        }
-
-        protected ConnectionManager NewConnectionManager(QueryConfig? config = null)
-        {
-            return new ConnectionManager(config ?? Config, Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
         }
     }
 }

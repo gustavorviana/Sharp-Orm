@@ -1,4 +1,7 @@
-﻿namespace SharpOrm.Builder
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.SqlServer;
+
+namespace SharpOrm.Builder
 {
     /// <summary>
     /// Provides extension methods for enabling and checking the NOLOCK option in SQL Server grammar options.

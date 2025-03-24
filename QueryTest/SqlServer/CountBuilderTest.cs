@@ -9,11 +9,11 @@ using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
 {
-    public class CountBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqlServerQueryConfig>>, ICountBuilderTest
+    public class CountBuilderTest : DbMockTest, IClassFixture<MockFixture<SqlServerQueryConfig>>, ICountBuilderTest
     {
         public CountBuilderTest(ITestOutputHelper output, MockFixture<SqlServerQueryConfig> connection) : base(output, connection)
         {
-
+            SetMockConnectionVersion();
         }
 
         [Fact]
@@ -127,6 +127,25 @@ namespace QueryTest.SqlServer
                 ["Value"],
                 sqlExpression
             );
+        }
+
+        [Fact]
+        public void CountWithOrderBy()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.OrderBy(OrderBy.Asc, "Id");
+
+            var sqlExpression = query.Grammar().Count();
+            QueryAssert.Equal("SELECT COUNT(*) FROM [TestTable]", sqlExpression);
+        }
+
+        [Fact]
+        public void CountColumn()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+
+            var sqlExpression = query.Grammar().Count(new Column("ColName"));
+            QueryAssert.Equal("SELECT COUNT([ColName]) FROM [TestTable]", sqlExpression);
         }
     }
 }

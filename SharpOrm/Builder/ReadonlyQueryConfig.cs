@@ -1,4 +1,5 @@
-﻿using SharpOrm.SqlMethods.Mappers.SqlServer;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.SqlMethods.Mappers.SqlServer;
 using System;
 
 namespace SharpOrm.Builder
@@ -8,6 +9,8 @@ namespace SharpOrm.Builder
     /// </summary>
     internal class ReadonlyQueryConfig : QueryConfig
     {
+        protected internal override bool NativeUpsertRows => false;
+
         /// <summary>
         /// Returns the name without any treatment applied to it.
         /// </summary>

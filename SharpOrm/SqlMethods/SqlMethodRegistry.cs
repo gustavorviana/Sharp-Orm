@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,12 +35,12 @@ namespace SharpOrm.SqlMethods
             return GetForeignMemberExpression(info, property);
         }
 
-        private SqlExpression GetNativeTypeExpression(IReadonlyQueryInfo info, SqlMember property, bool forcePrefix)
+        private SqlExpression GetNativeTypeExpression(IReadonlyQueryInfo info, SqlMember member, bool forcePrefix)
         {
-            if (property.IsStatic)
-                return new SqlExpression("");
+            if (member.IsStatic || member.Member.MemberType == System.Reflection.MemberTypes.Method)
+                return new SqlExpression(string.Empty);
 
-            return new DeferredMemberColumn(info, property.Member, forcePrefix);
+            return new DeferredMemberColumn(info, member.GetInfo(), forcePrefix);
         }
 
         private static DeferredMemberColumn GetForeignMemberExpression(IReadonlyQueryInfo info, SqlMember property)
@@ -50,7 +51,7 @@ namespace SharpOrm.SqlMethods
             var member = property.Childs[0];
             property.Childs = property.Childs.Skip(1).ToArray();
 
-            return new DeferredMemberColumn(info, member.Member, true);
+            return new DeferredMemberColumn(info, (SqlPropertyInfo)member, true);
         }
 
         private SqlExpression ApplyCaller(IReadonlyQueryInfo info, SqlExpression expression, SqlMemberInfo member)

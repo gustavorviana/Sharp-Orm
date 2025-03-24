@@ -23,10 +23,10 @@ namespace BaseTest.Mock
         public MockDataReader(Func<int, Row> rowsCall, int size)
         {
             this.rowsCall = rowsCall;
-            this.Size = size;
+            Size = size;
 
             if (size > 0)
-                this.currentRow = this.rowsCall(0);
+                currentRow = this.rowsCall(0);
         }
 
         public static MockDataReader FromFaker<T>(Faker<T> faker, int items) where T : class
@@ -36,36 +36,36 @@ namespace BaseTest.Mock
 
         public void Cancel()
         {
-            this.tokenSrc.Cancel();
+            tokenSrc.Cancel();
         }
 
         public MockDataReader SetCommand(MockCommand cmd)
         {
-            this.command = cmd;
-            this.command.OnCancel += (sender, e) => this.Cancel();
+            command = cmd;
+            command.OnCancel += (sender, e) => Cancel();
             return this;
         }
 
         private Row? currentRow = null;
 
-        public override bool HasRows => this.Size > 0;
-        public override object this[string name] => this.currentRow![name];
+        public override bool HasRows => Size > 0;
+        public override object this[string name] => currentRow![name];
 
         public override object this[int i] => GetValue(i);
 
         public override int Depth => 1;
 
         private bool closed = false;
-        public override bool IsClosed => this.closed;
+        public override bool IsClosed => closed;
 
         public override int RecordsAffected => -1;
 
-        public override int FieldCount => this.currentRow?.Count ?? 0;
+        public override int FieldCount => currentRow?.Count ?? 0;
 
         public override void Close()
         {
-            this.closed = true;
-            currentIndex = this.Size;
+            closed = true;
+            currentIndex = Size;
         }
 
         public override bool NextResult()
@@ -75,13 +75,13 @@ namespace BaseTest.Mock
 
         public override bool Read()
         {
-            this.WaitDelay();
+            WaitDelay();
             if (command?.Cancelled == true) return false;
 
-            if (currentIndex < this.Size - 1)
+            if (currentIndex < Size - 1)
             {
                 currentIndex++;
-                this.currentRow = this.rowsCall(this.currentIndex);
+                currentRow = rowsCall(currentIndex);
 
                 return true;
             }
@@ -92,8 +92,8 @@ namespace BaseTest.Mock
         {
             try
             {
-                if (this.ReadDelay > 0)
-                    Task.Delay(this.ReadDelay).Wait(this.tokenSrc.Token);
+                if (ReadDelay > 0)
+                    Task.Delay(ReadDelay).Wait(tokenSrc.Token);
             }
             catch (OperationCanceledException) { }
         }
@@ -181,13 +181,13 @@ namespace BaseTest.Mock
 
         public override string GetName(int i)
         {
-            return this.currentRow?[i].Name!;
+            return currentRow?[i].Name!;
         }
 
         public override int GetOrdinal(string name)
         {
             int index = 0;
-            foreach (var row in this.currentRow!)
+            foreach (var row in currentRow!)
             {
                 if (row.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                     return index;
@@ -219,13 +219,13 @@ namespace BaseTest.Mock
 
         public override IEnumerator GetEnumerator()
         {
-            foreach (var dictionary in this.currentRow!)
+            foreach (var dictionary in currentRow!)
                 yield return dictionary;
         }
 
         public override object GetValue(int ordinal)
         {
-            return this.currentRow![ordinal].Value ?? DBNull.Value;
+            return currentRow![ordinal].Value ?? DBNull.Value;
         }
 
         protected override void Dispose(bool disposing)

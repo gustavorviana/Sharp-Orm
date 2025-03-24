@@ -6,7 +6,7 @@ using System.Data;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
-    /// Represents an object that can be mapped from a database reader.
+    /// Represents an object that can be mapped from a database record.
     /// </summary>
     public class MappedObject : IMappedObject
     {
@@ -17,6 +17,7 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly TranslationRegistry registry;
         private readonly object _lock = new object();
         private ObjectActivator objectActivator;
+        private readonly NestedMode nestedMode;
         private readonly IFkQueue enqueueable;
         private ColumnInfo parentColumn;
         private MappedObject parent;
@@ -30,69 +31,106 @@ namespace SharpOrm.DataTranslation.Reader
         #endregion
 
         /// <summary>
-        /// Reads and maps an object of type <typeparamref name="T"/> from the database reader.
+        /// Reads and maps an object of type <typeparamref name="T"/> from the database record.
         /// </summary>
         /// <typeparam name="T">The type of the object to read and map.</typeparam>
-        /// <param name="reader">The database reader.</param>
+        /// <param name="record">The database record.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>The mapped object of type <typeparamref name="T"/>.</returns>
-        public static T Read<T>(IDataReader reader, TranslationRegistry registry = null)
+        public static T Read<T>(IDataRecord record, TranslationRegistry registry = null)
         {
-            return (T)Create(reader, typeof(T), registry: registry).Read(reader);
+            return (T)Create(record, typeof(T), registry: registry).Read(record);
         }
 
         /// <summary>
         /// Creates an <see cref="IMappedObject"/> for the specified type.
         /// </summary>
-        /// <param name="reader">The database reader.</param>
+        /// <param name="record">The database record.</param>
         /// <param name="type">The type of the object to create.</param>
         /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
-        public static IMappedObject Create(IDataReader reader, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
+        public static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
+        {
+            return Create(record, type, NestedMode.Attribute, enqueueable, registry);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="IMappedObject"/> for the specified type.
+        /// </summary>
+        /// <param name="record">The database record.</param>
+        /// <param name="type">The type of the object to create.</param>
+        /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
+        /// <param name="registry">The translation registry. If null, the default registry is used.</param>
+        /// <param name="nestedMode">The nested mode to use for mapping.</param>
+        /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        public static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
             if (ReflectionUtils.IsDynamic(type))
-                return new MappedDynamic(reader, registry);
+                return new MappedDynamic(record, registry);
 
             if (registry.GetManualMap(type) is TableInfo table)
-                return new MappedManualObj(table, registry, reader);
+                return new MappedManualObj(table, registry, record);
 
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue()).Map(registry, reader, "");
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(registry, record, string.Empty);
         }
 
-        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
+        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
         {
             this.Type = type;
             this.registry = registry;
             this.enqueueable = enqueueable;
+            this.nestedMode = nestedMode;
         }
 
-        private MappedObject Map(TranslationRegistry registry, IDataReader reader, string prefix)
+        private MappedObject Map(TranslationRegistry registry, IDataRecord record, string prefix)
         {
             if (this.Type == typeof(Row))
                 return this;
 
             if (!Type.IsArray)
-                objectActivator = new ObjectActivator(Type, reader, registry);
-
-            if (!string.IsNullOrEmpty(prefix) && !prefix.EndsWith("_"))
-                prefix += '_';
+                objectActivator = new ObjectActivator(Type, record, registry);
 
             foreach (var column in registry.GetTable(this.Type).Columns)
-                if (column.ForeignInfo != null) AddIfValidId(reader, fkColumns, column.ForeignInfo.ForeignKey, column);
-                else if (NeedMapAsValue(column)) AddIfValidId(reader, columns, GetName(column, prefix), column);
-                else if (column.Type != this.Type && !ReflectionUtils.IsCollection(column.Type)) this.MapChild(reader, column, prefix);
+                if (column.ForeignInfo != null) AddIfValidId(record, fkColumns, column.ForeignInfo.ForeignKey, column);
+                else if (NeedMapAsValue(column)) AddIfValidId(record, columns, GetName(column, prefix), column);
+                else MapNested(column, record, prefix);
 
             return this;
         }
 
-        private void MapChild(IDataReader reader, ColumnInfo column, string prefix)
+        private void MapNested(ColumnInfo column, IDataRecord record, string prefix)
         {
-            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable) { parentColumn = column, parent = this }
-                    .Map(registry, reader, prefix + column.Name));
+            if (!IsValidNested(column))
+                return;
+
+            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable, nestedMode) { parentColumn = column, parent = this }
+                    .Map(registry, record, GetColumnPrefix(column, prefix)));
+        }
+
+        private static string GetColumnPrefix(ColumnInfo column, string prefix)
+        {
+            if (!string.IsNullOrEmpty(column.MapNested?.Prefix))
+                return column.MapNested.Prefix;
+
+            if (string.IsNullOrEmpty(prefix))
+                return column.Name + '_';
+
+            return prefix;
+        }
+
+        private bool IsValidNested(ColumnInfo column)
+        {
+            return column.MapNested != null ||
+                (nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
+        }
+
+        private bool IsRootType(ColumnInfo column)
+        {
+            return column.Type == Type;
         }
 
         private static bool NeedMapAsValue(ColumnInfo column)
@@ -103,10 +141,10 @@ namespace SharpOrm.DataTranslation.Reader
             return column.IsNative || !(column.Translation is NativeSqlTranslation);
         }
 
-        private void AddIfValidId(IDataReader reader, List<MappedColumn> columns, string name, ColumnInfo column)
+        private void AddIfValidId(IDataRecord record, List<MappedColumn> columns, string name, ColumnInfo column)
         {
-            int index = reader.GetIndexOf(name);
-            if (index >= 0)
+            int index = record.GetIndexOf(name);
+            if (index != -1)
                 columns.Add(new MappedColumn(column, index));
         }
 
@@ -115,31 +153,31 @@ namespace SharpOrm.DataTranslation.Reader
             return column.AutoGenerated && prefix.Length != 0 ? (prefix + column.Name) : column.Name;
         }
 
-        public object Read(IDataReader reader)
+        public object Read(IDataRecord record)
         {
             lock (_lock)
             {
                 if (Type == typeof(Row))
-                    return reader.ReadRow(registry);
+                    return record.ReadRow(registry);
 
-                NewObject(reader);
+                NewObject(record);
 
-                for (int i = 0; i < reader.FieldCount; i++)
-                    SetValue(i, reader[i]);
+                for (int i = 0; i < record.FieldCount; i++)
+                    SetValue(i, record[i]);
 
                 return instance;
             }
         }
 
-        private object NewObject(IDataReader reader)
+        private object NewObject(IDataRecord record)
         {
-            instance = objectActivator.CreateInstance(reader);
+            instance = objectActivator.CreateInstance(record);
 
             for (int i = 0; i < childrens.Count; i++)
             {
                 var children = childrens[i];
                 if (!children.Type.IsArray)
-                    children.parentColumn.SetRaw(children.parent.instance, children.NewObject(reader));
+                    children.parentColumn.SetRaw(children.parent.instance, children.NewObject(record));
             }
 
             return instance;

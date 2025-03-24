@@ -1,4 +1,6 @@
-﻿using SharpOrm.SqlMethods;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Sqlite;
+using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.Sqlite;
 
 namespace SharpOrm.Builder
@@ -8,6 +10,8 @@ namespace SharpOrm.Builder
         public override bool CanUpdateJoin { get; } = false;
 
         public override SqlMethodRegistry Methods { get; } = new SqlMethodRegistry();
+
+        protected internal override bool NativeUpsertRows => false;
 
         /// <summary>
         /// Create an instance that allows only safe modifications.

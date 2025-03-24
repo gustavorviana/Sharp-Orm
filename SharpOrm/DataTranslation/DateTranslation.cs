@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 using System.Globalization;
 
 namespace SharpOrm.DataTranslation
@@ -132,7 +133,7 @@ namespace SharpOrm.DataTranslation
             if (obj is string strTime && TimeSpan.TryParse(strTime, out var time))
                 return time;
 
-            throw new NotSupportedException($"\"({obj?.GetType()}){obj}\" cannot be converted to {typeof(TimeSpan).FullName}.");
+            throw new NotSupportedException(string.Format(Messages.CannotConvertTo, $"({obj?.GetType()}){obj}", typeof(TimeSpan).FullName));
         }
 
         private object ParseDateTimeFromDb(object obj)

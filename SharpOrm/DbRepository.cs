@@ -3,11 +3,13 @@ using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -24,6 +26,16 @@ namespace SharpOrm
         public bool Disposed => this._disposed;
 
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
+
+        /// <summary>
+        /// Event that occurs when an error happens in the ConnectionManager.
+        /// </summary>
+        public event EventHandler<ConnectionExceptionEventArgs> OnError;
+
+        /// <summary>
+        /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
+        /// </summary>
+        protected bool AutoCommit => Creator?.AutoCommit ?? false;
 
         /// <summary>
         /// Gets the connection manager for the current transaction.
@@ -108,6 +120,15 @@ namespace SharpOrm
         /// <summary>
         /// Begins a new database transaction.
         /// </summary>
+        public virtual Task BeginTransactionAsync()
+        {
+            return TaskUtils.Async(BeginTransaction);
+        }
+
+
+        /// <summary>
+        /// Begins a new database transaction.
+        /// </summary>
         public virtual void BeginTransaction()
         {
             this.ThrowIfDisposed();
@@ -118,7 +139,16 @@ namespace SharpOrm
             if (this.Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            this.Transaction = new ConnectionManager(this.Creator, true) { CommandTimeout = this.CommandTimeout, autoCommit = false };
+            Transaction = new ConnectionManager(Creator, true) { CommandTimeout = CommandTimeout, _autoCommit = AutoCommit };
+        }
+
+        /// <summary>
+        /// Asynchronously commits the current database transaction.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public virtual Task CommitTransactionAsync()
+        {
+            return TaskUtils.Async(CommitTransaction);
         }
 
         /// <summary>
@@ -134,6 +164,15 @@ namespace SharpOrm
 
             this.Transaction.Commit();
             this.ClearTransaction();
+        }
+
+        /// <summary>
+        /// Asynchronously rolls back the current database transaction.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public virtual Task RollbackTransactionAsync()
+        {
+            return TaskUtils.Async(RollbackTransaction);
         }
 
         /// <summary>
@@ -276,14 +315,42 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Executes a non-query SQL statement asynchronously.
+        /// </summary>
+        /// <param name="query">The QueryBuilder used to create the command.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected.</returns>
+        protected async Task<int> ExecuteNonQueryAsync(QueryBuilder query, CancellationToken token)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).AddCancellationToken(token).SetExpression(query.ToExpression()))
+                return await builder.SetExpressionWithAffectedRowsAsync(query.ToExpression()) + await builder.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
         /// Executes a SQL statement against a connection object.
         /// </summary>
         /// <param name="query">The QueryBuilder used to create the command.</param>
         /// <returns></returns>
         protected int ExecuteNonQuery(QueryBuilder query)
         {
-            using (var cmd = this.CreateCommand(query))
-                return cmd.ExecuteNonQuery();
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query.ToExpression()))
+                return builder.SetExpressionWithAffectedRows(query.ToExpression()) + builder.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Executes a non-query SQL statement asynchronously.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected.</returns>
+        protected async Task<int> ExecuteNonQueryAsync(string query, CancellationToken token, params object[] args)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).AddCancellationToken(token).SetExpression(query, args))
+                return await builder.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -293,8 +360,22 @@ namespace SharpOrm
         /// <returns></returns>
         protected int ExecuteNonQuery(string query, params object[] args)
         {
-            using (var cmd = this.CreateCommand(query, args))
-                return cmd.ExecuteNonQuery();
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query, args))
+                return builder.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Executes a non-query SQL statement asynchronously.
+        /// </summary>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected.</returns>
+        protected async Task<int> ExecuteNonQueryAsync(string query, CancellationToken token)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).AddCancellationToken(token).SetExpression(query))
+                return await builder.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -304,8 +385,24 @@ namespace SharpOrm
         /// <returns></returns>
         protected int ExecuteNonQuery(string query)
         {
-            using (var cmd = this.CreateCommand(query))
-                return cmd.ExecuteNonQuery();
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query))
+                return builder.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of the first row in the result set returned by the query. All other columns and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>A task representing the asynchronous operation, with the first column of the first row in the result set.</returns>
+        protected async Task<T> ExecuteScalarAsync<T>(string query, CancellationToken token, params object[] args)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query, args))
+                return await builder.ExecuteScalarAsync<T>();
         }
 
         /// <summary>
@@ -315,17 +412,62 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         protected T ExecuteScalar<T>(string query, params object[] args)
         {
-            using (var cmd = this.CreateCommand(query, args))
-                return cmd.ExecuteScalar<T>(this.Creator.Config.Translation);
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query, args))
+                return builder.ExecuteScalar<T>();
         }
 
         /// <summary>
         /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        protected IEnumerable<T> ExecuteArrayScalar<T>(string query, params object[] args)
+        /// <param name="query">The SQL query string.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of the first column of all rows in the result set.</returns>
+        protected async Task<T[]> ExecuteArrayScalarAsync<T>(string query, CancellationToken token, params object[] args)
         {
-            return this.CreateCommand(query, args).ExecuteArrayScalar<T>(this.Creator.Config.Translation, this.Creator.Management);
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).AddCancellationToken(token).SetExpression(query, args))
+                return await builder.ExecuteArrayScalarAsync<T>();
+        }
+
+        /// <summary>
+        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        protected T[] ExecuteArrayScalar<T>(string query, params object[] args)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(query, args))
+                return builder.ExecuteArrayScalar<T>();
+        }
+
+        /// <summary>
+        /// Executes the provided SQL query asynchronously and returns an array of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the array.</typeparam>
+        /// <param name="sql">The SQL query string.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of the specified type.</returns>
+        protected Task<T[]> ExecuteArrayAsync<T>(string sql, CancellationToken token, params object[] args)
+        {
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).AddCancellationToken(token).SetExpression(sql, args))
+                return builder.ExecuteArrayScalarAsync<T>();
+        }
+
+        /// <summary>
+        /// Executes the provided SQL query and returns an array of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the array.</typeparam>
+        /// <param name="sql">The SQL query string.</param>
+        /// <param name="args">The arguments to be used in the SQL query.</param>
+        /// <returns>An array of the specified type.</returns>
+        protected T[] ExecuteArray<T>(string sql, params object[] args)
+        {
+            return ExecuteEnumerable<T>(sql, args).ToArray();
         }
 
         /// <summary>
@@ -337,7 +479,15 @@ namespace SharpOrm
         /// <returns>An enumerable collection of objects of type <typeparamref name="T"/>.</returns>
         protected IEnumerable<T> ExecuteEnumerable<T>(string sql, params object[] args)
         {
-            return CreateCommand(sql, args).ExecuteEnumerable<T>(null, this.Token, this.Creator.Management);
+            using (var manager = GetManager())
+            using (var builder = GetBuilder(manager).SetExpression(sql, args))
+                foreach (var item in builder.ExecuteEnumerable<T>())
+                    yield return item;
+        }
+
+        private CommandBuilder GetBuilder(ConnectionManager manager)
+        {
+            return new CommandBuilder(manager, Translation).AddCancellationToken(Token);
         }
 
         /// <summary>
@@ -345,9 +495,10 @@ namespace SharpOrm
         /// </summary>
         /// <param name="query">The QueryBuilder used to create the command.</param>
         /// <returns>A DbCommand created from the QueryBuilder.</returns>
+        [Obsolete("This method will be removed in version 4.0.")]
         protected DbCommand CreateCommand(QueryBuilder query)
         {
-            return this.CreateCommand(query.ToString(), query.Parameters);
+            return this.CreateCommand().SetExpression(query.ToExpression(true, true));
         }
 
         /// <summary>
@@ -417,7 +568,7 @@ namespace SharpOrm
                 if (useActiveTransaction && this.Transaction != null)
                     return this.Transaction;
 
-                return GetExistingManager() ?? this.GetNewManager();
+                return GetExistingManager() ?? GetNewManager();
             }
         }
 
@@ -440,13 +591,36 @@ namespace SharpOrm
             {
                 CommandTimeout = this.CommandTimeout
             };
+
+            if (OnError != null)
+                connection.OnError += OnError;
+
             _connections.Add(connection);
             return connection;
         }
 
+        /// <summary>
+        /// Asynchronously inserts a value of type T into the database.
+        /// </summary>
+        /// <typeparam name="T">The type of the value to insert.</typeparam>
+        /// <param name="value">The value to insert.</param>
+        /// <param name="token">The cancellation token to observe.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected.</returns>
+        protected Task<int> InsertAsync<T>(T value, CancellationToken token)
+        {
+            using (var query = Query<T>())
+                return query.InsertAsync(value, token);
+        }
+
+        /// <summary>  
+        /// Inserts a value of type T into the database.  
+        /// </summary>  
+        /// <typeparam name="T">The type of the value to insert.</typeparam>  
+        /// <param name="value">The value to insert.</param>  
+        /// <returns>The number of rows affected.</returns>  
         protected int Insert<T>(T value)
         {
-            using (var query = this.Query<T>())
+            using (var query = Query<T>())
                 return query.Insert(value);
         }
 

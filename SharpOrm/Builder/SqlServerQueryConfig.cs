@@ -1,4 +1,6 @@
-﻿using SharpOrm.SqlMethods;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.SqlServer;
+using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.SqlServer;
 
 namespace SharpOrm.Builder
@@ -12,7 +14,9 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets or sets a value indicating whether to use old pagination without LIMIT and OFFSET, using only ROW_NUMBER().
         /// </summary>
-        public bool UseOldPagination { get; set; }
+        public bool? UseOldPagination { get; set; }
+
+        protected internal override bool NativeUpsertRows => true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class.

@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using SharpOrm;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 
@@ -27,23 +28,29 @@ namespace BaseTest.Mock
 
         public override string DataSource => "Src";
 
-        public override string ServerVersion => "1.0";
+        private string _version = "1.0";
+        public override string ServerVersion => _version;
 
         public override ConnectionState State => state;
 
+        public void SetVersion(Version version)
+        {
+            _version = version.ToString();
+        }
+
         public override void ChangeDatabase(string databaseName)
         {
-            this.database = databaseName;
+            database = databaseName;
         }
 
         public override void Close()
         {
-            this.state = ConnectionState.Closed;
+            state = ConnectionState.Closed;
         }
 
         public override void Open()
         {
-            this.state = ConnectionState.Open;
+            state = ConnectionState.Open;
         }
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -53,7 +60,13 @@ namespace BaseTest.Mock
 
         public void Reset()
         {
-            this.OnQueryFallback = null!;
+            OnQueryFallback = null!;
+        }
+
+        public MockConnection Register(string query, params Cell[] cells)
+        {
+            QueryReaders[query] = () => new MockDataReader(cells);
+            return this;
         }
 
         protected override DbCommand CreateDbCommand()
@@ -67,7 +80,7 @@ namespace BaseTest.Mock
                     var now = DateTime.Now;
                     try
                     {
-                        if (this.QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
+                        if (QueryReaders.TryGetValue(cmd.CommandText, out var readerCall))
                             return readerCall().SetCommand(cmd);
                     }
                     finally
@@ -75,7 +88,7 @@ namespace BaseTest.Mock
                         System.Diagnostics.Debug.WriteLine("Load reader delay " + (DateTime.Now - now).TotalSeconds);
                     }
 
-                    if (OnQueryFallback != null && OnQueryFallback(cmd) is MockDataReader reader)
+                    if (OnFallback(cmd) is MockDataReader reader)
                         return reader;
 
                     if (ThrowIfNoQuery)
@@ -87,6 +100,11 @@ namespace BaseTest.Mock
             };
 
             return cmd;
+        }
+
+        internal MockDataReader? OnFallback(MockCommand cmd)
+        {
+            return OnQueryFallback != null ? OnQueryFallback(cmd) : null;
         }
     }
 }

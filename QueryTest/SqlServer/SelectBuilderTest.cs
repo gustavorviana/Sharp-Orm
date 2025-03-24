@@ -4,6 +4,7 @@ using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.SqlServer;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
@@ -28,7 +29,7 @@ namespace QueryTest.SqlServer
         [InlineData("table.*", "[table].*")]
         public void FixColumnName(string raw, string expected)
         {
-            Assert.Equal(expected, this.Config.ApplyNomenclature(raw));
+            Assert.Equal(expected, Config.ApplyNomenclature(raw));
         }
 
         [Fact]
@@ -104,6 +105,8 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffset()
         {
+            SetMockConnectionVersion();
+
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id").Offset = 1;
             query.Where("Id", 1);
@@ -115,6 +118,8 @@ namespace QueryTest.SqlServer
         [Fact]
         public void NewSelectOffsetLimit()
         {
+            SetMockConnectionVersion();
+
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("Id");
             query.Where("Id", 1);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Msg;
+using System;
 using System.IO;
 
 namespace SharpOrm.DataTranslation
@@ -34,7 +35,7 @@ namespace SharpOrm.DataTranslation
                 return new MemoryStream(buffer);
 
             if (!(value is MemoryStream stream))
-                throw new NotSupportedException("Invalid value provided. Expected a MemoryStream or byte[].");
+                throw new NotSupportedException(Messages.Translation.BytesExpected);
 
             var ms = new MemoryStream();
             stream.CopyTo(ms);
@@ -60,7 +61,7 @@ namespace SharpOrm.DataTranslation
                 return ms.ToArray();
 
             if (!(value is MemoryStream stream) || !stream.CanRead)
-                throw new NotSupportedException("Invalid value provided. Expected a MemoryStream or byte[].");
+                throw new NotSupportedException(Messages.Translation.BytesExpected);
 
             using (ms = new MemoryStream())
             {

@@ -1,15 +1,20 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Builder.Grammars;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
+using SharpOrm.Msg;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -21,13 +26,8 @@ namespace SharpOrm
     {
         private ObjectReader _objReader;
 
-        /// <summary>
-        /// Table name in the database.
-        /// </summary>
-        [Obsolete("This property will be removed in version 3.x.")]
-        public static string TableName => TableInfo.GetNameOf(typeof(T));
         protected internal TableInfo TableInfo { get; }
-        private MemberInfoColumn[] _fkToLoad = new MemberInfoColumn[0];
+        private List<MemberInfo> _fkToLoad = new List<MemberInfo>();
 
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
@@ -44,8 +44,8 @@ namespace SharpOrm
         /// </summary>
         public Trashed Trashed
         {
-            get => this.Info.Where.Trashed;
-            set => this.Info.Where.SetTrash(value, TableInfo);
+            get => Info.Where.Trashed;
+            set => Info.Where.SetTrash(value, TableInfo);
         }
 
         #region Query
@@ -138,11 +138,11 @@ namespace SharpOrm
         {
             ((IRootTypeMap)Info).RootType = typeof(T);
             TableInfo = manager.Config.Translation.GetTable(((IRootTypeMap)Info).RootType);
-            this.ValidateModelOnSave = manager.Config.ValidateModelOnSave;
-            this.ApplyValidations();
+            ValidateModelOnSave = manager.Config.ValidateModelOnSave;
+            ApplyValidations();
 
             if (TableInfo.SoftDelete != null)
-                this.Trashed = Trashed.Except;
+                Trashed = Trashed.Except;
         }
 
         private Query(DbName table, QueryConfig config) : base(table, config)
@@ -152,7 +152,7 @@ namespace SharpOrm
 
         private void ApplyValidations()
         {
-            this.ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
+            ReturnsInsetionId = TableInfo.GetPrimaryKeys().Length > 0;
         }
 
         private static string GetDbName(TranslationRegistry registry = null)
@@ -170,43 +170,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columns">Columns that must be ordered.</param>
         /// <returns></returns>
-        [Obsolete("Use \"OrderBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderBy(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Asc, columns);
-        }
-
-        /// <summary>
-        /// Applies descending sort.
-        /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"OrderByDesc(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderByDesc(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(SharpOrm.OrderBy.Desc, columns);
-        }
-
-        /// <summary>
-        /// Applies an ascending sort.
-        /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"OrderBy(OrderBy, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> OrderBy(OrderBy order, params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)this.OrderBy(order, columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
-        }
-
-        /// <summary>
-        /// Applies an ascending sort.
-        /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
         public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Asc, expression);
+            return OrderBy(SharpOrm.OrderBy.Asc, expression);
         }
 
         /// <summary>
@@ -216,7 +182,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderByDesc(Expression<ColumnExpression<T>> expression)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Desc, expression);
+            return OrderBy(SharpOrm.OrderBy.Desc, expression);
         }
 
         /// <summary>
@@ -227,10 +193,8 @@ namespace SharpOrm
         /// <returns></returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
-            return (Query<T>)this.OrderBy(order, GetColumns(expression));
+            return (Query<T>)OrderBy(order, GetColumns(expression));
         }
-
-        #endregion
 
         /// <summary>
         /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
@@ -241,19 +205,6 @@ namespace SharpOrm
         {
             return (Query<T>)base.GroupBy(GetColumns(expression));
         }
-
-        /// <summary>
-        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
-        /// </summary>
-        /// <param name="columns">The column names by which the results should be grouped.</param>
-        /// <returns></returns>
-        [Obsolete("Use \"GroupBy(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> GroupBy(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)base.GroupBy(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
-        }
-
-        #region Select
 
         /// <summary>
         /// Selects a column from the table using a column expression.
@@ -274,17 +225,6 @@ namespace SharpOrm
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.Select(GetColumns(expression));
-        }
-
-        /// <summary>
-        /// Select column of table by Column object.
-        /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
-        [Obsolete("Use \"Select(Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Select(params Expression<ColumnExpression<T>>[] columns)
-        {
-            return (Query<T>)base.Select(columns.Select(ExpressionUtils<T>.GetColumn).ToArray());
         }
 
         /// <summary>
@@ -311,21 +251,11 @@ namespace SharpOrm
 
         internal ExpressionColumn[] GetColumns(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, config);
+            var processor = new ExpressionProcessor<T>(Info, config);
             return processor.ParseColumns(expression).ToArray();
         }
 
         #region AddForeign
-
-        public Query<T> AddForeign(Expression<ColumnExpression<T>> call, params Expression<ColumnExpression<T>>[] calls)
-        {
-            this.AddForeign(call);
-
-            foreach (var item in calls)
-                this.AddForeign(item);
-
-            return this;
-        }
 
         /// <summary>
         /// Adds a foreign key to the query based on the specified column expression.
@@ -335,8 +265,10 @@ namespace SharpOrm
         /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
-            var cols = ExpressionUtils<T>.GetColumnPath(call);
-            ReflectionUtils.AddToArray(ref this._fkToLoad, cols.Where(c => !this._fkToLoad.Any(fk => fk.Equals(c))).ToArray());
+            foreach (var column in ExpressionUtils<T>.GetMemberPath(call, false).Reverse())
+                if (!_fkToLoad.Contains(column))
+                    _fkToLoad.Add(column);
+
             return this;
         }
 
@@ -358,6 +290,84 @@ namespace SharpOrm
         #region DML SQL commands
 
         /// <summary>
+        /// Asynchronously deletes rows from the database.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the numb
+        public override async Task<int> DeleteAsync(CancellationToken token)
+        {
+            return await DeleteAsync(false, token);
+        }
+
+        /// <inheritdoc/>
+        public override int Delete()
+        {
+            return Delete(false);
+        }
+
+        /// <summary>
+        /// Asynchronously deletes rows from the database, with an option to force deletion.
+        /// </summary>
+        /// <param name="force">If true, forces deletion even if soft delete is enabled; otherwise, performs a soft delete if applicable.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of deleted rows.</returns>
+        public async Task<int> DeleteAsync(bool force, CancellationToken token)
+        {
+            if (force || TableInfo.SoftDelete == null)
+                return await base.DeleteAsync(token);
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
+        /// </summary>
+        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
+        /// <returns>Number of deleted rows.</returns>
+        public int Delete(bool force)
+        {
+            if (force || TableInfo.SoftDelete == null)
+                return base.Delete();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().SoftDelete(TableInfo.SoftDelete)) + cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Asynchronously restores soft-deleted records in the database.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the number of restored rows.</returns>
+        public async Task<int> RestoreAsync(CancellationToken token)
+        {
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().RestoreSoftDeleted(TableInfo.SoftDelete)) +
+                     await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Restore the values deleted using soft delete.
+        /// </summary>
+        /// <returns>Number of values restored.</returns>
+        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
+        public int Restore()
+        {
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().RestoreSoftDeleted(TableInfo.SoftDelete)) +
+                    cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage, Column countColumn)
+        {
+            return Pager<T>.FromBuilderAsync(this, peerPage, currentPage, countColumn);
+        }
+
+        /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
         /// <param name="peerPage">The number of items per page.</param>
@@ -370,6 +380,18 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage, string countColumnName)
+        {
+            return Pager<T>.FromBuilderAsync(this, peerPage, currentPage, countColumnName);
+        }
+
+        /// <summary>
         /// Creates a Pager<T> object for performing pagination on the query result.
         /// </summary>
         /// <param name="peerPage">The number of items per page.</param>
@@ -379,6 +401,17 @@ namespace SharpOrm
         public Pager<T> Paginate(int peerPage, int currentPage, string countColumnName)
         {
             return Pager<T>.FromBuilder(this, peerPage, currentPage, countColumnName);
+        }
+
+        /// <summary>
+        /// Creates a Pager<T> object for performing pagination on the query result asynchronously.
+        /// </summary>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number (One based).</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager<T> object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> PaginateAsync(int peerPage, int currentPage)
+        {
+            return Pager<T>.FromBuilderAsync(this, peerPage, currentPage);
         }
 
         /// <summary>
@@ -402,44 +435,88 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously retrieves the first result or the default value if no result is found.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with the first result or the default value.</returns>
+        public Task<T> FirstOrDefaultAsync(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                int? lastLimit = Limit;
+                Limit = 1;
+
+                try
+                {
+                    return GetEnumerable<T>(token).FirstOrDefault();
+                }
+                finally
+                {
+                    Limit = lastLimit;
+                }
+            });
+        }
+
+        /// <summary>
         /// Get first result.
         /// </summary>
         /// <returns></returns>
         public T FirstOrDefault()
         {
-            int? lastLimit = this.Limit;
-            this.Limit = 1;
+            int? lastLimit = Limit;
+            Limit = 1;
 
             try
             {
-                return this.GetEnumerable<T>().FirstOrDefault();
+                return GetEnumerable<T>().FirstOrDefault();
             }
             finally
             {
-                this.Limit = lastLimit;
+                Limit = lastLimit;
             }
         }
 
         public override IEnumerable<K> GetEnumerable<K>()
         {
-            var enumerable = (DbCommandEnumerable<K>)base.GetEnumerable<K>();
-            if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
-                return enumerable;
+            return GetEnumerable<K>(default);
+        }
+
+        private IEnumerable<K> GetEnumerable<K>(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
 
             try
             {
-                FkLoaders fkLoaders = new FkLoaders(this.Manager, this._fkToLoad, this.Token);
-
-                enumerable.fkQueue = fkLoaders;
-                var list = enumerable.ToList();
-                fkLoaders.LoadForeigns();
-
-                return list;
+                using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(Info.Config.NewGrammar(this).Select()))
+                    foreach (var item in ConfigureFkLoader(cmd.ExecuteEnumerable<K>(true)))
+                        yield return item;
             }
             finally
             {
-                this.Manager?.CloseByEndOperation();
+                Manager?.CloseByEndOperation();
             }
+        }
+
+        private IEnumerable<K> ConfigureFkLoader<K>(DbCommandEnumerable<K> enumerable)
+        {
+            if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
+                return enumerable;
+
+            FkLoaders fkLoaders = new FkLoaders(Manager, _fkToLoad, Token);
+
+            enumerable._fkQueue = fkLoaders;
+            var list = enumerable.ToList();
+            fkLoaders.LoadForeigns();
+            return list;
+        }
+
+        /// <summary>
+        /// Asynchronously searches and returns the first occurrence of an object of type T that matches the values of the provided primary keys.
+        /// </summary>
+        /// <param name="primaryKeysValues">The values of the primary keys to search for.</param>
+        /// <returns>A task representing the asynchronous operation, with the first occurrence of an object of type T that matches the provided primary keys.</returns>
+        public Task<T> FindAsync(CancellationToken token, params object[] primaryKeysValues)
+        {
+            return TaskUtils.Async(() => Find(primaryKeysValues));
         }
 
         /// <summary>
@@ -449,8 +526,8 @@ namespace SharpOrm
         /// <returns>The first occurrence of an object of type T that matches the provided primary keys.</returns>
         public T Find(params object[] primaryKeysValues)
         {
-            using (var query = (Query<T>)this.Clone(false))
-                return this.WherePk(primaryKeysValues).FirstOrDefault();
+            using (var query = (Query<T>)Clone(false))
+                return WherePk(primaryKeysValues).FirstOrDefault();
         }
 
         /// <summary>
@@ -466,12 +543,25 @@ namespace SharpOrm
             ValidatePkVals(pkCols, primaryKeysValues);
 
             if (primaryKeysValues.Length == 1)
-                return (Query<T>)this.Where(pkCols[0].Name, primaryKeysValues[0]);
+                return (Query<T>)Where(pkCols[0].Name, primaryKeysValues[0]);
 
-            return (Query<T>)this.Where(query =>
+            return (Query<T>)Where(query =>
             {
                 for (var i = 0; i < primaryKeysValues.Length; i++)
                     query.Where(pkCols[i].Name, primaryKeysValues[i]);
+            });
+        }
+
+        /// <summary>
+        /// Asynchronously gets all available results.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with an array of results.</returns>
+        public Task<T[]> GetAsync(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                using (var builder = GetCommand().AddCancellationToken(token))
+                    return GetEnumerable<T>(builder, token).ToArray();
             });
         }
 
@@ -481,7 +571,22 @@ namespace SharpOrm
         /// <returns></returns>
         public T[] Get()
         {
-            return this.GetEnumerable<T>().ToArray();
+            return GetEnumerable<T>().ToArray();
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one row into the table.
+        /// </summary>
+        /// <param name="obj">The object to insert.</param>
+        /// <returns>A task representing the asynchronous operation, with the ID of the inserted row.</returns>
+        public async Task<int> InsertAsync(T obj, CancellationToken token)
+        {
+            ValidateReadonly();
+
+            var reader = GetObjectReader(true, true);
+            object result = await InsertAsync(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj), token);
+            SetPrimaryKey(obj, result);
+            return TranslationUtils.TryNumeric(result);
         }
 
         /// <summary>
@@ -491,11 +596,11 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(T obj)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
 
-            var reader = this.GetObjectReader(true, true);
-            object result = this.Insert(reader.ReadCells(obj), this.ReturnsInsetionId && !reader.HasValidKey(obj));
-            this.SetPrimaryKey(obj, result);
+            var reader = GetObjectReader(true, true);
+            object result = Insert(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj));
+            SetPrimaryKey(obj, result);
             return TranslationUtils.TryNumeric(result);
         }
 
@@ -512,12 +617,33 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="objs">The objects to insert.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
+        public Task<int> BulkInsertAsync(CancellationToken token, params T[] objs)
+        {
+            return BulkInsertAsync((IEnumerable<T>)objs, token);
+        }
+
+        /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
         /// <param name="rows"></param>
         public int BulkInsert(params T[] objs)
         {
-            return this.BulkInsert((IEnumerable<T>)objs);
+            return BulkInsert((IEnumerable<T>)objs);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="objs">The objects to insert.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
+        public Task<int> BulkInsertAsync(IEnumerable<T> objs, CancellationToken token)
+        {
+            var reader = GetObjectReader(true, true);
+            return base.BulkInsertAsync(objs.Select(x => reader.ReadRow(x)), token);
         }
 
         /// <summary>
@@ -526,8 +652,21 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            var reader = this.GetObjectReader(true, true);
+            var reader = GetObjectReader(true, true);
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
+        }
+
+        /// <summary>
+        /// Asynchronously updates table keys using object values.
+        /// </summary>
+        /// <param name="obj">The object to update.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
+        public Task<int> UpdateAsync(T obj, CancellationToken token)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            return base.UpdateAsync(GetObjectReader(false, false).ReadCells(obj), token);
         }
 
         /// <summary>
@@ -540,26 +679,21 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.Update(this.GetObjectReader(false, false).ReadCells(obj));
+            return base.Update(GetObjectReader(false, false).ReadCells(obj));
         }
 
         /// <summary>
-        /// Update table keys using object values.
+        /// Asynchronously updates table keys using object values.
         /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="calls">Calls to retrieve the properties that should be saved.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        [Obsolete("Use \"Update(T, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public int Update(T obj, params Expression<ColumnExpression<T>>[] calls)
+        /// <param name="obj">The object to update.</param>
+        /// <param name="expression">Expression to retrieve the properties that should be saved.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
+        public Task<int> UpdateAsync(T obj, Expression<ColumnExpression<T>> expression, CancellationToken token)
         {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            if (calls.Length == 0)
-                throw new ArgumentNullException(nameof(calls));
-
-            return this.Update(this.GetObjectReader(false, false).Only(calls).ReadCells(obj));
+            return UpdateAsync(GetObjectReader(false, false).Only(expression).ReadCells(obj), token);
         }
 
         /// <summary>
@@ -574,7 +708,18 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return this.Update(this.GetObjectReader(false, false).Only(expression).ReadCells(obj));
+            return Update(GetObjectReader(false, false).Only(expression).ReadCells(obj));
+        }
+
+        /// <summary>
+        /// Asynchronously updates table keys using object values.
+        /// </summary>
+        /// <param name="obj">The object to update.</param>
+        /// <param name="columns">The columns to update.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of updated rows.</returns>
+        public Task<int> UpdateAsync(T obj, CancellationToken token, params string[] columns)
+        {
+            return base.UpdateAsync(GetUpdateCells(obj, columns), token);
         }
 
         /// <summary>
@@ -585,20 +730,84 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(T obj, params string[] columns)
         {
+            return base.Update(GetUpdateCells(obj, columns));
+        }
+
+        private Cell[] GetUpdateCells(T obj, params string[] columns)
+        {
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var reader = this.GetObjectReader(false, false);
+            var reader = GetObjectReader(false, false);
             if (columns.Length > 0) reader.Only(columns);
 
             var toUpdate = reader.ReadCells(obj).ToArray();
             if (toUpdate.Length == 0)
                 throw new InvalidOperationException(Messages.ColumnsNotFound);
 
-            return base.Update(toUpdate);
+            return toUpdate;
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public Task UpsertAsync(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null, CancellationToken token = default)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            return UpsertAsync(obj, toCheckColumns, updateColumns, default);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public void Upsert(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            Upsert(obj, toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public Task UpsertAsync(T obj, string[] toCheckColumns, string[] updateColumns, CancellationToken token)
+        {
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            return base.UpsertAsync(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns, token);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentException">Thrown when no columns are specified to check.</exception>
+        public void Upsert(T obj, string[] toCheckColumns, params string[] updateColumns)
+        {
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            base.Upsert(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns);
         }
 
         #endregion
@@ -658,15 +867,15 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
-            var name = new ExpressionProcessor<T>(this.Info, ExpressionConfig.None).GetTableName(table, out var member);
+            var name = new ExpressionProcessor<T>(Info, ExpressionConfig.None).GetTableName(table, out var member);
             var dbName = new DbName(name, alias);
 
             if (Info.Joins.Any(j => j.MemberInfo == member && j.Info.TableName == dbName))
                 throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
 
-            JoinQuery join = new JoinQuery(this.Info.Config, dbName) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
+            JoinQuery join = new JoinQuery(Info.Config, dbName, typeof(T)) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
             join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
-            this.Info.Joins.Add(join);
+            Info.Joins.Add(join);
 
             return this;
         }
@@ -681,7 +890,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
         {
-            return (Query<T>)this.Join<C>(alias, column1, "=", column2);
+            return (Query<T>)Join<C>(alias, column1, "=", column2);
         }
 
         /// <summary>
@@ -696,30 +905,17 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
         {
-            var name = Config.Translation.GetTableName(typeof(C));
-
-            return (Query<T>)this.Join(new DbName(name, alias), q =>
+            return (Query<T>)Join(DbName.Of<C>(alias, Config.Translation), q =>
             {
                 q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
             }, type);
         }
 
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, string column1, string column2)
+        public Query<T> Join<R>(string alias, string column1, string column2)
         {
-            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, column2));
-        }
-
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, string column1, string operation, string column2, string type = "INNER")
-        {
-            return (Query<T>)this.Join<C>(alias, q => q.WhereColumn(column1, operation, column2), type);
-        }
-
-        [Obsolete("Use \"Join<C>(string, Expression<ColumnExpression<C>>, string, Expression<ColumnExpression<T>>)\". This method will be removed in version 3.x.")]
-        public Query<T> Join<C>(string alias, QueryCallback callback, string type = "INNER")
-        {
-            return (Query<T>)base.Join(DbName.Of<C>(alias, Config.Translation), callback, type); ;
+            var dbName = DbName.Of<R>(alias, Config.Translation);
+            base.Join(dbName, x => x.WhereColumn(column1, column2), "INNER");
+            return this;
         }
 
         /// <summary>
@@ -878,35 +1074,6 @@ namespace SharpOrm
 
         #endregion
 
-        /// <inheritdoc/>
-        public override int Delete()
-        {
-            return this.Delete(false);
-        }
-
-        /// <summary>
-        /// Remove the database rows (if it's a class with soft delete, just mark it as deleted).
-        /// </summary>
-        /// <param name="force">If the class uses soft delete and it's set to false, mark the row as deleted; otherwise, delete the row.</param>
-        /// <returns>Number of deleted rows.</returns>
-        public int Delete(bool force)
-        {
-            if (force || TableInfo.SoftDelete == null)
-                return base.Delete();
-
-            return this.ExecuteAndGetAffected(this.GetGrammar().SoftDelete(this.TableInfo.SoftDelete));
-        }
-
-        /// <summary>
-        /// Restore the values deleted using soft delete.
-        /// </summary>
-        /// <returns>Number of values restored.</returns>
-        /// <exception cref="NotSupportedException">Launched when there is an attempt to restore a class that does not implement soft delete.</exception>
-        public int Restore()
-        {
-            return this.ExecuteAndGetAffected(this.GetGrammar().RestoreSoftDeleted(this.TableInfo.SoftDelete));
-        }
-
         #region Where
 
         /// <summary>
@@ -1014,7 +1181,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Where(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.Where(GetColumn(columnExp), operation, value);
+            Where(GetColumn(columnExp), operation, value);
             return this;
         }
 
@@ -1039,7 +1206,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> WhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.Where(GetColumn(columnExp), operation, GetColumn(column2Exp));
+            Where(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
@@ -1116,7 +1283,7 @@ namespace SharpOrm
         /// <param name="columnExp">The column expression to compare.</param>
         public Query<T> WhereNotNull(Expression<ColumnExpression<T>> columnExp)
         {
-            return (Query<T>)this.Where(GetColumn(columnExp), "IS NOT", null);
+            return (Query<T>)Where(GetColumn(columnExp), "IS NOT", null);
         }
 
         #region OR
@@ -1226,7 +1393,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhere(Expression<ColumnExpression<T>> columnExp, string operation, object value)
         {
-            this.OrWhere(GetColumn(columnExp), operation, value);
+            OrWhere(GetColumn(columnExp), operation, value);
             return this;
         }
 
@@ -1251,7 +1418,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhereColumn(Expression<ColumnExpression<T>> columnExp, string operation, Expression<ColumnExpression<T>> column2Exp)
         {
-            this.OrWhere(GetColumn(columnExp), operation, GetColumn(column2Exp));
+            OrWhere(GetColumn(columnExp), operation, GetColumn(column2Exp));
             return this;
         }
 
@@ -1332,7 +1499,7 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotNull(Expression<ColumnExpression<T>> columnExp)
         {
-            return (Query<T>)this.OrWhere(GetColumn(columnExp), "IS NOT", null);
+            return (Query<T>)OrWhere(GetColumn(columnExp), "IS NOT", null);
         }
 
         #endregion
@@ -1356,7 +1523,7 @@ namespace SharpOrm
 
         private Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
         {
-            var processor = new ExpressionProcessor<T>(this.Info, ExpressionConfig.All);
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.All);
             return processor.ParseColumn(column);
         }
 
@@ -1367,14 +1534,15 @@ namespace SharpOrm
         /// <returns>A new instance of the Query object with the same configuration.</returns>
         public override Query Clone(bool withWhere)
         {
-            Query<T> query = new Query<T>(this.Info.TableName, this.Manager);
+            Query<T> query = new Query<T>(Info.TableName, Manager);
+            query.Token = Token;
 
             if (withWhere)
-                query.Info.LoadFrom(this.Info);
+                query.Info.LoadFrom(Info);
             else if (TableInfo.SoftDelete != null)
-                query.Info.Where.SetTrash(this.Trashed, TableInfo);
+                query.Info.Where.SetTrash(Trashed, TableInfo);
 
-            this.OnClone(query);
+            OnClone(query);
 
             return query;
         }
@@ -1386,7 +1554,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad = (MemberInfoColumn[])this._fkToLoad.Clone();
+            query._fkToLoad.AddRange(_fkToLoad);
         }
 
         internal ObjectReader GetObjectReader(bool readPk, bool isCreate)
@@ -1394,11 +1562,11 @@ namespace SharpOrm
             if (_objReader == null)
             {
                 _objReader = new ObjectReader(TableInfo);
-                _objReader.ReadFk = this.Info.Config.LoadForeign;
+                _objReader.ReadFk = Info.Config.LoadForeign;
                 _objReader.Validate = true;
             }
 
-            _objReader.IgnoreTimestamps = this.IgnoreTimestamps;
+            _objReader.IgnoreTimestamps = IgnoreTimestamps;
             _objReader.IsCreate = isCreate;
             _objReader.ReadPk = readPk;
 
@@ -1412,15 +1580,14 @@ namespace SharpOrm
     public class Query : QueryBase, ICloneable, IGrammarOptions, IDisposable
     {
         #region Properties
-        internal string[] deleteJoins = null;
         private bool _disposed = false;
 
         protected internal new QueryInfo Info => (QueryInfo)base.Info;
 
         /// <summary>
-        /// Gets a value indicating whether the object has been disposed.
+        /// Gets a value indicating whether the object has been _disposed.
         /// </summary>
-        public bool Disposed => this._disposed;
+        public bool Disposed => _disposed;
 
         /// <summary>
         /// Indicate whether the database should return only distinct items.
@@ -1447,7 +1614,7 @@ namespace SharpOrm
         /// <summary>
         /// Settings used to build the SQL command.
         /// </summary>
-        public QueryConfig Config => this.Info.Config;
+        public QueryConfig Config => Info.Config;
         /// <summary>
         /// Connection manager of the query.
         /// </summary>
@@ -1463,10 +1630,11 @@ namespace SharpOrm
         /// </summary>
         public int CommandTimeout
         {
-            get => this._commandTimeout ?? this.Manager.CommandTimeout;
-            set => this._commandTimeout = value;
+            get => _commandTimeout ?? Manager.CommandTimeout;
+            set => _commandTimeout = value;
         }
-        private OpenReader lastOpenReader = null;
+
+        private CommandBuilder _lastOpenReader = null;
         #endregion
 
         #region Query
@@ -1546,7 +1714,7 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : this(table, manager.Config)
         {
-            this.Manager = manager;
+            Manager = manager;
         }
 
         internal Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
@@ -1569,9 +1737,9 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(columnNames), Messages.NoColumnsInserted);
 
             if (columnNames.Length == 1 && columnNames.First() == "*")
-                return this.Select(Column.All);
+                return Select(Column.All);
 
-            return this.Select(columnNames.Select(name => new Column(name)).ToArray());
+            return Select(columnNames.Select(name => new Column(name)).ToArray());
         }
 
         /// <summary>
@@ -1584,7 +1752,7 @@ namespace SharpOrm
             if (!columns.Any())
                 throw new ArgumentNullException(nameof(columns), Messages.NoColumnsInserted);
 
-            this.Info.Select = columns;
+            Info.Select = columns;
 
             return this;
         }
@@ -1602,7 +1770,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, string column1, string column2)
         {
-            return this.Join(table, q => q.WhereColumn(column1, column2));
+            return Join(table, q => q.WhereColumn(column1, column2));
         }
 
         /// <summary>
@@ -1616,7 +1784,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, string column1, string operation, string column2, string type = "INNER")
         {
-            return this.Join(table, q => q.WhereColumn(column1, operation, column2), type);
+            return Join(table, q => q.WhereColumn(column1, operation, column2), type);
         }
 
         /// <summary>
@@ -1629,7 +1797,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
-            return this.Join(new DbName(table), callback, type, grammarOptions);
+            return Join(new DbName(table), callback, type, grammarOptions);
         }
 
         /// <summary>
@@ -1641,7 +1809,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER")
         {
-            return this.Join(table, callback, type, this.GrammarOptions);
+            return Join(table, callback, type, GrammarOptions);
         }
 
         /// <summary>
@@ -1654,9 +1822,9 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
         {
-            JoinQuery join = new JoinQuery(this.Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
+            JoinQuery join = new JoinQuery(Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
             callback(join);
-            this.Info.Joins.Add(join);
+            Info.Joins.Add(join);
             return this;
         }
 
@@ -1671,7 +1839,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query GroupBy(params string[] columnNames)
         {
-            return this.GroupBy(columnNames.Select(name => new Column(name)).ToArray());
+            return GroupBy(columnNames.Select(name => new Column(name)).ToArray());
         }
 
         /// <summary>
@@ -1681,7 +1849,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query GroupBy(params Column[] columns)
         {
-            this.Info.GroupsBy = columns;
+            Info.GroupsBy = columns;
 
             return this;
         }
@@ -1697,9 +1865,9 @@ namespace SharpOrm
         /// <returns></returns>
         public Query Having(QueryCallback callback)
         {
-            var qBase = new QueryBase(this.Config, this.Info.TableName);
+            var qBase = new QueryBase(Config, Info.TableName);
             callback(qBase);
-            this.Info.Having.Add(qBase.Info.Where);
+            Info.Having.Add(qBase.Info.Where);
 
             return this;
         }
@@ -1715,7 +1883,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params string[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Asc, columns);
+            return OrderBy(SharpOrm.OrderBy.Asc, columns);
         }
 
         /// <summary>
@@ -1725,7 +1893,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderByDesc(params string[] columns)
         {
-            return this.OrderBy(SharpOrm.OrderBy.Desc, columns);
+            return OrderBy(SharpOrm.OrderBy.Desc, columns);
         }
 
         /// <summary>
@@ -1736,7 +1904,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params string[] columns)
         {
-            return this.OrderBy(order, columns.Select(c => new Column(c)).ToArray());
+            return OrderBy(order, columns.Select(c => new Column(c)).ToArray());
         }
 
         /// <summary>
@@ -1747,7 +1915,7 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(OrderBy order, params Column[] columns)
         {
-            return this.OrderBy(columns.Select(c => new ColumnOrder(c, order)).ToArray());
+            return OrderBy(columns.Select(c => new ColumnOrder(c, order)).ToArray());
         }
 
         /// <summary>
@@ -1757,14 +1925,223 @@ namespace SharpOrm
         /// <returns></returns>
         public Query OrderBy(params ColumnOrder[] orders)
         {
-            this.Info.Orders = orders.Where(x => x.Order != SharpOrm.OrderBy.None).ToArray();
+            Info.Orders = orders.Where(x => x.Order != SharpOrm.OrderBy.None).ToArray();
 
             return this;
         }
 
         #endregion
 
-        #region DML SQL commands
+        #region DML SQL Commands
+
+        /// <summary>
+        /// Asynchronously inserts or updates a record in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="sourceName">The name of the source table.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
+        public async Task<int> UpsertAsync(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, CancellationToken token)
+        {
+            ValidateUpsert(sourceName, toCheckColumns, updateColumns, insertColumns);
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns)) +
+                    await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Inserts or updates a record in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="sourceName">The name of the source table.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <returns>The number of affected rows.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when any of the column arrays are null or empty.</exception>
+        public int Upsert(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
+        {
+            ValidateUpsert(sourceName, toCheckColumns, updateColumns, insertColumns);
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Upsert(sourceName, toCheckColumns, updateColumns, insertColumns)) +
+                    cmd.ExecuteNonQuery();
+        }
+
+        private static void ValidateUpsert(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns)
+        {
+            if (toCheckColumns == null || toCheckColumns.Length == 0)
+                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
+
+            if (updateColumns == null || updateColumns.Length == 0)
+                throw new ArgumentNullException(nameof(updateColumns), "UpdateColumns cannot be null or empty.");
+
+            if (insertColumns == null || insertColumns.Length == 0)
+                throw new ArgumentNullException(nameof(insertColumns), "InsertColumns cannot be null or empty.");
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates a row in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
+        {
+            if (row == null)
+                throw new ArgumentNullException(nameof(row));
+
+            if (toCheckColumns == null || toCheckColumns.Length == 0)
+                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
+
+            ValidateReadonly();
+
+            if (Info.Config.NativeUpsertRows)
+                return UpsertAsync(new Row[] { row }, toCheckColumns, updateColumns, token);
+
+            return NonNativeUpsertAsync(row, toCheckColumns, updateColumns, token);
+        }
+
+        /// <summary>
+        /// Inserts or updates a row in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the row or toCheckColumns are null or empty.</exception>
+        public void Upsert(Row row, string[] toCheckColumns, string[] updateColumns = null)
+        {
+            if (row == null)
+                throw new ArgumentNullException(nameof(row));
+
+            if (toCheckColumns == null || toCheckColumns.Length == 0)
+                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
+
+            ValidateReadonly();
+
+            if (Info.Config.NativeUpsertRows)
+                Upsert(new Row[] { row }, toCheckColumns, updateColumns);
+            else
+                NonNativeUpsert(row, toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates multiple rows in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="rows">The rows to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
+        public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
+        {
+            updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
+
+            if (!Config.NativeUpsertRows)
+            {
+                foreach (var row in rows)
+                    await NonNativeUpsertAsync(row, toCheckColumns, updateColumns, token);
+
+                return 0;
+            }
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Inserts or updates multiple rows in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="rows">The rows to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <returns>The number of affected rows.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when rows or toCheckColumns are null or empty.</exception>
+        public int Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns = null)
+        {
+            updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
+
+            if (!Config.NativeUpsertRows)
+            {
+                foreach (var row in rows)
+                    NonNativeUpsert(row, toCheckColumns, updateColumns);
+
+                return 0;
+            }
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + cmd.ExecuteNonQuery();
+        }
+
+        private string[] FixUpdateColumns(Row[] rows, string[] toCheckColumns, string[] updateColumns)
+        {
+            if (rows == null || rows.Length == 0)
+                throw new ArgumentNullException(nameof(rows), "Rows cannot be null or empty.");
+
+            if (toCheckColumns == null || toCheckColumns.Length == 0)
+                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
+
+            ValidateReadonly();
+
+            if (updateColumns == null || updateColumns.Length == 0)
+                return rows[0].Cells.Select(x => x.Name).Where(x => !toCheckColumns.Contains(x)).ToArray();
+
+            return updateColumns;
+        }
+
+        private void NonNativeUpsert(Row row, string[] toCheckColumns, string[] updateColumns)
+        {
+            ValidateReadonly();
+
+            using (var query = Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, row[column]);
+
+                if (query.Any()) query.Update(row.Cells.Where(x => AnyColumn(updateColumns, x.Name)));
+                else query.Insert(row.Cells);
+            }
+        }
+
+        private async Task NonNativeUpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns, CancellationToken token)
+        {
+            ValidateReadonly();
+
+            using (var query = Clone(false))
+            {
+                foreach (var column in toCheckColumns)
+                    query.Where(column, row[column]);
+
+                if (query.Any()) await query.UpdateAsync(row.Cells.Where(x => AnyColumn(updateColumns, x.Name)), token);
+                else await query.InsertAsync(row.Cells, token);
+            }
+        }
+
+        private static bool AnyColumn(string[] columns, string column)
+        {
+            if (columns == null || columns.Length == 0) return true;
+
+            for (int i = 0; i < columns.Length; i++)
+                if (columns[i].Equals(column, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Asynchronously updates rows on table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns></returns>
+        public async Task<int> UpdateAsync(CancellationToken token, params Cell[] cells)
+        {
+            ValidateReadonly();
+            if (!cells.Any())
+                throw new InvalidOperationException(Messages.NoColumnsInserted);
+
+            return await UpdateAsync((IEnumerable<Cell>)cells, token);
+        }
 
         /// <summary>
         /// Update rows on table.
@@ -1773,11 +2150,26 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(params Cell[] cells)
         {
-            this.ValidateReadonly();
+            ValidateReadonly();
             if (!cells.Any())
                 throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-            return this.Update((IEnumerable<Cell>)cells);
+            return Update((IEnumerable<Cell>)cells);
+        }
+
+        /// <summary>
+        /// Asynchronously updates rows on table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns></returns>
+        public async Task<int> UpdateAsync(IEnumerable<Cell> cells, CancellationToken token)
+        {
+            ValidateReadonly();
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Update(cells)) +
+                    await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -1787,9 +2179,25 @@ namespace SharpOrm
         /// <returns></returns>
         public int Update(IEnumerable<Cell> cells)
         {
-            this.ValidateReadonly();
-            this.CheckIsSafeOperation();
-            return this.ExecuteAndGetAffected(this.GetGrammar().Update(cells));
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Update(cells)) + cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one row into the table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns>Id of row.</returns>
+        public async Task<int> InsertAsync(CancellationToken token, params Cell[] cells)
+        {
+            ValidateReadonly();
+
+            if (cells.Length == 0)
+                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
+
+            return TranslationUtils.TryNumeric(await InsertAsync(cells, true, token));
         }
 
         /// <summary>
@@ -1799,12 +2207,22 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(params Cell[] cells)
         {
-            this.ValidateReadonly();
-
             if (cells.Length == 0)
                 throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            return TranslationUtils.TryNumeric(this.Insert(cells, true));
+            return TranslationUtils.TryNumeric(Insert(cells, true));
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one row into the table.
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns>Id of row.</returns>
+        public async Task<int> InsertAsync(IEnumerable<Cell> cells, CancellationToken token)
+        {
+            ValidateReadonly();
+
+            return TranslationUtils.TryNumeric(await InsertAsync(cells, true, token));
         }
 
         /// <summary>
@@ -1814,21 +2232,29 @@ namespace SharpOrm
         /// <returns>Id of row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
-            this.ValidateReadonly();
+            return TranslationUtils.TryNumeric(Insert(cells, true));
+        }
 
-            return TranslationUtils.TryNumeric(this.Insert(cells, true));
+        /// <summary>
+        /// Asynchronously inserts a new record into the database table using the specified query and column names.
+        /// </summary>
+        /// <param name="queryBase">The base query to use for the insert operation.</param>
+        /// <param name="columnNames">The names of the columns to insert values into.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
+        public async Task<int> InsertAsync(QueryBase queryBase, CancellationToken token, params string[] columnNames)
+        {
+            using (var cmd = await GetCommand().AddCancellationToken(token).SetExpressionAsync(GetGrammar().InsertQuery(queryBase, columnNames)))
+                return await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="query"></param>
         /// <param name="columnNames"></param>
         public int Insert(QueryBase queryBase, params string[] columnNames)
         {
-            this.ValidateReadonly();
-
-            return this.ExecuteAndGetAffected(this.GetGrammar().InsertQuery(queryBase, columnNames));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().InsertQuery(queryBase, columnNames)))
+                return cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1837,16 +2263,40 @@ namespace SharpOrm
         /// <param name="columnNames"></param>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
-            this.ValidateReadonly();
             if (columnNames == null || columnNames.Length == 0)
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException(Messages.AtLeastOneColumnRequired);
 
-            return this.ExecuteAndGetAffected(this.GetGrammar().InsertExpression(expression, columnNames));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().InsertExpression(expression, columnNames)))
+                return cmd.ExecuteNonQuery();
+        }
+
+        internal async Task<object> InsertAsync(IEnumerable<Cell> cells, bool returnsInsetionId, CancellationToken token)
+        {
+            ValidateReadonly();
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+            {
+                await cmd.SetExpressionAsync(GetGrammar().Insert(cells, returnsInsetionId));
+                return await cmd.ExecuteScalarAsync();
+            }
         }
 
         internal object Insert(IEnumerable<Cell> cells, bool returnsInsetionId)
         {
-            return this.ExecuteScalar(this.GetGrammar().Insert(cells, returnsInsetionId));
+            using (var cmd = GetCommand())
+            {
+                cmd.SetExpression(GetGrammar().Insert(cells, returnsInsetionId));
+                return cmd.ExecuteScalar();
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
+        public async Task<int> BulkInsertAsync(CancellationToken token, params Row[] rows)
+        {
+            return await BulkInsertAsync((ICollection<Row>)rows, token);
         }
 
         /// <summary>
@@ -1855,7 +2305,18 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(params Row[] rows)
         {
-            return this.BulkInsert((ICollection<Row>)rows);
+            return BulkInsert((ICollection<Row>)rows);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="rows"></param>
+        public async Task<int> BulkInsertAsync(IEnumerable<Row> rows, CancellationToken token)
+        {
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().BulkInsert(rows)) +
+                    await cmd.ExecuteWithRecordsAffectedAsync();
         }
 
         /// <summary>
@@ -1864,8 +2325,60 @@ namespace SharpOrm
         /// <param name="rows"></param>
         public int BulkInsert(IEnumerable<Row> rows)
         {
-            this.ValidateReadonly();
-            return this.ExecuteAndGetAffected(this.GetGrammar().BulkInsert(rows));
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().BulkInsert(rows)) + cmd.ExecuteWithRecordsAffected();
+        }
+
+        /// <summary>
+        /// Asynchronously removes rows from database
+        /// </summary>
+        /// <returns>Number of deleted rows.</returns>
+        public virtual async Task<int> DeleteAsync(CancellationToken token)
+        {
+            ValidateReadonly();
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Delete()) +
+                    await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Asynchronously deletes rows from the database, including those from joined tables.
+        /// </summary>
+        /// <param name="tables">The names of the tables to include in the delete operation. These should be the same names used in .Join.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of deleted rows.</returns>
+        /// <remarks>
+        /// This function is not compatible with all databases.
+        /// </remarks>
+        public async Task<int> DeleteIncludingJoinsAsync(CancellationToken token, params string[] tables)
+        {
+            if (tables == null || tables.Length == 0)
+                throw new ArgumentNullException(nameof(tables));
+
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand().AddCancellationToken(token))
+                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().DeleteIncludingJoins(tables)) + await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Deletes rows from the database, including those from joined tables.
+        /// </summary>
+        /// <param name="tables">The names of the tables to include in the delete operation. These should be the same names used in .Join.</param>
+        /// <returns>The number of deleted rows.</returns>
+        /// <remarks>
+        /// This function is not compatible with all databases.
+        /// </remarks>
+        public int DeleteIncludingJoins(params string[] tables)
+        {
+            if (tables == null || tables.Length == 0)
+                throw new ArgumentNullException(nameof(tables));
+
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().DeleteIncludingJoins(tables)) + cmd.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1874,9 +2387,21 @@ namespace SharpOrm
         /// <returns>Number of deleted rows.</returns>
         public virtual int Delete()
         {
-            this.ValidateReadonly();
-            this.CheckIsSafeOperation();
-            return this.ExecuteAndGetAffected(this.GetGrammar().Delete());
+            CheckIsSafeOperation();
+
+            using (var cmd = GetCommand())
+                return cmd.SetExpressionWithAffectedRows(GetGrammar().Delete()) + cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Asynchronously counts the amount of results available. 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<long> CountAsync(CancellationToken token)
+        {
+            ValidateReadonly();
+            using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Count()))
+                return Convert.ToInt64(await cmd.ExecuteScalarAsync());
         }
 
         /// <summary>
@@ -1885,8 +2410,18 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count()
         {
-            this.ValidateReadonly();
-            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count()));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Count()))
+                return Convert.ToInt64(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Asynchronously counts the amount of results available. 
+        /// </summary>
+        /// <param name="column">Column to count.</param>
+        /// <returns></returns>
+        public async Task<long> CountAsync(string columnName, CancellationToken token)
+        {
+            return await CountAsync(new Column(columnName), token);
         }
 
         /// <summary>
@@ -1896,7 +2431,18 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(string columnName)
         {
-            return this.Count(new Column(columnName));
+            return Count(new Column(columnName));
+        }
+
+        /// <summary>
+        /// Asynchronously counts the amount of results available. 
+        /// </summary>
+        /// <param name="column">Column to count.</param>
+        /// <returns></returns>
+        public async Task<long> CountAsync(Column column, CancellationToken token)
+        {
+            using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Count(column)))
+                return Convert.ToInt64(await cmd.ExecuteScalarAsync());
         }
 
         /// <summary>
@@ -1906,8 +2452,21 @@ namespace SharpOrm
         /// <returns></returns>
         public long Count(Column column)
         {
-            this.ValidateReadonly();
-            return Convert.ToInt64(this.ExecuteScalar(this.GetGrammar().Count(column)));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Count(column)))
+                return Convert.ToInt64(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Asynchronously returns all rows of the table
+        /// </summary>
+        /// <returns></returns>
+        public Task<Row[]> ReadRowsAsync(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                using (var cmd = GetCommand())
+                    return GetEnumerable<Row>(cmd, token).ToArray();
+            });
         }
 
         /// <summary>
@@ -1916,7 +2475,30 @@ namespace SharpOrm
         /// <returns></returns>
         public Row[] ReadRows()
         {
-            return this.GetEnumerable<Row>().ToArray();
+            return GetEnumerable<Row>().ToArray();
+        }
+
+        /// <summary>
+        /// Asynchronously returns the first row of the table (if the table returns no value, null will be returned).
+        /// </summary>
+        /// <returns></returns>
+        public Task<Row> FirstRowAsync(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                int? lastLimit = Limit;
+                Limit = 1;
+
+                try
+                {
+                    using (var cmd = GetCommand())
+                        return GetEnumerable<Row>(cmd, token).FirstOrDefault();
+                }
+                finally
+                {
+                    Limit = lastLimit;
+                }
+            });
         }
 
         /// <summary>
@@ -1925,17 +2507,32 @@ namespace SharpOrm
         /// <returns></returns>
         public Row FirstRow()
         {
-            int? lastLimit = this.Limit;
-            this.Limit = 1;
+            int? lastLimit = Limit;
+            Limit = 1;
 
             try
             {
-                return this.GetEnumerable<Row>().FirstOrDefault();
+                using (var cmd = GetCommand())
+                    return GetEnumerable<Row>(cmd, default).FirstOrDefault();
             }
             finally
             {
-                this.Limit = lastLimit;
+                Limit = lastLimit;
             }
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves an collection of the specified type.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the collection.</typeparam>
+        /// <returns>An collection of the specified type.</returns>
+        public Task<T[]> GetAsync<T>(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                using (var cmd = GetCommand())
+                    return GetEnumerable<T>(cmd, token).ToArray();
+            });
         }
 
         /// <summary>
@@ -1945,7 +2542,8 @@ namespace SharpOrm
         /// <returns>An collection of the specified type.</returns>
         public T[] Get<T>()
         {
-            return this.GetEnumerable<T>().ToArray();
+            using (var cmd = GetCommand())
+                return GetEnumerable<T>(cmd, default).ToArray();
         }
 
         /// <summary>
@@ -1955,11 +2553,33 @@ namespace SharpOrm
         /// <returns>An enumerable collection of the specified type.</returns>
         public virtual IEnumerable<T> GetEnumerable<T>()
         {
-            this.ValidateReadonly();
-            this.Token.ThrowIfCancellationRequested();
-            var grammar = this.Info.Config.NewGrammar(this);
+            Token.ThrowIfCancellationRequested();
 
-            return new DbCommandEnumerable<T>(this.GetCommand(grammar.Select()), this.Config.Translation, this.Manager.Management, this.Token) { DisposeCommand = true };
+            using (var cmd = GetCommand(true))
+                foreach (var item in GetEnumerable<T>(cmd, default))
+                    yield return item;
+        }
+
+        internal IEnumerable<T> GetEnumerable<T>(CommandBuilder builder, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            return builder.SetExpression(Info.Config.NewGrammar(this).Select())
+                .SetExpression(Info.Config.NewGrammar(this).Select())
+                .AddCancellationToken(token)
+                .ExecuteEnumerable<T>(builder.leaveOpen);
+        }
+
+        /// <summary>
+        /// Asynchronously executes the query and returns the first column of all rows in the result. All other keys are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        public async Task<T[]> ExecuteArrayScalarAsync<T>(CancellationToken token)
+        {
+            Token.ThrowIfCancellationRequested();
+
+            using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Select()))
+                return await cmd.ExecuteArrayScalarAsync<T>();
         }
 
         /// <summary>
@@ -1968,17 +2588,22 @@ namespace SharpOrm
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         public T[] ExecuteArrayScalar<T>()
         {
-            this.ValidateReadonly();
-            this.Token.ThrowIfCancellationRequested();
-            try
-            {
-                using (DbCommand cmd = this.GetCommand(this.GetGrammar().Select()))
-                    return cmd.ExecuteArrayScalar<T>(this.Config.Translation).ToArray();
-            }
-            finally
-            {
-                this.Manager?.CloseByEndOperation();
-            }
+            Token.ThrowIfCancellationRequested();
+
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
+                return cmd.ExecuteArrayScalar<T>();
+
+        }
+
+        /// <summary>
+        /// Asynchronously executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
+        /// </summary>
+        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public async Task<T> ExecuteScalarAsync<T>(CancellationToken token)
+        {
+            using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Select()))
+                return await cmd.ExecuteScalarAsync<T>();
         }
 
         /// <summary>
@@ -1988,8 +2613,18 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public T ExecuteScalar<T>()
         {
-            this.ValidateReadonly();
-            return this.Config.Translation.FromSql<T>(this.ExecuteScalar(this.GetGrammar().Select()));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
+                return cmd.ExecuteScalar<T>();
+        }
+
+        /// <summary>
+        /// Asynchronously executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
+        /// </summary>
+        /// <returns>The first column of the first row in the result set.</returns>
+        public async Task<object> ExecuteScalarAsync(CancellationToken token)
+        {
+            using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Select()))
+                return await cmd.ExecuteScalarAsync();
         }
 
         /// <summary>
@@ -1998,8 +2633,17 @@ namespace SharpOrm
         /// <returns>The first column of the first row in the result set.</returns>
         public object ExecuteScalar()
         {
-            this.ValidateReadonly();
-            return this.Config.Translation.FromSql(this.ExecuteScalar(this.GetGrammar().Select()));
+            using (var cmd = GetCommand().SetExpression(GetGrammar().Select()))
+                return cmd.ExecuteScalar();
+        }
+
+        /// <summary>
+        /// Asynchronously executes the query and returns a <see cref="DbDataReader"/> to read the results.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with a <see cref="DbDataReader"/> to read the results.</returns>
+        public Task<DbDataReader> ExecuteReaderAsync()
+        {
+            return TaskUtils.Async(ExecuteReader);
         }
 
         /// <summary>
@@ -2008,35 +2652,12 @@ namespace SharpOrm
         /// <returns></returns>
         public DbDataReader ExecuteReader()
         {
-            this.ValidateReadonly();
-            this.Token.ThrowIfCancellationRequested();
+            Token.ThrowIfCancellationRequested();
 
-            if (this.lastOpenReader is OpenReader last)
+            if (_lastOpenReader is CommandBuilder last)
                 last.Dispose();
 
-            return (this.lastOpenReader = new OpenReader(this.GetCommand(this.GetGrammar().Select()), this.Token)).reader;
-        }
-
-        /// <summary>
-        /// Indicate that the rows from the joined tables that matched the criteria should also be removed when executing <see cref="Delete"/>.
-        /// </summary>
-        /// <param name="tables">Names of the tables (or aliases if used) whose rows should be removed.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        [Obsolete("This method will be removed in version 3.x.")]
-        public Query JoinToDelete(params string[] tables)
-        {
-            if (tables == null || tables.Length == 0)
-                throw new ArgumentNullException(nameof(tables));
-
-            this.deleteJoins = tables.Select(this.Config.ApplyNomenclature).ToArray();
-            return this;
-        }
-
-        protected void ValidateReadonly()
-        {
-            if (this.Manager is null)
-                throw new InvalidOperationException("This query is read-only.");
+            return (_lastOpenReader = GetCommand().SetExpression(GetGrammar().Select())).ExecuteReader();
         }
 
         #endregion
@@ -2049,22 +2670,23 @@ namespace SharpOrm
         /// <returns></returns>
         public object Clone()
         {
-            return this.Clone(true);
+            return Clone(true);
         }
 
         /// <summary>
         /// Clones the Query object.
         /// </summary>
-        /// <param name="withWhere">Signals if the parameters of the "WHERE" should be copied.</param>
+        /// <param name="withWhereJoin">Signals if the parameters of the "WHERE" should be copied.</param>
         /// <returns></returns>
-        public virtual Query Clone(bool withWhere)
+        public virtual Query Clone(bool withWhereJoin)
         {
-            Query query = new Query(this.Info.TableName, this.Manager);
+            Query query = new Query(Info.TableName, Manager);
+            query.Token = Token;
 
-            if (withWhere)
-                query.Info.LoadFrom(this.Info);
+            if (withWhereJoin)
+                query.Info.LoadFrom(Info);
 
-            this.OnClone(query);
+            OnClone(query);
 
             return query;
         }
@@ -2074,15 +2696,15 @@ namespace SharpOrm
         /// </summary>
         protected void CheckIsSafeOperation()
         {
-            if (this.Info.Config.OnlySafeModifications && this.Info.Where.Empty)
+            if (Info.Config.OnlySafeModifications && Info.Where.Empty)
                 throw new UnsafeDbOperation();
         }
 
         protected virtual void OnClone(Query cloned)
         {
-            cloned.Distinct = this.Distinct;
-            cloned.Limit = this.Limit;
-            cloned.Offset = this.Offset;
+            cloned.Distinct = Distinct;
+            cloned.Limit = Limit;
+            cloned.Offset = Offset;
         }
 
         #endregion
@@ -2095,7 +2717,7 @@ namespace SharpOrm
         /// <returns>A Query instance for method chaining.</returns>
         public Query Exists(string table, QueryCallback callback)
         {
-            var query = Query.ReadOnly(table);
+            var query = Query.ReadOnly(table, Info.Config);
             query.Limit = 1;
             query.Where(callback);
             base.Exists(query);
@@ -2110,7 +2732,7 @@ namespace SharpOrm
         /// <returns>A Query instance for method chaining.</returns>
         public Query OrExists(string table, QueryCallback callback)
         {
-            var query = Query.ReadOnly(table);
+            var query = Query.ReadOnly(table, Info.Config);
             query.Limit = 1;
             query.Where(callback);
             base.OrExists(query);
@@ -2124,52 +2746,32 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query Where(QueryBase where)
         {
-            if (where is Query) throw new NotSupportedException($"Cannot add a {where.GetType().FullName} to the WHERE clause.");
+            if (where is Query) throw new NotSupportedException(string.Format(Messages.Query.InvalidWhereValue, where.GetType().FullName));
 
-            this.Info.Where.Add(where.Info.Where);
+            Info.Where.Add(where.Info.Where);
 
             return this;
         }
 
-        protected internal object ExecuteScalar(SqlExpression expression)
+        internal CommandBuilder GetCommand(bool leaveOpen = false)
         {
-            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteScalar());
+            ValidateReadonly();
+
+            var cmd = Manager.GetCommand(Config.Translation, leaveOpen);
+            cmd.AddCancellationToken(Token);
+
+            if (CommandTimeout > 0)
+                cmd.Timeout = CommandTimeout;
+
+            cmd.LogQuery = true;
+
+            return cmd;
         }
 
-        protected internal int ExecuteNonQuery(SqlExpression expression)
+        protected void ValidateReadonly()
         {
-            return this.SafeExecuteCommand(expression, cmd => cmd.ExecuteNonQuery());
-        }
-
-        protected internal int ExecuteAndGetAffected(SqlExpression expression)
-        {
-            return this.SafeExecuteCommand(expression, cmd =>
-            {
-                using (var reader = cmd.ExecuteReader())
-                    return reader.RecordsAffected;
-            });
-        }
-
-        protected T SafeExecuteCommand<T>(SqlExpression expression, Func<DbCommand, T> func)
-        {
-            try
-            {
-                using (var cmd = this.GetCommand(expression))
-                    return func(cmd);
-            }
-            finally
-            {
-                this.Manager.CloseByEndOperation();
-            }
-        }
-
-        protected internal DbCommand GetCommand(SqlExpression expression)
-        {
-            Grammar.QueryLogger?.Invoke(expression.ToString());
-            return this.Manager
-                .CreateCommand(this.CommandTimeout)
-                .SetExpression(expression)
-                .SetCancellationToken(this.Token);
+            if (Manager is null)
+                throw new InvalidOperationException(Messages.Query.ReadOnly);
         }
 
         /// <summary>
@@ -2187,113 +2789,49 @@ namespace SharpOrm
         /// <returns></returns>
         public SqlExpression ToSqlExpression()
         {
-            return GetGrammar().GetSelectExpression();
+            return GetGrammar().Select(false);
         }
 
         protected internal Grammar GetGrammar()
         {
-            return this.Info.Config.NewGrammar(this);
+            return Info.Config.NewGrammar(this);
         }
 
         #region IDisposed
 
         ~Query()
         {
-            this.Dispose(false);
+            Dispose(false);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (this._disposed)
+            if (_disposed)
                 return;
 
-            this._disposed = true;
+            _disposed = true;
 
-            if (disposing && this.lastOpenReader is OpenReader last)
-                last.Dispose();
+            if (disposing)
+                _lastOpenReader?.Dispose();
 
-            this.Manager?.CloseByDisposeChild();
-            this.lastOpenReader = null;
+            Manager?.CloseByDisposeChild();
+            _lastOpenReader = null;
         }
 
         /// <summary>
         /// Releases all resources used by the object.
         /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown if the object has already been disposed.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the object has already been _disposed.</exception>
         public void Dispose()
         {
-            if (this._disposed)
-                throw new ObjectDisposedException(this.GetType().Name);
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
 
-            this.Dispose(true);
+            Dispose(true);
 
             GC.SuppressFinalize(this);
         }
 
         #endregion
-
-        private class OpenReader : IDisposable
-        {
-            private bool _disposed;
-            private readonly DbCommand command;
-            public readonly DbDataReader reader;
-            private CancellationTokenRegistration token;
-
-            public OpenReader(DbCommand command, CancellationToken token)
-            {
-                this.command = command;
-                token.Register(this.CancelCommand);
-                this.reader = command.ExecuteReader();
-            }
-
-            private void CancelCommand()
-            {
-                SafeDispose(this.token);
-                try { this.command.Cancel(); } catch { }
-            }
-
-            #region IDisposable
-
-            public void Dispose()
-            {
-                if (this._disposed)
-                    return;
-
-                this.CancelCommand();
-
-                SafeDispose(this.reader);
-                SafeDispose(this.command);
-
-                this.Dispose(true);
-                GC.SuppressFinalize(this);
-            }
-
-            private static void SafeDispose(IDisposable disposable)
-            {
-                if (disposable != null) try { disposable.Dispose(); } catch { }
-            }
-
-            ~OpenReader()
-            {
-                this.Dispose(false);
-            }
-
-            protected void Dispose(bool disposing)
-            {
-                if (this._disposed)
-                    return;
-
-                this._disposed = true;
-                this.CancelCommand();
-
-                if (!disposing)
-                    return;
-
-                try { this.reader.Dispose(); } catch { }
-                try { this.command.Dispose(); } catch { }
-            }
-
-            #endregion
-        }
     }
 }

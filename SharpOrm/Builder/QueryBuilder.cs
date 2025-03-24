@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,8 +18,8 @@ namespace SharpOrm.Builder
     public class QueryBuilder : IDisposable, ISqlExpressible
     {
         private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+        internal protected readonly StringBuilder query = new StringBuilder();
         private bool hasMemberColumn = false;
-        internal readonly StringBuilder query = new StringBuilder();
         /// <summary>
         /// A list of parameters for the SQL query.
         /// </summary>
@@ -75,6 +76,13 @@ namespace SharpOrm.Builder
         {
         }
 
+        internal QueryBuilder(QueryBuilder builder) : this(builder.info)
+        {
+            paramInterceptor = builder.paramInterceptor;
+
+            softDelete = builder.softDelete;
+            Trashed = builder.Trashed;
+        }
         /// <summary>
         /// Create an instance of <see cref="QueryBuilder"/> using <see cref="IReadonlyQueryInfo"/>.
         /// </summary>
@@ -82,8 +90,9 @@ namespace SharpOrm.Builder
         public QueryBuilder(IReadonlyQueryInfo info)
         {
             this.info = info;
-            this.Parameters = new ReadOnlyCollection<object>(parameters);
+            Parameters = new ReadOnlyCollection<object>(parameters);
         }
+
 
         /// <summary>
         /// Adds a <see cref="QueryBuilder"/> to this instance.
@@ -95,7 +104,7 @@ namespace SharpOrm.Builder
                 throw new ArgumentNullException(nameof(builder));
 
             if (this.Equals(builder))
-                throw new InvalidOperationException("The same instance cannot be passed as a parameter.");
+                throw new InvalidOperationException(Messages.Query.SelfInstanceNotSupported);
 
             return this.Add(builder.query.ToString()).AddParameters(builder.Parameters);
         }
@@ -142,7 +151,7 @@ namespace SharpOrm.Builder
         public QueryBuilder Add(string query, bool allowAlias, params object[] parameters)
         {
             if (query.Count(c => c == '?') != parameters.Length)
-                throw new InvalidOperationException("The operation cannot be performed because the arguments passed in the SQL query do not match the provided parameters.");
+                throw new InvalidOperationException(Messages.Query.ExpressionParamsNotMath);
 
             this.query.AppendAndReplace(query, '?', count => this.AddParameter(parameters[count - 1], true));
 
@@ -153,8 +162,6 @@ namespace SharpOrm.Builder
         /// Adds a SQL query with parameters to the instance.
         /// </summary>
         /// <param name="query">The SQL query to be added.</param>
-        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
         public QueryBuilder AddAndReplace(string query, char toReplace, Func<int, string> func)
         {
@@ -166,8 +173,6 @@ namespace SharpOrm.Builder
         /// Adds a SQL query with parameters to the instance.
         /// </summary>
         /// <param name="query">The SQL query to be added.</param>
-        /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
-        /// <param name="parameters">The parameters to be replaced in the query.</param>
         /// <exception cref="InvalidOperationException">Thrown when the number of parameters in the query does not match the number of provided parameters.</exception>
         public QueryBuilder AddAndReplace(string query, char toReplace, Action<int> call)
         {
@@ -182,6 +187,9 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Indicates whether aliases are allowed in the parameter name.</param>
         public QueryBuilder AddParameter(object val, bool allowAlias = true, bool forceWriteColumn = false)
         {
+            if (val is QueryParam)
+                return InternalAddParam(val);
+
             if (TryDeferredExpression(ref val, allowAlias))
                 return this;
 
@@ -223,8 +231,8 @@ namespace SharpOrm.Builder
         /// <returns>The updated <see cref="QueryBuilder"/> with the parameter added.</returns>
         protected virtual QueryBuilder InternalAddParam(object value)
         {
-            this.parameters.Add(value);
-            return this.Add("?");
+            parameters.Add(value);
+            return Add("?");
         }
 
         /// <summary>
@@ -300,7 +308,7 @@ namespace SharpOrm.Builder
             if (column is string strColumn)
             {
                 if (string.IsNullOrEmpty(strColumn))
-                    throw new Exception(Messages.EmptyColumnName);
+                    throw new Exception(Messages.Query.EmptyColumnName);
 
                 return this.Add(this.info.Config.ApplyNomenclature(strColumn));
             }
@@ -314,7 +322,7 @@ namespace SharpOrm.Builder
             if (column is SqlExpression exp)
                 return this.Add(exp);
 
-            throw new NotSupportedException("The column type is not supported.");
+            throw new NotSupportedException(Messages.Query.ColumnTypeNotsupported);
         }
 
         private bool TryDeferredExpression(ref object column, bool allowAlias)
@@ -335,7 +343,7 @@ namespace SharpOrm.Builder
         /// Adds raw text to the query.
         /// </summary>
         /// <param name="raw">The raw text to be added to the query.</param>
-        public QueryBuilder Add(string raw)
+        public virtual QueryBuilder Add(string raw)
         {
             this.query.Append(raw);
             return this;
@@ -359,17 +367,33 @@ namespace SharpOrm.Builder
         /// <param name="values">An enumerable collection of values to be joined and added to the query.</param>
         public QueryBuilder AddJoin<T>(string separator, IEnumerable<T> values)
         {
-            BuilderExt.AppendJoin(this.query, separator, values);
-            return this;
-        }
+            using (var en = values.GetEnumerator())
+            {
+                if (!en.MoveNext())
+                    return this;
 
+                Add(en.Current);
+
+                while (en.MoveNext())
+                    Add(separator).Add(en.Current);
+
+                return this;
+            }
+        }
 
         /// <summary>
         /// Adds multiple values to the query, joining them with a specified separator.
         /// </summary>
         public QueryBuilder AddJoin<T>(Action<T> callback, string separator, IEnumerator<T> en)
         {
-            this.query.AppendJoin(callback, separator, en);
+            callback(en.Current);
+
+            while (en.MoveNext())
+            {
+                Add(separator);
+                callback(en.Current);
+            }
+
             return this;
         }
 
@@ -444,31 +468,6 @@ namespace SharpOrm.Builder
             return this.ToExpression();
         }
 
-        /// <summary>
-        /// Returns an <see cref="SqlExpression"/> representation of the query.
-        /// </summary>
-        /// <param name="info">The query information.</param>
-        public SqlExpression ToExpression(bool withDeferrer = false)
-        {
-            if (this.hasMemberColumn || withDeferrer)
-                return ToSafeExpression(withDeferrer);
-
-            return new SqlExpression(this.ToString(), this.parameters.ToArray());
-        }
-
-        private SqlExpression ToSafeExpression(bool withDeferrer = false)
-        {
-            var builder = new StringBuilder();
-            builder.AppendAndReplace(this.query.ToString(), '?', count =>
-             {
-                 if (this.Parameters[count - 1] is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
-                 else if (withDeferrer && this.Parameters[count - 1] is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info));
-                 else builder.Append('?');
-             });
-
-            return new SqlExpression(builder.ToString(), this.parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
-        }
-
         private static bool CanBeUsedAsParameter(object value, bool withDeferrer)
         {
             if (value is MemberInfoColumn)
@@ -483,26 +482,53 @@ namespace SharpOrm.Builder
         /// <returns>The SQL query as a string.</returns>
         public override string ToString()
         {
-            return this.Trashed == Trashed.With ? query.ToString() : ApplyTrashedFilter(query.ToString());
+            return query.ToString();
         }
 
-        private string ApplyTrashedFilter(string content)
+        /// <summary>
+        /// Returns an <see cref="SqlExpression"/> representation of the query.
+        /// </summary>
+        /// <param name="info">The query information.</param>
+        public virtual SqlExpression ToExpression(bool withDeferrer = false, bool throwOnDeferrerFail = true)
         {
+            var builder = GetSafeStringBuilder();
+            if (query.Length == 0)
+                return new SqlExpression(builder.ToString(), this.parameters.ToArray());
+
+            if (Trashed != Trashed.With)
+                builder.Append(" AND (");
+
+            builder.AppendAndReplace(this.query.ToString(), '?', count =>
+            {
+                var param = this.parameters[count - 1];
+                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
+                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info, throwOnDeferrerFail));
+                else builder.Append('?');
+            });
+
+            if (Trashed != Trashed.With)
+                builder.Append(')');
+
+            return new SqlExpression(builder.ToString(), parameters.Where(value => CanBeUsedAsParameter(value, withDeferrer)).ToArray());
+        }
+
+        private StringBuilder GetSafeStringBuilder()
+        {
+            if (Trashed == Trashed.With)
+                return new StringBuilder();
+
             StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
 
             if (this.Trashed == Trashed.Only) sb.Append(" = 1");
             else sb.Append(" = 0");
 
-            if (content.Length == 0)
-                return sb.ToString();
-
-            return sb.Append(" AND (").Append(content).Append(')').ToString();
+            return sb;
         }
 
         internal void SetTrash(Trashed visibility, TableInfo table)
         {
             if (visibility != Trashed.With && table.SoftDelete == null)
-                throw new NotSupportedException("The class does not support soft delete, only those with SoftDeleteAttribute do.");
+                throw new NotSupportedException(Messages.Query.ClassNotSupportSoftDelete);
 
             this.Trashed = visibility;
             this.softDelete = table.SoftDelete;
@@ -549,7 +575,22 @@ namespace SharpOrm.Builder
 
             public SqlExpression ToExpression(IReadonlyQueryInfo info)
             {
-                return original.ToSafeExpression(info, alias);
+                return ToExpression(info, true);
+            }
+
+            public SqlExpression ToExpression(IReadonlyQueryInfo info, bool throwOnFail)
+            {
+                try
+                {
+                    return original.ToExpression(info);
+                }
+                catch (Exception)
+                {
+                    if (throwOnFail)
+                        throw;
+
+                    return new SqlExpression("!");
+                }
             }
         }
     }

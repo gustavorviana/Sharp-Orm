@@ -12,7 +12,7 @@ namespace DbRunTest.BaseTests.Dml
         [Fact]
         public void Delete()
         {
-            using var query = NewQuery(this.GetUnsafeManager(), TestTableUtils.TABLE);
+            using var query = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
             query.Delete();
             query.BulkInsert(TestTableUtils.NewRow(1, "A"), TestTableUtils.NewRow(2, "B"));
 
@@ -32,7 +32,7 @@ namespace DbRunTest.BaseTests.Dml
             using var qOrder = new Query<Order>(Creator);
             using var qCustomer = new Query<Customer>(Creator);
 
-            qOrder.Join<Customer>("c", "c.id", "orders.customer_id");
+            qOrder.Join("Customers c", "c.id", "orders.customer_id");
             qOrder.Where("c.name", "Ronaldo");
             qOrder.Delete();
 

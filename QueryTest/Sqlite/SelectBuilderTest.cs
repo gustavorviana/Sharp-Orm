@@ -115,10 +115,10 @@ namespace QueryTest.Sqlite
         [Fact]
         public void FixColumnName()
         {
-            string basic = this.Config.ApplyNomenclature("colName");
-            string withTable = this.Config.ApplyNomenclature("table.colName");
-            string all = this.Config.ApplyNomenclature("*");
-            string allWithTable = this.Config.ApplyNomenclature("table.*");
+            string basic = Config.ApplyNomenclature("colName");
+            string withTable = Config.ApplyNomenclature("table.colName");
+            string all = Config.ApplyNomenclature("*");
+            string allWithTable = Config.ApplyNomenclature("table.*");
 
             Assert.Equal("\"colName\"", basic);
             Assert.Equal("\"table\".\"colName\"", withTable);

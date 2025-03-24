@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Expressions;
+using SharpOrm.Msg;
 using System;
 
 namespace SharpOrm.Builder
@@ -16,7 +17,7 @@ namespace SharpOrm.Builder
 
         public ReadonlyQueryInfo(QueryConfig config, DbName tableName)
         {
-            this.Config = config ?? throw new ArgumentNullException("The query configuration cannot be null.");
+            this.Config = config ?? throw new ArgumentNullException(Messages.ConfigMustBeNotNull);
             this.TableName = tableName;
         }
     }

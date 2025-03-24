@@ -10,7 +10,7 @@ namespace DbRunTest.SqlServer.Dml
     {
         public override void Insert()
         {
-            using var q = NewQuery(this.GetUnsafeManager(), TestTableUtils.TABLE);
+            using var q = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
             q.Insert(TestTableUtils.NewRow(120, "User 1").Cells);
 
             Assert.Equal(1, q.Count());

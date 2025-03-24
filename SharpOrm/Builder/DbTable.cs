@@ -1,7 +1,11 @@
-﻿using SharpOrm.Connection;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
+using SharpOrm.Msg;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Builder
 {
@@ -11,21 +15,21 @@ namespace SharpOrm.Builder
     public class DbTable : IDisposable
     {
         #region Fields/Properties
-        private readonly TableGrammar grammar;
-        private bool disposed;
+        private readonly TableGrammar _grammar;
+        private bool _disposed;
         public static bool RandomNameForTempTable { get; set; }
 
         /// <summary>
         /// Table connection manager.
         /// </summary>
         public ConnectionManager Manager { get; }
-        private bool isLocalManager = false;
+        private bool _isLocalManager = false;
 
         /// <summary>
         /// Table name.
         /// </summary>
-        public DbName DbName => grammar.Name;
-        private bool dropped = false;
+        public DbName DbName => _grammar.Name;
+        private bool _dropped = false;
         #endregion
 
         #region Creator and Constructors
@@ -103,7 +107,7 @@ namespace SharpOrm.Builder
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
-            return new DbTable(grammar, manager) { isLocalManager = isLocalManager };
+            return new DbTable(grammar, manager) { _isLocalManager = isLocalManager };
         }
 
         private static void FixName(TableSchema schema)
@@ -128,17 +132,17 @@ namespace SharpOrm.Builder
         public DbTable(string name, ConnectionManager manager = null)
         {
             this.Manager = manager ?? new ConnectionManager() { Management = ConnectionManagement.CloseOnDispose };
-            this.grammar = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = false });
-            this.isLocalManager = manager == null;
+            _grammar = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = false });
+            _isLocalManager = manager == null;
 
-            if (!this.Exists())
-                throw new DatabaseException($"The table '{grammar.Name}' was not found.");
+            if (!Exists())
+                throw new DatabaseException(string.Format(Messages.Table.TableNotFound, _grammar.Name));
         }
 
         private DbTable(TableGrammar grammar, ConnectionManager manager)
         {
             this.Manager = manager;
-            this.grammar = grammar;
+            _grammar = grammar;
         }
 
         #endregion
@@ -163,13 +167,32 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Asynchronously checks if the table exists.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with a boolean result indicating whether the table exists.</returns>
+        public async Task<bool> ExistsAsync(CancellationToken token = default)
+        {
+            return await Manager.ExecuteScalarAsync<int>(_grammar.Exists(), token: token) > 0;
+        }
+
+        /// <summary>
         /// Checks if table exists.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         public bool Exists()
         {
-            return Exists(this.grammar, this.Manager);
+            return Exists(_grammar, this.Manager);
+        }
+
+        /// <summary>
+        /// Asynchronously deletes the table from the database.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task DropAsync(CancellationToken token = default)
+        {
+            await Manager.ExecuteNonQueryAsync(_grammar.Drop(), token);
+            _dropped = true;
         }
 
         /// <summary>
@@ -177,18 +200,30 @@ namespace SharpOrm.Builder
         /// </summary>
         public void Drop()
         {
-            Manager.ExecuteNonQuery(grammar.Drop());
-            this.dropped = true;
+            Manager.ExecuteNonQuery(_grammar.Drop());
+            _dropped = true;
         }
 
+        /// <summary>
+        /// Asynchronously truncates the table.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task TruncateAsync(CancellationToken token = default)
+        {
+            await Manager.ExecuteNonQueryAsync(_grammar.Truncate(), token);
+        }
+
+        /// <summary>
+        /// Truncates the table, removing all rows.
+        /// </summary>
         public void Truncate()
         {
-            Manager.ExecuteNonQuery(grammar.Truncate());
+            Manager.ExecuteNonQuery(_grammar.Truncate());
         }
 
         public override string ToString()
         {
-            if (this.grammar.Schema.Temporary)
+            if (_grammar.Schema.Temporary)
                 return $"Temporary Table {this.DbName}";
 
             return $"Table {this.DbName}";
@@ -216,6 +251,22 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Checks if table exists.
         /// </summary>
+        /// <param name="name"></param>
+        /// <param name="manager"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static async Task<bool> ExistsAsync(string name, bool isTemp = false, ConnectionManager manager = null, CancellationToken token = default)
+        {
+            if (manager is null)
+                throw new ArgumentNullException(nameof(manager));
+
+            var expression = manager.Config.NewTableGrammar(new TableSchema(name) { Temporary = isTemp }).Exists();
+            return await manager.ExecuteScalarAsync<int>(expression, token: token) > 0;
+        }
+
+        /// <summary>
+        /// Checks if table exists.
+        /// </summary>
         /// <param name="schema"></param>
         /// <param name="manager"></param>
         /// <returns></returns>
@@ -228,26 +279,26 @@ namespace SharpOrm.Builder
         private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
         {
             if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
-                throw new InvalidOperationException($"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\".");
+                throw new InvalidOperationException(Messages.Table.InvalidEmpTableConnection);
         }
         #endregion
 
         #region IDisposable
         protected virtual void Dispose(bool disposing)
         {
-            if (this.disposed)
+            if (_disposed)
                 return;
 
-            disposed = true;
+            _disposed = true;
 
             try
             {
-                if (grammar.Schema.Temporary && !this.dropped)
+                if (_grammar.Schema.Temporary && !_dropped)
                     Drop();
             }
             catch { }
 
-            if (disposing && this.isLocalManager)
+            if (disposing && _isLocalManager)
                 this.Manager.Dispose();
         }
 
@@ -258,7 +309,7 @@ namespace SharpOrm.Builder
 
         public void Dispose()
         {
-            if (disposed) return;
+            if (_disposed) return;
 
             Dispose(disposing: true);
             GC.SuppressFinalize(this);

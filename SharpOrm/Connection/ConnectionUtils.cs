@@ -1,10 +1,13 @@
-﻿using SharpOrm.Collections;
+﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using SharpOrm.DataTranslation;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm.Connection
 {
@@ -32,6 +35,73 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
+        /// Gets the server version from the database connection.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The server version.</returns>
+        internal static Version GetVersion(this DbConnection connection)
+        {
+            return StringUtils.ParseVersionString(connection.ServerVersion);
+        }
+
+        /// <summary>
+        /// Opens the database connection asynchronously if it is not already open.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <returns>The opened database connection.</returns>
+        /// <exception cref="Errors.DbConnectionException">Thrown when there is an error opening the connection.</exception>
+        public static async Task<DbConnection> OpenIfNeededAsync(this DbConnection connection)
+        {
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                    await connection.OpenAsync();
+
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                throw new Errors.DbConnectionException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Opens the database connection asynchronously with a cancellation token if it is not already open.
+        /// </summary>
+        /// <param name="connection">The database connection.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>The opened database connection.</returns>
+        /// <exception cref="Errors.DbConnectionException">Thrown when there is an error opening the connection.</exception>
+        public static async Task<DbConnection> OpenIfNeededAsync(this DbConnection connection, CancellationToken token)
+        {
+            try
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                    await connection.OpenAsync(token);
+
+                return connection;
+            }
+            catch (Exception ex)
+            {
+                throw new Errors.DbConnectionException(ex);
+            }
+        }
+
+        /// <summary>  
+        /// Executes a SQL statement against a connection object asynchronously and returns the result as an array of type <typeparamref name="T"/>.  
+        /// </summary>  
+        /// <typeparam name="T">The type of the elements in the returned array.</typeparam>  
+        /// <param name="manager">The <see cref="ConnectionManager"/> that manages the database connection.</param>  
+        /// <param name="sql">The SQL query to be executed.</param>  
+        /// <param name="registry">The <see cref="TranslationRegistry"/> used for mapping query results, if provided.</param>  
+        /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>  
+        /// <returns>A task representing the asynchronous operation, with an array of type <typeparamref name="T"/> representing the query results.</returns>  
+        public static Task<T[]> ExecuteArrayAsync<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteArray<T>(manager, sql, registry, token));
+        }
+
+        /// <summary>
         /// Executes a SQL statement against a connection object and returns the result as an array of type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type of the elements in the returned array.</typeparam>
@@ -40,10 +110,23 @@ namespace SharpOrm.Connection
         /// <param name="registry">The <see cref="TranslationRegistry"/> used for mapping query results, if provided.</param>
         /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
         /// <returns>An array of type <typeparamref name="T"/> representing the query results.</returns>
-
         public static T[] ExecuteArray<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
         {
             return ExecuteArray<T>(manager, new SqlExpression(sql), registry, token);
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object asynchronously and returns the result as an array of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements in the returned array.</typeparam>
+        /// <param name="manager">The <see cref="ConnectionManager"/> that manages the database connection.</param>
+        /// <param name="expression">The <see cref="SqlExpression"/> representing the SQL query to be executed.</param>
+        /// <param name="registry">The <see cref="TranslationRegistry"/> used for mapping query results, if provided.</param>
+        /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of type <typeparamref name="T"/> representing the query results.</returns>
+        public static Task<T[]> ExecuteArrayAsync<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteArray<T>(manager, expression, registry, token));
         }
 
         /// <summary>
@@ -85,7 +168,22 @@ namespace SharpOrm.Connection
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public static IEnumerable<T> ExecuteEnumerable<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            return new DbCommandEnumerable<T>(manager.CreateCommand(expression).SetCancellationToken(token), registry, manager.Management, token);
+            return new DbCommandEnumerable<T>(manager.CreateCommand(expression).SetCancellationToken(token), registry, manager.Management, token)
+            {
+                manager = manager
+            };
+        }
+
+        /// <summary>
+        /// Executes a SQL statement against a connection object asynchronously and returns the number of rows affected.
+        /// </summary>
+        /// <param name="manager">The <see cref="ConnectionManager"/> that manages the database connection.</param>
+        /// <param name="sql">The SQL query to be executed.</param>
+        /// <param name="token">Optional. A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of rows affected by the SQL query.</returns>
+        public static Task<int> ExecuteNonQueryAsync(this ConnectionManager manager, string sql, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteNonQuery(manager, sql, token));
         }
 
         /// <summary>
@@ -100,6 +198,11 @@ namespace SharpOrm.Connection
             return ExecuteNonQuery(manager, new SqlExpression(sql), token);
         }
 
+        public static Task<int> ExecuteNonQueryAsync(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteNonQuery(manager, expression, token));
+        }
+
         /// <summary>
         /// Executes a SQL statement against a connection object and returns the number of rows affected.
         /// </summary>
@@ -109,20 +212,16 @@ namespace SharpOrm.Connection
         /// <returns>The number of rows affected by the SQL query.</returns>
         public static int ExecuteNonQuery(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
         {
-            try
+            using (var cmd = manager.GetCommand().AddCancellationToken(token))
             {
-                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteNonQuery();
+                cmd.SetExpression(expression);
+                return cmd.ExecuteNonQuery();
             }
-            catch
-            {
-                token.ThrowIfCancellationRequested();
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
-            }
+        }
+
+        public static Task<T> ExecuteScalarAsync<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteScalar<T>(manager, sql, registry, token));
         }
 
         /// <summary>
@@ -133,9 +232,14 @@ namespace SharpOrm.Connection
         /// <param name="sql">The SQL query to be executed.</param>
         /// <param name="token">Optional. A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
         /// <returns>The value of the first column of the first row in the result set, converted to type <typeparamref name="T"/>.</returns>
-        public static T ExecuteScalar<T>(this ConnectionManager manager, string sql, CancellationToken token = default)
+        public static T ExecuteScalar<T>(this ConnectionManager manager, string sql, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            return ExecuteScalar<T>(manager, new SqlExpression(sql), token);
+            return ExecuteScalar<T>(manager, new SqlExpression(sql), registry, token);
+        }
+
+        public static Task<T> ExecuteScalarAsync<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteScalar<T>(manager, expression, registry, token));
         }
 
         /// <summary>
@@ -144,34 +248,27 @@ namespace SharpOrm.Connection
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <param name="expression">SqlExpression to execute.</param>
         /// <returns>The first column of the first row in the result set.</returns>
-        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, CancellationToken token = default)
+        public static T ExecuteScalar<T>(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            try
+            using (var cmd = new CommandBuilder(manager, registry).AddCancellationToken(token))
             {
-                using (var cmd = manager.CreateCommand(expression).SetCancellationToken(token))
-                    return cmd.ExecuteScalar<T>();
-            }
-            catch
-            {
-                token.ThrowIfCancellationRequested();
-                throw;
-            }
-            finally
-            {
-                manager.CloseByEndOperation();
+                cmd.SetExpression(expression);
+                return cmd.ExecuteScalar<T>();
             }
         }
 
-        /// <summary>
-        /// Gets a command with the specified SQL expression.
-        /// </summary>
-        /// <param name="manager">The connection manager.</param>
-        /// <param name="expression">The SQL expression to set in the command.</param>
-        /// <returns>The configured database command.</returns>
-        [Obsolete("Use CreateCommand(SqlExpression). This method will be removed in version 3.x.")]
-        public static DbCommand GetCommand(this ConnectionManager manager, SqlExpression expression)
+        public static Task<object> ExecuteScalarAsync(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
         {
-            return manager.CreateCommand().SetExpression(expression);
+            return TaskUtils.Async(() => ExecuteScalar(manager, expression, registry, token));
+        }
+
+        public static object ExecuteScalar(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry = null, CancellationToken token = default)
+        {
+            using (var cmd = new CommandBuilder(manager, registry).AddCancellationToken(token))
+            {
+                cmd.SetExpression(expression);
+                return cmd.ExecuteScalar();
+            }
         }
 
         /// <summary>
@@ -213,7 +310,10 @@ namespace SharpOrm.Connection
 
         internal static DbParameter AddParam(this DbCommand command, string name, object value)
         {
-            var param = command.CreateParameter();
+            if (value is QueryParam queryParam)
+                return queryParam.Init(command);
+
+            DbParameter param = command.CreateParameter();
             param.ParameterName = name;
             param.Value = value ?? DBNull.Value;
             command.Parameters.Add(param);

@@ -1,6 +1,8 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,7 +15,6 @@ namespace SharpOrm.Builder
     /// </summary>
     public class TableInfo
     {
-        private static readonly BindingFlags propertiesFlags = BindingFlags.Instance | BindingFlags.Public;
         private readonly object _readLock = new object();
         internal readonly TranslationRegistry registry;
         private ObjectReader reader = null;
@@ -47,25 +48,10 @@ namespace SharpOrm.Builder
             this.SoftDelete = softDelete;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation configuration and type.
-        /// </summary>
-        /// <param name="type">The type representing the table.</param>s
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
-        public TableInfo(Type type) : this(type, TranslationRegistry.Default)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the TableInfo class with the specified translation registry and type.
-        /// </summary>
-        /// <param name="registry">The translation registry.</param>
-        /// <param name="type">The type representing the table.</param>
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTable(Type)\". This constructor will be removed in version 3.x.")]
-        public TableInfo(Type type, TranslationRegistry registry)
+        internal TableInfo(Type type, TranslationRegistry registry)
         {
             if (type == null || type.IsAbstract || type == typeof(Row))
-                throw new InvalidOperationException($"Invalid type provided for the {nameof(TableInfo)} class.");
+                throw new InvalidOperationException(Messages.Table.InvalidType);
 
             this.Type = type;
             this.registry = registry;
@@ -90,10 +76,10 @@ namespace SharpOrm.Builder
 
         private IEnumerable<ColumnInfo> GetColumns()
         {
-            foreach (var prop in this.Type.GetProperties(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var prop in this.Type.GetProperties(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, prop);
 
-            foreach (var field in this.Type.GetFields(propertiesFlags).Where(ColumnInfo.CanWork))
+            foreach (var field in this.Type.GetFields(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
                 yield return new ColumnInfo(registry, field);
         }
 
@@ -106,13 +92,15 @@ namespace SharpOrm.Builder
         {
             if (columns.Length == 0)
             {
-                this.Validate(owner);
+                Validate(owner);
                 return;
             }
 
-            foreach (var column in this.Columns)
+            var context = new ValidationContext(owner);
+
+            foreach (var column in Columns)
                 if (columns.ContainsIgnoreCase(column.Name))
-                    column.Validate(owner);
+                    column.Validate(context);
         }
 
         /// <summary>
@@ -121,7 +109,9 @@ namespace SharpOrm.Builder
         /// <param name="owner"></param>
         public void Validate(object owner)
         {
-            foreach (var item in this.Columns) item.Validate(owner);
+            var context = new ValidationContext(owner);
+
+            foreach (var item in Columns) item.Validate(context);
         }
 
         /// <summary>
@@ -150,7 +140,7 @@ namespace SharpOrm.Builder
         public object GetValue(object owner, string name)
         {
             if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))
-                throw new KeyNotFoundException($"The key '{name}' does not exist in the object '{this.Type.FullName}'.");
+                throw new KeyNotFoundException(string.Format(Messages.Table.KeyNotFound, name, Type.FullName));
 
             return col.Get(owner);
         }
@@ -158,7 +148,7 @@ namespace SharpOrm.Builder
         internal object GetValue(object owner, MemberInfo column)
         {
             if (!(this.Columns.FirstOrDefault(c => c.column == column) is ColumnInfo col))
-                throw new KeyNotFoundException($"The key '{column.Name}' does not exist in the object '{this.Type.FullName}'.");
+                throw new KeyNotFoundException(string.Format(Messages.Table.KeyNotFound, column.Name, this.Type.FullName));
 
             return col.Get(owner);
         }
@@ -194,19 +184,12 @@ namespace SharpOrm.Builder
             return this.reader;
         }
 
-        [Obsolete("This method will be removed in version 2.x.")]
-        public object CreateInstance()
-        {
-            return Activator.CreateInstance(this.Type);
-        }
-
         public override string ToString()
         {
             return string.Format("{0}: {1}", this.Name, this.Type);
         }
 
-        [Obsolete("Use \"SharpOrm.DataTranslation.TranslationRegistry.Default.GetTableName(Type)\". This constructor will be removed in version 3.x.")]
-        public static string GetNameOf(Type type)
+        internal static string GetNameOf(Type type)
         {
             if (!(GetValidType(type).GetCustomAttribute<TableAttribute>(false) is TableAttribute table) || string.IsNullOrEmpty(table.Name))
                 return type.Name;

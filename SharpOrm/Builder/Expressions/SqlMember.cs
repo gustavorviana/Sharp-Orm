@@ -1,7 +1,6 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,20 +11,22 @@ namespace SharpOrm.Builder.Expressions
     {
         internal SqlMemberInfo[] Childs { get; set; }
         internal bool IsNativeType { get; }
+        private readonly Type declaringType;
 
         public MemberInfo Member { get; }
         public bool IsStatic { get; }
         public string Name => ColumnInfo.GetName(Member);
         public string Alias { get; }
 
-        public SqlMember(MemberInfo member, SqlMemberInfo[] childs, string alias)
+        public SqlMember(Type declaringType, MemberInfo member, SqlMemberInfo[] childs, string alias)
         {
             if (member == null) throw new ArgumentNullException(nameof(member));
 
             IsNativeType = member.MemberType == MemberTypes.Method || TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false);
 
+            this.declaringType = declaringType;
             Member = member;
-            Childs = childs ?? new SqlMemberInfo[0];
+            Childs = childs ?? DotnetUtils.EmptyArray<SqlMemberInfo>();
             IsStatic = false;
             Alias = GetAlias(Name, alias, childs, IsNativeType);
         }
@@ -41,12 +42,15 @@ namespace SharpOrm.Builder.Expressions
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
         }
 
-        private static string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
+        private string GetAlias(string name, string alias, SqlMemberInfo[] childs, bool isNative)
         {
             if (!isNative && childs.Length > 0)
                 name = childs[0].Name;
 
-            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null; ;
+            if (Member.Name == alias)
+                alias = null;
+
+            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null;
         }
 
         public bool Equals(SqlMember other)
@@ -88,6 +92,14 @@ namespace SharpOrm.Builder.Expressions
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Alias);
             return hashCode;
+        }
+
+        internal SqlPropertyInfo GetInfo()
+        {
+            if (Member.MemberType == MemberTypes.Property || Member.MemberType == MemberTypes.Field)
+                return new SqlPropertyInfo(declaringType, Member);
+
+            throw new NotSupportedException();
         }
 
         public static bool operator ==(SqlMember left, SqlMember right)

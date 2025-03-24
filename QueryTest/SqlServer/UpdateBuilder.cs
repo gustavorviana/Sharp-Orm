@@ -5,6 +5,7 @@ using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.SqlServer;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
@@ -39,7 +40,7 @@ namespace QueryTest.SqlServer
         public void UpdateByColumn()
         {
             using var q = new Query(TestTableUtils.TABLE);
-            var g = new MysqlGrammar(q);
+            var g = new SqlServerGrammar(q);
             q.Where("id", "=", 1);
 
             var sqlExpression = g.Update([new Cell("name", new Column("nick"))]);

@@ -1,4 +1,6 @@
-﻿using SharpOrm.SqlMethods;
+﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Mysql;
+using SharpOrm.SqlMethods;
 using SharpOrm.SqlMethods.Mappers.Mysql;
 using System.Linq;
 using System.Text;
@@ -11,6 +13,8 @@ namespace SharpOrm.Builder
     public class MysqlQueryConfig : QueryConfig
     {
         private static string unsafeChars = "\\¥Š₩∖﹨＼\"'`\u00b4ʹʺʻʼˈˊˋ\u02d9\u0300\u0301‘’‚′‵❛❜＇";
+
+        protected internal override bool NativeUpsertRows => true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MysqlQueryConfig"/> class.

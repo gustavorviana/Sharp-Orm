@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace SharpOrm
             get
             {
                 if (!(this.GetCell(columnName) is Cell cell))
-                    throw new ArgumentException($"The column \"{columnName}\" was not found.");
+                    throw new ArgumentException(string.Format(Messages.Table.ColumnNotFound, columnName));
 
                 return cell.Value;
             }

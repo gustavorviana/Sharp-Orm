@@ -1,6 +1,7 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Utils;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars;
 using Xunit.Abstractions;
 
 namespace QueryTest.Utils
@@ -19,7 +20,7 @@ namespace QueryTest.Utils
 
         protected TableGrammar GetTableGrammar(TableSchema schema)
         {
-            return this.Config.NewTableGrammar(schema);
+            return Config.NewTableGrammar(schema);
         }
     }
 }

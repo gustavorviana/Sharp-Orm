@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,31 +45,35 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
-            if (!IsValid(name, '.', '_', '#'))
-                throw new InvalidOperationException("The name contains one or more invalid characters.");
+            if (!IsValidName(name))
+                throw new InvalidOperationException(Messages.Name.InvalidNameChars);
+        }
+
+        internal static bool IsValidName(string name)
+        {
+            return IsValid(name, '.', '#');
         }
 
         public static void ValidateAlias(string alias)
         {
-            if (!string.IsNullOrEmpty(alias) && !IsValid(alias, '.', '_', ' ', '.'))
-                throw new InvalidOperationException("The alias contains one or more invalid characters.");
+            if (!string.IsNullOrEmpty(alias) && !IsValidAlias(alias))
+                throw new InvalidOperationException(Messages.Name.InvalidAliasChars);
+        }
+
+        internal static bool IsValidAlias(string alias)
+        {
+            return IsValid(alias, '.', ' ');
         }
 
         public static DbName Of<T>(string alias, TranslationRegistry registry = null)
         {
             if (ReflectionUtils.IsDynamic(typeof(T)))
-                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
+                throw new NotSupportedException(Messages.DynamicNotSupported);
+
+            if (registry == null)
+                registry = TranslationRegistry.Default;
 
             return new DbName(registry.GetTableName(typeof(T)), alias, false);
-        }
-
-        [Obsolete("Use Of<T>(string) instead.")]
-        public static DbName Of<T>(string alias)
-        {
-            if (ReflectionUtils.IsDynamic(typeof(T)))
-                throw new NotSupportedException("It is not possible to use dynamic types in this operation.");
-
-            return new DbName(TableInfo.GetNameOf(typeof(T)), alias, false);
         }
 
         /// <summary>
@@ -82,7 +87,7 @@ namespace SharpOrm.Builder
 
             var splits = fullName.Split(' ');
             if (splits.Length > 3)
-                throw new ArgumentException("Table name is invalid.");
+                throw new ArgumentException(Messages.Name.InvalidTableName);
 
             this.Name = splits[0];
             this.Alias = GetAlias(splits);
@@ -91,7 +96,7 @@ namespace SharpOrm.Builder
         internal static DbName FromPossibleEmptyName(string name)
         {
             if (string.IsNullOrEmpty(name))
-                return new DbName("", "", false);
+                return new DbName(string.Empty, string.Empty, false);
 
             return new DbName(name);
         }
@@ -102,9 +107,12 @@ namespace SharpOrm.Builder
         /// <returns>The alias of the object, if set; otherwise, returns the name of the object.</returns>
         public string TryGetAlias(QueryConfig config)
         {
-            return string.IsNullOrEmpty(this.Alias) ?
-                config.ApplyNomenclature(this.Name) :
-                config.ApplyNomenclature(this.Alias);
+            return config.ApplyNomenclature(TryGetAlias());
+        }
+
+        public string TryGetAlias()
+        {
+            return string.IsNullOrEmpty(Alias) ? Name : Alias;
         }
 
         /// <summary>
@@ -137,9 +145,9 @@ namespace SharpOrm.Builder
             return string.IsNullOrEmpty(this.Alias) ? this.Name : this.Alias;
         }
 
-        private static bool IsValid(string content, params char[] allowed)
+        internal static bool IsValid(string content, params char[] allowed)
         {
-            return content.All(c => char.IsLetterOrDigit(c) || allowed.Contains(c));
+            return content.All(c => char.IsLetterOrDigit(c) || c == '_' || allowed.Contains(c));
         }
 
         #region IEquatable

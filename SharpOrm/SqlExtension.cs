@@ -37,6 +37,9 @@ namespace SharpOrm
         /// <returns>A sanitized SQL name with the specified prefix and suffix added to each part.</returns>
         public static string SanitizeSqlName(this string value, char prefix, char suffix)
         {
+            if (value == "*")
+                return value;
+
             string[] splitNames = value.Split('.');
             for (int i = 0; i < splitNames.Length; i++)
                 if (splitNames[i] != "*")

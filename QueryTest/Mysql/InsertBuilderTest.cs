@@ -101,7 +101,7 @@ namespace QueryTest.Mysql
 
             QueryAssert.EqualDecoded(
                 "INSERT INTO `TestTable` (`Id`, `Name`, `Nick`, `record_created`, `Number`, `custom_id`, `custom_status`) VALUES (1, @p1, NULL, @p2, 2.1, @p3, 1); SELECT LAST_INSERT_ID();",
-                [table.Name, table.CreatedAt, table.CustomId?.ToString(this.Translation.GuidFormat)!],
+                [table.Name, table.CreatedAt, table.CustomId?.ToString(Translation.GuidFormat)!],
                 query.Grammar().Insert(Row.Parse(table, typeof(TestTable), true, false).Cells)
             );
         }

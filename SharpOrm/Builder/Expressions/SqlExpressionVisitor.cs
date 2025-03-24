@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -26,19 +28,21 @@ namespace SharpOrm.Builder.Expressions
         public SqlMember Visit(Expression expression, string memberName = null)
         {
             if (expression == null)
-                throw new ArgumentNullException("expression");
+                throw new ArgumentNullException(nameof(expression));
 
             expression = UnwrapUnaryExpression(expression);
 
             if (expression is NewExpression)
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
-            GetMembersAndMemberInfo(expression, out var members, out var member);
+            var members = GetMembers(expression, out var member);
 
             if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
                 return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
 
-            return new SqlMember(member, members.ToArray(), memberName);
+            var memberType = member.DeclaringType.IsAssignableFrom(rootType) ? rootType : member.DeclaringType;
+
+            return new SqlMember(memberType, member, members.ToArray(), memberName);
         }
 
         private Expression UnwrapUnaryExpression(Expression expression)
@@ -50,21 +54,13 @@ namespace SharpOrm.Builder.Expressions
             return expression;
         }
 
-        private void GetMembersAndMemberInfo(Expression expression, out List<SqlMemberInfo> members, out MemberInfo member)
+        private List<SqlMemberInfo> GetMembers(Expression expression, out MemberInfo member)
         {
-            var memberExpression = expression as MemberExpression;
-            if (memberExpression != null)
-            {
-                members = VisitMemberExpression(memberExpression, out member);
-                return;
-            }
+            if (expression is MemberExpression memberExpression)
+                return VisitMemberExpression(memberExpression, out member);
 
-            var methodCallExpression = expression as MethodCallExpression;
-            if (methodCallExpression != null)
-            {
-                members = VisitMethodCall(methodCallExpression, out member);
-                return;
-            }
+            if (expression is MethodCallExpression methodCallExpression)
+                return VisitMethodCall(methodCallExpression, out member);
 
             throw new NotSupportedException(string.Format("Expression type {0} is not supported", expression.GetType().Name));
         }
@@ -151,7 +147,7 @@ namespace SharpOrm.Builder.Expressions
                 return list;
             }
 
-            throw new InvalidOperationException("Invalid expression structure");
+            throw new InvalidOperationException(Messages.Expressions.Invalid);
         }
 
         private object VisitMethodArgument(Expression expression)
@@ -162,8 +158,7 @@ namespace SharpOrm.Builder.Expressions
             expression = UnwrapUnaryExpression(expression);
 
             if (!(expression is MemberExpression memberExp))
-                throw new NotSupportedException(
-                    string.Format("Argument expression type {0} is not supported", expression.GetType().Name));
+                throw new NotSupportedException(string.Format(Messages.Expressions.ArgumentNotSupported, expression.GetType().Name));
 
             return GetMethodArgValue(memberExp);
         }
@@ -177,8 +172,7 @@ namespace SharpOrm.Builder.Expressions
             if (ReflectionUtils.TryGetValue(memberExp.Member, target, out var value))
                 return value;
 
-            throw new NotSupportedException(
-                string.Format("Member type {0} is not supported", memberExp.Member.GetType().Name));
+            throw new NotSupportedException(string.Format(Messages.Expressions.MemberNotSupported, memberExp.Member.GetType().Name));
         }
 
         private object GetMethodColumn(MemberExpression memberExp)
@@ -212,6 +206,27 @@ namespace SharpOrm.Builder.Expressions
             }
 
             return false;
+        }
+
+        internal static IEnumerable<MemberInfo> GetMemberPath(MemberExpression memberExpression, bool allowNativeType)
+        {
+            if (!allowNativeType)
+                ValidateMemberType(memberExpression.Member);
+
+            while (memberExpression != null)
+            {
+                yield return memberExpression.Member;
+                memberExpression = memberExpression.Expression as MemberExpression;
+            }
+        }
+
+        internal static void ValidateMemberType(MemberInfo member)
+        {
+            if (!TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false))
+                return;
+
+            string mType = member.MemberType == MemberTypes.Property ? "property" : "field";
+            throw new InvalidOperationException(string.Format(Messages.Expressions.LoadIncompatible, mType, member.Name));
         }
     }
 }

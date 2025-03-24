@@ -4,8 +4,11 @@ using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -37,7 +40,7 @@ namespace SharpOrm
             CancellationTokenRegistration registry = default;
             registry = token.Register(() =>
             {
-                try { command.Cancel(); } catch { }
+                command.SafeCancel();
                 registry.Dispose();
             });
 
@@ -46,21 +49,72 @@ namespace SharpOrm
             return command;
         }
 
-        /// <summary>
-        /// Executes the query and returns the first column of all rows in the result. All other columns are ignored.
-        /// </summary>
-        /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        public static IEnumerable<T> ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen)
+        internal static void SafeCancel(this DbCommand command)
         {
+            try
+            {
+                if (command.Connection.State != ConnectionState.Closed)
+                    command.Cancel();
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Executes the command asynchronously and returns the results as an array of scalar values.
+        /// </summary>
+        /// <typeparam name="T">The type of the scalar values.</typeparam>
+        /// <param name="cmd">The database command to execute.</param>
+        /// <param name="translationRegistry">The translation registry to use for converting values.</param>
+        /// <param name="management">The connection management strategy.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an array of scalar values of type <typeparamref name="T"/>.</returns>
+        public static Task<T[]> ExecuteArrayScalarAsync<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
+        {
+            return TaskUtils.Async(() => ExecuteArrayScalar<T>(cmd, translationRegistry, management, token));
+        }
+
+        /// <summary>
+        /// Executes the command and returns the results as an array of scalar values.
+        /// </summary>
+        /// <typeparam name="T">The type of the scalar values.</typeparam>
+        /// <param name="cmd">The database command to execute.</param>
+        /// <param name="translationRegistry">The translation registry to use for converting values.</param>
+        /// <param name="management">The connection management strategy.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>An array of scalar values of type <typeparamref name="T"/>.</returns>
+        public static T[] ExecuteArrayScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
+        {
+            return ExecuteEnumerableScalar<T>(cmd, translationRegistry, management, token).ToArray();
+        }
+
+        /// <summary>
+        /// Executes the command and returns the results as an enumerable of scalar values.
+        /// </summary>
+        /// <typeparam name="T">The type of the scalar values.</typeparam>
+        /// <param name="cmd">The database command to execute.</param>
+        /// <param name="translationRegistry">The translation registry to use for converting values.</param>
+        /// <param name="management">The connection management strategy.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>An enumerable of scalar values of type <typeparamref name="T"/>.</returns>
+        public static IEnumerable<T> ExecuteEnumerableScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+
             ISqlTranslation translation = (translationRegistry ?? TranslationRegistry.Default).GetFor(typeof(T));
             Type expectedType = TranslationRegistry.GetValidTypeFor(typeof(T));
 
-            using (var reader = cmd.ExecuteReader())
-                while (reader.Read())
-                    if (reader.IsDBNull(0)) yield return default;
-                    else yield return (T)translation.FromSqlValue(reader.GetValue(0), expectedType);
+            try
+            {
+                using (var reader = cmd.ExecuteReader())
+                    while (!token.IsCancellationRequested && reader.Read())
+                        yield return reader.GetValue<T>(translation, expectedType);
+            }
+            finally
+            {
+                if (CanClose(management)) cmd.Connection.Close();
+            }
 
-            if (CanClose(management)) cmd.Connection.Close();
+            token.ThrowIfCancellationRequested();
         }
 
         internal static bool CanClose(ConnectionManagement management)
@@ -73,6 +127,7 @@ namespace SharpOrm
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
         /// <returns>The first column of the first row in the result set.</returns>
+        [Obsolete("This method will be removed in version 4.x")]
         public static T ExecuteScalar<T>(this DbCommand cmd, TranslationRegistry translationRegistry = null)
         {
             return (translationRegistry ?? TranslationRegistry.Default).FromSql<T>(cmd.ExecuteScalar());

@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,9 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     public class TranslationRegistry : IEquatable<TranslationRegistry>, ICloneable
     {
+        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
-        private readonly List<TableInfo> manualMapped = new List<TableInfo>();
+        private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
 
         public static TranslationRegistry Default
         {
@@ -20,12 +22,19 @@ namespace SharpOrm.DataTranslation
             set => _default = value ?? throw new ArgumentNullException(nameof(Default));
         }
 
-        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
+        /// <summary>
+        /// Indicates whether empty strings should be converted to null values.
+        /// </summary>
+        public bool EmptyStringToNull
+        {
+            get => native.EmptyStringToNull;
+            set => native.EmptyStringToNull = value;
+        }
 
         /// <summary>
         /// Custom value translators.
         /// </summary>
-        public ISqlTranslation[] Translators { get; set; } = new ISqlTranslation[0];
+        public ISqlTranslation[] Translators { get; set; } = DotnetUtils.EmptyArray<ISqlTranslation>();
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
@@ -95,7 +104,7 @@ namespace SharpOrm.DataTranslation
             if (GetFor(expectedType) is ISqlTranslation conversor)
                 return conversor.ToSqlValue(value, expectedType);
 
-            throw new NotSupportedException($"Type \"{expectedType.FullName}\" is not supported");
+            throw new NotSupportedException(string.Format(Messages.TypeNotSupported, expectedType.FullName));
         }
 
         /// <summary>
@@ -183,7 +192,7 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         /// <param name="member"></param>
         /// <returns></returns>
-        public static ISqlTranslation GetOf(MemberInfo member)
+        public ISqlTranslation GetOf(MemberInfo member)
         {
             if (member.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
@@ -194,14 +203,14 @@ namespace SharpOrm.DataTranslation
         internal TableInfo AddTableMap<T>(TableMap<T> map)
         {
             var type = typeof(T);
-            if (manualMapped.Any(x => x.Type == type))
-                throw new InvalidOperationException("The type has already been mapped.");
+            if (_manualMapped.Any(x => x.Type == type))
+                throw new InvalidOperationException(Messages.Table.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
-                throw new ArgumentNullException("SharpOrm.Builder.TableMap<T>.Name");
+                throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));
 
             var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
-            manualMapped.Add(table);
+            _manualMapped.Add(table);
             return table;
         }
 
@@ -230,7 +239,7 @@ namespace SharpOrm.DataTranslation
 
         internal TableInfo GetManualMap(Type type)
         {
-            return manualMapped.FirstOrDefault(x => x.Type == type);
+            return _manualMapped.FirstOrDefault(x => x.Type == type);
         }
 
         #region IEquatable
@@ -273,17 +282,17 @@ namespace SharpOrm.DataTranslation
 
         #endregion
 
-        object ICloneable.Clone() => this.Clone();
+        object ICloneable.Clone() => Clone();
 
         public TranslationRegistry Clone()
         {
-
             return new TranslationRegistry
             {
                 DbTimeZone = DbTimeZone,
                 GuidFormat = GuidFormat,
                 TimeZone = TimeZone,
-                Translators = Translators
+                Translators = Translators,
+                EnumSerialization = EnumSerialization
             };
         }
     }

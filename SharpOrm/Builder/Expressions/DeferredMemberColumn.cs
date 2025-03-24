@@ -1,8 +1,6 @@
 ﻿using SharpOrm.SqlMethods;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace SharpOrm.Builder.Expressions
@@ -10,15 +8,15 @@ namespace SharpOrm.Builder.Expressions
     internal class DeferredMemberColumn : SqlExpression, IDeferredSqlExpression
     {
         private readonly IReadonlyQueryInfo queryInfo;
-        private readonly MemberInfo member;
+        private readonly SqlPropertyInfo member;
         private readonly bool needPrefix;
 
-        public string Name => ColumnInfo.GetName(member);
+        public string Name => ColumnInfo.GetName(member.Member);
         private string tableName = null;
 
-        public DeferredMemberColumn(IReadonlyQueryInfo queryInfo, MemberInfo member, bool needPrefix)
+        public DeferredMemberColumn(IReadonlyQueryInfo queryInfo, SqlPropertyInfo member, bool needPrefix)
         {
-            Parameters = new object[0];
+            Parameters = DotnetUtils.EmptyArray<object>();
             this.needPrefix = needPrefix;
             this.queryInfo = queryInfo;
             this.member = member;
@@ -62,12 +60,14 @@ namespace SharpOrm.Builder.Expressions
 
         private bool NeedChangeInfo(IReadonlyQueryInfo info)
         {
-            return !(queryInfo is QueryInfo qInfo) || (!qInfo.IsExpectedType(member.DeclaringType) && qInfo.TableName.Name != GetTableName());
+            return !(queryInfo is QueryInfo qInfo)
+                || (!qInfo.IsExpectedType(member.DeclaringType)
+                && !qInfo.TableName.Name.Equals(GetTableName(), StringComparison.OrdinalIgnoreCase));
         }
 
         private bool IsMemberJoin(JoinQuery join)
         {
-            return join.MemberInfo == member || join.Info.TableName.Name == GetTableName();
+            return join.MemberInfo == member.Member || join.Info.TableName.Name == GetTableName();
         }
 
         private string GetTableName()

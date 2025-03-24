@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -14,7 +15,7 @@ namespace SharpOrm
         #region Properties/Fields
         private readonly Column countColunm;
         protected readonly Query query;
-        private T[] items = new T[0];
+        private T[] items = DotnetUtils.EmptyArray<T>();
 
         private int peerPage;
         private bool disposed;
@@ -47,12 +48,32 @@ namespace SharpOrm
         public T this[int index] => items[index];
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Pager{T}"/> class.
+        /// </summary>
+        /// <param name="query">The query to use for retrieving data.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="page">The current page number.</param>
+        /// <param name="countColunm">The column used to count the number of items.</param>
         protected Pager(Query query, int peerPage, int page, Column countColunm)
         {
             this.query = query;
             this.CurrentPage = page;
             this.peerPage = peerPage;
             this.countColunm = countColunm;
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class asynchronously using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <param name="countColumnName">Column name used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
+        public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, string countColumnName)
+        {
+            return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumnName));
         }
 
         /// <summary>
@@ -66,6 +87,19 @@ namespace SharpOrm
         public static Pager<T> FromBuilder(Query builder, int peerPage, int currentPage, string countColumnName)
         {
             return FromBuilder(builder, peerPage, currentPage, new Column(countColumnName));
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Pager{T}"/> class asynchronously using a query builder.
+        /// </summary>
+        /// <param name="builder">The query builder to use.</param>
+        /// <param name="peerPage">The number of items per page.</param>
+        /// <param name="currentPage">The current page number.</param>
+        /// <param name="countColumn">Column used to count the number of items.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
+        public static Task<Pager<T>> FromBuilderAsync(Query builder, int peerPage, int currentPage, Column countColumn = null)
+        {
+            return TaskUtils.Async(() => FromBuilder(builder, peerPage, currentPage, countColumn));
         }
 
         /// <summary>
@@ -85,9 +119,23 @@ namespace SharpOrm
             return list;
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator for the collection.</returns>
         public IEnumerator<T> GetEnumerator() => this.items.AsEnumerable().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
+
+        /// <summary>
+        /// Navigates to the specified page asynchronously.
+        /// </summary>
+        /// <param name="page">The one-based page number to navigate to.</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> GoToPageAsync(int page)
+        {
+            return TaskUtils.Async(() => GoToPage(page));
+        }
 
         /// <summary>
         /// Navigates to the specified page.
@@ -97,23 +145,34 @@ namespace SharpOrm
         /// This value is one-based, meaning that the page count starts from 1.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified page number is out of range.</exception>
-        public void GoToPage(int page)
+        public Pager<T> GoToPage(int page)
         {
-            if (page < 1 || page > this.Pages)
+            if (page < 1 || page > Pages)
                 throw new ArgumentOutOfRangeException(nameof(page));
 
-            int lastPage = this.CurrentPage;
-            this.CurrentPage = page;
+            int lastPage = CurrentPage;
+            CurrentPage = page;
 
             try
             {
-                this.Refresh();
+                Refresh();
+                return this;
             }
             catch (Exception)
             {
-                this.CurrentPage = lastPage;
+                CurrentPage = lastPage;
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Sets the number of items to display per page asynchronously.
+        /// </summary>
+        /// <param name="value">The number of items per page (one-based).</param>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> SetPeerPageAsync(int value)
+        {
+            return TaskUtils.Async(() => SetPeerPage(value));
         }
 
         /// <summary>
@@ -121,27 +180,40 @@ namespace SharpOrm
         /// </summary>
         /// <param name="value">The number of items per page (one-based).</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified value is less than 1.</exception>
-        public void SetPeerPage(int value)
+        public Pager<T> SetPeerPage(int value)
         {
             if (value < 1)
                 throw new ArgumentOutOfRangeException(nameof(value));
 
-            this.peerPage = value;
-            this.RefreshPageCount();
+            peerPage = value;
+            RefreshPageCount();
 
-            if (this.CurrentPage > this.Pages)
-                this.CurrentPage = this.Pages;
+            if (CurrentPage > Pages)
+                CurrentPage = Pages;
 
-            this.RefreshItems();
+            RefreshItems();
+
+            return this;
+        }
+
+        /// <summary>
+        /// Refreshes the pager asynchronously, updating the item collection and page count.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation, with a Pager{T} object for performing pagination on the query result.</returns>
+        public Task<Pager<T>> RefreshAsync()
+        {
+            return TaskUtils.Async(Refresh);
         }
 
         /// <summary>
         /// Refreshes the pager, updating the item collection and page count.
         /// </summary>
-        public void Refresh()
+        public Pager<T> Refresh()
         {
-            this.RefreshPageCount();
-            this.RefreshItems();
+            RefreshPageCount();
+            RefreshItems();
+
+            return this;
         }
 
         /// <summary>
@@ -149,8 +221,8 @@ namespace SharpOrm
         /// </summary>
         private void RefreshPageCount()
         {
-            this.Total = this.countColunm == null ? this.query.Count() : this.query.Count(this.countColunm);
-            this.Pages = PageCalculator.CalcPages(this.Total, this.peerPage);
+            Total = countColunm == null ? query.Count() : query.Count(countColunm);
+            Pages = PageCalculator.CalcPages(Total, peerPage);
         }
 
         /// <summary>
@@ -158,15 +230,19 @@ namespace SharpOrm
         /// </summary>
         private void RefreshItems()
         {
-            this.query.Offset = this.peerPage * (this.CurrentPage - 1);
-            this.query.Limit = this.peerPage;
+            query.Offset = peerPage * (CurrentPage - 1);
+            query.Limit = peerPage;
 
-            this.items = this.GetItems().ToArray();
+            items = GetItems();
         }
 
-        protected virtual IEnumerable<T> GetItems()
+        /// <summary>
+        /// Retrieves the items for the current page.
+        /// </summary>
+        /// <returns>An array of items for the current page.</returns>
+        protected virtual T[] GetItems()
         {
-            return this.query.GetEnumerable<T>();
+            return query.GetEnumerable<T>().ToArray();
         }
 
         #region IDisposable
@@ -183,10 +259,13 @@ namespace SharpOrm
             if (disposing)
                 this.query.Dispose();
 
-            this.items = new T[0];
+            this.items = DotnetUtils.EmptyArray<T>();
             disposed = true;
         }
 
+        /// <summary>
+        /// Finalizes the pager instance, releasing resources.
+        /// </summary>
         ~Pager()
         {
             Dispose(disposing: false);

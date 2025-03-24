@@ -12,7 +12,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void ExistsTableTest()
         {
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable"));
+            var grammar = GetTableGrammar(new TableSchema("MyTable"));
             var expected = new SqlExpression("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name = \"MyTable\";");
 
             Assert.Equal(expected, grammar.Exists());
@@ -21,7 +21,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void ExistsTempTableTest()
         {
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable") { Temporary = true });
+            var grammar = GetTableGrammar(new TableSchema("MyTable") { Temporary = true });
             var expected = new SqlExpression("SELECT COUNT(*) FROM sqlite_temp_master WHERE type='table' AND name = \"temp_MyTable\";");
 
             Assert.Equal(expected, grammar.Exists());
@@ -30,7 +30,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DropTableTest()
         {
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable"));
+            var grammar = GetTableGrammar(new TableSchema("MyTable"));
             var expected = new SqlExpression("DROP TABLE \"MyTable\"");
             var current = grammar.Drop();
 
@@ -40,7 +40,7 @@ namespace QueryTest.Sqlite
         [Fact]
         public void DropTempTableTest()
         {
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable") { Temporary = true });
+            var grammar = GetTableGrammar(new TableSchema("MyTable") { Temporary = true });
             var expected = new SqlExpression("DROP TABLE \"temp_MyTable\"");
             var current = grammar.Drop();
 
@@ -50,10 +50,10 @@ namespace QueryTest.Sqlite
         [Fact]
         public void CreateBasedTable()
         {
-            var q = Query.ReadOnly("BaseTable", this.Config).Select("Id", "Name");
+            var q = Query.ReadOnly("BaseTable", Config).Select("Id", "Name");
             q.Where("Id", ">", 50);
 
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable", q));
+            var grammar = GetTableGrammar(new TableSchema("MyTable", q));
             var expected = new SqlExpression("CREATE TABLE \"MyTable\" AS SELECT \"Id\", \"Name\" FROM \"BaseTable\" WHERE \"Id\" > 50");
 
             Assert.Equal(expected, grammar.Create());
@@ -62,10 +62,10 @@ namespace QueryTest.Sqlite
         [Fact]
         public void CreateBasedTempTable()
         {
-            var q = Query.ReadOnly("BaseTable", this.Config).Select("Id", "Name");
+            var q = Query.ReadOnly("BaseTable", Config).Select("Id", "Name");
             q.Where("Id", ">", 50);
 
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable", q) { Temporary = true });
+            var grammar = GetTableGrammar(new TableSchema("MyTable", q) { Temporary = true });
             var expected = new SqlExpression("CREATE TABLE temp.\"temp_MyTable\" AS SELECT \"Id\", \"Name\" FROM \"BaseTable\" WHERE \"Id\" > 50");
 
             Assert.Equal(expected, grammar.Create());
@@ -80,7 +80,7 @@ namespace QueryTest.Sqlite
             cols.Add<int>("Status").Unique = true;
             cols.Add<int>("Status2").Unique = true;
 
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable", cols));
+            var grammar = GetTableGrammar(new TableSchema("MyTable", cols));
             var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Name\" TEXT NULL,\"Status\" INTEGER NULL,\"Status2\" INTEGER NULL,CONSTRAINT \"UC_MyTable\" UNIQUE (\"Status\",\"Status2\"),PRIMARY KEY (\"Id\" AUTOINCREMENT))");
 
             Assert.Equal(expected, grammar.Create());
@@ -93,7 +93,7 @@ namespace QueryTest.Sqlite
             cols.AddPk("Id");
             cols.AddPk("Id2");
 
-            var grammar = this.GetTableGrammar(new TableSchema("MyTable", cols));
+            var grammar = GetTableGrammar(new TableSchema("MyTable", cols));
             var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Id2\" INTEGER NOT NULL,PRIMARY KEY (\"Id\",\"Id2\"))");
 
             Assert.Equal(expected, grammar.Create());

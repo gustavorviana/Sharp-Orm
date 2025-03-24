@@ -64,7 +64,7 @@ namespace DbRunTest.BaseTests
             query.Limit = 0;
 
             var tableColumns = query.ReadTable().Columns.OfType<DataColumn>().Select(x => x.ColumnName).ToArray();
-            var classColumns = new TableInfo(typeof(Address)).Columns.Select(x => x.Name).ToArray();
+            var classColumns = Translation.GetTable(typeof(Address)).Columns.Select(x => x.Name).ToArray();
 
             Assert.Equal(tableColumns, classColumns);
         }
@@ -94,7 +94,7 @@ namespace DbRunTest.BaseTests
         public virtual void CheckExists()
         {
             var schema = GetSchema();
-            using var table = DbTable.Create(schema, this.Manager);
+            using var table = DbTable.Create(schema, Manager);
             Assert.True(DbTable.Exists(table.DbName.Name, schema.Temporary, table.Manager), "DbTable.Exists(string, bool, ConnectionManager)");
             Assert.True(table.Exists(), "DbTable.Exists()");
         }
@@ -102,7 +102,7 @@ namespace DbRunTest.BaseTests
         [Fact]
         public void InsertData()
         {
-            using var table = DbTable.Create(GetSchema(), this.Manager);
+            using var table = DbTable.Create(GetSchema(), Manager);
             var q = table.GetQuery();
             q.Insert(new Cell("name", "Richard"));
             q.Insert(new Cell("name", "Manuel"));
@@ -118,7 +118,7 @@ namespace DbRunTest.BaseTests
             cols.Add<int>("Status").Unique = true;
 
             var schema = new TableSchema("MyTestTable", cols) { Temporary = true };
-            using var table = DbTable.Create(schema, this.Manager);
+            using var table = DbTable.Create(schema, Manager);
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace DbRunTest.BaseTests
             cols.AddPk("Id2");
 
             var schema = new TableSchema("MyTestTable", cols) { Temporary = true };
-            using var table = DbTable.Create(schema, this.Manager);
+            using var table = DbTable.Create(schema, Manager);
         }
 
         protected static TableSchema GetSchema()

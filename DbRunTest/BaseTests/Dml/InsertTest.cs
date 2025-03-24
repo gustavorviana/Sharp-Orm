@@ -1,7 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using SharpOrm;
 using System.Data.Common;
 using Xunit.Abstractions;
 
@@ -26,7 +25,7 @@ namespace DbRunTest.BaseTests.Dml
             const uint Id = 1;
             const string Name = "User 1";
             const string Email = "my@email.com";
-            using var query = NewQuery<Customer>(this.GetUnsafeManager());
+            using var query = NewQuery<Customer>(GetUnsafeManager());
 
             query.Delete();
 

@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +48,7 @@ namespace SharpOrm.Builder.Expressions
             {
                 var toCheck = info.Childs[info.Childs.Length - 2];
                 bool isDateOrTime = TranslationUtils.IsDateOrTime(toCheck.DeclaringType);
-                bool isTimeOfDay = toCheck.Member.Name == nameof(DateTime.TimeOfDay);
+                bool isTimeOfDay = toCheck.Name == nameof(DateTime.TimeOfDay);
 
                 info.Childs = isDateOrTime && isTimeOfDay
                     ? info.Childs.Where((x, index) => index != info.Childs.Length - 2).ToArray()

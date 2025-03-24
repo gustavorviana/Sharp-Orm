@@ -69,7 +69,7 @@ namespace QueryTest.Utils
 
         protected Query<T> NewQuery<T>()
         {
-            return new Query<T>(this.Manager);
+            return new Query<T>(Manager);
         }
     }
 }
