@@ -2,6 +2,7 @@
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -53,6 +54,27 @@ namespace SharpOrm.DataTranslation
         {
             get => native.GuidFormat;
             set => native.GuidFormat = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the date format used for date translations.
+        /// </summary>
+        /// <remarks>
+        /// The default date format is "yyyy-MM-dd HH:mm:ss".
+        /// </remarks>
+        public string DateFormat
+        {
+            get => native.dateTranslation.Format;
+            set => native.dateTranslation.Format = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the culture used for numeric translations.
+        /// </summary>
+        public CultureInfo Culture
+        {
+            get => native.numericTranslation.Culture;
+            set => native.numericTranslation.Culture = value;
         }
 
         /// <summary>
