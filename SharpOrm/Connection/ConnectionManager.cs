@@ -372,7 +372,10 @@ namespace SharpOrm.Connection
 
         internal CommandBuilder GetCommand()
         {
-            return new CommandBuilder(this);
+            return new CommandBuilder(this)
+            {
+                Timeout = CommandTimeout
+            };
         }
 
         internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry)
