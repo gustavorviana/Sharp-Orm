@@ -9,7 +9,7 @@ namespace SharpOrm.DataTranslation
 
         public bool CanWork(Type type) => TranslationUtils.IsNumeric(type) || type == typeof(string);
 
-        public object FromSqlValue(object value, Type expectedType)
+        public virtual object FromSqlValue(object value, Type expectedType)
         {
             if (value.GetType() == expectedType)
                 return value;
@@ -50,7 +50,7 @@ namespace SharpOrm.DataTranslation
             throw new NotSupportedException();
         }
 
-        public object ToSqlValue(object value, Type type)
+        public virtual object ToSqlValue(object value, Type type)
         {
             return value;
         }
