@@ -23,7 +23,7 @@ namespace SharpOrm
         /// </summary>
         protected SqlExpression()
         {
-
+            Parameters = DotnetUtils.EmptyArray<object>();
         }
 
         /// <summary>
