@@ -1252,6 +1252,17 @@ namespace SharpOrm
         /// <typeparam name="T">The type of items to compare.</typeparam>
         /// <param name="columnExp">The column expression to compare.</param>
         /// <param name="items">The array of items to check against the column value.</param>
+        public Query<T> WhereIn<K>(Expression<ColumnExpression<T>> columnExp, ICollection<K> items)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "IN", items);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the specified items.
+        /// </summary>
+        /// <typeparam name="T">The type of items to compare.</typeparam>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="items">The array of items to check against the column value.</param>
         public Query<T> WhereIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
         {
             return (Query<T>)base.Where(GetColumn(columnExp), "IN", items);
@@ -1264,6 +1275,11 @@ namespace SharpOrm
         /// <param name="columnExp">The column expression to compare.</param>
         /// <param name="items">The array of items to check against the column value.</param>
         public Query<T> WhereNotIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "NOT IN", items);
+        }
+
+        public Query<T> WhereNotIn<K>(Expression<ColumnExpression<T>> columnExp, ICollection<K> items)
         {
             return (Query<T>)base.Where(GetColumn(columnExp), "NOT IN", items);
         }

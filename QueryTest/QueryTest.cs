@@ -279,5 +279,49 @@ namespace QueryTest
 
             Assert.Equal(expected.ToString(), query.ToString());
         }
+
+        [Fact]
+        public void WhereInList()
+        {
+            const string EXPECTED = "SELECT * FROM [Customers] WHERE [Id] IN (1, 2, 3)";
+
+            var query = new Query<Customer>()
+                .WhereIn<int>(x => x.Id, new List<int> { 1, 2, 3 });
+
+            Assert.Equal(EXPECTED, query.ToString());
+        }
+
+        [Fact]
+        public void Exists()
+        {
+            const string EXPECTED = "SELECT * FROM [Customers] WHERE EXISTS (SELECT [Id] FROM [Orders] WHERE [Status] IN (1, 2, 3))";
+            var statuses = new List<int> { 1, 2, 3 };
+
+            var query = new Query<Customer>();
+            var subQuery = Query.ReadOnly("Orders");
+
+            subQuery.Select("Id");
+            subQuery.WhereIn<int>("Status", statuses);
+
+            query.Exists(subQuery);
+            Assert.Equal(EXPECTED, query.ToString());
+        }
+
+        [Fact]
+        public void WhereAndExists()
+        {
+            const string EXPECTED = "SELECT * FROM [Customers] WHERE [CreatedAt] = ? AND EXISTS (SELECT 1 FROM [Orders] WHERE [CreatedAt] = ? AND [Status] IN (1, 2, 3))";
+            var statuses = new List<int> { 1, 2, 3 };
+
+            var query = new Query<Customer>();
+            var subQuery = Query.ReadOnly("Orders");
+
+            subQuery.Where("CreatedAt", DateTime.Now);
+            subQuery.WhereIn<int>("Status", statuses);
+
+            query.Where("CreatedAt", DateTime.Now);
+            query.Exists(subQuery);
+            Assert.Equal(EXPECTED, query.ToString());
+        }
     }
 }
