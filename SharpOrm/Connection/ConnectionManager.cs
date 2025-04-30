@@ -370,6 +370,54 @@ namespace SharpOrm.Connection
             }
         }
 
+        /// <summary>  
+        /// Retrieves a query object for the specified table name.  
+        /// </summary>  
+        /// <typeparam name="T">The type of the query object.</typeparam>  
+        /// <param name="table">The name of the table.</param>  
+        /// <returns>A query object for the specified table.</returns>  
+        public Query<T> GetQuery<T>(string table)
+        {
+            return GetQuery<T>(new DbName(table));
+        }
+
+        /// <summary>  
+        /// Retrieves a query object for the specified table name.  
+        /// </summary>  
+        /// <typeparam name="T">The type of the query object.</typeparam>  
+        /// <param name="table">The name of the table.</param>  
+        /// <returns>A query object for the specified table.</returns>  
+        public Query<T> GetQuery<T>(DbName table)
+        {
+            return new Query<T>(table, this)
+            {
+                CommandTimeout = CommandTimeout
+            };
+        }
+
+        /// <summary>
+        /// Creates a query for the specified table.
+        /// </summary>
+        /// <param name="table">The name of the table as a <see cref="DbName"/> object.</param>
+        /// <returns>A new instance of <see cref="Query"/> for the specified table.</returns>
+        public Query GetQuery(string table)
+        {
+            return GetQuery(new DbName(table));
+        }
+
+        /// <summary>
+        /// Creates a query for the specified table.
+        /// </summary>
+        /// <param name="table">The name of the table as a <see cref="DbName"/> object.</param>
+        /// <returns>A new instance of <see cref="Query"/> for the specified table.</returns>
+        public Query GetQuery(DbName table)
+        {
+            return new Query(table, this)
+            {
+                CommandTimeout = CommandTimeout
+            };
+        }
+
         internal CommandBuilder GetCommand()
         {
             return new CommandBuilder(this)
