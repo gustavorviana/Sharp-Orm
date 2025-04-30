@@ -29,7 +29,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 Builder.AddJoin(WriteUpdateCell, ", ", en);
             }
 
-            if (needAlias)
+            if (needAlias || Info.Joins.Any())
                 Builder.Add(" FROM ").Add(GetTableName(true));
 
             if (Query.IsNoLock())
