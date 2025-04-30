@@ -1579,7 +1579,7 @@ namespace SharpOrm
             {
                 _objReader = new ObjectReader(TableInfo);
                 _objReader.ReadFk = Info.Config.LoadForeign;
-                _objReader.Validate = true;
+                _objReader.Validate = ValidateModelOnSave;
             }
 
             _objReader.IgnoreTimestamps = IgnoreTimestamps;

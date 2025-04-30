@@ -66,9 +66,9 @@ namespace QueryTest.DataTranslation
         public void UpdateColumnsTest()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
-            reader.ReadPk = true;
+            reader.ReadPk = false;
 
-            string[] expected = ["Id", "Name", "Street", "City", "UpdatedAt"];
+            string[] expected = ["Name", "Street", "City", "UpdatedAt"];
 
             var columns = reader.GetColumnNames();
             CollectionAssert.ContainsAll(expected, columns);
