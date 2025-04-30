@@ -440,8 +440,17 @@ namespace SharpOrm.Builder
             if (not) this.Info.Where.Add("NOT ");
             this.Info.Where.Add("EXISTS ");
 
-            if (queryObj is Query query) this.WriteQuery(query);
-            else this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+            if (queryObj is Query query)
+            {
+                if (query.Info.Select.Length == 1 && query.Info.Select.First().IsAll())
+                    query.Info.Select = new[] { (Column)"1" };
+
+                this.WriteQuery(query);
+            }
+            else
+            {
+                this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+            }
 
             return this;
         }
