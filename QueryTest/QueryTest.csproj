@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SharpOrm.Fb\SharpOrm.Fb.csproj" />
     <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
     <ProjectReference Include="..\BaseTest\BaseTest.csproj" />
   </ItemGroup>

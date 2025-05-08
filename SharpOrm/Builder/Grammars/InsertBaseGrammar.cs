@@ -20,6 +20,13 @@ namespace SharpOrm.Builder.Grammars
             AppendInsertCells(cells);
         }
 
+        protected void Build(Row row)
+        {
+            AppendInsertHeader(row.ColumnNames);
+            Builder.Add("VALUES ");
+            AppendInsertCells(row.Cells);
+        }
+
         protected void AppendInsertHeader(string[] columns)
         {
             columns = columns.Select(Info.Config.ApplyNomenclature).ToArray();

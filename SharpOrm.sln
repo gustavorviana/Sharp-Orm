@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaseTest", "BaseTest\BaseTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbRunTest", "DbRunTest\DbRunTest.csproj", "{4D0A5874-9D0F-42BF-84EF-61AA11877141}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpOrm.Fb", "SharpOrm.Fb\SharpOrm.Fb.csproj", "{C115064F-948F-4DD1-A610-B0394B8BC0AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{4D0A5874-9D0F-42BF-84EF-61AA11877141}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D0A5874-9D0F-42BF-84EF-61AA11877141}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D0A5874-9D0F-42BF-84EF-61AA11877141}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C115064F-948F-4DD1-A610-B0394B8BC0AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C115064F-948F-4DD1-A610-B0394B8BC0AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C115064F-948F-4DD1-A610-B0394B8BC0AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C115064F-948F-4DD1-A610-B0394B8BC0AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

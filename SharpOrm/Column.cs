@@ -251,7 +251,7 @@ namespace SharpOrm
             return new ExpressionProcessor<T>(info, ExpressionConfig.All).ParseColumn(expression);
         }
 
-        internal string GetCountColumn()
+        public string GetCountColumn()
         {
             if (this.IsAll())
                 return "*";
@@ -260,7 +260,7 @@ namespace SharpOrm
             return this.IsCount ? exp.Substring(6, exp.Length - 8) : this.Name;
         }
 
-        internal bool IsAll()
+        public bool IsAll()
         {
             return (this.expression?.ToString() ?? this.Name).EndsWith("*");
         }

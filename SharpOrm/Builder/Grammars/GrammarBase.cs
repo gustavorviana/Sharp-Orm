@@ -1,7 +1,9 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SharpOrm.Builder.Grammars
 {
@@ -23,6 +25,11 @@ namespace SharpOrm.Builder.Grammars
         /// Gets the query information.
         /// </summary>
         public QueryInfo Info => Query.Info;
+
+        /// <summary>
+        /// Gets the translation registry for the current query configuration.
+        /// </summary>
+        protected TranslationRegistry Translation => Query.Info.Config.Translation;
 
         public GrammarBase(Query query)
         {
@@ -278,6 +285,12 @@ namespace SharpOrm.Builder.Grammars
         protected virtual void WriteSelectColumns()
         {
             AddParams(this.Info.Select);
+        }
+
+        protected IEnumerable<ColumnInfo> GetPrimaryKeys()
+        {
+            var tableinfo = Query.GetTableInfo();
+            return tableinfo == null ? DotnetUtils.EmptyArray<ColumnInfo>() : tableinfo.Columns.Where(c => c.Key);
         }
 
         /// <summary>

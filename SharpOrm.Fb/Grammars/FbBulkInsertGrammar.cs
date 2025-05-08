@@ -1,19 +1,24 @@
-﻿using SharpOrm.Builder.Grammars.Interfaces;
+﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Grammars.Interfaces;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace SharpOrm.Builder.Grammars.SqlServer
+namespace SharpOrm.Fb.Grammars
 {
-    public class SqlServerBulkInsertGrammar : InsertBaseGrammar, IBulkInsertGrammar
+    internal class FbBulkInsertGrammar : InsertBaseGrammar, IBulkInsertGrammar
     {
-        public SqlServerBulkInsertGrammar(Query query) : base(query, true)
+        private const int MAX_LINES = 10_000;
+
+        public FbBulkInsertGrammar(Query query) : base(query, true)
         {
         }
 
         public virtual void Build(IEnumerable<Row> rows)
         {
+            var batchBuilder = (BatchQueryBuilder)Builder;
+
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
@@ -23,19 +28,20 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
                 while (InternalBulkInsert(@enum))
                 {
-                    ((BatchQueryBuilder)Builder).Remove(0, 2);
-                    ((BatchQueryBuilder)Builder).SetCursor(0, 0);
+                    batchBuilder.Remove(0, 2);
+                    batchBuilder.SetCursor(0, 0);
 
                     AppendInsertHeader(@enum.Current.ColumnNames);
                     Builder.Add("VALUES ");
 
-                    ((BatchQueryBuilder)Builder).RestoreCursor();
+                    batchBuilder.RestoreCursor();
                 }
             }
         }
 
         private bool InternalBulkInsert(IEnumerator<Row> @enum)
         {
+            int addedLines = 0;
             while (@enum.MoveNext())
             {
                 ((BatchQueryBuilder)Builder).CreateSavePoint();
@@ -43,7 +49,8 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 Builder.Add(", ");
                 AppendInsertCells(@enum.Current.Cells);
 
-                if (Builder.Parameters.Count > Query.Config.DbParamsLimit)
+                addedLines++;
+                if (Builder.Parameters.Count > Query.Config.DbParamsLimit || addedLines >= MAX_LINES)
                 {
                     ((BatchQueryBuilder)Builder).BuildSavePoint();
                     return true;

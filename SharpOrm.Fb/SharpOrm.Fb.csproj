@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net45;net46;net5.0;net6.0;net8.0</TargetFrameworks>
+		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<FileVersion>1.0.0</FileVersion>
+		<VersionPrefix>1.0.0</VersionPrefix>
+		<IncludeSymbols>True</IncludeSymbols>
+		<RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>SharpOrm</Title>
+		<Authors>Gustavo Viana</Authors>
+		<RepositoryUrl>https://github.com/gustavorviana/Sharp-Orm</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<Company />
+		<Description>Sharp Orm is a library that assists in database query creation and database connection management.</Description>
+		<Copyright>$(Authors)</Copyright>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="SqlMethods\Mappers\" />
+	</ItemGroup>
+</Project>
