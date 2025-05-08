@@ -13,6 +13,20 @@ namespace QueryTest
     public class QueryTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
+        public async Task EmptyBulkInsert_Should_Return_ZeroAsync()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, await query.BulkInsertAsync(CancellationToken.None));
+        }
+
+        [Fact]
+        public void EmptyBulkInsert_Should_Return_Zero()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, query.BulkInsert());
+        }
+
+        [Fact]
         public void InsertT_ShouldNotChangeAddressId()
         {
             const int expectedId = 1;

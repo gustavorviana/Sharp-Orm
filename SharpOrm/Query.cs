@@ -2331,8 +2331,14 @@ namespace SharpOrm
         public async Task<int> BulkInsertAsync(IEnumerable<Row> rows, CancellationToken token)
         {
             using (var cmd = GetCommand().AddCancellationToken(token))
-                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().BulkInsert(rows)) +
+            {
+                var expression = GetGrammar().BulkInsert(rows);
+                if (expression.IsEmpty)
+                    return 0;
+
+                return await cmd.SetExpressionWithAffectedRowsAsync(expression) +
                     await cmd.ExecuteWithRecordsAffectedAsync();
+            }
         }
 
         /// <summary>
@@ -2342,7 +2348,13 @@ namespace SharpOrm
         public int BulkInsert(IEnumerable<Row> rows)
         {
             using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().BulkInsert(rows)) + cmd.ExecuteWithRecordsAffected();
+            {
+                var expression = GetGrammar().BulkInsert(rows);
+                if (expression.IsEmpty)
+                    return 0;
+
+                return cmd.SetExpressionWithAffectedRows(expression) + cmd.ExecuteWithRecordsAffected();
+            }
         }
 
         /// <summary>

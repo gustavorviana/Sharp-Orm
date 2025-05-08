@@ -32,6 +32,13 @@ namespace QueryTest.SqlServer
             );
         }
 
+        [Fact]
+        public void EmptyBulkInsert()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            QueryAssert.EqualDecoded("", [], query.Grammar().BulkInsert([]));
+        }
+
         private static Row NewRow(int id, string name)
         {
             return new Row(new Cell(TestTableUtils.ID, id), new Cell(TestTableUtils.NAME, name));
