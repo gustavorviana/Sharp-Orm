@@ -70,8 +70,8 @@ namespace SharpOrm.Builder
         {
             var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
 
-            if (except) this.Columns.Where(x => !props.Contains(x.PropName));
-            return this.Columns.Where(x => props.Contains(x.PropName));
+            if (except) this.Columns.Where(x => !props.ContainsIgnoreCase(x.PropName));
+            return this.Columns.Where(x => props.ContainsIgnoreCase(x.PropName));
         }
 
         private IEnumerable<ColumnInfo> GetColumns()

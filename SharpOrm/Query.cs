@@ -2101,7 +2101,10 @@ namespace SharpOrm
             ValidateReadonly();
 
             if (updateColumns == null || updateColumns.Length == 0)
-                return rows[0].Cells.Select(x => x.Name).Where(x => !toCheckColumns.Contains(x)).ToArray();
+                updateColumns = rows[0].Cells.Select(x => x.Name).Where(x => !toCheckColumns.ContainsIgnoreCase(x)).ToArray();
+
+            if (updateColumns.Length == 0)
+                return rows[0].Cells.Select(x => x.Name).ToArray();
 
             return updateColumns;
         }

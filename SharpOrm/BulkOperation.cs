@@ -2,6 +2,7 @@
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
 using SharpOrm.Msg;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,12 +123,12 @@ namespace SharpOrm
 
         private string[] GetToUpdateCells(string[] comparationColumns)
         {
-            return this.tempColumns.Where(x => !comparationColumns.Contains(x)).ToArray();
+            return this.tempColumns.Where(x => !comparationColumns.ContainsIgnoreCase(x)).ToArray();
         }
 
         private IEnumerable<string> GetToUpdateCells(ExpressionColumn[] comparationColumns)
         {
-            return this.tempColumns.Where(tc => !comparationColumns.Any(c => tc == c.Name));
+            return this.tempColumns.Where(tc => !comparationColumns.Any(c => tc.EqualsIgnoreCase(c.Name)));
         }
 
         private Cell GetUpdateCell(string tempName, string col)

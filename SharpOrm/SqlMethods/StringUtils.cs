@@ -75,5 +75,10 @@ namespace SharpOrm.SqlMethods
 
             return foundReplaces;
         }
+
+        public static bool EqualsIgnoreCase(this string origin, string value)
+        {
+            return string.Equals(origin, value, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

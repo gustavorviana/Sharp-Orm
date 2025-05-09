@@ -337,5 +337,20 @@ namespace QueryTest
             query.Exists(subQuery);
             Assert.Equal(EXPECTED, query.ToString());
         }
+
+
+        [Fact]
+        public void MergeWithRowWithSameWhereAndUpdateColumns()
+        {
+            const string EXPECTED = "MERGE INTO [Test] [Target] USING(VALUES (1, @p1)) AS [Source] ([Id], [Name]) ON [Source].[id]=[Target].[id] AND [Source].[name]=[Target].[name] WHEN MATCHED THEN UPDATE SET [Target].[Id]=[Source].[Id], [Target].[Name]=[Source].[Name] WHEN NOT MATCHED THEN INSERT ([Id], [Name]) VALUES ([Source].[Id], [Source].[Name]);";
+
+            var rows = new Row(new Cell("Id", 1), new Cell("Name", "Name"));
+
+            using var fallback = RegisterFallback();
+            using var query = new Query("Test");
+            query.Upsert(rows, [Tables.Address.ID, Tables.Address.NAME]);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
     }
 }
