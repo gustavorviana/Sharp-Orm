@@ -27,6 +27,34 @@ namespace QueryTest
         }
 
         [Fact]
+        public void EmptyUpsert_Should_Return_Zero()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, query.Upsert(Array.Empty<Row>(), ["id"]));
+        }
+
+        [Fact]
+        public async Task EmptyUpsert_Should_Return_ZeroAsync()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, await query.UpsertAsync(Array.Empty<Row>(), ["id"]));
+        }
+
+        [Fact]
+        public void EmptyUpsertT_Should_Return_Zero()
+        {
+            using var query = new Query<TestTable>();
+            Assert.Equal(0, query.Upsert([], x => x.Nick));
+        }
+
+        [Fact]
+        public async Task EmptyUpsertT_Should_Return_ZeroAsync()
+        {
+            using var query = new Query<TestTable>();
+            Assert.Equal(0, await query.UpsertAsync([], x => x.Nick));
+        }
+
+        [Fact]
         public void InsertT_ShouldNotChangeAddressId()
         {
             const int expectedId = 1;

@@ -130,6 +130,16 @@ namespace SharpOrm.DataTranslation
             return this;
         }
 
+        /// <summary>  
+        /// Reads rows from a collection of objects and converts them into an array of <see cref="Row"/> instances.  
+        /// </summary>  
+        /// <param name="owners">The collection of objects to read.</param>  
+        /// <returns>An array of <see cref="Row"/> instances representing the objects.</returns>  
+        public Row[] ReadRows(params object[] owners)
+        {
+            return owners.Select(ReadRow).ToArray();
+        }
+
         /// <summary>
         /// Reads a row from the specified object.
         /// </summary>

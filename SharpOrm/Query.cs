@@ -767,6 +767,21 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public Task<int> UpsertAsync(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null, CancellationToken token = default)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            return UpsertAsync(objs, toCheckColumns, updateColumns, default);
+        }
+
+        /// <summary>
         /// Inserts or updates an object in the database based on the specified columns to check and update.
         /// </summary>
         /// <param name="obj">The object to insert or update.</param>
@@ -779,6 +794,22 @@ namespace SharpOrm
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
             Upsert(obj, toCheckColumns, updateColumns);
+        }
+
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public int Upsert(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            return Upsert(objs, toCheckColumns, updateColumns);
         }
 
         /// <summary>
@@ -796,6 +827,23 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public async Task<int> UpsertAsync(T[] objs, string[] toCheckColumns, string[] updateColumns, CancellationToken token)
+        {
+            if (objs.Length == 0)
+                return 0;
+
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            return await base.UpsertAsync(GetObjectReader(true, true).ReadRows(objs), toCheckColumns, updateColumns, token);
+        }
+
+        /// <summary>
         /// Inserts or updates an object in the database based on the specified columns to check and update.
         /// </summary>
         /// <param name="obj">The object to insert or update.</param>
@@ -808,6 +856,24 @@ namespace SharpOrm
                 throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
 
             base.Upsert(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentException">Thrown when no columns are specified to check.</exception>
+        public int Upsert(T[] objs, string[] toCheckColumns, params string[] updateColumns)
+        {
+            if (objs.Length == 0)
+                return 0;
+
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            return base.Upsert(GetObjectReader(true, true).ReadRows(objs), toCheckColumns, updateColumns);
         }
 
         #endregion
@@ -2052,6 +2118,9 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
+            if (rows.Length == 0)
+                return 0;
+
             updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
 
             if (!Config.NativeUpsertRows)
@@ -2076,6 +2145,9 @@ namespace SharpOrm
         /// <exception cref="ArgumentNullException">Thrown when rows or toCheckColumns are null or empty.</exception>
         public int Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns = null)
         {
+            if (rows.Length == 0)
+                return 0;
+
             updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
 
             if (!Config.NativeUpsertRows)
