@@ -380,5 +380,39 @@ namespace QueryTest
 
             Assert.Equal(EXPECTED, fallback.ToString());
         }
+
+        [Fact]
+        public void Upsert()
+        {
+            const string EXPECTED = "INSERT INTO [BasicTable] ([Name]) VALUES (@p1); SELECT SCOPE_IDENTITY();";
+            var model = new BasicTable
+            {
+                Id = 0,
+                Name = "Name"
+            };
+
+            using var fallback = RegisterFallback();
+            using var query = new Query<BasicTable>();
+            query.Upsert(model, x => x.Id, x => x.Name);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
+
+        [Fact]
+        public void UpsertWithId()
+        {
+            const string EXPECTED = "SELECT COUNT(*) FROM (SELECT * FROM [BasicTable] WHERE [Id] = 1) AS [count]\r\nINSERT INTO [BasicTable] ([Name]) VALUES (@p1); SELECT SCOPE_IDENTITY();";
+            var model = new BasicTable
+            {
+                Id = 1,
+                Name = "Name"
+            };
+
+            using var fallback = RegisterFallback();
+            using var query = new Query<BasicTable>();
+            query.Upsert(model, x => x.Id, x => x.Name, x => x.Name);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
     }
 }
