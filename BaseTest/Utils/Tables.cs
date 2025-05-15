@@ -69,10 +69,9 @@ namespace BaseTest.Utils
 
             public static Row[] RandomRows(int quantity)
             {
-                return Faker()
+                return [.. Faker()
                     .Generate(quantity)
-                    .Select(x => NewRow(x.Id, x.Name, x.Street, x.City))
-                    .ToArray();
+                    .Select(x => NewRow(x.Id, x.Name, x.Street, x.City))];
             }
 
             public static Row NewRow(int? id, string name, string street, string city)

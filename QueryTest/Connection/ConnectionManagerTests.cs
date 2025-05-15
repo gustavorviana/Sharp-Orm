@@ -7,7 +7,7 @@ namespace QueryTest.Connection;
 public class ConnectionManagerTests : DbMockFallbackTest
 {
     [Fact]
-    public void ManagerErrors()
+    public void ManagerErrorsTest()
     {
         const string Error = "Test Error";
         using (RegisterFallback(x => throw new DatabaseException(Error)))
@@ -19,5 +19,20 @@ public class ConnectionManagerTests : DbMockFallbackTest
             var validatedException = Assert.IsType<DatabaseException>(exception);
             Assert.Equal(Error, validatedException.Message);
         }
+    }
+
+    [Fact]
+    public void CreateCommandBuilderTest()
+    {
+        const int EXPECTED_INITIAL_TIMEOUT = 30;
+        const int EXPECTED_TIMEOUT = 120;
+
+        var initialTimeout = Manager.CreateCommand().CommandTimeout;
+
+        Manager.CommandTimeout = EXPECTED_TIMEOUT;
+        var timeout = Manager.CreateCommand().CommandTimeout;
+
+        Assert.Equal(EXPECTED_INITIAL_TIMEOUT, initialTimeout);
+        Assert.Equal(EXPECTED_TIMEOUT, timeout);
     }
 }

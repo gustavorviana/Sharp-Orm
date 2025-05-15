@@ -17,7 +17,7 @@ namespace SharpOrm.Builder.Grammars
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
-                    throw new InvalidOperationException(Messages.NoColumnsInserted);
+                    return;
 
                 Build(@enum.Current.Cells);
 

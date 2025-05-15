@@ -22,9 +22,18 @@ namespace SharpOrm.DataTranslation
         #endregion
 
         /// <summary>
+        /// Gets or sets the mode for reading primary keys.
+        /// </summary>
+        public ReadMode PrimaryKeyMode { get; set; } = ReadMode.None;
+
+        /// <summary>
         /// Gets or sets a value indicating whether to read primary keys.
         /// </summary>
-        public bool ReadPk { get; set; }
+        public bool ReadPk
+        {
+            get => PrimaryKeyMode != ReadMode.None;
+            set => PrimaryKeyMode = value ? ReadMode.ValidOnly : ReadMode.None;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether to read foreign keys.
@@ -130,6 +139,16 @@ namespace SharpOrm.DataTranslation
             return this;
         }
 
+        /// <summary>  
+        /// Reads rows from a collection of objects and converts them into an array of <see cref="Row"/> instances.  
+        /// </summary>  
+        /// <param name="owners">The collection of objects to read.</param>  
+        /// <returns>An array of <see cref="Row"/> instances representing the objects.</returns>  
+        public Row[] ReadRows(params object[] owners)
+        {
+            return owners.Select(ReadRow).ToArray();
+        }
+
         /// <summary>
         /// Reads a row from the specified object.
         /// </summary>
@@ -144,19 +163,15 @@ namespace SharpOrm.DataTranslation
         private IEnumerable<Cell> ReadDictCells(IDictionary<string, object> owner)
         {
             return owner
-                .Where(item => IsAllowedName(item.Key) || (this.IsKey(item.Key) && this.UsePk(item.Value)))
+                .Where(item => IsAllowedName(item.Key) || (IsKey(item.Key) && CanuseKeyValue(item.Value)))
                 .Select(item => new Cell(item.Key, item.Value));
         }
 
-        private bool IsKey(string name)
+        private static bool IsKey(string name)
         {
             return name.Equals("id", StringComparison.OrdinalIgnoreCase);
         }
 
-        private bool UsePk(object value)
-        {
-            return ReadPk && !TranslationUtils.IsInvalidPk(value);
-        }
         #endregion
 
         /// <summary>
@@ -228,7 +243,7 @@ namespace SharpOrm.DataTranslation
                 return new Cell(column.ForeignInfo.ForeignKey, GetFkValue(context.ObjectInstance, column.GetRaw(context.ObjectInstance), column));
 
             object value = ProcessValue(column, context.ObjectInstance);
-            if (column.Key && TranslationUtils.IsInvalidPk(value))
+            if (column.Key && !CanuseKeyValue(value))
                 return null;
 
             if (Validate) column.ValidateValue(context, value);
@@ -288,6 +303,14 @@ namespace SharpOrm.DataTranslation
         private bool CanReadFk(ColumnInfo column)
         {
             return ReadFk && !table.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool CanuseKeyValue(object value)
+        {
+            if (PrimaryKeyMode == ReadMode.None)
+                return false;
+
+            return !TranslationUtils.IsInvalidPk(value) || PrimaryKeyMode == ReadMode.All;
         }
     }
 }

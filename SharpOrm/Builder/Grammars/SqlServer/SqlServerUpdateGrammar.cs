@@ -16,18 +16,20 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         public void Build(IEnumerable<Cell> cells)
         {
             ThrowOffsetNotSupported();
+
+            var needAlias = !string.IsNullOrEmpty(Info.TableName.Alias) || Query.IsNoLock();
             using (var en = cells.GetEnumerator())
             {
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
-                Builder.Add("UPDATE ").Add(Info.Joins.Any() ? FixTableName(Info.TableName.ToString()) : GetTableName(false));
+                Builder.Add("UPDATE ").Add(FixTableName(needAlias ? Info.TableName.TryGetAlias() : Info.TableName.Name));
                 AddLimit();
                 Builder.Add(" SET ");
                 Builder.AddJoin(WriteUpdateCell, ", ", en);
             }
 
-            if (Info.Joins.Any() || Query.IsNoLock())
+            if (needAlias || Info.Joins.Any())
                 Builder.Add(" FROM ").Add(GetTableName(true));
 
             if (Query.IsNoLock())

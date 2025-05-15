@@ -18,7 +18,7 @@ namespace QueryTest.Sqlite
             using var query = new Query(TestTableUtils.TABLE);
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
-            QueryAssert.Equal($"SELECT * FROM \"TestTable\" WHERE \"Name\" = 'Mike' AND \"Date\" = '{today.ToString(DateTranslation.Format)}' AND \"Alias\" = '\"Mik\";\''Mik\''#--'", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT * FROM \"TestTable\" WHERE \"Name\" = 'Mike' AND \"Date\" = '{today.ToString(Translation.DateFormat)}' AND \"Alias\" = '\"Mik\";\''Mik\''#--'", query.Grammar().Select());
         }
     }
 }

@@ -17,6 +17,66 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
+        public void ReadCellsWithValidKeyTest()
+        {
+            var reader = GetObjectReaderWithValidation(false);
+            reader.PrimaryKeyMode = ReadMode.ValidOnly;
+
+            var cells = reader.ReadCells(new Item
+            {
+                Id = 1,
+                Name = "My Name",
+                Description = "My Description"
+            }).ToArray();
+
+            Assert.Equal(3, cells.Length);
+            Assert.Equal("Id", cells[0].Name);
+            Assert.Equal("Name", cells[1].Name);
+            Assert.Equal("Description", cells[2].Name);
+
+            Assert.Equal(1, cells[0].Value);
+            Assert.Equal("My Name", cells[1].Value);
+            Assert.Equal("My Description", cells[2].Value);
+
+            cells = [.. reader.ReadCells(new Item())];
+            Assert.DoesNotContain(cells, x => x.Name == "Id");
+        }
+
+        [Fact]
+        public void ReadCellsWithInvalidValidKeyTest()
+        {
+            var reader = GetObjectReaderWithValidation(false);
+            reader.PrimaryKeyMode = ReadMode.All;
+
+            var cells = reader.ReadCells(new Item()).ToArray();
+            Assert.Equal(3, cells.Length);
+            Assert.Equal("Id", cells[0].Name);
+            Assert.Equal("Name", cells[1].Name);
+            Assert.Equal("Description", cells[2].Name);
+
+            Assert.Equal(0, cells[0].Value);
+            Assert.Equal(DBNull.Value, cells[1].Value);
+            Assert.Equal(DBNull.Value, cells[2].Value);
+
+            cells = [.. reader.ReadCells(new Item { Id = 1 })];
+            Assert.Equal(3, cells.Length);
+        }
+
+        [Fact]
+        public void ReadCellsWithoutKeyTest()
+        {
+            var reader = GetObjectReaderWithValidation(false);
+            reader.PrimaryKeyMode = ReadMode.None;
+
+            var cells = reader.ReadCells(new Item { Id = 1 }).ToArray();
+
+            Assert.Equal(2, cells.Length);
+
+            cells = [.. reader.ReadCells(new Item())];
+            Assert.Equal(2, cells.Length);
+        }
+
+        [Fact]
         public void ValidateTest()
         {
             var result = Assert.Throws<ValidationException>(() => GetObjectReaderWithValidation().ReadCells(new Item()).ToArray());
@@ -66,19 +126,19 @@ namespace QueryTest.DataTranslation
         public void UpdateColumnsTest()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
-            reader.ReadPk = true;
+            reader.ReadPk = false;
 
-            string[] expected = ["Id", "Name", "Street", "City", "UpdatedAt"];
+            string[] expected = ["Name", "Street", "City", "UpdatedAt"];
 
             var columns = reader.GetColumnNames();
             CollectionAssert.ContainsAll(expected, columns);
         }
 
-        private ObjectReader GetObjectReaderWithValidation()
+        private ObjectReader GetObjectReaderWithValidation(bool validate = true)
         {
             return new ObjectReader(Translation.GetTable(typeof(Item)))
             {
-                Validate = true
+                Validate = validate
             };
         }
 

@@ -1,10 +1,13 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -42,9 +45,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to filter.</param>
         /// <param name="column">The column on which the "contains" condition is applied.</param>
         /// <param name="value">The value to search for within the specified column.</param>
-        public static QueryBase WhereContains(this QueryBase qBase, object column, string value)
+        public static Q WhereContains<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -53,9 +56,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
-        public static QueryBase WhereStartsWith(this QueryBase qBase, object column, string value)
+        public static Q WhereStartsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.Where(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -64,9 +67,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
-        public static QueryBase WhereEndsWith(this QueryBase qBase, object column, string value)
+        public static Q WhereEndsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
+            return (Q)qBase.Where(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -75,9 +78,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to filter.</param>
         /// <param name="column">The column on which the "contains" condition is applied.</param>
         /// <param name="value">The value to search for within the specified column.</param>
-        public static QueryBase WhereNotContains(this QueryBase qBase, object column, string value)
+        public static Q WhereNotContains<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -86,9 +89,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
-        public static QueryBase WhereNotStartsWith(this QueryBase qBase, object column, string value)
+        public static Q WhereNotStartsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.Where(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -97,9 +100,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
-        public static QueryBase WhereNotEndsWith(this QueryBase qBase, object column, string value)
+        public static Q WhereNotEndsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
+            return (Q)qBase.Where(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -131,9 +134,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
-        public static QueryBase WhereIn(this QueryBase qBase, object column, SqlExpression expression)
+        public static Q WhereIn<Q>(this Q qBase, object column, SqlExpression expression) where Q : QueryBase
         {
-            return qBase.Where(column, "IN", expression);
+            return (Q)qBase.Where(column, "IN", expression);
         }
 
         /// <summary>
@@ -141,9 +144,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
-        public static QueryBase WhereIn(this QueryBase qBase, object column, Query query)
+        public static Q WhereIn<Q>(this Q qBase, object column, Query query) where Q : QueryBase
         {
-            return qBase.Where(column, "IN", query);
+            return (Q)qBase.Where(column, "IN", query);
         }
 
         /// <summary>
@@ -151,9 +154,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
-        public static QueryBase WhereNotIn(this QueryBase qBase, object column, SqlExpression expression)
+        public static Q WhereNotIn<Q>(this Q qBase, object column, SqlExpression expression) where Q : QueryBase
         {
-            return qBase.Where(column, "NOT IN", expression);
+            return (Q)qBase.Where(column, "NOT IN", expression);
         }
 
         /// <summary>
@@ -186,9 +189,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="value">The value to check for in the columns.</param>
         /// <param name="columns">The names of the columns to check.</param>
-        public static QueryBase WhereInColumn(this QueryBase qBase, object value, params string[] columns)
+        public static Q WhereInColumn<Q>(this Q qBase, object value, params string[] columns) where Q : QueryBase
         {
-            return WhereInColumn(qBase, false, value, columns, QueryBase.AND);
+            return (Q)WhereInColumn(qBase, false, value, columns, QueryBase.AND);
         }
 
         /// <summary>
@@ -197,9 +200,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="value">The value to check for in the columns.</param>
         /// <param name="columns">The names of the columns to check.</param>
-        public static QueryBase WhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
+        public static Q WhereNotInColumn<Q>(this Q qBase, object value, params string[] columns) where Q : QueryBase
         {
-            return WhereInColumn(qBase, true, value, columns, QueryBase.AND);
+            return (Q)WhereInColumn(qBase, true, value, columns, QueryBase.AND);
         }
 
         /// <summary>
@@ -209,7 +212,7 @@ namespace SharpOrm
         /// <param name="column">Column to be checked.</param>
         /// <param name="likeOptions">LIKE checks that should be added.</param>
         /// <returns></returns>
-        public static QueryBase WhereNotLikeIn(this QueryBase qBase, object column, params string[] likeOptions)
+        public static Q WhereNotLikeIn<Q>(this Q qBase, object column, params string[] likeOptions) where Q : QueryBase
         {
             qBase.WriteWhereType(QueryBase.AND);
             qBase.Info.Where.Add("NOT ");
@@ -224,7 +227,7 @@ namespace SharpOrm
         /// <param name="column">Column to be checked.</param>
         /// <param name="likeOptions">LIKE checks that should be added.</param>
         /// <returns></returns>
-        public static QueryBase WhereLikeIn(this QueryBase qBase, object column, params string[] likeOptions)
+        public static Q WhereLikeIn<Q>(this Q qBase, object column, params string[] likeOptions) where Q : QueryBase
         {
             qBase.WriteWhereType(QueryBase.AND);
             return InternalWhereLikeIn(qBase, column, likeOptions);
@@ -241,9 +244,9 @@ namespace SharpOrm
         /// <param name="column1">The name of the first column to be compared.</param>
         /// <param name="column2">The name of the second column to be compared.</param>
         /// <returns>The updated query object with the added condition.</returns>
-        public static QueryBase OrWhereColumn(this QueryBase query, string column1, string column2)
+        public static Q OrWhereColumn<Q>(this Q query, string column1, string column2) where Q : QueryBase
         {
-            return query.OrWhereColumn(column1, "=", column2);
+            return (Q)query.OrWhereColumn(column1, "=", column2);
         }
 
         /// <summary>
@@ -253,9 +256,9 @@ namespace SharpOrm
         /// <param name="column1">The name of the first column to be compared.</param>
         /// <param name="column2">The name of the second column to be compared.</param>
         /// <returns>The updated query object with the added condition.</returns>
-        public static QueryBase OrWhereNotColumn(this QueryBase query, string column1, string column2)
+        public static Q OrWhereNotColumn<Q>(this Q query, string column1, string column2) where Q : QueryBase
         {
-            return query.OrWhereColumn(column1, "!=", column2);
+            return (Q)query.OrWhereColumn(column1, "!=", column2);
         }
 
         /// <summary>
@@ -264,9 +267,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "contains" comparison on.</param>
         /// <param name="value">The value to search for within the specified column.</param>
-        public static QueryBase OrWhereContains(this QueryBase qBase, object column, string value)
+        public static Q OrWhereContains<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -275,9 +278,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
-        public static QueryBase OrWhereStartsWith(this QueryBase qBase, object column, string value)
+        public static Q OrWhereStartsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.OrWhere(column, "LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -286,9 +289,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
-        public static QueryBase OrWhereEndsWith(this QueryBase qBase, object column, string value)
+        public static Q OrWhereEndsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
+            return (Q)qBase.OrWhere(column, "LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -297,9 +300,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "contains" comparison on.</param>
         /// <param name="value">The value to search for within the specified column.</param>
-        public static QueryBase OrWhereNotContains(this QueryBase qBase, object column, string value)
+        public static Q OrWhereNotContains<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -308,9 +311,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
-        public static QueryBase OrWhereNotStartsWith(this QueryBase qBase, object column, string value)
+        public static Q OrWhereNotStartsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
+            return (Q)qBase.OrWhere(column, "NOT LIKE", string.Concat(value.SanitizeSqlValue(), "%"));
         }
 
         /// <summary>
@@ -319,9 +322,9 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
-        public static QueryBase OrWhereNotEndsWith(this QueryBase qBase, object column, string value)
+        public static Q OrWhereNotEndsWith<Q>(this Q qBase, object column, string value) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
+            return (Q)qBase.OrWhere(column, "NOT LIKE", string.Concat("%", value.SanitizeSqlValue()));
         }
 
         /// <summary>
@@ -353,9 +356,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
-        public static QueryBase OrWhereIn(this QueryBase qBase, object column, SqlExpression expression)
+        public static Q OrWhereIn<Q>(this Q qBase, object column, SqlExpression expression) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "IN", expression);
+            return (Q)qBase.OrWhere(column, "IN", expression);
         }
 
         /// <summary>
@@ -363,9 +366,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "IN" comparison on.</param>
-        public static QueryBase OrWhereIn(this QueryBase qBase, object column, Query query)
+        public static Q OrWhereIn<Q>(this Q qBase, object column, Query query) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "IN", query);
+            return (Q)qBase.OrWhere(column, "IN", query);
         }
 
         /// <summary>
@@ -373,9 +376,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="column">The column to perform the "NOT IN" comparison on.</param>
-        public static QueryBase OrWhereNotIn(this QueryBase qBase, object column, SqlExpression expression)
+        public static Q OrWhereNotIn<Q>(this Q qBase, object column, SqlExpression expression) where Q : QueryBase
         {
-            return qBase.OrWhere(column, "NOT IN", expression);
+            return (Q)qBase.OrWhere(column, "NOT IN", expression);
         }
 
         /// <summary>
@@ -408,7 +411,7 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="value">The value to check for in the columns.</param>
         /// <param name="columns">The names of the columns to check.</param>
-        public static QueryBase OrWhereInColumn(this QueryBase qBase, object value, params string[] columns)
+        public static Q OrWhereInColumn<Q>(this Q qBase, object value, params string[] columns) where Q : QueryBase
         {
             return WhereInColumn(qBase, false, value, columns, QueryBase.OR);
         }
@@ -419,7 +422,7 @@ namespace SharpOrm
         /// <param name="qBase">The QueryBase object to apply the filter on.</param>
         /// <param name="value">The value to check for in the columns.</param>
         /// <param name="columns">The names of the columns to check.</param>
-        public static QueryBase OrWhereNotInColumn(this QueryBase qBase, object value, params string[] columns)
+        public static Q OrWhereNotInColumn<Q>(this Q qBase, object value, params string[] columns) where Q : QueryBase
         {
             return WhereInColumn(qBase, true, value, columns, QueryBase.OR);
         }
@@ -431,7 +434,7 @@ namespace SharpOrm
         /// <param name="column">Column to be checked.</param>
         /// <param name="likeOptions">LIKE checks that should be added.</param>
         /// <returns></returns>
-        public static QueryBase OrWhereNotLikeIn(this QueryBase qBase, object column, params string[] likeOptions)
+        public static Q OrWhereNotLikeIn<Q>(this Q qBase, object column, params string[] likeOptions) where Q : QueryBase
         {
             qBase.WriteWhereType(QueryBase.OR);
             qBase.Info.Where.Add(" NOT ");
@@ -446,7 +449,7 @@ namespace SharpOrm
         /// <param name="column">Column to be checked.</param>
         /// <param name="likeOptions">LIKE checks that should be added.</param>
         /// <returns></returns>
-        public static QueryBase OrWhereLikeIn(this QueryBase qBase, object column, params string[] likeOptions)
+        public static Q OrWhereLikeIn<Q>(this Q qBase, object column, params string[] likeOptions) where Q : QueryBase
         {
             qBase.WriteWhereType(QueryBase.OR);
             return InternalWhereLikeIn(qBase, column, likeOptions);
@@ -462,7 +465,7 @@ namespace SharpOrm
         /// <param name="likeOptions"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        private static QueryBase InternalWhereLikeIn(QueryBase qBase, object column, string[] likeOptions)
+        private static Q InternalWhereLikeIn<Q>(Q qBase, object column, string[] likeOptions) where Q : QueryBase
         {
             if (likeOptions == null || likeOptions.Length < 1)
                 throw new ArgumentNullException(nameof(likeOptions));
@@ -478,7 +481,7 @@ namespace SharpOrm
             return qBase;
         }
 
-        private static QueryBase WhereInColumn(QueryBase qBase, bool not, object value, IEnumerable<string> columns, string whereType)
+        private static Q WhereInColumn<Q>(Q qBase, bool not, object value, IEnumerable<string> columns, string whereType) where Q : QueryBase
         {
             qBase.WriteWhereType(whereType);
             qBase.Info.Where.AddParameter(value);
@@ -563,7 +566,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false, false).Except(expression).ReadCells(obj));
+            return query.Update(query.GetObjectReader(ReadMode.None, false).Except(expression).ReadCells(obj));
         }
 
         /// <summary>
@@ -580,7 +583,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false, false).Except(columns).ReadCells(obj));
+            return query.Update(query.GetObjectReader(ReadMode.None, false).Except(columns).ReadCells(obj));
         }
 
         /// <summary>
@@ -607,7 +610,7 @@ namespace SharpOrm
         [Obsolete("It will be removed in version 4.0.")]
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
-            return Insert<R>(query, query.GetObjectReader(true, true).ReadCells(obj));
+            return Insert<R>(query, query.GetObjectReader(ReadMode.ValidOnly, true).ReadCells(obj));
         }
 
         /// <summary>
@@ -647,6 +650,16 @@ namespace SharpOrm
         public static bool Any(this Query query)
         {
             return query.Count() > 0;
+        }
+
+        /// <summary>
+        /// Checks if there is any value in the table.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public static async Task<bool> AnyAsync(this Query query, CancellationToken token = default)
+        {
+            return await query.CountAsync(token) > 0;
         }
 
         /// <summary>

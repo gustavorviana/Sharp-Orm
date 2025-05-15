@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Errors;
 using SharpOrm.Msg;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections;
 using System.Linq;
@@ -440,8 +441,17 @@ namespace SharpOrm.Builder
             if (not) this.Info.Where.Add("NOT ");
             this.Info.Where.Add("EXISTS ");
 
-            if (queryObj is Query query) this.WriteQuery(query);
-            else this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+            if (queryObj is Query query)
+            {
+                if (query.Info.Select.Length == 1 && query.Info.Select.First().IsAll())
+                    query.Info.Select = new[] { (Column)"1" };
+
+                this.WriteQuery(query);
+            }
+            else
+            {
+                this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+            }
 
             return this;
         }
@@ -493,7 +503,7 @@ namespace SharpOrm.Builder
             this.Info.Where.AddColumn(column, false);
             this.Info.Where.Add().Add(operation).Add();
 
-            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && (operation == "IN" || operation == "NOT IN");
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && IsCollection(operation);
             if (isExpressionList)
                 this.Info.Where.Add('(');
 
@@ -503,6 +513,11 @@ namespace SharpOrm.Builder
                 this.Info.Where.Add(')');
 
             return this;
+        }
+
+        private static bool IsCollection(string operation)
+        {
+            return operation.EqualsIgnoreCase("in") || operation.EqualsIgnoreCase("not in");
         }
 
         /// <summary>

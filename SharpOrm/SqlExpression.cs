@@ -13,6 +13,8 @@ namespace SharpOrm
     public class SqlExpression : IEquatable<SqlExpression>
     {
         private readonly string value;
+        public bool IsEmpty => string.IsNullOrEmpty(value);
+
         /// <summary>
         /// Gets the parameters used in the SQL values.
         /// </summary>
@@ -23,7 +25,7 @@ namespace SharpOrm
         /// </summary>
         protected SqlExpression()
         {
-
+            Parameters = DotnetUtils.EmptyArray<object>();
         }
 
         /// <summary>

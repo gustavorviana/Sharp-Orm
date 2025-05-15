@@ -9,7 +9,7 @@ namespace SharpOrm.DataTranslation
         #region Fields\Properties
         private TimeZoneInfo _dbTimeZone = TimeZoneInfo.Local;
         private TimeZoneInfo _codeTimeZone = TimeZoneInfo.Local;
-        internal const string Format = "yyyy-MM-dd HH:mm:ss";
+        public string Format { get; set; } = "yyyy-MM-dd HH:mm:ss";
 
         /// <summary>
         /// Timezone in which dates should be stored in the database.
@@ -152,7 +152,10 @@ namespace SharpOrm.DataTranslation
 
         private DateTime? ParseDateStringFromDb(string dateStr)
         {
-            if (DateTime.TryParseExact(dateStr, Format, null, DateTimeStyles.None, out DateTime date))
+            if (DateTime.TryParse(dateStr, out DateTime date))
+                return ConvertDate(DbTimeZone, CodeTimeZone, date);
+
+            if (DateTime.TryParseExact(dateStr, Format, null, DateTimeStyles.None, out date))
                 return ConvertDate(DbTimeZone, CodeTimeZone, date);
 
             return null;

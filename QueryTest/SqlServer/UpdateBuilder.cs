@@ -110,5 +110,25 @@ namespace QueryTest.SqlServer
                 sqlExpression
             );
         }
+
+        [Fact]
+        public void UpdateJoin()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.Join("Table2 t2", "t2.Id", "=", "TestTable.T2Id");
+            query.Where("t2.Id", 1);
+
+            var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
+            var sqlExpression = query.Grammar().Update(row.Cells);
+
+            QueryAssert.Equal(
+                new SqlExpression(
+                    "UPDATE [TestTable] SET [name] = ?, [alias] = ?, [value] = NULL, [status] = 1 FROM [TestTable] INNER JOIN [Table2] [t2] ON [t2].[Id] = [TestTable].[T2Id] WHERE [t2].[Id] = 1",
+                    "MyTestName",
+                    "Test"
+                ),
+                sqlExpression
+            );
+        }
     }
 }

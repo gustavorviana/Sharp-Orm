@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Globalization;
 
 namespace SharpOrm.DataTranslation
 {
     internal class NativeSqlTranslation : ISqlTranslation
     {
         private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
-        private static readonly NumericTranslation numericTranslation = new NumericTranslation();
+        internal readonly NumericTranslation numericTranslation = new NumericTranslation();
         internal readonly DateTranslation dateTranslation = new DateTranslation();
         public EnumSerialization EnumSerialization { get; set; } = EnumSerialization.Value;
 
@@ -141,7 +142,7 @@ namespace SharpOrm.DataTranslation
             return StringToSql(value);
         }
 
-        private static bool IsNumeric(object value, Type type)
+        private bool IsNumeric(object value, Type type)
         {
             return numericTranslation.CanWork(type) && (!(value is string strVal) || TranslationUtils.IsNumericString(strVal));
         }

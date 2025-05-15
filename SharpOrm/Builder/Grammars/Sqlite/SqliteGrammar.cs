@@ -20,10 +20,10 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             ParamInterceptor += (original) =>
             {
                 if (original is DateTime date)
-                    return date.ToString(DateTranslation.Format);
+                    return date.ToString(query.Config.Translation.DateFormat);
 
                 if (original is DateTimeOffset offset)
-                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo()).ToString(DateTranslation.Format);
+                    return TimeZoneInfo.ConvertTime(offset.UtcDateTime, GetTimeZoneInfo()).ToString(query.Config.Translation.DateFormat);
 
                 return original;
             };

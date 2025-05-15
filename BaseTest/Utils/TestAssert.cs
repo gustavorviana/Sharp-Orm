@@ -8,7 +8,7 @@ namespace BaseTest.Utils
         public static void EqualDate(DateTime expected, object actual, string message)
         {
             Assert.IsType<DateTime>(actual);
-            EqualDate(expected, (DateTime)actual, message);
+            EqualDate(expected, (DateTime)actual, message, TranslationRegistry.Default);
         }
 
         public static void EqualTime(TimeSpan expected, TimeSpan actual, string message)
@@ -19,9 +19,11 @@ namespace BaseTest.Utils
             Assert.True(expectedSeconds == Math.Round(actual.TotalSeconds), message + $"({expectedSeconds}, {actualSeconds}); ({expected.TotalSeconds}; {actual.TotalSeconds})");
         }
 
-        public static void EqualDate(DateTime expected, DateTime actual, string message)
+        public static void EqualDate(DateTime expected, DateTime actual, string message, TranslationRegistry? registry = null)
         {
-            Assert.Equal(expected.Date.ToString(DateTranslation.Format), actual.Date.ToString(DateTranslation.Format));
+            registry ??= TranslationRegistry.Default;
+
+            Assert.Equal(expected.Date.ToString(registry.DateFormat), actual.Date.ToString(registry.DateFormat));
         }
     }
 }
