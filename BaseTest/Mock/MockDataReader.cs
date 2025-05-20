@@ -58,9 +58,16 @@ namespace BaseTest.Mock
         private bool closed = false;
         public override bool IsClosed => closed;
 
-        public override int RecordsAffected => -1;
+        private int _recordsAffected = -1;
+        public override int RecordsAffected => _recordsAffected;
 
         public override int FieldCount => currentRow?.Count ?? 0;
+
+        public MockDataReader SetRecordsAffected(int value)
+        {
+            _recordsAffected = value;
+            return this;
+        }
 
         public override void Close()
         {
