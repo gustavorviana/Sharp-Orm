@@ -20,10 +20,25 @@ namespace QueryTest
         }
 
         [Fact]
-        public void EmptyBulkInsert_Should_Return_Zero()
+        public void Empty_BulkInsert_Should_Return_Zero()
         {
             using var query = new Query(TestTableUtils.TABLE);
             Assert.Equal(0, query.BulkInsert());
+        }
+
+        [Fact]
+        public void NonEmpty_BulkInsert_Should_Return_Zero()
+        {
+            using var fallback = RegisterFallback(x => new MockDataReader().SetRecordsAffected(1));
+            using var query = new Query(TestTableUtils.TABLE);
+            query.Config.DbParamsLimit = 1;
+
+            Assert.Equal(2, 
+                query.BulkInsert(
+                    new Row(new Cell("Column", "Value")),
+                    new Row(new Cell("Column", "Value"))
+                )
+            );
         }
 
         [Fact]
