@@ -3,6 +3,7 @@ using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -302,10 +303,10 @@ namespace SharpOrm.Connection
             if (Transaction != null)
                 throw new InvalidOperationException(Messages.Connection.TransactionAlreadyOpen);
 
-            if (creator != null)
-                return new ConnectionManager(creator, creator.GetConnection().OpenIfNeeded().BeginTransaction(), true).CopyOptionsFrom(this, false);
+            var transaction = (creator?.GetConnection() ?? Connection).OpenIfNeeded().BeginTransaction(isolationLevel);
+            var management = creator == null ? ConnectionManagement.CloseOnManagerDispose : creator.Management;
 
-            return new ConnectionManager(Config, Connection.OpenIfNeeded().BeginTransaction(isolationLevel), true, ConnectionManagement.CloseOnManagerDispose).CopyOptionsFrom(this, false);
+            return new ConnectionManager(Config, transaction, true, management).CopyOptionsFrom(this, false);
         }
 
         private ConnectionManager CopyOptionsFrom(ConnectionManager manager, bool copyManagement = true)
@@ -341,7 +342,12 @@ namespace SharpOrm.Connection
                 return;
 
             await this.Connection.OpenAsync(token);
-            try { this.Connection.Close(); } catch { }
+
+#if NET5_0_OR_GREATER
+            try { await this.Connection.CloseAsync(); } catch { }
+#else
+            try { this.Connection.Close(); } catch { } 
+#endif
         }
 
         internal void SignalException(Exception exception)
@@ -374,11 +380,11 @@ namespace SharpOrm.Connection
         /// Retrieves a query object for the specified table name.  
         /// </summary>  
         /// <typeparam name="T">The type of the query object.</typeparam>  
-        /// <param name="table">The name of the table.</param>  
+        /// <param name="alias">The alias of the table.</param>  
         /// <returns>A query object for the specified table.</returns>  
-        public Query<T> GetQuery<T>(string table)
+        public virtual Query<T> GetQuery<T>(string alias = null)
         {
-            return GetQuery<T>(new DbName(table));
+            return new Query<T>(alias, this);
         }
 
         /// <summary>  
@@ -387,12 +393,9 @@ namespace SharpOrm.Connection
         /// <typeparam name="T">The type of the query object.</typeparam>  
         /// <param name="table">The name of the table.</param>  
         /// <returns>A query object for the specified table.</returns>  
-        public Query<T> GetQuery<T>(DbName table)
+        public virtual Query<T> GetQuery<T>(DbName table)
         {
-            return new Query<T>(table, this)
-            {
-                CommandTimeout = CommandTimeout
-            };
+            return new Query<T>(table, this);
         }
 
         /// <summary>
@@ -400,7 +403,7 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="table">The name of the table as a <see cref="DbName"/> object.</param>
         /// <returns>A new instance of <see cref="Query"/> for the specified table.</returns>
-        public Query GetQuery(string table)
+        public virtual Query GetQuery(string table)
         {
             return GetQuery(new DbName(table));
         }
@@ -410,25 +413,14 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="table">The name of the table as a <see cref="DbName"/> object.</param>
         /// <returns>A new instance of <see cref="Query"/> for the specified table.</returns>
-        public Query GetQuery(DbName table)
+        public virtual Query GetQuery(DbName table)
         {
-            return new Query(table, this)
-            {
-                CommandTimeout = CommandTimeout
-            };
+            return new Query(table, this);
         }
 
         internal CommandBuilder GetCommand()
         {
-            return new CommandBuilder(this)
-            {
-                Timeout = CommandTimeout
-            };
-        }
-
-        internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry)
-        {
-            return new CommandBuilder(this, registry, false);
+            return new CommandBuilder(this);
         }
 
         internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry, bool leaveOpen)
