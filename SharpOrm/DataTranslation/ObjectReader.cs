@@ -255,7 +255,7 @@ namespace SharpOrm.DataTranslation
             if (!IsAllowedName(column.Name) || (column.Key && !ReadPk))
                 return false;
 
-            return column.ForeignInfo == null || CanReadFk(column);
+            return (column.ForeignInfo != null && CanReadFk(column)) || column.Translation != null;
         }
 
         private object ProcessValue(ColumnInfo column, object owner)

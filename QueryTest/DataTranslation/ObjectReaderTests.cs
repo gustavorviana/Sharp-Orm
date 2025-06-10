@@ -26,7 +26,12 @@ namespace QueryTest.DataTranslation
             {
                 Id = 1,
                 Name = "My Name",
-                Description = "My Description"
+                Description = "My Description",
+                SubItem = new SubItem
+                {
+                    Id = 2,
+                    Name = "Sub Item Name"
+                }
             }).ToArray();
 
             Assert.Equal(3, cells.Length);
@@ -150,6 +155,14 @@ namespace QueryTest.DataTranslation
             public string? Name { get; set; }
 
             public string? Description { get; set; }
+
+            public SubItem? SubItem { get; set; }
+        }
+
+        private class SubItem
+        {
+            public int Id { get; set; }
+            public string? Name { get; set; }
         }
     }
 }
