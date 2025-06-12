@@ -5,6 +5,18 @@ namespace SharpOrm
 {
     internal static class TaskUtils
     {
+        public static Task CompletedTask
+        {
+            get
+            {
+#if NET45
+return Task.FromResult(true);
+#else
+                return Task.CompletedTask;
+#endif
+            }
+        }
+
         public static Task<T> Async<T>(Func<T> callback)
         {
             try

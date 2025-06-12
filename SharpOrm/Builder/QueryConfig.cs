@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.Grammars;
 using SharpOrm.DataTranslation;
+using SharpOrm.Interceptors;
 using SharpOrm.Msg;
 using SharpOrm.SqlMethods;
 using System;
@@ -12,6 +13,8 @@ namespace SharpOrm.Builder
     /// </summary>
     public abstract class QueryConfig : ICloneable
     {
+        public ISaveInterceptor SaveInterceptor { get; set; }
+
         /// <summary>
         /// Gets the maximum number of parameters allowed in a database query.
         /// </summary>
