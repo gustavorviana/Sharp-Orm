@@ -85,7 +85,7 @@ namespace QueryTest.DataTranslation
         public void ValidateTest()
         {
             var result = Assert.Throws<ValidationException>(() => GetObjectReaderWithValidation().ReadCells(new Item()).ToArray());
-            Assert.Equal("The Item field is required.", result.Message);
+            Assert.Equal("The Name field is required.", result.Message);
         }
 
         [Fact]

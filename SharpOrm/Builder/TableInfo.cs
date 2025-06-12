@@ -17,7 +17,7 @@ namespace SharpOrm.Builder
     {
         private readonly object _readLock = new object();
         internal readonly TranslationRegistry registry;
-        private ObjectReader reader = null;
+        private ObjectReaderBase _reader = null;
 
         public Type Type { get; }
         /// <summary>
@@ -168,20 +168,20 @@ namespace SharpOrm.Builder
                 return this.GetConfiguredReader(readPk, readFk, properties, needContains, validate).ReadCells(owner);
         }
 
-        private ObjectReader GetConfiguredReader(bool readPk, bool readFk, string[] properties, bool needContains, bool validate)
+        private ObjectReaderBase GetConfiguredReader(bool readPk, bool readFk, string[] properties, bool needContains, bool validate)
         {
-            if (this.reader == null)
-                this.reader = new ObjectReader(this);
+            if (_reader == null)
+                _reader = ObjectReader.Create(this);
 
-            this.reader.ReadPk = readPk;
-            this.reader.ReadFk = readFk;
+            _reader.ReadPk = readPk;
+            _reader.ReadFk = readFk;
 
-            if (needContains) this.reader.Only(properties);
-            else this.reader.Except(properties);
+            if (needContains) _reader.Only(properties);
+            else _reader.Except(properties);
 
-            this.reader.Validate = validate;
+            _reader.Validate = validate;
 
-            return this.reader;
+            return _reader;
         }
 
         public override string ToString()

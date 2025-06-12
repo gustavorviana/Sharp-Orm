@@ -253,6 +253,8 @@ namespace SharpOrm.Builder
             if (value == DBNull.Value)
                 value = null;
 
+            context.MemberName = column.Name;
+
             for (int i = 0; i < Validations.Length; i++)
                 Validations[i].Validate(value, context);
         }
