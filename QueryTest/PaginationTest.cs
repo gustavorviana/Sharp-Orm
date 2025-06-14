@@ -110,10 +110,13 @@ namespace QueryTest
 
             var customer = fakeCustomer.Generate();
 
-            ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] WHERE [customer_id] = 2");
-            Connection.QueryReaders["SELECT * FROM [Orders] WHERE [customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
-                () => new MockDataReader(i => Row.Parse(order), 1);
-            Connection.QueryReaders["SELECT TOP(1) * FROM [Customers] WHERE [Id] = " + customer.Id] = () => new MockDataReader(i => Row.Parse(customer), 1);
+            var builder = new RowBuilder()
+                .AddObject(Row.Parse(order))
+                .AddObject("Customers_c_", Row.Parse(customer));
+
+            ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] LEFT JOIN [Customers] ON [Customers].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2");
+            Connection.QueryReaders["SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status], [Customers].[Id] AS [Customers_c_Id], [Customers].[Name] AS [Customers_c_Name], [Customers].[Email] AS [Customers_c_Email], [Customers].[address_id] AS [Customers_c_address_id] FROM [Orders] LEFT JOIN [Customers] ON [Customers].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
+                () => new MockDataReader(i => builder.ToRow(), 1);
 
             using var fallback = RegisterFallback();
             using var query = new Query<Order>();
@@ -121,6 +124,7 @@ namespace QueryTest
 
             using var pager = query.Paginate(2, 1);
 
+            Assert.NotEmpty(pager);
             Assert.NotNull(pager[0].Customer);
             Assert.Equivalent(pager[0].Customer, customer);
             Assert.Equal(pager[0].CustomerId, order.CustomerId);

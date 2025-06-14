@@ -9,6 +9,8 @@ namespace SharpOrm.Builder
     /// </summary>
     public class QueryInfo : QueryBaseInfo, IRootTypeMap
     {
+        internal QueryBase Parent { get; set; }
+
         Type IRootTypeMap.RootType { get; set; }
 
         /// <summary>

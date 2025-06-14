@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.DataTranslation
 {
-    public class ObjectTranslatorTests : DbMockTest
+    public class ObjectTranslatorTests : DbMockFallbackTest
     {
         private readonly TableInfo table;
 
@@ -291,8 +291,9 @@ namespace QueryTest.DataTranslation
         public void LoadArrayChild()
         {
             Connection.QueryReaders.Add("SELECT TOP(1) * FROM [Orders]", () => GetReader(i => MakeOrderCells(1), 3));
-            Connection.QueryReaders.Add("SELECT * FROM [OrderItems] WHERE [id] = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
+            Connection.QueryReaders.Add("SELECT * FROM [OrderItems] WHERE [Id] = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
+            using var fallback = RegisterFallback();
             using var query = new Query<Order>(Manager);
             query.AddForeign(x => x.ArrayItems);
             query.AddForeign(x => x.ListItems);
@@ -301,6 +302,10 @@ namespace QueryTest.DataTranslation
             var obj = query.FirstOrDefault();
 
             Assert.NotNull(obj);
+            Assert.NotEmpty(obj.ArrayItems);
+            Assert.NotEmpty(obj.ListItems);
+            Assert.NotEmpty(obj.IListItems);
+
             Assert.True(obj.ArrayItems.All(itm => itm.OrderId == 1));
             Assert.True(obj.ListItems.All(itm => itm.OrderId == 1));
             Assert.True(obj.IListItems.All(itm => itm.OrderId == 1));

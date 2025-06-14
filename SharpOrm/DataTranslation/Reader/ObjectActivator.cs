@@ -40,7 +40,6 @@ namespace SharpOrm.DataTranslation.Reader
         /// Gets the appropriate constructor for the _type based on the data record.
         /// </summary>
         /// <param name="record">The data record used to match constructor parameters.</param>
-        /// <param name="paramsIndex">Array of parameter indexes.</param>
         /// <returns>The matched constructor, or null if none found.</returns>
         private ParamInfo[] GetParams(IDataRecord record, TranslationRegistry registry, out ConstructorInfo constructor)
         {
@@ -82,7 +81,6 @@ namespace SharpOrm.DataTranslation.Reader
 #if DEBUG
                 System.Diagnostics.Debugger.Break();
 #endif
-
                 return null;
             }
         }

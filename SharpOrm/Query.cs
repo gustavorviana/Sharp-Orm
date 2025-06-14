@@ -9,9 +9,9 @@ using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,12 +21,14 @@ namespace SharpOrm
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
     /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
-    public class Query<T> : Query
+    public class Query<T> : Query, IFkNodeRoot
     {
         private ObjectReader _objReader;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _pendingSelect = false;
 
         protected internal TableInfo TableInfo { get; }
-        private List<MemberInfo> _fkToLoad = new List<MemberInfo>();
+        private readonly ForeignKeyRegister _foreignKeyRegister;
 
         /// <summary>
         /// If the model has one or more validations defined, they will be checked before saving or updating.
@@ -46,6 +48,8 @@ namespace SharpOrm
             get => Info.Where.Trashed;
             set => Info.Where.SetTrash(value, TableInfo);
         }
+
+        ForeignKeyRegister IFkNodeRoot.ForeignKeyRegister => _foreignKeyRegister;
 
         #region Query
 
@@ -135,6 +139,7 @@ namespace SharpOrm
         /// <param name="manager">Connection manager to be used.</param>
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
+            Info.Parent = this;
             ((IRootTypeMap)Info).RootType = typeof(T);
             TableInfo = manager.Config.Translation.GetTable(((IRootTypeMap)Info).RootType);
             ValidateModelOnSave = manager.Config.ValidateModelOnSave;
@@ -142,11 +147,15 @@ namespace SharpOrm
 
             if (TableInfo.SoftDelete != null)
                 Trashed = Trashed.Except;
+
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo);
         }
 
         private Query(DbName table, QueryConfig config) : base(table, config)
         {
+            Info.Parent = this;
             ((IRootTypeMap)Info).RootType = typeof(T);
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo);
         }
 
         private void ApplyValidations()
@@ -264,9 +273,24 @@ namespace SharpOrm
         /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
-            foreach (var column in ExpressionUtils<T>.GetMemberPath(call, false).Reverse())
-                if (!_fkToLoad.Contains(column))
-                    _fkToLoad.Add(column);
+            var members = ExpressionUtils<T>.GetMemberPath(call, false).Reverse();
+            var createdNodes = _foreignKeyRegister.RegisterTreePath(members).ToList();
+            for (int i = 0; i < createdNodes.Count; i++)
+            {
+                var currentNode = createdNodes[i];
+
+                if (!currentNode.IsCollection)
+                    Join(
+                        currentNode.TableInfo.Name,
+                        $"{currentNode.TableInfo.Name}.{currentNode.LocalKeyColumn}",
+                        "=",
+                        $"{currentNode.TableParent.Name}.{currentNode.ParentKeyColumn}",
+                        "LEFT"
+                    );
+            }
+
+            if (createdNodes.Count > 0)
+                _pendingSelect = true;
 
             return this;
         }
@@ -485,6 +509,7 @@ namespace SharpOrm
 
             try
             {
+                ConfigureForeignSelect();
                 using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(Info.Config.NewGrammar(this).Select()))
                     foreach (var item in ConfigureFkLoader(cmd.ExecuteEnumerable<K>(true)))
                         yield return item;
@@ -495,12 +520,19 @@ namespace SharpOrm
             }
         }
 
+        private void ConfigureForeignSelect()
+        {
+            if (!_foreignKeyRegister.HasAnyNonCollection())
+                return;
+
+            var columns = _foreignKeyRegister.GetAllColumn();
+            if (columns.Length > 0)
+                Select(columns);
+        }
+
         private IEnumerable<K> ConfigureFkLoader<K>(DbCommandEnumerable<K> enumerable)
         {
-            if (TranslationUtils.IsNullOrEmpty(_fkToLoad))
-                return enumerable;
-
-            FkLoaders fkLoaders = new FkLoaders(Manager, _fkToLoad, Token);
+            FkLoaders fkLoaders = new FkLoaders(Manager, _foreignKeyRegister, Token);
 
             enumerable._fkQueue = fkLoaders;
             var list = enumerable.ToList();
@@ -794,7 +826,6 @@ namespace SharpOrm
 
             Upsert(obj, toCheckColumns, updateColumns);
         }
-
 
         /// <summary>
         /// Inserts or updates an object in the database based on the specified columns to check and update.
@@ -1715,7 +1746,7 @@ namespace SharpOrm
             if (!(cloned is Query<T> query))
                 return;
 
-            query._fkToLoad.AddRange(_fkToLoad);
+            _foreignKeyRegister.CopyTo(query._foreignKeyRegister);
         }
 
         internal ObjectReader GetObjectReader(ReadMode pkReadMode, bool isCreate)
@@ -1732,6 +1763,28 @@ namespace SharpOrm
             _objReader.IsCreate = isCreate;
 
             return _objReader;
+        }
+
+        public override string ToString()
+        {
+            if (_pendingSelect)
+            {
+                _pendingSelect = false;
+                ConfigureForeignSelect();
+            }
+
+            return base.ToString();
+        }
+
+        public override QueryBase Where(object column, string operation, object value)
+        {
+            if (column is string strCol)
+                return base.Where(new SafeWhere(strCol, operation, value));
+
+            if (column is Column col)
+                return base.Where(new SafeWhere(col, operation, value));
+
+            return base.Where(column, operation, value);
         }
     }
 

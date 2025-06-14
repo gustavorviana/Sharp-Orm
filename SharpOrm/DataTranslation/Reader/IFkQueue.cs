@@ -1,10 +1,12 @@
 ﻿using SharpOrm.Builder;
+using System;
 
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
     /// Interface representing a foreign key queue.
     /// </summary>
+    [Obsolete("This interface will be removed in version 4.0.")]
     public interface IFkQueue
     {
         /// <summary>

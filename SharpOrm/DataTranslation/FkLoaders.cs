@@ -11,21 +11,24 @@ using System.Threading;
 
 namespace SharpOrm.DataTranslation
 {
+    [Obsolete]
     internal class FkLoaders : IFkQueue
     {
         #region Fields/Props
         private readonly Queue<ForeignInfo> _foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly CancellationToken _token;
-        private readonly IReadOnlyList<MemberInfo> _fkToLoad;
 
+        public ForeignKeyRegister ForeignKeyRegister { get; }
         public ConnectionManager Manager { get; }
+        public QueryConfig Config => Manager.Config;
         #endregion
 
-        public FkLoaders(ConnectionManager manager, IReadOnlyList<MemberInfo> fkToLoad, CancellationToken token)
+        public FkLoaders(ConnectionManager manager, ForeignKeyRegister register, CancellationToken token)
         {
+            ForeignKeyRegister = register;
             _token = token;
+
             Manager = manager;
-            _fkToLoad = fkToLoad;
         }
 
         public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
@@ -33,10 +36,7 @@ namespace SharpOrm.DataTranslation
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            if (_fkToLoad.FirstOrDefault(f => f == column.column) is MemberInfo lCol)
-                AddFkColumn(lCol, owner, fkValue, column);
-            else if (Manager.Config.LoadForeign)
-                column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(translator, column, fkValue));
+            AddFkColumn(owner, fkValue, column);
         }
 
         /// <summary>
@@ -47,27 +47,13 @@ namespace SharpOrm.DataTranslation
             while (!_token.IsCancellationRequested && _foreignKeyToLoad.Count > 0)
             {
                 ForeignInfo info = _foreignKeyToLoad.Dequeue();
-                info.SetForeignValue(GetValueFor(info));
+                info.SetValue(GetCollectionValueFor(info));
             }
 
             _token.ThrowIfCancellationRequested();
         }
 
-        private object GetValueFor(ForeignInfo info)
-        {
-            if (ReflectionUtils.IsCollection(info.Type))
-                return GetCollectionValueFor(info);
-
-            using (var query = CreateQuery(info))
-            {
-                query.Limit = 1;
-
-                using (var @enum = CreateEnumerator(info, query.ExecuteReader()))
-                    return @enum.MoveNext() ? @enum.Current : null;
-            }
-        }
-
-        private object GetCollectionValueFor(ForeignInfo info)
+        private RuntimeList GetCollectionValueFor(ForeignInfo info)
         {
             using (var query = CreateQuery(info))
             {
@@ -76,7 +62,7 @@ namespace SharpOrm.DataTranslation
                 using (var @enum = CreateEnumerator(info, query.ExecuteReader()))
                     runtime.AddAll(@enum);
 
-                return runtime.ToCollection(info.Type);
+                return runtime;
             }
         }
 
@@ -94,17 +80,39 @@ namespace SharpOrm.DataTranslation
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
-            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), Manager.Config.NestedMapMode, this, Manager.Config.Translation);
+            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), Manager.Config.NestedMapMode, null, Manager.Config.Translation);
             return new DbObjectEnumerator(reader, mapped, _token);
         }
 
-        private void AddFkColumn(MemberInfo lCol, object owner, object fkValue, ColumnInfo column)
+        private void AddFkColumn(object owner, object fkValue, ColumnInfo column)
         {
-            var info = _foreignKeyToLoad.FirstOrDefault(fki => fki.IsFk(column.Type, fkValue));
-            if (info == null)
-                _foreignKeyToLoad.Enqueue(info = new ForeignInfo(lCol, fkValue, column.ForeignInfo.LocalKey));
+            _foreignKeyToLoad.Enqueue(new ForeignInfo(owner, Config.Translation.GetTableName(column.Type), column, fkValue, column.ForeignInfo.LocalKey));
+        }
 
-            info.AddFkColumn(owner, column);
+        private class ForeignInfo
+        {
+            private readonly object _owner;
+            private readonly ColumnInfo _column;
+
+            public object ForeignKey { get; }
+            public string TableName { get; }
+            public string LocalKey { get; }
+
+            public Type Type => _column.Type;
+
+            public ForeignInfo(object owner, string tableName, ColumnInfo column, object foreignKey, string localKey)
+            {
+                ForeignKey = foreignKey;
+                TableName = tableName;
+                LocalKey = localKey;
+                _column = column;
+                _owner = owner;
+            }
+
+            public void SetValue(RuntimeList list)
+            {
+                _column.SetRaw(_owner, list.ToCollection(Type));
+            }
         }
     }
 }

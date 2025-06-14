@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 
 namespace SharpOrm.Builder
 {
@@ -84,6 +85,15 @@ namespace SharpOrm.Builder
                 return GetCollectionInterfaces().Any(x => interfaces.Contains(x));
 
             return GetGenericCollectionInterfaces().Any(x => HasGenericInterface(interfaces, x));
+        }
+
+        public static Type GetCollectionElementType(Type type)
+        {
+            if (type.IsArray)
+                return type.GetElementType();
+
+            var args = type.GetGenericArguments();
+            return args.Length > 0 ? args[0] : type;
         }
 
         private static IEnumerable<Type> GetGenericCollectionInterfaces()

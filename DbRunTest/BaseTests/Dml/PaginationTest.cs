@@ -2,7 +2,9 @@
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using SharpOrm;
+using SharpOrm.Builder.Grammars;
 using System.Data.Common;
+using System.Diagnostics;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
@@ -94,11 +96,12 @@ namespace DbRunTest.BaseTests.Dml
         public virtual void PaginateWithForeign()
         {
             ConfigureInitialCustomerAndOrder();
+            Grammar.QueryLogger = (sql) => Debug.WriteLine(sql);
             using var query = NewQuery<Order>();
-            var orders = ((Query<Order>)query.Where("customer_id", 2)).AddForeign(o => o.Customer.Address).Paginate(2, 1);
+            var orders = query.Where(x => x.CustomerId, 2).AddForeign(o => o.Customer.Address).Paginate(2, 1);
 
             Assert.NotNull(orders[0].Customer);
-            Assert.Equal(orders[0].Customer, orders[1].Customer);
+            Assert.Equivalent(orders[0].Customer, orders[1].Customer);
             Assert.Equal(orders[0].CustomerId, orders[1].CustomerId);
             Assert.Equal(orders[0].Customer.Id, orders[1].Customer.Id);
 

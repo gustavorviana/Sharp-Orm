@@ -203,7 +203,10 @@ namespace SharpOrm.DataTranslation
         /// <returns>The valid type.</returns>
         public static Type GetValidTypeFor(Type expectedType)
         {
-            if (expectedType != null && Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
+            if (expectedType == null)
+                return null;
+
+            if (Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
                 return underlyingType;
 
             return expectedType;

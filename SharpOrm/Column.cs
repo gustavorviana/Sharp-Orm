@@ -270,12 +270,12 @@ namespace SharpOrm
             StringBuilder builder = new StringBuilder("Column(");
 
             if (expression != null) builder.Append(expression.ToString());
-            else if (string.IsNullOrEmpty(Alias)) builder.Append(Name.Trim());
+            else builder.Append(Name.Trim());
 
             if (UseCollate())
                 builder.Append(" COLLATE ").Append(Collate);
 
-            if (expression == null)
+            if (expression == null && !string.IsNullOrEmpty(Alias))
                 builder.AppendFormat(" AS {0}", Alias.Trim());
 
             return builder.Append(")").ToString();
