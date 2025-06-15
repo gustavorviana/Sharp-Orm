@@ -22,7 +22,7 @@ namespace SharpOrm.SqlMethods
             SqlExpression column = GetMemberNameExpression(info, property, forcePrefix);
 
             foreach (var member in property.Childs)
-                column = this.ApplyCaller(info, column, member);
+                column = ApplyCaller(info, column, member);
 
             return new QueryBuilder(info).Add(column).ToExpression();
         }

@@ -1,4 +1,6 @@
-﻿using SharpOrm.Builder;
+﻿using DbRunTest.Comparators;
+using SharpOrm.Builder;
+using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +14,8 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     internal abstract class ForeignKeyNodeBase
     {
-        protected readonly List<ForeignKeyTreeNode> _nodes = new List<ForeignKeyTreeNode>();
-        public IReadOnlyCollection<ForeignKeyTreeNode> Nodes => _nodes;
+        protected readonly List<ForeignKeyNode> _nodes = new List<ForeignKeyNode>();
+        public IReadOnlyCollection<ForeignKeyNode> Nodes => _nodes;
         public TableInfo TableInfo { get; }
 
         public ForeignKeyNodeBase(TableInfo tableInfo)
@@ -25,25 +27,24 @@ namespace SharpOrm.DataTranslation
         /// Gets an existing child node for the specified member or adds a new one if it does not exist.
         /// </summary>
         /// <param name="member">The member representing the foreign key relationship.</param>
-        /// <param name="node">The resulting <see cref="ForeignKeyTreeNode"/> instance.</param>
         /// <returns>True if a new node was added; false if the node already existed.</returns>
-        public virtual bool GetOrAddChild(MemberInfo member, out ForeignKeyTreeNode node)
+        public virtual ForeignKeyNode GetOrAddChild(MemberInfo member)
         {
-            node = _nodes.FirstOrDefault(x => x.Member.Equals(member));
+            var node = _nodes.FirstOrDefault(x => MemberInfoComparator.Default.Equals(x.Member, member));
             if (node != null)
-                return false;
+                return node;
 
             var memberColumnInfo = TableInfo.GetColumn(member);
             if (memberColumnInfo == null)
                 throw new InvalidOperationException($"Column not found for member {member.Name} in table {TableInfo.Name}");
 
             var memberTableInfo = TableInfo.registry.GetTable(GetMemberType(member, out var isCollection));
-
-            node = new ForeignKeyTreeNode(memberTableInfo, memberColumnInfo, TableInfo, GetTreePrefix(), isCollection);
+            node = CreateNode(memberColumnInfo, memberTableInfo, isCollection);
             _nodes.Add(node);
-
-            return true;
+            return node;
         }
+
+        protected abstract ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection);
 
         public bool Exists(MemberInfo member)
         {
@@ -60,9 +61,6 @@ namespace SharpOrm.DataTranslation
             return memberType;
         }
 
-        public virtual string GetTreePrefix()
-        {
-            return $"{TableInfo.Name}_";
-        }
+        public abstract string GetTreePrefix();
     }
 }

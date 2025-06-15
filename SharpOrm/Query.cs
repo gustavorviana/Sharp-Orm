@@ -5,6 +5,7 @@ using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
+using SharpOrm.ForeignKey;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace SharpOrm
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
     /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
-    public class Query<T> : Query, IFkNodeRoot
+    public class Query<T> : Query, IFkNodeRoot, INodeCreationListener
     {
         private ObjectReader _objReader;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -148,14 +149,14 @@ namespace SharpOrm
             if (TableInfo.SoftDelete != null)
                 Trashed = Trashed.Except;
 
-            _foreignKeyRegister = new ForeignKeyRegister(TableInfo);
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, this);
         }
 
         private Query(DbName table, QueryConfig config) : base(table, config)
         {
             Info.Parent = this;
             ((IRootTypeMap)Info).RootType = typeof(T);
-            _foreignKeyRegister = new ForeignKeyRegister(TableInfo);
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, this);
         }
 
         private void ApplyValidations()
@@ -265,34 +266,44 @@ namespace SharpOrm
 
         #region AddForeign
 
+        internal IIncludable<T, TProperty> Include<TProperty>(Expression<Func<T, TProperty>> expression)
+        {
+            var members = ExpressionUtils<T>.GetMemberPath(expression, false).Reverse();
+            return _foreignKeyRegister.RegisterTreePath(members).GetIncludable<T, TProperty>();
+        }
+
         /// <summary>
         /// Adds a foreign key to the query based on the specified column expression.
         /// </summary>
-        /// <typeparam name="T">The type of the elements in the query.</typeparam>
         /// <param name="call">An expression representing the column to be added as a foreign key.</param>
         /// <returns>The query with the added foreign key.</returns>
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var members = ExpressionUtils<T>.GetMemberPath(call, false).Reverse();
-            var createdNodes = _foreignKeyRegister.RegisterTreePath(members).ToList();
-            for (int i = 0; i < createdNodes.Count; i++)
-            {
-                var currentNode = createdNodes[i];
-
-                if (!currentNode.IsCollection)
-                    Join(
-                        currentNode.TableInfo.Name,
-                        $"{currentNode.TableInfo.Name}.{currentNode.LocalKeyColumn}",
-                        "=",
-                        $"{currentNode.TableParent.Name}.{currentNode.ParentKeyColumn}",
-                        "LEFT"
-                    );
-            }
-
-            if (createdNodes.Count > 0)
-                _pendingSelect = true;
+            _foreignKeyRegister.RegisterTreePath(members);
 
             return this;
+        }
+
+        void INodeCreationListener.Created(ForeignKeyNode node)
+        {
+            if (node.IsCollection)
+                return;
+
+            JoinQuery join = new JoinQuery(Info.Config, node.Name)
+            {
+                Type = "LEFT",
+                MemberInfo = node.Member
+            };
+
+            join.WhereColumn(
+                $"{node.Name.TryGetAlias()}.{node.LocalKeyColumn}",
+                "=",
+                $"{node.TableParent.Name}.{node.ParentKeyColumn}"
+            );
+
+            Info.Joins.Add(join);
+            _pendingSelect = true;
         }
 
         #endregion

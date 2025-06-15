@@ -110,7 +110,7 @@ namespace SharpOrm.DataTranslation.Reader
             return this;
         }
 
-        private void RegisterForeignNode(ForeignKeyTreeNode node, IDataRecord record)
+        private void RegisterForeignNode(ForeignKeyNode node, IDataRecord record)
         {
             if (node.ColumnInfo.ForeignInfo != null && ReflectionUtils.IsCollection(node.ColumnInfo.Type))
             {
@@ -128,7 +128,7 @@ namespace SharpOrm.DataTranslation.Reader
                 nodeObj.RegisterForeignNode(subNode, record);
         }
 
-        private MappedObject MapNodeColumns(ForeignKeyTreeNode node, IDataRecord record)
+        private MappedObject MapNodeColumns(ForeignKeyNode node, IDataRecord record)
         {
             _objectActivator = new ObjectActivator(Type, record, _registry);
             foreach (var info in node.Columns)

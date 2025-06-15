@@ -1,46 +1,35 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SharpOrm.DataTranslation
 {
-    internal class ForeignKeyRegister : ForeignKeyNodeBase
+    internal class ForeignKeyRegister : ForeignKeyNodeBase, INodeCreationListener
     {
         private readonly List<MemberInfo> _fkCollections = new List<MemberInfo>();
+        private readonly INodeCreationListener _listener;
 
-        public ForeignKeyRegister(TableInfo rootTableInfo) : base(rootTableInfo)
+        public ForeignKeyRegister(TableInfo rootTableInfo, INodeCreationListener listener) : base(rootTableInfo)
         {
+            _listener = listener;
         }
 
-        public IEnumerable<ForeignKeyTreeNode> RegisterTreePath(IEnumerable<MemberInfo> memberPath)
+        public ForeignKeyNode RegisterTreePath(IEnumerable<MemberInfo> memberPath)
         {
             var pathList = memberPath.ToList();
-            if (pathList.Count == 0) yield break;
+            if (pathList.Count == 0) return null;
 
-            var createdNodes = new List<ForeignKeyTreeNode>();
-            var rootMember = pathList[0];
-            if (GetOrAddChild(rootMember, out var rootNode))
-                yield return rootNode;
-
+            var rootNode = GetOrAddChild(pathList[0]);
             var currentNode = rootNode;
 
             for (int i = 1; i < pathList.Count; i++)
-            {
-                var isNew = currentNode.GetOrAddChild(pathList[i], out currentNode);
+                currentNode = currentNode.GetOrAddChild(pathList[i]);
 
-                if (isNew)
-                {
-                    if (currentNode.IsCollection)
-                        _fkCollections.Add(currentNode.Member);
-
-                    createdNodes.Add(currentNode);
-                }
-            }
-
-            foreach (var node in createdNodes)
-                yield return node;
+            return currentNode;
         }
 
         public void CopyTo(ForeignKeyRegister register)
@@ -52,17 +41,6 @@ namespace SharpOrm.DataTranslation
         public bool IsFkCollection(MemberInfo member)
         {
             return _fkCollections.Contains(member);
-        }
-
-        public override bool GetOrAddChild(MemberInfo member, out ForeignKeyTreeNode node)
-        {
-            if (!base.GetOrAddChild(member, out node))
-                return false;
-
-            if (node.IsCollection)
-                _fkCollections.Add(member);
-
-            return true;
         }
 
         public Column[] GetAllColumn()
@@ -91,7 +69,7 @@ namespace SharpOrm.DataTranslation
             return false;
         }
 
-        public IEnumerable<ForeignKeyTreeNode> GetAllNodes()
+        public IEnumerable<ForeignKeyNode> GetAllNodes()
         {
             foreach (var child in _nodes)
                 foreach (var descendant in child.GetAllNodes())
@@ -101,6 +79,26 @@ namespace SharpOrm.DataTranslation
         public override string GetTreePrefix()
         {
             return string.Empty;
+        }
+
+        void INodeCreationListener.Created(ForeignKeyNode node)
+        {
+            if (node.IsCollection)
+                _fkCollections.Add(node.Member);
+
+            _listener.Created(node);
+        }
+
+        public override string ToString()
+        {
+            return $"{TableInfo.Name} (Root)";
+        }
+
+        protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection)
+        {
+            var node = new ForeignKeyNode(this, memberTableInfo, memberColumnInfo, TableInfo, GetTreePrefix(), isCollection);
+            ((INodeCreationListener)this).Created(node);
+            return node;
         }
     }
 }

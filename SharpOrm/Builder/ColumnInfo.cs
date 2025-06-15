@@ -273,7 +273,6 @@ namespace SharpOrm.Builder
         public bool Equals(ColumnInfo other)
         {
             return !(other is null) &&
-                   EqualityComparer<MemberInfo>.Default.Equals(column, other.column) &&
                    Name == other.Name &&
                    Key == other.Key &&
                    Order == other.Order &&
@@ -287,7 +286,6 @@ namespace SharpOrm.Builder
         public override int GetHashCode()
         {
             int hashCode = -1825907665;
-            hashCode = hashCode * -1521134295 + EqualityComparer<MemberInfo>.Default.GetHashCode(column);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + Key.GetHashCode();
             hashCode = hashCode * -1521134295 + Order.GetHashCode();

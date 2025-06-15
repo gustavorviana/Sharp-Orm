@@ -98,7 +98,10 @@ namespace DbRunTest.BaseTests.Dml
             ConfigureInitialCustomerAndOrder();
             Grammar.QueryLogger = (sql) => Debug.WriteLine(sql);
             using var query = NewQuery<Order>();
-            var orders = query.Where(x => x.CustomerId, 2).AddForeign(o => o.Customer.Address).Paginate(2, 1);
+            query.Where(x => x.CustomerId, 2);
+
+            var orders = query.AddForeign(o => o.Customer.Address)
+                .Paginate(2, 1);
 
             Assert.NotNull(orders[0].Customer);
             Assert.Equivalent(orders[0].Customer, orders[1].Customer);

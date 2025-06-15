@@ -6,9 +6,9 @@ using SharpOrm;
 
 namespace QueryTest
 {
-    public class PaginationTest : DbMockFallbackTest
+    public class PaginationTests : DbMockFallbackTest
     {
-        public PaginationTest()
+        public PaginationTests()
         {
             SetMockConnectionVersion();
         }
@@ -112,10 +112,10 @@ namespace QueryTest
 
             var builder = new RowBuilder()
                 .AddObject(Row.Parse(order))
-                .AddObject("Customers_c_", Row.Parse(customer));
+                .AddObject("Customer_c_", Row.Parse(customer));
 
-            ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] LEFT JOIN [Customers] ON [Customers].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2");
-            Connection.QueryReaders["SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status], [Customers].[Id] AS [Customers_c_Id], [Customers].[Name] AS [Customers_c_Name], [Customers].[Email] AS [Customers_c_Email], [Customers].[address_id] AS [Customers_c_address_id] FROM [Orders] LEFT JOIN [Customers] ON [Customers].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
+            ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] LEFT JOIN [Customers] [Customer] ON [Customer].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2");
+            Connection.QueryReaders["SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status], [Customer].[Id] AS [Customer_c_Id], [Customer].[Name] AS [Customer_c_Name], [Customer].[Email] AS [Customer_c_Email], [Customer].[address_id] AS [Customer_c_address_id] FROM [Orders] LEFT JOIN [Customers] [Customer] ON [Customer].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
                 () => new MockDataReader(i => builder.ToRow(), 1);
 
             using var fallback = RegisterFallback();

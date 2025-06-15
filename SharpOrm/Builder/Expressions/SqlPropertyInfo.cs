@@ -20,7 +20,7 @@ namespace SharpOrm.Builder.Expressions
 
         public override string ToString()
         {
-            return this.Name;
+            return Name;
         }
     }
 }

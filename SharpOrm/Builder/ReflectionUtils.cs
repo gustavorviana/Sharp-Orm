@@ -34,6 +34,17 @@ namespace SharpOrm.Builder
             return b.ToString();
         }
 
+        public static Type GetTopMostBaseType(Type type)
+        {
+            if (type == null) return null;
+
+            Type current = type;
+            while (current.BaseType != null && current.BaseType != typeof(object))
+                current = current.BaseType;
+
+            return current;
+        }
+
         public static object GetMemberValue(MemberInfo member, object owner)
         {
             if (TryGetValue(member, owner, out object value))

@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation;
+﻿using DbRunTest.Comparators;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -56,7 +57,7 @@ namespace SharpOrm.Builder
             this.Type = type;
             this.registry = registry;
             this.Name = GetNameOf(type);
-            this.Columns = this.GetColumns().ToArray();
+            this.Columns = GetColumns().ToArray();
             this.SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
             this.Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
         }
@@ -212,7 +213,7 @@ namespace SharpOrm.Builder
 
         internal ColumnInfo GetColumn(MemberInfo member)
         {
-            return this.Columns.FirstOrDefault(c => c.column == member);
+            return Columns.FirstOrDefault(c => MemberInfoComparator.Default.Equals(c.column, member));
         }
     }
 }
