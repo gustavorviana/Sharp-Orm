@@ -564,13 +564,13 @@ namespace SharpOrm.Builder
 
         private class DeferredValue : IDeferredSqlExpression
         {
-            private readonly IDeferredSqlExpression original;
-            private readonly bool alias;
+            private readonly IDeferredSqlExpression _original;
+            private readonly bool _alias;
 
             public DeferredValue(IDeferredSqlExpression original, bool alias)
             {
-                this.original = original;
-                this.alias = alias;
+                _original = original;
+                _alias = alias;
             }
 
             public SqlExpression ToExpression(IReadonlyQueryInfo info)
@@ -582,7 +582,7 @@ namespace SharpOrm.Builder
             {
                 try
                 {
-                    return original.ToExpression(info);
+                    return _original.ToSafeExpression(info, _alias);
                 }
                 catch (Exception)
                 {
@@ -591,6 +591,11 @@ namespace SharpOrm.Builder
 
                     return new SqlExpression("!");
                 }
+            }
+
+            public override string ToString()
+            {
+                return _original.ToString();
             }
         }
     }

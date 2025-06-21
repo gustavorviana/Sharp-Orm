@@ -141,22 +141,20 @@ namespace SharpOrm
         public Query(DbName table, ConnectionManager manager) : base(table, manager)
         {
             Info.Parent = this;
-            ((IRootTypeMap)Info).RootType = typeof(T);
-            TableInfo = manager.Config.Translation.GetTable(((IRootTypeMap)Info).RootType);
+            TableInfo = manager.Config.Translation.GetTable(typeof(T));
             ValidateModelOnSave = manager.Config.ValidateModelOnSave;
             ApplyValidations();
 
             if (TableInfo.SoftDelete != null)
                 Trashed = Trashed.Except;
 
-            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, this);
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, Info.TableName, this);
         }
 
         private Query(DbName table, QueryConfig config) : base(table, config)
         {
             Info.Parent = this;
-            ((IRootTypeMap)Info).RootType = typeof(T);
-            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, this);
+            _foreignKeyRegister = new ForeignKeyRegister(TableInfo, Info.TableName, this);
         }
 
         private void ApplyValidations()
@@ -260,7 +258,7 @@ namespace SharpOrm
 
         internal ExpressionColumn[] GetColumns(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            var processor = new ExpressionProcessor<T>(Info, config);
+            var processor = new ExpressionProcessor<T>(this, config);
             return processor.ParseColumns(expression).ToArray();
         }
 
@@ -292,14 +290,13 @@ namespace SharpOrm
 
             JoinQuery join = new JoinQuery(Info.Config, node.Name)
             {
-                Type = "LEFT",
-                MemberInfo = node.Member
+                Type = "LEFT"
             };
 
             join.WhereColumn(
                 $"{node.Name.TryGetAlias()}.{node.LocalKeyColumn}",
                 "=",
-                $"{node.TableParent.Name}.{node.ParentKeyColumn}"
+                $"{node.TableParent.TryGetAlias()}.{node.ParentKeyColumn}"
             );
 
             Info.Joins.Add(join);
@@ -801,7 +798,7 @@ namespace SharpOrm
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
         public Task UpsertAsync(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null, CancellationToken token = default)
         {
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
@@ -816,7 +813,7 @@ namespace SharpOrm
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
         public Task<int> UpsertAsync(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null, CancellationToken token = default)
         {
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
@@ -831,7 +828,7 @@ namespace SharpOrm
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
         public void Upsert(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
         {
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
@@ -846,7 +843,7 @@ namespace SharpOrm
         /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
         public int Upsert(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
         {
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
 
@@ -931,7 +928,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
             var insertColumns = processor.ParseColumnNames(insertColumnsExp).ToArray();
@@ -971,7 +968,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.New);
             var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
             var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
             var insertColumns = processor.ParseColumnNames(insertColumnsExp).ToArray();
@@ -1054,48 +1051,26 @@ namespace SharpOrm
         /// <returns>The current query instance.</returns>
         public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
-            var name = new ExpressionProcessor<T>(Info, ExpressionConfig.None).GetTableName(table, out var member);
-            var dbName = new DbName(name, alias);
+            var members = ExpressionUtils<T>.GetMemberPath(table, false).Reverse().ToArray();
+            var node = _foreignKeyRegister.Get(members);
 
-            if (Info.Joins.Any(j => j.MemberInfo == member && j.Info.TableName == dbName))
-                throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, member.Name));
+            if (node != null)
+                throw new InvalidOperationException(string.Format(Messages.Query.DuplicateJoin, members.Last().Name));
 
-            JoinQuery join = new JoinQuery(Info.Config, dbName, typeof(T)) { Type = type, GrammarOptions = grammarOptions, MemberInfo = member };
-            join.Where(GetColumn(join.Info, column1, true), operation, GetColumn(column2, true));
+            node = _foreignKeyRegister.RegisterTreePath(members, true);
+
+            JoinQuery join = new JoinQuery(Info.Config, node.Name) { Type = type, GrammarOptions = grammarOptions };
+            (join.Info as QueryInfo).Parent = this;
+
+            var column1Result = GetColumn(column1, node);
+            var column2Result = GetColumn(column2);
+
+            join.Where(column1Result, operation, column2Result);
             Info.Joins.Add(join);
 
+            _pendingSelect = true;
+
             return this;
-        }
-
-        /// <summary>
-        /// Performs an INNER JOIN between this query and another table with a specified alias.
-        /// </summary>
-        /// <typeparam name="C">The type of the related table.</typeparam>
-        /// <param name="alias">The alias for the table. If no alias is desired, use an empty string.</param>
-        /// <param name="column1">The first column expression to compare.</param>
-        /// <param name="column2">The second column expression to compare.</param>
-        /// <returns>The current query instance.</returns>
-        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, Expression<ColumnExpression<T>> column2)
-        {
-            return (Query<T>)Join<C>(alias, column1, "=", column2);
-        }
-
-        /// <summary>
-        /// Performs a JOIN between this query and another table with a specified alias, operation, and join type.
-        /// </summary>
-        /// <typeparam name="C">The type of the related table.</typeparam>
-        /// <param name="alias">The alias for the table. If no alias is desired, use an empty string.</param>
-        /// <param name="column1">The first column expression to compare.</param>
-        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
-        /// <param name="column2">The second column expression to compare.</param>
-        /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
-        /// <returns>The current query instance.</returns>
-        public Query<T> Join<C>(string alias, Expression<ColumnExpression<C>> column1, string operation, Expression<ColumnExpression<T>> column2, string type = "INNER")
-        {
-            return (Query<T>)Join(DbName.Of<C>(alias, Config.Translation), q =>
-            {
-                q.Where(GetColumn(q.Info, column1, true), operation, GetColumn(column2, true));
-            }, type);
         }
 
         public Query<T> Join<R>(string alias, string column1, string column2)
@@ -1709,24 +1684,16 @@ namespace SharpOrm
 
         #endregion
 
-        private ExpressionColumn GetColumn(Expression<ColumnExpression<T>> column, bool forceTablePrefix = false)
+        private ExpressionColumn GetColumn<K>(Expression<ColumnExpression<K>> column, IForeignKeyNode parent = null)
         {
-            return GetColumn(Info, column, forceTablePrefix);
-        }
-
-        private static ExpressionColumn GetColumn<K>(IReadonlyQueryInfo info, Expression<ColumnExpression<K>> column, bool forceTablePrefix)
-        {
-            var processor = new ExpressionProcessor<K>(info, ExpressionConfig.SubMembers | ExpressionConfig.Method)
-            {
-                ForceTablePrefix = forceTablePrefix,
-            };
+            var processor = new ExpressionProcessor<K>(Info, Config.Translation, ExpressionConfig.SubMembers | ExpressionConfig.Method, parent ?? _foreignKeyRegister);
 
             return processor.ParseColumns(column).First();
         }
 
         private Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
         {
-            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.All);
+            var processor = new ExpressionProcessor<T>(this, ExpressionConfig.All);
             return processor.ParseColumn(column);
         }
 

@@ -45,6 +45,11 @@ namespace SharpOrm.Builder
             return current;
         }
 
+        public static bool SameType(Type type1, Type type2)
+        {
+            return GetTopMostBaseType(type1) == GetTopMostBaseType(type2);
+        }
+
         public static object GetMemberValue(MemberInfo member, object owner)
         {
             if (TryGetValue(member, owner, out object value))

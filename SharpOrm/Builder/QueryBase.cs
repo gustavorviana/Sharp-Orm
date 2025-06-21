@@ -10,13 +10,14 @@ namespace SharpOrm.Builder
     /// <summary>
     /// SQL clause creator. Provides methods to build SQL SELECT, INSERT, UPDATE and DELETE queries. Allows defining WHERE, ORDER BY, GROUP BY, JOIN and other clauses.
     /// </summary>
-    public class QueryBase
+    public class QueryBase : IWithQueryInfo
     {
         #region Fields\Const
         internal const string AND = "AND";
         internal const string OR = "OR";
 
         protected internal QueryBaseInfo Info { get; }
+        QueryInfo IWithQueryInfo.Info => Info as QueryInfo;
 
         private static string[] AvailableOperations { get; } = {
             "=",
@@ -35,6 +36,7 @@ namespace SharpOrm.Builder
             "IS",
             "IS NOT"
         };
+
         #endregion
 
         /// <summary>
@@ -43,12 +45,12 @@ namespace SharpOrm.Builder
         /// <param name="config">The configuration to use for the query.</param>
         public QueryBase(QueryConfig config, DbName table)
         {
-            this.Info = new QueryInfo(config, table);
+            Info = new QueryInfo(config, table);
         }
 
         protected QueryBase(QueryInfo info)
         {
-            this.Info = info;
+            Info = info;
         }
 
         #region Where

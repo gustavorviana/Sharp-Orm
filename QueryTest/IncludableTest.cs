@@ -15,7 +15,7 @@ namespace QueryTest
         public IncludableTest()
         {
             _listener = Substitute.For<INodeCreationListener>();
-            _register = new ForeignKeyRegister(new TableInfo(typeof(Order), TranslationRegistry.Default), _listener);
+            _register = new ForeignKeyRegister(new TableInfo(typeof(Order), TranslationRegistry.Default), new DbName("Orders"), _listener);
         }
 
         [Fact]

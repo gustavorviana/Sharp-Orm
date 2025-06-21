@@ -12,22 +12,28 @@ namespace SharpOrm.DataTranslation
     {
         private readonly List<MemberInfo> _fkCollections = new List<MemberInfo>();
         private readonly INodeCreationListener _listener;
+        public override DbName Name { get; }
 
-        public ForeignKeyRegister(TableInfo rootTableInfo, INodeCreationListener listener) : base(rootTableInfo)
+        public override QueryInfo RootInfo => _listener.Info;
+
+        QueryInfo IWithQueryInfo.Info => _listener.Info;
+
+        public ForeignKeyRegister(TableInfo rootTableInfo, DbName name, INodeCreationListener listener) : base(rootTableInfo)
         {
             _listener = listener;
+            Name = name;
         }
 
-        public ForeignKeyNode RegisterTreePath(IEnumerable<MemberInfo> memberPath)
+        public ForeignKeyNode RegisterTreePath(IEnumerable<MemberInfo> memberPath, bool silent = false)
         {
             var pathList = memberPath.ToList();
             if (pathList.Count == 0) return null;
 
-            var rootNode = GetOrAddChild(pathList[0]);
+            var rootNode = GetOrAddChild(pathList[0], silent);
             var currentNode = rootNode;
 
             for (int i = 1; i < pathList.Count; i++)
-                currentNode = currentNode.GetOrAddChild(pathList[i]);
+                currentNode = currentNode.GetOrAddChild(pathList[i], silent);
 
             return currentNode;
         }
@@ -49,7 +55,7 @@ namespace SharpOrm.DataTranslation
 
             foreach (var item in TableInfo.Columns)
                 if (item.ForeignInfo == null)
-                    names.Add(new Column($"{TableInfo.Name}.{item.Name}", ""));
+                    names.Add(new Column($"{Name.TryGetAlias()}.{item.Name}", ""));
 
             foreach (var node in GetAllNodes())
                 if (!node.IsCollection)
@@ -94,10 +100,23 @@ namespace SharpOrm.DataTranslation
             return $"{TableInfo.Name} (Root)";
         }
 
-        protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection)
+        protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection, bool silent = false)
         {
-            var node = new ForeignKeyNode(this, memberTableInfo, memberColumnInfo, TableInfo, GetTreePrefix(), isCollection);
-            ((INodeCreationListener)this).Created(node);
+            var node = new ForeignKeyNode(this, memberTableInfo, memberColumnInfo, Name, GetTreePrefix(), isCollection);
+            if (!silent)
+                ((INodeCreationListener)this).Created(node);
+            return node;
+        }
+
+        public ForeignKeyNode Get(IList<MemberInfo> path)
+        {
+            if (path == null || path.Count == 0)
+                return null;
+
+            var node = Get(path[0]);
+            for (int i = 1; node != null && i < path.Count; i++)
+                node = node.Get(path[i]);
+
             return node;
         }
     }

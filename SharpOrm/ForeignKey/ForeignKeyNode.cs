@@ -15,8 +15,8 @@ namespace SharpOrm.DataTranslation
 
         public ForeignKeyRegister Root { get; }
         public ColumnInfo ColumnInfo { get; }
-        public TableInfo TableParent { get; }
-        public DbName Name { get; }
+        public DbName TableParent { get; }
+        public override DbName Name { get; }
 
         public MemberInfo Member => ColumnInfo.column;
         public string ParentKeyColumn => ColumnInfo.ForeignInfo?.ForeignKey;
@@ -24,7 +24,9 @@ namespace SharpOrm.DataTranslation
 
         public bool IsCollection { get; }
 
-        public ForeignKeyNode(ForeignKeyRegister root, TableInfo tableInfo, ColumnInfo columnInfo, TableInfo tableParent, string prefix, bool isCollection) : base(tableInfo)
+        public override QueryInfo RootInfo => Root.RootInfo;
+
+        public ForeignKeyNode(ForeignKeyRegister root, TableInfo tableInfo, ColumnInfo columnInfo, DbName tableParent, string prefix, bool isCollection) : base(tableInfo)
         {
             ColumnInfo = columnInfo ?? throw new ArgumentNullException(nameof(columnInfo));
             Prefix = prefix + Member.Name;
@@ -84,10 +86,11 @@ namespace SharpOrm.DataTranslation
             return includable;
         }
 
-        protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection)
+        protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection, bool silent = false)
         {
-            var node = new ForeignKeyNode(Root, memberTableInfo, memberColumnInfo, TableInfo, GetTreePrefix(), isCollection);
-            ((INodeCreationListener)Root).Created(node);
+            var node = new ForeignKeyNode(Root, memberTableInfo, memberColumnInfo, Name, GetTreePrefix(), isCollection);
+            if (!silent)
+                ((INodeCreationListener)Root).Created(node);
 
             return node;
         }

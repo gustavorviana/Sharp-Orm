@@ -7,11 +7,9 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents the information for building a SQL query.
     /// </summary>
-    public class QueryInfo : QueryBaseInfo, IRootTypeMap
+    public class QueryInfo : QueryBaseInfo
     {
         internal QueryBase Parent { get; set; }
-
-        Type IRootTypeMap.RootType { get; set; }
 
         /// <summary>
         /// Gets the HAVING clause builder.

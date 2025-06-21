@@ -15,7 +15,7 @@ namespace SharpOrm
     public class Column : ISqlExpressibleAlias, IEquatable<Column>, IEquatable<string>
     {
         #region Fields\Properties
-        protected readonly SqlExpression expression;
+        internal readonly SqlExpression expression;
         /// <summary>
         /// Gets the name of the column.
         /// </summary>
@@ -235,7 +235,7 @@ namespace SharpOrm
         /// <returns>A Column object representing the parsed column expression.</returns>
         public static Column Parse<T>(Expression<ColumnExpression<T>> expression, IReadonlyQueryInfo info)
         {
-            return new ExpressionProcessor<T>(info, ExpressionConfig.All).ParseColumns(expression).First();
+            return new ExpressionProcessor<T>(info, info?.Config?.Translation, ExpressionConfig.All, null).ParseColumns(expression).First();
         }
 
         /// <summary>
@@ -248,7 +248,7 @@ namespace SharpOrm
         /// <returns>A Column object representing the parsed column expression.</returns>
         public static Column Parse<T, R>(Expression<ColumnExpression<T, R>> expression, IReadonlyQueryInfo info)
         {
-            return new ExpressionProcessor<T>(info, ExpressionConfig.All).ParseColumn(expression);
+            return new ExpressionProcessor<T>(info, info?.Config?.Translation, ExpressionConfig.All, null).ParseColumn(expression);
         }
 
         internal string GetCountColumn()

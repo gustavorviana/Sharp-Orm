@@ -13,6 +13,7 @@ namespace SharpOrm.DataTranslation
     public abstract class ObjectReaderBase
     {
         protected readonly TableInfo _table;
+        public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private ReadMode _primaryKeyMode = ReadMode.None;
@@ -151,7 +152,7 @@ namespace SharpOrm.DataTranslation
 
         protected IEnumerable<SqlMember> GetMembers<K>(Expression<ColumnExpression<K>> expression)
         {
-            return new ExpressionProcessor<K>(null, ExpressionConfig.New).ParseExpression(expression);
+            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New, null).ParseExpression(expression);
         }
 
         protected IEnumerable<ColumnInfo> GetValidColumns()

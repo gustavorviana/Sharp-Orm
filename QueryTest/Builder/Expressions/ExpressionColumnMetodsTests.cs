@@ -2,7 +2,6 @@
 using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm.Builder;
-using SharpOrm.Builder.Expressions;
 using static QueryTest.Builder.Expressions.ExpressionProcessorTests;
 
 namespace QueryTest.Builder.Expressions
@@ -53,37 +52,6 @@ namespace QueryTest.Builder.Expressions
             var column = ParseColumn<Customer>(x => new { CliId = x.Name.Length });
 
             QueryAssert.Equal(info, "LEN([Name]) AS [CliId]", column.ToExpression(info));
-        }
-
-        [Fact]
-        public void SelectCancatWithInclude()
-        {
-            var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
-
-            var info = GetQueryInfo<Customer>(new SqlServerQueryConfig(), new DbName("Customer"));
-            info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
-
-            var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
-            var columns = processor.ParseColumns(x => string.Concat(x.Name, x.Address.Street)).ToArray();
-
-            Assert.Single(columns);
-            QueryAssert.Equal(info, "CONCAT([Customer].[Name],[Address].[Street]) AS [Concat]", columns[0].ToExpression(info));
-        }
-
-        [Fact]
-        public void SelectWithInclude()
-        {
-            var memberInfo = typeof(Customer).GetProperty(nameof(Customer.Address));
-
-            var info = GetQueryInfo<Customer>(new SqlServerQueryConfig(), new DbName("Customer"));
-            info.Joins.Add(new JoinQuery(info.Config, new DbName("Address")) { MemberInfo = memberInfo });
-
-            var processor = new ExpressionProcessor<Customer>(info, ExpressionConfig.All);
-            var columns = processor.ParseColumns(x => new { x.Name, x.Address.Street }).ToArray();
-
-            Assert.Equal(2, columns.Length);
-            QueryAssert.Equal(info, "[Customer].[Name]", columns[0].ToExpression(info));
-            QueryAssert.Equal(info, "[Address].[Street]", columns[1].ToExpression(info));
         }
 
         [Fact]

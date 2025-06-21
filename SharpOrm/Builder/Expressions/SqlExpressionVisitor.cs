@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.ForeignKey;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -12,17 +13,19 @@ namespace SharpOrm.Builder.Expressions
     {
         private const string PropertyExpressionTypeName = "System.Linq.Expressions.PropertyExpression";
 
-        private readonly ExpressionConfig config;
-        private readonly IReadonlyQueryInfo info;
-        private readonly Type rootType;
+        private readonly TranslationRegistry _registry;
+        private readonly ExpressionConfig _config;
+        private readonly IReadonlyQueryInfo _info;
+        internal readonly IForeignKeyNode _parent;
+        private readonly Type _rootType;
 
-        public bool ForceTablePrefix { get; set; }
-
-        public SqlExpressionVisitor(Type rootType, IReadonlyQueryInfo info, ExpressionConfig config)
+        public SqlExpressionVisitor(Type rootType, TranslationRegistry registry, IReadonlyQueryInfo info, ExpressionConfig config, IForeignKeyNode parent)
         {
-            this.rootType = rootType;
-            this.config = config;
-            this.info = info;
+            _registry = registry ?? TranslationRegistry.Default;
+            _rootType = rootType;
+            _parent = parent;
+            _config = config;
+            _info = info;
         }
 
         public SqlMember Visit(Expression expression, string memberName = null)
@@ -35,14 +38,17 @@ namespace SharpOrm.Builder.Expressions
             if (expression is NewExpression)
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
-            var members = GetMembers(expression, out var member);
+            var path = GetPath(expression);
 
-            if (ReflectionUtils.IsStatic(member) && member is PropertyInfo)
-                return new SqlMember(new SqlPropertyInfo(expression.Type, member), memberName);
+            if (path.IsStaticProperty())
+                return new SqlMember(path.TargetMember, memberName);
 
-            var memberType = member.DeclaringType.IsAssignableFrom(rootType) ? rootType : member.DeclaringType;
+            return new SqlMember(path.Path.ToArray(), path.TargetMember, path.Childs.ToArray(), GetColumnName(path.TargetMember), memberName);
+        }
 
-            return new SqlMember(memberType, member, members.ToArray(), memberName);
+        private string GetColumnName(SqlMemberInfo member)
+        {
+            return _registry.GetTable(member.DeclaringType).GetColumn(member.Member)?.Name ?? member.Member.Name;
         }
 
         private Expression UnwrapUnaryExpression(Expression expression)
@@ -54,55 +60,46 @@ namespace SharpOrm.Builder.Expressions
             return expression;
         }
 
-        private List<SqlMemberInfo> GetMembers(Expression expression, out MemberInfo member)
+        private MemberPath GetPath(Expression expression)
         {
             if (expression is MemberExpression memberExpression)
-                return VisitMemberExpression(memberExpression, out member);
+                return VisitMemberExpression(memberExpression);
 
             if (expression is MethodCallExpression methodCallExpression)
-                return VisitMethodCall(methodCallExpression, out member);
+                return VisitMethodCall(methodCallExpression);
 
             throw new NotSupportedException(string.Format("Expression type {0} is not supported", expression.GetType().Name));
         }
 
-        private List<SqlMemberInfo> VisitMemberExpression(MemberExpression memberExp, out MemberInfo member)
+        private MemberPath VisitMemberExpression(MemberExpression memberExp)
         {
             ValidateSubmembers(memberExp);
 
-            var path = GatherMemberPath(memberExp);
-            member = path[0];
-            path.RemoveAt(0);
-
-            return new List<SqlMemberInfo>(path.Select(x => new SqlPropertyInfo(memberExp.Expression.Type, x)));
-        }
-
-        private void ValidateSubmembers(MemberExpression memberExp)
-        {
-            if (!config.HasFlag(ExpressionConfig.SubMembers) && memberExp.Expression as MemberExpression != null)
-                throw new NotSupportedException(Messages.Expressions.SubmembersDisabled);
-        }
-
-        private List<MemberInfo> GatherMemberPath(MemberExpression memberExp)
-        {
-            var path = new List<MemberInfo>();
+            var info = new MemberPath();
             var currentExp = memberExp;
 
             while (currentExp != null)
             {
-                path.Insert(0, currentExp.Member);
+                info.AddMember(currentExp);
                 currentExp = currentExp.Expression as MemberExpression;
             }
 
-            return path;
+            return info.LoadRootMember(_rootType);
         }
 
-        private List<SqlMemberInfo> VisitMethodCall(MethodCallExpression methodCallExp, out MemberInfo member)
+        private void ValidateSubmembers(MemberExpression memberExp)
         {
-            if (!config.HasFlag(ExpressionConfig.Method))
+            if (!_config.HasFlag(ExpressionConfig.SubMembers) && memberExp.Expression as MemberExpression != null)
+                throw new NotSupportedException(Messages.Expressions.SubmembersDisabled);
+        }
+
+        private MemberPath VisitMethodCall(MethodCallExpression methodCallExp)
+        {
+            if (!_config.HasFlag(ExpressionConfig.Method))
                 throw new NotSupportedException(Messages.Expressions.FunctionDisabled);
 
-            var methods = new List<SqlMemberInfo>();
             Expression currentExp = methodCallExp;
+            var methods = new List<SqlMemberInfo>();
 
             while (currentExp is MethodCallExpression)
             {
@@ -115,12 +112,12 @@ namespace SharpOrm.Builder.Expressions
                 currentExp = currentMethodCall.Object;
             }
 
-            return ProcessMethodCallResult(currentExp, methods, out member);
+            return ProcessMethodCallResult(currentExp, methods);
         }
 
         private SqlMethodInfo CreateMethodInfo(MethodCallExpression methodCall)
         {
-            var arguments = methodCall.Arguments.Select(VisitMethodArgument).ToArray();
+            var arguments = methodCall.Arguments.Select(x => VisitMethodArgument(x)).ToArray();
             return new SqlMethodInfo(
                 methodCall.Method.IsStatic ?
                 methodCall.Method.DeclaringType :
@@ -130,21 +127,26 @@ namespace SharpOrm.Builder.Expressions
             );
         }
 
-        private List<SqlMemberInfo> ProcessMethodCallResult(Expression currentExp, List<SqlMemberInfo> methods, out MemberInfo member)
+        private MemberPath ProcessMethodCallResult(Expression currentExp, List<SqlMemberInfo> methods)
         {
             var finalMethodCall = currentExp as MethodCallExpression;
             if (finalMethodCall != null)
             {
-                member = finalMethodCall.Method;
-                return methods;
+                var memberType = finalMethodCall.Type.IsAssignableFrom(_rootType) ? _rootType : finalMethodCall.Type.DeclaringType;
+
+                var path = new MemberPath(memberType);
+
+                path.AddMembers(methods);
+                path.TargetMember = new SqlMethodInfo(finalMethodCall.Type, finalMethodCall.Method, new object[0]);
+                return path;
             }
 
             var memberExpression = currentExp as MemberExpression;
             if (memberExpression != null)
             {
-                var list = VisitMemberExpression(memberExpression, out member);
-                list.AddRange(methods);
-                return list;
+                var path = VisitMemberExpression(memberExpression);
+                path.Childs.AddRange(methods);
+                return path;
             }
 
             throw new InvalidOperationException(Messages.Expressions.Invalid);
@@ -180,7 +182,7 @@ namespace SharpOrm.Builder.Expressions
             if (memberExp.Expression.GetType().ToString() != PropertyExpressionTypeName)
                 return new MemberInfoColumn(memberExp.Member);
 
-            return this.info.Config.Methods.ApplyMember(this.info, Visit(memberExp), ForceTablePrefix);
+            return _info.Config.Methods.ApplyMember(_info, Visit(memberExp, null), _parent);
         }
 
         private object GetTarget(Expression expression)

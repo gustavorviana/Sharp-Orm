@@ -9,36 +9,36 @@ namespace SharpOrm.Builder.Expressions
 {
     public class SqlMember : IEquatable<SqlMember>
     {
-        internal SqlMemberInfo[] Childs { get; set; }
-        internal bool IsNativeType { get; }
-        private readonly Type declaringType;
+        private readonly SqlMemberInfo _member;
 
-        public MemberInfo Member { get; }
+        internal SqlMemberInfo[] Path { get; }
+        internal SqlMemberInfo[] Childs { get; set; }
+        internal bool IsNativeType => _member.IsNativeType;
+        public Type DeclaringType => _member.DeclaringType;
+
+        public MemberInfo Member => _member.Member;
         public bool IsStatic { get; }
-        public string Name => ColumnInfo.GetName(Member);
+        public string Name { get; }
         public string Alias { get; }
 
-        public SqlMember(Type declaringType, MemberInfo member, SqlMemberInfo[] childs, string alias)
+        internal SqlMember(SqlMemberInfo[] path, SqlMemberInfo member, SqlMemberInfo[] childs, string name, string alias)
         {
-            if (member == null) throw new ArgumentNullException(nameof(member));
+            _member = member ?? throw new ArgumentNullException(nameof(member));
 
-            IsNativeType = member.MemberType == MemberTypes.Method || TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false);
-
-            this.declaringType = declaringType;
-            Member = member;
+            Name = name;
+            Path = path ?? DotnetUtils.EmptyArray<SqlMemberInfo>();
             Childs = childs ?? DotnetUtils.EmptyArray<SqlMemberInfo>();
-            IsStatic = false;
             Alias = GetAlias(Name, alias, childs, IsNativeType);
         }
 
-        public SqlMember(SqlMemberInfo staticMember, string alias)
+        internal SqlMember(SqlMemberInfo staticMember, string alias)
         {
-            if (staticMember == null) throw new ArgumentNullException(nameof(staticMember));
+            _member = staticMember ?? throw new ArgumentNullException(nameof(staticMember));
 
-            Member = staticMember.Member;
+            Name = ColumnInfo.GetName(Member);
+            Path = DotnetUtils.EmptyArray<SqlMemberInfo>();
             Childs = new[] { staticMember };
             IsStatic = true;
-            IsNativeType = true;
             Alias = !string.IsNullOrEmpty(alias) && alias != Name ? alias : null;
         }
 
@@ -50,7 +50,7 @@ namespace SharpOrm.Builder.Expressions
             if (Member.Name == alias)
                 alias = null;
 
-            return !string.IsNullOrEmpty(alias) && alias != name ? alias : null;
+            return !string.IsNullOrEmpty(alias) || alias != name ? alias : null;
         }
 
         public bool Equals(SqlMember other)
@@ -97,7 +97,7 @@ namespace SharpOrm.Builder.Expressions
         internal SqlPropertyInfo GetInfo()
         {
             if (Member.MemberType == MemberTypes.Property || Member.MemberType == MemberTypes.Field)
-                return new SqlPropertyInfo(declaringType, Member);
+                return new SqlPropertyInfo(DeclaringType, Member);
 
             throw new NotSupportedException();
         }

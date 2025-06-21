@@ -12,11 +12,14 @@ namespace SharpOrm.DataTranslation
     /// <summary>
     /// Base class for managing a collection of foreign key tree nodes associated with a table.
     /// </summary>
-    internal abstract class ForeignKeyNodeBase
+    internal abstract class ForeignKeyNodeBase : IForeignKeyNode
     {
         protected readonly List<ForeignKeyNode> _nodes = new List<ForeignKeyNode>();
         public IReadOnlyCollection<ForeignKeyNode> Nodes => _nodes;
         public TableInfo TableInfo { get; }
+        public abstract DbName Name { get; }
+
+        public abstract QueryInfo RootInfo { get; }
 
         public ForeignKeyNodeBase(TableInfo tableInfo)
         {
@@ -28,9 +31,9 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         /// <param name="member">The member representing the foreign key relationship.</param>
         /// <returns>True if a new node was added; false if the node already existed.</returns>
-        public virtual ForeignKeyNode GetOrAddChild(MemberInfo member)
+        public virtual ForeignKeyNode GetOrAddChild(MemberInfo member, bool silent = false)
         {
-            var node = _nodes.FirstOrDefault(x => MemberInfoComparator.Default.Equals(x.Member, member));
+            var node = Get(member);
             if (node != null)
                 return node;
 
@@ -39,12 +42,22 @@ namespace SharpOrm.DataTranslation
                 throw new InvalidOperationException($"Column not found for member {member.Name} in table {TableInfo.Name}");
 
             var memberTableInfo = TableInfo.registry.GetTable(GetMemberType(member, out var isCollection));
-            node = CreateNode(memberColumnInfo, memberTableInfo, isCollection);
+            node = CreateNode(memberColumnInfo, memberTableInfo, isCollection, silent);
             _nodes.Add(node);
             return node;
         }
 
-        protected abstract ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection);
+        /// <summary>
+        /// Gets the child node corresponding to the specified member, if it exists in the current collection.
+        /// </summary>
+        /// <param name="member">The member representing the foreign key relationship.</param>
+        /// <returns>The <see cref="ForeignKeyNode"/> if found; otherwise, <c>null</c>.</returns>
+        public virtual ForeignKeyNode Get(MemberInfo member)
+        {
+            return _nodes.FirstOrDefault(x => MemberInfoComparator.Default.Equals(x.Member, member));
+        }
+
+        protected abstract ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection, bool silent);
 
         public bool Exists(MemberInfo member)
         {

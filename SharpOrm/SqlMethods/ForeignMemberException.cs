@@ -28,7 +28,7 @@ namespace SharpOrm.SqlMethods
             return new ForeignMemberException(
                 member.DeclaringType,
                 member.Member,
-                $"It's not possible to load the '{member.Name}' {mType}, there are no joins for the '{expectedTable}' table or defined for the '{member.DeclaringType}' type."
+                $"It's not possible to load the '{member.Name}' {mType} because there is no include configured for the '{expectedTable}' table or for the '{member.DeclaringType}' type."
             );
         }
     }
