@@ -1,10 +1,8 @@
 ﻿using SharpOrm.Builder;
-using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -22,6 +20,9 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly IFkQueue _fkQueue;
         private ColumnInfo _parentColumn;
         private MappedObject _parent;
+        private bool IsCollection { get; }
+
+        private ForeignKeyRegister Register => (_fkQueue as FkLoaders)?.ForeignKeyRegister;
 
         /// <summary>
         /// Gets the type of the mapped object.
@@ -81,6 +82,7 @@ namespace SharpOrm.DataTranslation.Reader
         private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
         {
             Type = type;
+            IsCollection = RuntimeList.IsCollection(type);
             _registry = registry;
             _fkQueue = enqueueable;
             _nestedMode = nestedMode;
@@ -91,21 +93,19 @@ namespace SharpOrm.DataTranslation.Reader
             if (Type == typeof(Row))
                 return this;
 
-            if (!Type.IsArray)
+            if (!IsCollection)
                 _objectActivator = new ObjectActivator(Type, record, _registry);
 
-            var register = (_fkQueue as FkLoaders)?.ForeignKeyRegister;
-
             foreach (var column in _registry.GetTable(Type).Columns)
-                if (column.ForeignInfo != null && (!(register?.Exists(column.column) ?? false)))
+                if (column.ForeignInfo != null && (!(Register?.Exists(column.column) ?? false)))
                     AddIfValidId(record, prefix + column.ForeignInfo.ForeignKey, column, true);
                 else if (NeedMapAsValue(column))
                     AddIfValidId(record, GetName(column, prefix), column);
                 else
                     MapNested(column, record, prefix);
 
-            if (register != null)
-                foreach (var node in register.Nodes)
+            if (Register != null)
+                foreach (var node in Register.Nodes)
                     RegisterForeignNode(node, record);
 
             return this;
@@ -120,7 +120,7 @@ namespace SharpOrm.DataTranslation.Reader
                 return;
             }
 
-            var nodeObj = new MappedObject(node.TableInfo.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = node.ColumnInfo, _parent = this };
+            var nodeObj = new MappedObject(node.ColumnInfo.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = node.ColumnInfo, _parent = this };
             nodeObj.MapNodeColumns(node, record);
 
             _childrens.Add(nodeObj);
@@ -131,7 +131,9 @@ namespace SharpOrm.DataTranslation.Reader
 
         private MappedObject MapNodeColumns(ForeignKeyNode node, IDataRecord record)
         {
-            _objectActivator = new ObjectActivator(Type, record, _registry);
+            if (!node.IsCollection)
+                _objectActivator = new ObjectActivator(Type, record, _registry);
+
             foreach (var info in node.Columns)
                 if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo.column))
                     AddIfValidId(record, info.Alias + info.ForeignInfo.ForeignKey, info.ColumnInfo, true);
@@ -229,11 +231,13 @@ namespace SharpOrm.DataTranslation.Reader
         private object NewObject(IDataRecord record)
         {
             instance = _objectActivator.CreateInstance(record);
+            if (instance == null)
+                return null;
 
             for (int i = 0; i < _childrens.Count; i++)
             {
                 var children = _childrens[i];
-                if (!children.Type.IsArray)
+                if (!children.IsCollection)
                     children._parentColumn.SetRaw(children._parent.instance, children.NewObject(record));
             }
 
@@ -242,6 +246,9 @@ namespace SharpOrm.DataTranslation.Reader
 
         private void SetValue(int index, object value)
         {
+            if (instance == null)
+                return;
+
             for (int i = 0; i < _columns.Count; i++)
             {
                 var column = _columns.ElementAt(i);

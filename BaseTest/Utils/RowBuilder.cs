@@ -31,7 +31,7 @@ namespace BaseTest.Utils
 
         public RowBuilder AddCell(Cell cell, string? prefix = null)
         {
-            if (prefix == null) prefix = "";
+            prefix ??= "";
 
             return AddCell($"{prefix}{cell.Name}", cell.Value);
         }

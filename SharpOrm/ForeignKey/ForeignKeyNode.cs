@@ -3,7 +3,6 @@ using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace SharpOrm.DataTranslation
 {
@@ -15,7 +14,7 @@ namespace SharpOrm.DataTranslation
         private IIncludable _includable;
 
         public ForeignKeyRegister Root { get; }
-        public ColumnInfo ColumnInfo { get; }
+        public override ColumnInfo ColumnInfo { get; }
         public DbName TableParent { get; }
         public override DbName Name { get; }
 
@@ -31,14 +30,19 @@ namespace SharpOrm.DataTranslation
         public ForeignKeyNode(ForeignKeyRegister root, TableInfo tableInfo, ColumnInfo columnInfo, IForeignKeyNode parent, string prefix, bool isCollection) : base(tableInfo)
         {
             ColumnInfo = columnInfo ?? throw new ArgumentNullException(nameof(columnInfo));
-            Prefix = prefix + Member.Name;
+            ParentIsCollection = CheckParentIsCollection(parent);
+            Prefix = isCollection ? Member.Name : prefix + Member.Name;
             IsCollection = isCollection;
-            ParentIsCollection = parent is ForeignKeyNode node && node.IsCollection;
             TableParent = parent.Name;
             Name = BuildName();
             Root = root;
 
             LoadColumns();
+        }
+
+        private static bool CheckParentIsCollection(IForeignKeyNode parent)
+        {
+            return parent is ForeignKeyNode node && (node.IsCollection || node.ParentIsCollection);
         }
 
         private DbName BuildName()
@@ -51,26 +55,23 @@ namespace SharpOrm.DataTranslation
 
         private void LoadColumns()
         {
-            var prefix = $"{GetTreePrefix()}c_";
+            var prefix = IsCollection ? string.Empty : $"{GetTreePrefix()}c_";
             foreach (var column in TableInfo.Columns)
-                _columns.Add(new FkColumn(column, new Column($"{Name.TryGetAlias()}.{column.Name}", $"{prefix}{column.Name}")));
+                _columns.Add(new FkColumn(column, GetColumn(column, prefix)));
         }
 
-        public override IEnumerable<ForeignKeyNode> GetAllNodes()
+        private Column GetColumn(ColumnInfo column, string prefix)
         {
-            yield return this;
-
-            foreach (var child in base.GetAllNodes())
-                yield return child;
+            return new Column($"{Name.TryGetAlias()}.{column.Name}", $"{prefix}{column.Name}");
         }
 
         public override IEnumerable<Column> GetAllColumn()
         {
             foreach (var column in Columns)
-                if (column.ForeignInfo == null)
+                if (column.ForeignInfo == null && !ReflectionUtils.IsCollection(column.ColumnInfo.Type))
                     yield return column.Column;
 
-            foreach (var node in GetAllNodes())
+            foreach (var node in GetAllChildNodes(false))
                 if (!node.IsCollection)
                     foreach (var column in node.Columns)
                         if (column.ForeignInfo == null)
@@ -103,16 +104,17 @@ namespace SharpOrm.DataTranslation
 
         protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection, bool silent = false)
         {
-            var node = new ForeignKeyNode(Root, memberTableInfo, memberColumnInfo, this, GetTreePrefix(), isCollection);
+            var prefix = IsCollection ? string.Empty : GetTreePrefix();
+            var node = new ForeignKeyNode(Root, memberTableInfo, memberColumnInfo, this, prefix, isCollection);
             if (!silent)
                 ((INodeCreationListener)Root).Created(node);
 
             return node;
         }
 
-        internal JoinQuery ToJoinQuery(QueryInfo info)
+        internal JoinQuery ToJoinQuery(QueryConfig config)
         {
-            JoinQuery join = new JoinQuery(info.Config, Name)
+            JoinQuery join = new JoinQuery(config, Name)
             {
                 Type = "LEFT"
             };

@@ -264,7 +264,7 @@ namespace SharpOrm
 
         #region AddForeign
 
-        internal IIncludable<T, TProperty> Include<TProperty>(Expression<Func<T, TProperty>> expression)
+        public IIncludable<T, TProperty> Include<TProperty>(Expression<Func<T, TProperty>> expression)
         {
             var members = ExpressionUtils<T>.GetMemberPath(expression, false).Reverse();
             return _foreignKeyRegister.RegisterTreePath(members).GetIncludable<T, TProperty>();
@@ -288,7 +288,7 @@ namespace SharpOrm
             if (node.IsCollection || node.ParentIsCollection)
                 return;
 
-            Info.Joins.Add(node.ToJoinQuery(Info));
+            Info.Joins.Add(node.ToJoinQuery(Info.Config));
             _pendingSelect = true;
         }
 

@@ -30,10 +30,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (type.IsArray) throw new NotSupportedException(Messages.ObjectActivator.ArrayType);
 
             _type = type;
-            _objParams = GetParams(record, registry, out _ctor) ?? throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
-
-            if (_ctor == null)
-                throw new NotSupportedException(Messages.ObjectActivator.NoSuitableConstructor);
+            _objParams = GetParams(record, registry, out _ctor);
         }
 
         /// <summary>
@@ -92,6 +89,9 @@ namespace SharpOrm.DataTranslation.Reader
         /// <returns>The created object instance.</returns>
         public object CreateInstance(IDataRecord record)
         {
+            if (_objParams == null)
+                return null;
+
             var values = _objParams.Select(x => x.GetValue(record)).ToArray();
             return _ctor.Invoke(values);
         }

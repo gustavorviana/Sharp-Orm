@@ -70,7 +70,11 @@ namespace SharpOrm.DataTranslation
             var query = new Query(info.TableName, Manager) { Token = _token };
             info.Node.ApplySelectToQuery(query);
 
-            query.Where(info.LocalKey ?? "Id", info.ForeignKey);
+            foreach (var item in info.Node.Nodes)
+                if (!item.IsCollection)
+                    query.Info.Joins.Add(item.ToJoinQuery(query.Info.Config));
+
+            query.Where($"{info.TableName}.{info.LocalKey ?? "Id"}", info.ForeignKey);
             return query;
         }
 
