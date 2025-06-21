@@ -80,7 +80,7 @@ namespace SharpOrm.DataTranslation
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
-            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), Manager.Config.NestedMapMode, null, Manager.Config.Translation);
+            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), Manager.Config.NestedMapMode, null, info.Node, Manager.Config.Translation);
             return new DbObjectEnumerator(reader, mapped, _token);
         }
 

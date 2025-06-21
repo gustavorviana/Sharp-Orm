@@ -22,7 +22,7 @@ namespace SharpOrm.DataTranslation.Reader
         private MappedObject _parent;
         private bool IsCollection { get; }
 
-        private ForeignKeyRegister Register => (_fkQueue as FkLoaders)?.ForeignKeyRegister;
+        internal ForeignKeyNodeBase Node { get; set; }
 
         /// <summary>
         /// Gets the type of the mapped object.
@@ -51,6 +51,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             return Create(record, type, NestedMode.Attribute, enqueueable, registry);
@@ -65,6 +66,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <param name="nestedMode">The nested mode to use for mapping.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             if (registry == null)
@@ -76,10 +78,18 @@ namespace SharpOrm.DataTranslation.Reader
             if (registry.GetManualMap(type) is TableInfo table)
                 return new MappedManualObj(table, registry, record);
 
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(record, string.Empty);
+            return Create(record, type, nestedMode, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyRegister, registry);
         }
 
-        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
+        internal static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)
+        {
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode)
+            {
+                Node = node
+            }.Map(record, string.Empty);
+        }
+
+        internal MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
         {
             Type = type;
             IsCollection = RuntimeList.IsCollection(type);
@@ -88,7 +98,7 @@ namespace SharpOrm.DataTranslation.Reader
             _nestedMode = nestedMode;
         }
 
-        private MappedObject Map(IDataRecord record, string prefix)
+        internal MappedObject Map(IDataRecord record, string prefix)
         {
             if (Type == typeof(Row))
                 return this;
@@ -97,15 +107,15 @@ namespace SharpOrm.DataTranslation.Reader
                 _objectActivator = new ObjectActivator(Type, record, _registry);
 
             foreach (var column in _registry.GetTable(Type).Columns)
-                if (column.ForeignInfo != null && (!(Register?.Exists(column.column) ?? false)))
+                if (column.ForeignInfo != null && (!(Node?.Exists(column.column) ?? false)))
                     AddIfValidId(record, prefix + column.ForeignInfo.ForeignKey, column, true);
                 else if (NeedMapAsValue(column))
                     AddIfValidId(record, GetName(column, prefix), column);
                 else
                     MapNested(column, record, prefix);
 
-            if (Register != null)
-                foreach (var node in Register.Nodes)
+            if (Node != null)
+                foreach (var node in Node.Nodes)
                     RegisterForeignNode(node, record);
 
             return this;
