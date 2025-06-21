@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm.DataTranslation
 {

@@ -33,7 +33,7 @@ namespace QueryTest
             using var query = new Query(TestTableUtils.TABLE);
             query.Config.DbParamsLimit = 1;
 
-            Assert.Equal(2, 
+            Assert.Equal(2,
                 query.BulkInsert(
                     new Row(new Cell("Column", "Value")),
                     new Row(new Cell("Column", "Value"))

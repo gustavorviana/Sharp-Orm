@@ -5,12 +5,7 @@ using SharpOrm.ForeignKey;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Xml.Linq;
-using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm.SqlMethods
 {

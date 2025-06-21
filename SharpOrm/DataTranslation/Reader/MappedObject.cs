@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
 using System.Linq;
 
 namespace SharpOrm.DataTranslation.Reader
@@ -184,7 +183,7 @@ namespace SharpOrm.DataTranslation.Reader
         private void AddIfValidId(IDataRecord record, string name, ColumnInfo column, bool isFk = false)
         {
             int index = record.GetIndexOf(name);
-             if (index < 0)
+            if (index < 0)
                 return;
 
             AddOrUpdateColumn(isFk ? new MappedUnusedFkColumn(_registry, _fkQueue, column, index) : new MappedColumn(column, index));

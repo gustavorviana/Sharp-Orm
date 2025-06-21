@@ -40,7 +40,7 @@ namespace QueryTest
             var prefix = node.GetTreePrefix();
 
             CollectionAssert.ContainsAll(
-                node.Columns.Select(x => x.Alias), 
+                node.Columns.Select(x => x.Alias),
                 node.TableInfo.Columns.Select(x => $"{prefix}c_{x.Name}")
             );
 

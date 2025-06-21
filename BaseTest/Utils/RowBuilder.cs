@@ -33,7 +33,7 @@ namespace BaseTest.Utils
         {
             if (prefix == null) prefix = "";
 
-            return this.AddCell($"{prefix}{cell.Name}", cell.Value);
+            return AddCell($"{prefix}{cell.Name}", cell.Value);
         }
 
         public RowBuilder AddCell(string name, object value)

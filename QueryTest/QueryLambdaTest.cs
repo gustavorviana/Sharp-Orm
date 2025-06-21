@@ -1,7 +1,6 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Models;
 using BaseTest.Utils;
-using NSubstitute;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.SqlMethods;

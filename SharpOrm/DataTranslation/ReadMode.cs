@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SharpOrm.DataTranslation
+﻿namespace SharpOrm.DataTranslation
 {
     /// <summary>
     /// Specifies the mode for reading data.

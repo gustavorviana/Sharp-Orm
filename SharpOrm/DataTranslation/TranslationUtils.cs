@@ -30,7 +30,7 @@ namespace SharpOrm.DataTranslation
             if (type is null)
                 return true;
 
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>) )
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
                 return IsNative(Nullable.GetUnderlyingType(type), ignoreBuffer);
 
             return type.IsPrimitive || type.IsEnum || _nativeTypes.Contains(type) || IsNumeric(type) || !ignoreBuffer && IsBuffer(type);

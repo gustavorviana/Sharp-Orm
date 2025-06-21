@@ -3,7 +3,6 @@ using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -346,7 +345,7 @@ namespace SharpOrm.Connection
 #if NET5_0_OR_GREATER
             try { await this.Connection.CloseAsync(); } catch { }
 #else
-            try { this.Connection.Close(); } catch { } 
+            try { this.Connection.Close(); } catch { }
 #endif
         }
 
