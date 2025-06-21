@@ -288,18 +288,7 @@ namespace SharpOrm
             if (node.IsCollection || node.ParentIsCollection)
                 return;
 
-            JoinQuery join = new JoinQuery(Info.Config, node.Name)
-            {
-                Type = "LEFT"
-            };
-
-            join.WhereColumn(
-                $"{node.Name.TryGetAlias()}.{node.LocalKeyColumn}",
-                "=",
-                $"{node.TableParent.TryGetAlias()}.{node.ParentKeyColumn}"
-            );
-
-            Info.Joins.Add(join);
+            Info.Joins.Add(node.ToJoinQuery(Info));
             _pendingSelect = true;
         }
 
@@ -517,7 +506,7 @@ namespace SharpOrm
 
             try
             {
-                ConfigureForeignSelect();
+                _foreignKeyRegister.ApplySelectToQuery(this);
                 using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(Info.Config.NewGrammar(this).Select()))
                     foreach (var item in ConfigureFkLoader(cmd.ExecuteEnumerable<K>(true)))
                         yield return item;
@@ -526,16 +515,6 @@ namespace SharpOrm
             {
                 Manager?.CloseByEndOperation();
             }
-        }
-
-        private void ConfigureForeignSelect()
-        {
-            if (!_foreignKeyRegister.HasAnyNonCollection())
-                return;
-
-            var columns = _foreignKeyRegister.GetAllColumn();
-            if (columns.Length > 0)
-                Select(columns);
         }
 
         private IEnumerable<K> ConfigureFkLoader<K>(DbCommandEnumerable<K> enumerable)
@@ -1748,7 +1727,7 @@ namespace SharpOrm
             if (_pendingSelect)
             {
                 _pendingSelect = false;
-                ConfigureForeignSelect();
+                _foreignKeyRegister.ApplySelectToQuery(this);
             }
 
             return base.ToString();

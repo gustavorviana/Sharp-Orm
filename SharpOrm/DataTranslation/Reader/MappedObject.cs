@@ -1,8 +1,10 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -114,7 +116,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (node.ColumnInfo.ForeignInfo != null && ReflectionUtils.IsCollection(node.ColumnInfo.Type))
             {
                 int index = record.GetIndexOf(node.ColumnInfo.ForeignInfo.ForeignKey);
-                AddOrUpdateColumn(new MappedFkColumn(_registry, _fkQueue, node.ColumnInfo, index));
+                AddOrUpdateColumn(new MappedFkColumn(_registry, _fkQueue, node, index));
                 return;
             }
 
@@ -310,16 +312,18 @@ namespace SharpOrm.DataTranslation.Reader
         {
             private readonly IFkQueue _fkQueue;
             private readonly TranslationRegistry _registry;
+            private readonly ForeignKeyNode _node;
 
-            public MappedFkColumn(TranslationRegistry registry, IFkQueue fkQueue, ColumnInfo column, int index) : base(column, index)
+            public MappedFkColumn(TranslationRegistry registry, IFkQueue fkQueue, ForeignKeyNode node, int index) : base(node.ColumnInfo, index)
             {
+                _node = node;
                 _fkQueue = fkQueue;
                 _registry = registry;
             }
 
             public override void Set(object owner, object value)
             {
-                _fkQueue.EnqueueForeign(owner, _registry, value, Column);
+                _fkQueue.EnqueueForeign(owner, _registry, value, _node);
             }
         }
     }

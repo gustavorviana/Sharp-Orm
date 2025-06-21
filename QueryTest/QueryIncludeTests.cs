@@ -48,7 +48,6 @@ namespace QueryTest
 
             _query.Include(x => x.Orders).ThenInclude(x => x.Customer);
 
-
             Assert.Empty(_query.Info.Joins);
             Assert.Single(register.Nodes);
             Assert.Single(register.Nodes.First().Nodes);

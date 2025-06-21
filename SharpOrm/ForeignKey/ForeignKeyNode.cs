@@ -3,6 +3,7 @@ using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace SharpOrm.DataTranslation
 {
@@ -55,13 +56,25 @@ namespace SharpOrm.DataTranslation
                 _columns.Add(new FkColumn(column, new Column($"{Name.TryGetAlias()}.{column.Name}", $"{prefix}{column.Name}")));
         }
 
-        public IEnumerable<ForeignKeyNode> GetAllNodes()
+        public override IEnumerable<ForeignKeyNode> GetAllNodes()
         {
             yield return this;
 
-            foreach (var child in _nodes)
-                foreach (var descendant in child.GetAllNodes())
-                    yield return descendant;
+            foreach (var child in base.GetAllNodes())
+                yield return child;
+        }
+
+        public override IEnumerable<Column> GetAllColumn()
+        {
+            foreach (var column in Columns)
+                if (column.ForeignInfo == null)
+                    yield return column.Column;
+
+            foreach (var node in GetAllNodes())
+                if (!node.IsCollection)
+                    foreach (var column in node.Columns)
+                        if (column.ForeignInfo == null)
+                            yield return column.Column;
         }
 
         public override string ToString()
@@ -95,6 +108,22 @@ namespace SharpOrm.DataTranslation
                 ((INodeCreationListener)Root).Created(node);
 
             return node;
+        }
+
+        internal JoinQuery ToJoinQuery(QueryInfo info)
+        {
+            JoinQuery join = new JoinQuery(info.Config, Name)
+            {
+                Type = "LEFT"
+            };
+
+            join.WhereColumn(
+                $"{Name.TryGetAlias()}.{LocalKeyColumn}",
+                "=",
+                $"{TableParent.TryGetAlias()}.{ParentKeyColumn}"
+            );
+
+            return join;
         }
     }
 }

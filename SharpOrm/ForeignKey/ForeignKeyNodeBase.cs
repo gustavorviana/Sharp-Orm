@@ -20,6 +20,8 @@ namespace SharpOrm.DataTranslation
 
         public abstract QueryInfo RootInfo { get; }
 
+        public ColumnInfo ColumnInfo => null;
+
         public ForeignKeyNodeBase(TableInfo tableInfo)
         {
             TableInfo = tableInfo;
@@ -73,6 +75,45 @@ namespace SharpOrm.DataTranslation
             return memberType;
         }
 
+        public void ApplySelectToQuery(Query query)
+        {
+            if (!HasAnyNonCollection())
+                return;
+
+            var columns = GetAllColumn().ToArray();
+            if (columns.Length > 0)
+                query.Select(columns);
+        }
+
+        public bool HasAnyNonCollection()
+        {
+            foreach (var node in GetAllNodes())
+                if (!node.IsCollection)
+                    return true;
+
+            return false;
+        }
+
         public abstract string GetTreePrefix();
+
+        public virtual IEnumerable<Column> GetAllColumn()
+        {
+            foreach (var item in TableInfo.Columns)
+                if (item.ForeignInfo == null)
+                    yield return new Column($"{Name.TryGetAlias()}.{item.Name}", "");
+
+            foreach (var node in GetAllNodes())
+                if (!node.IsCollection)
+                    foreach (var column in node.Columns)
+                        if (column.ForeignInfo == null)
+                            yield return column.Column;
+        }
+
+        public virtual IEnumerable<ForeignKeyNode> GetAllNodes()
+        {
+            foreach (var child in _nodes)
+                foreach (var descendant in child.GetAllNodes())
+                    yield return descendant;
+        }
     }
 }

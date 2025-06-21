@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.ForeignKey;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -8,12 +9,12 @@ namespace SharpOrm.DataTranslation.Reader
     [Obsolete]
     internal class ObjIdFkQueue : IFkQueue
     {
-        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
+        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, IForeignKeyNode node)
         {
             if (fkValue is DBNull || fkValue is null)
                 return;
 
-            column.SetRaw(owner, MakeObjWithId(translator, column, fkValue));
+            node.ColumnInfo.SetRaw(owner, MakeObjWithId(translator, node.ColumnInfo, fkValue));
         }
 
         public static object MakeObjWithId(TranslationRegistry translator, ColumnInfo column, object fkValue)

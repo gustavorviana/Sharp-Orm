@@ -7,5 +7,6 @@ namespace SharpOrm.ForeignKey
         TableInfo TableInfo { get; }
         DbName Name { get; }
         QueryInfo RootInfo { get; }
+        ColumnInfo ColumnInfo { get; }
     }
 }

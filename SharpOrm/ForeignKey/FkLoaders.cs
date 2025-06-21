@@ -2,6 +2,7 @@
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation.Reader;
+using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -29,12 +30,12 @@ namespace SharpOrm.DataTranslation
             Manager = manager;
         }
 
-        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, ColumnInfo column)
+        public void EnqueueForeign(object owner, TranslationRegistry translator, object fkValue, IForeignKeyNode node)
         {
             if (fkValue is null || fkValue is DBNull)
                 return;
 
-            AddFkColumn(owner, fkValue, column);
+            AddFkColumn(owner, fkValue, node as ForeignKeyNode);
         }
 
         /// <summary>
@@ -66,14 +67,11 @@ namespace SharpOrm.DataTranslation
 
         private Query CreateQuery(ForeignInfo info)
         {
-            var query = CreateQuery(info.TableName);
+            var query = new Query(info.TableName, Manager) { Token = _token };
+            info.Node.ApplySelectToQuery(query);
+
             query.Where(info.LocalKey ?? "Id", info.ForeignKey);
             return query;
-        }
-
-        private Query CreateQuery(string name)
-        {
-            return new Query(name, Manager) { Token = _token };
         }
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
@@ -82,34 +80,34 @@ namespace SharpOrm.DataTranslation
             return new DbObjectEnumerator(reader, mapped, _token);
         }
 
-        private void AddFkColumn(object owner, object fkValue, ColumnInfo column)
+        private void AddFkColumn(object owner, object fkValue, ForeignKeyNode node)
         {
-            _foreignKeyToLoad.Enqueue(new ForeignInfo(owner, Config.Translation.GetTableName(column.Type), column, fkValue, column.ForeignInfo.LocalKey));
+            _foreignKeyToLoad.Enqueue(new ForeignInfo(owner, node, fkValue));
         }
 
         private class ForeignInfo
         {
             private readonly object _owner;
-            private readonly ColumnInfo _column;
+            public ForeignKeyNode Node { get; }
 
             public object ForeignKey { get; }
             public string TableName { get; }
             public string LocalKey { get; }
 
-            public Type Type => _column.Type;
+            public Type Type => Node.ColumnInfo.Type;
 
-            public ForeignInfo(object owner, string tableName, ColumnInfo column, object foreignKey, string localKey)
+            public ForeignInfo(object owner, ForeignKeyNode node, object foreignKey)
             {
+                LocalKey = node.ColumnInfo.ForeignInfo.LocalKey;
+                TableName = node.Name.Name;
                 ForeignKey = foreignKey;
-                TableName = tableName;
-                LocalKey = localKey;
-                _column = column;
                 _owner = owner;
+                Node = node;
             }
 
             public void SetValue(RuntimeList list)
             {
-                _column.SetRaw(_owner, list.ToCollection(Type));
+                Node.ColumnInfo.SetRaw(_owner, list.ToCollection(Type));
             }
         }
     }

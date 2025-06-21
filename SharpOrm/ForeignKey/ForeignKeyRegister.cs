@@ -47,39 +47,6 @@ namespace SharpOrm.DataTranslation
             return _fkCollections.Contains(member);
         }
 
-        public Column[] GetAllColumn()
-        {
-            var names = new List<Column>();
-
-            foreach (var item in TableInfo.Columns)
-                if (item.ForeignInfo == null)
-                    names.Add(new Column($"{Name.TryGetAlias()}.{item.Name}", ""));
-
-            foreach (var node in GetAllNodes())
-                if (!node.IsCollection)
-                    foreach (var column in node.Columns)
-                        if (column.ForeignInfo == null)
-                            names.Add(column.Column);
-
-            return names.ToArray();
-        }
-
-        public bool HasAnyNonCollection()
-        {
-            foreach (var node in GetAllNodes())
-                if (!node.IsCollection)
-                    return true;
-
-            return false;
-        }
-
-        public IEnumerable<ForeignKeyNode> GetAllNodes()
-        {
-            foreach (var child in _nodes)
-                foreach (var descendant in child.GetAllNodes())
-                    yield return descendant;
-        }
-
         public override string GetTreePrefix()
         {
             return string.Empty;
