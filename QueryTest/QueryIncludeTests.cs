@@ -1,6 +1,7 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
 using SharpOrm;
+using SharpOrm.DataTranslation;
 
 namespace QueryTest
 {
@@ -38,6 +39,21 @@ namespace QueryTest
 
             Assert.Single(_query.Info.Joins);
             Assert.Equal("Address", _query.Info.Joins.First().Info.TableName.Name);
+        }
+
+        [Fact]
+        public virtual void ThenInclude()
+        {
+            var register = ((IFkNodeRoot)_query).ForeignKeyRegister;
+
+            _query.Include(x => x.Orders).ThenInclude(x => x.Customer);
+
+
+            Assert.Empty(_query.Info.Joins);
+            Assert.Single(register.Nodes);
+            Assert.Single(register.Nodes.First().Nodes);
+            Assert.Equal("Orders", register.Nodes.First().Name.Name);
+            Assert.Equal("Customers", register.Nodes.First().Nodes.First().Name.Name);
         }
 
         [Fact]

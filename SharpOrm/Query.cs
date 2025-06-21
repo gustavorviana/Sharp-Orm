@@ -285,7 +285,7 @@ namespace SharpOrm
 
         void INodeCreationListener.Created(ForeignKeyNode node)
         {
-            if (node.IsCollection)
+            if (node.IsCollection || node.ParentIsCollection)
                 return;
 
             JoinQuery join = new JoinQuery(Info.Config, node.Name)

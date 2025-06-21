@@ -1,8 +1,14 @@
-﻿namespace SharpOrm.ForeignKey
+﻿using SharpOrm.DataTranslation;
+
+namespace SharpOrm.ForeignKey
 {
-    public interface IIncludable<out TEntity, out TProperty> : IIncludable
+    public interface IIncludable<out TEntity, out TProperty>
     {
     }
 
-    public interface IIncludable { }
+    internal interface IIncludable
+    {
+        ForeignKeyRegister Register { get; }
+        ForeignKeyNodeBase Node { get; }
+    }
 }

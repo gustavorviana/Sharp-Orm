@@ -2,15 +2,15 @@
 
 namespace SharpOrm.ForeignKey
 {
-    internal class Includable<TEntity, TProperty> : IIncludable<TEntity, TProperty>
+    internal class Includable<TEntity, TProperty> : IIncludable<TEntity, TProperty>, IIncludable
     {
-        internal readonly ForeignKeyRegister _register;
-        internal readonly ForeignKeyNodeBase _node;
+        public ForeignKeyRegister Register { get; }
+        public ForeignKeyNodeBase Node { get; }
 
         public Includable(ForeignKeyRegister register, ForeignKeyNodeBase node)
         {
-            _register = register;
-            _node = node;
+            Register = register;
+            Node = node;
         }
     }
 }

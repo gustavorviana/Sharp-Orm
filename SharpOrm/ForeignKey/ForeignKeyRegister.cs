@@ -100,7 +100,7 @@ namespace SharpOrm.DataTranslation
 
         protected override ForeignKeyNode CreateNode(ColumnInfo memberColumnInfo, TableInfo memberTableInfo, bool isCollection, bool silent = false)
         {
-            var node = new ForeignKeyNode(this, memberTableInfo, memberColumnInfo, Name, GetTreePrefix(), isCollection);
+            var node = new ForeignKeyNode(this, memberTableInfo, memberColumnInfo, this, GetTreePrefix(), isCollection);
             if (!silent)
                 ((INodeCreationListener)this).Created(node);
             return node;

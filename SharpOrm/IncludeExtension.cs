@@ -17,7 +17,7 @@ namespace SharpOrm
         {
             var sourceClass = source as Includable<TEntity, TProperty>;
 
-            return InternalInclude<TEntity, TProperty>(sourceClass._register, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>(sourceClass.Register, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> Include<TEntity, TPreviousProperty, TProperty>(
@@ -25,9 +25,9 @@ namespace SharpOrm
         Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
         where TEntity : class
         {
-            var sourceClass = source as Includable<TEntity, TPreviousProperty>;
+            var sourceClass = source as IIncludable;
 
-            return InternalInclude<TEntity, TProperty>(sourceClass._register, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>(sourceClass.Register, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
@@ -35,9 +35,9 @@ namespace SharpOrm
         Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
         where TEntity : class
         {
-            var sourceClass = source as Includable<TEntity, TPreviousProperty>;
+            var sourceClass = source as IIncludable;
 
-            return InternalInclude<TEntity, TProperty>(sourceClass._register, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>(sourceClass.Node, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
@@ -45,10 +45,9 @@ namespace SharpOrm
         Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
         where TEntity : class
         {
-            var sourceClass = source as Includable<TEntity, TPreviousProperty>;
+            var sourceClass = source as IIncludable;
 
-
-            return InternalInclude<TEntity, TProperty>(sourceClass._register, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>(sourceClass.Node, navigationPropertyPath);
         }
 
         internal static IIncludable<TEntity, TProperty> InternalInclude<TEntity, TProperty>(ForeignKeyNodeBase parent, LambdaExpression expression)

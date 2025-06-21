@@ -84,7 +84,7 @@ namespace SharpOrm.Builder.Expressions
                 currentExp = currentExp.Expression as MemberExpression;
             }
 
-            return info.LoadRootMember(_rootType);
+            return info.LoadRootMember();
         }
 
         private void ValidateSubmembers(MemberExpression memberExp)
@@ -134,7 +134,7 @@ namespace SharpOrm.Builder.Expressions
             {
                 var memberType = finalMethodCall.Type.IsAssignableFrom(_rootType) ? _rootType : finalMethodCall.Type.DeclaringType;
 
-                var path = new MemberPath(memberType);
+                var path = new MemberPath();
 
                 path.AddMembers(methods);
                 path.TargetMember = new SqlMethodInfo(finalMethodCall.Type, finalMethodCall.Method, new object[0]);
