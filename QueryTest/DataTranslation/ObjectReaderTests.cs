@@ -2,6 +2,7 @@
 using BaseTest.Utils;
 using SharpOrm.DataTranslation;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QueryTest.DataTranslation
 {
@@ -102,6 +103,34 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
+        public void ColumnsWithDatabaseGeneratedTest()
+        {
+            var reader = ObjectReader.OfType<Item>(Translation);
+            reader.ReadPk = true;
+            reader.IsCreate = true;
+            reader.ReadDatabaseGenerated = true;
+
+            string[] expected = ["Id", "Name", "Description", "IsValidName"];
+
+            var columns = reader.GetColumnNames();
+            CollectionAssert.ContainsAll(expected, columns);
+        }
+
+        [Fact]
+        public void ColumnsWithoutDatabaseGeneratedTest()
+        {
+            var reader = ObjectReader.OfType<Item>(Translation);
+            reader.ReadPk = true;
+            reader.IsCreate = true;
+            reader.ReadDatabaseGenerated = false;
+
+            string[] expected = ["Id", "Name", "Description"];
+
+            var columns = reader.GetColumnNames();
+            CollectionAssert.ContainsAll(expected, columns);
+        }
+
+        [Fact]
         public void ColumnsWithoutTimestampsTest()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
@@ -157,6 +186,9 @@ namespace QueryTest.DataTranslation
             public string? Description { get; set; }
 
             public SubItem? SubItem { get; set; }
+
+            [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+            public bool IsValidName { get; set; }
         }
 
         private class SubItem

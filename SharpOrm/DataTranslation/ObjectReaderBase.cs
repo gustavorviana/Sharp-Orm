@@ -11,6 +11,8 @@ namespace SharpOrm.DataTranslation
     public abstract class ObjectReaderBase
     {
         protected readonly TableInfo _table;
+
+        public bool ReadDatabaseGenerated { get; set; }
         public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -160,6 +162,9 @@ namespace SharpOrm.DataTranslation
 
         private bool CanReadColumn(ColumnInfo column)
         {
+            if (!ReadDatabaseGenerated && column.DatabaseGenerated)
+                return false;
+
             if (column.Key && !ReadPk)
                 return false;
 
