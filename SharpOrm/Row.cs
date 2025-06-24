@@ -76,6 +76,16 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Determines whether the row contains a column with the specified name.
+        /// </summary>
+        /// <param name="columnName">The name of the column to check for existence.</param>
+        /// <returns>True if the column exists in the row; otherwise, false.</returns>
+        public bool HasColumn(string columnName)
+        {
+            return this.names.Contains(columnName, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Parses an object into a <see cref="Row"/>.
         /// </summary>
         /// <param name="obj">The object to parse.</param>

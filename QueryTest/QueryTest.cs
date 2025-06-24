@@ -13,6 +13,63 @@ namespace QueryTest
     public class QueryTest(ITestOutputHelper? output) : DbMockFallbackTest(output)
     {
         [Fact]
+        public async Task EmptyBulkInsert_Should_Return_ZeroAsync()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, await query.BulkInsertAsync(CancellationToken.None));
+        }
+
+        [Fact]
+        public void Empty_BulkInsert_Should_Return_Zero()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, query.BulkInsert());
+        }
+
+        [Fact]
+        public void NonEmpty_BulkInsert_Should_Return_Zero()
+        {
+            using var fallback = RegisterFallback(x => new MockDataReader().SetRecordsAffected(1));
+            using var query = new Query(TestTableUtils.TABLE);
+            query.Config.DbParamsLimit = 1;
+
+            Assert.Equal(2, 
+                query.BulkInsert(
+                    new Row(new Cell("Column", "Value")),
+                    new Row(new Cell("Column", "Value"))
+                )
+            );
+        }
+
+        [Fact]
+        public void EmptyUpsert_Should_Return_Zero()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, query.Upsert(Array.Empty<Row>(), ["id"]));
+        }
+
+        [Fact]
+        public async Task EmptyUpsert_Should_Return_ZeroAsync()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            Assert.Equal(0, await query.UpsertAsync(Array.Empty<Row>(), ["id"]));
+        }
+
+        [Fact]
+        public void EmptyUpsertT_Should_Return_Zero()
+        {
+            using var query = new Query<TestTable>();
+            Assert.Equal(0, query.Upsert([], x => x.Nick));
+        }
+
+        [Fact]
+        public async Task EmptyUpsertT_Should_Return_ZeroAsync()
+        {
+            using var query = new Query<TestTable>();
+            Assert.Equal(0, await query.UpsertAsync([], x => x.Nick));
+        }
+
+        [Fact]
         public void InsertT_ShouldNotChangeAddressId()
         {
             const int expectedId = 1;
@@ -322,6 +379,55 @@ namespace QueryTest
             query.Where("CreatedAt", DateTime.Now);
             query.Exists(subQuery);
             Assert.Equal(EXPECTED, query.ToString());
+        }
+
+
+        [Fact]
+        public void MergeWithRowWithSameWhereAndUpdateColumns()
+        {
+            const string EXPECTED = "MERGE INTO [Test] [Target] USING(VALUES (1, @p1)) AS [Source] ([Id], [Name]) ON [Source].[id]=[Target].[id] AND [Source].[name]=[Target].[name] WHEN MATCHED THEN UPDATE SET [Target].[Id]=[Source].[Id], [Target].[Name]=[Source].[Name] WHEN NOT MATCHED THEN INSERT ([Id], [Name]) VALUES ([Source].[Id], [Source].[Name]);";
+
+            var rows = new Row(new Cell("Id", 1), new Cell("Name", "Name"));
+
+            using var fallback = RegisterFallback();
+            using var query = new Query("Test");
+            query.Upsert(rows, [Tables.Address.ID, Tables.Address.NAME]);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
+
+        [Fact]
+        public void Upsert()
+        {
+            const string EXPECTED = "INSERT INTO [BasicTable] ([Name]) VALUES (@p1); SELECT SCOPE_IDENTITY();";
+            var model = new BasicTable
+            {
+                Id = 0,
+                Name = "Name"
+            };
+
+            using var fallback = RegisterFallback();
+            using var query = new Query<BasicTable>();
+            query.Upsert(model, x => x.Id, x => x.Name);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
+
+        [Fact]
+        public void UpsertWithId()
+        {
+            const string EXPECTED = "SELECT COUNT(*) FROM (SELECT * FROM [BasicTable] WHERE [Id] = 1) AS [count]\r\nINSERT INTO [BasicTable] ([Name]) VALUES (@p1); SELECT SCOPE_IDENTITY();";
+            var model = new BasicTable
+            {
+                Id = 1,
+                Name = "Name"
+            };
+
+            using var fallback = RegisterFallback();
+            using var query = new Query<BasicTable>();
+            query.Upsert(model, x => x.Id, x => x.Name, x => x.Name);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
         }
     }
 }

@@ -24,6 +24,9 @@ namespace SharpOrm.Builder.Expressions
 
         internal IEnumerable<string> ParseColumnNames(Expression<ColumnExpression<T>> expression)
         {
+            if (expression is null)
+                return DotnetUtils.EmptyArray<string>();
+
             return ParseExpression(expression).Select(x => x.Name);
         }
 

@@ -14,6 +14,8 @@ namespace SharpOrm
         public SqlExpression[] Expressions { get; }
         private object[] _parms;
 
+        public override bool IsEmpty => Expressions.Length == 0;
+
         /// <summary>
         /// Gets the parameters used in the SQL expressions.
         /// </summary>
@@ -32,7 +34,7 @@ namespace SharpOrm
         /// Initializes a new instance of the BatchSqlExpression class with the provided SQL expressions.
         /// </summary>
         /// <param name="expressions">The SQL expressions in the batch.</param>
-        public BatchSqlExpression(SqlExpression[] expressions)
+        public BatchSqlExpression(params SqlExpression[] expressions)
         {
             this.Expressions = expressions;
         }

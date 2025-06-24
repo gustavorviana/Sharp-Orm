@@ -5,7 +5,6 @@ using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
@@ -23,6 +22,13 @@ namespace QueryTest.Sqlite
                 ["T1", "T2", "T3", "T4", "T5"],
                 query.Grammar().BulkInsert(rows)
             );
+        }
+
+        [Fact]
+        public void EmptyBulkInsert()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            QueryAssert.EqualDecoded("", [], query.Grammar().BulkInsert([]));
         }
 
         private static Row NewRow(int id, string name)

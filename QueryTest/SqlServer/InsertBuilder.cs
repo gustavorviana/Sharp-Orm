@@ -32,6 +32,13 @@ namespace QueryTest.SqlServer
             );
         }
 
+        [Fact]
+        public void EmptyBulkInsert()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            QueryAssert.EqualDecoded("", [], query.Grammar().BulkInsert([]));
+        }
+
         private static Row NewRow(int id, string name)
         {
             return new Row(new Cell(TestTableUtils.ID, id), new Cell(TestTableUtils.NAME, name));
@@ -169,7 +176,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertLotWithParamsLimit()
         {
-            using var query = new Query(TestTableUtils.TABLE, GetManager(new ParamsSqlServerQueryConfig(10)));
+            using var query = new Query(TestTableUtils.TABLE, GetManager(new SqlServerQueryConfig { DbParamsLimit = 10}));
             var grammar = query.Grammar();
             var rows = Tables.Address.RandomRows(7);
 
@@ -198,11 +205,6 @@ namespace QueryTest.SqlServer
         {
             return rows.Select(x => x.Cells.Select(x => x.Value).Where(x => x is string))
                 .Aggregate((current, next) => current.Concat(next).ToArray()).ToArray();
-        }
-
-        private class ParamsSqlServerQueryConfig(int insertLimitParams) : SqlServerQueryConfig
-        {
-            public override int DbParamsLimit { get; } = insertLimitParams;
         }
     }
 }

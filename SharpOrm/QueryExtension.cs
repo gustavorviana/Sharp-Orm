@@ -1,10 +1,13 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpOrm
 {
@@ -563,7 +566,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false, false).Except(expression).ReadCells(obj));
+            return query.Update(query.GetObjectReader(ReadMode.None, false).Except(expression).ReadCells(obj));
         }
 
         /// <summary>
@@ -580,7 +583,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return query.Update(query.GetObjectReader(false, false).Except(columns).ReadCells(obj));
+            return query.Update(query.GetObjectReader(ReadMode.None, false).Except(columns).ReadCells(obj));
         }
 
         /// <summary>
@@ -607,7 +610,7 @@ namespace SharpOrm
         [Obsolete("It will be removed in version 4.0.")]
         public static R Insert<T, R>(this Query<T> query, T obj)
         {
-            return Insert<R>(query, query.GetObjectReader(true, true).ReadCells(obj));
+            return Insert<R>(query, query.GetObjectReader(ReadMode.ValidOnly, true).ReadCells(obj));
         }
 
         /// <summary>
@@ -647,6 +650,16 @@ namespace SharpOrm
         public static bool Any(this Query query)
         {
             return query.Count() > 0;
+        }
+
+        /// <summary>
+        /// Checks if there is any value in the table.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public static async Task<bool> AnyAsync(this Query query, CancellationToken token = default)
+        {
+            return await query.CountAsync(token) > 0;
         }
 
         /// <summary>

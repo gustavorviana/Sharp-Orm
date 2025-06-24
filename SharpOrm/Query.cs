@@ -7,7 +7,6 @@ using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using SharpOrm.Msg;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -583,7 +582,7 @@ namespace SharpOrm
         {
             ValidateReadonly();
 
-            var reader = GetObjectReader(true, true);
+            var reader = GetObjectReader(ReadMode.ValidOnly, true);
             object result = await InsertAsync(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj), token);
             SetPrimaryKey(obj, result);
             return TranslationUtils.TryNumeric(result);
@@ -598,7 +597,7 @@ namespace SharpOrm
         {
             ValidateReadonly();
 
-            var reader = GetObjectReader(true, true);
+            var reader = GetObjectReader(ReadMode.ValidOnly, true);
             object result = Insert(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj));
             SetPrimaryKey(obj, result);
             return TranslationUtils.TryNumeric(result);
@@ -642,17 +641,17 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
         public Task<int> BulkInsertAsync(IEnumerable<T> objs, CancellationToken token)
         {
-            var reader = GetObjectReader(true, true);
+            var reader = GetObjectReader(ReadMode.ValidOnly, true);
             return base.BulkInsertAsync(objs.Select(x => reader.ReadRow(x)), token);
         }
 
         /// <summary>
         /// Inserts one or more rows into the table.
         /// </summary>
-        /// <param name="rows"></param>
+        ///<param name="objs"></param>
         public int BulkInsert(IEnumerable<T> objs)
         {
-            var reader = GetObjectReader(true, true);
+            var reader = GetObjectReader(ReadMode.ValidOnly, true);
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
@@ -666,7 +665,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.UpdateAsync(GetObjectReader(false, false).ReadCells(obj), token);
+            return base.UpdateAsync(GetObjectReader(ReadMode.None, false).ReadCells(obj), token);
         }
 
         /// <summary>
@@ -679,7 +678,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return base.Update(GetObjectReader(false, false).ReadCells(obj));
+            return base.Update(GetObjectReader(ReadMode.None, false).ReadCells(obj));
         }
 
         /// <summary>
@@ -693,7 +692,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return UpdateAsync(GetObjectReader(false, false).Only(expression).ReadCells(obj), token);
+            return UpdateAsync(GetObjectReader(ReadMode.None, false).Only(expression).ReadCells(obj), token);
         }
 
         /// <summary>
@@ -708,7 +707,7 @@ namespace SharpOrm
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            return Update(GetObjectReader(false, false).Only(expression).ReadCells(obj));
+            return Update(GetObjectReader(ReadMode.None, false).Only(expression).ReadCells(obj));
         }
 
         /// <summary>
@@ -741,7 +740,7 @@ namespace SharpOrm
             if (columns.Length == 0)
                 throw new ArgumentNullException(nameof(columns));
 
-            var reader = GetObjectReader(false, false);
+            var reader = GetObjectReader(ReadMode.None, false);
             if (columns.Length > 0) reader.Only(columns);
 
             var toUpdate = reader.ReadCells(obj).ToArray();
@@ -767,6 +766,21 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public Task<int> UpsertAsync(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null, CancellationToken token = default)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            return UpsertAsync(objs, toCheckColumns, updateColumns, default);
+        }
+
+        /// <summary>
         /// Inserts or updates an object in the database based on the specified columns to check and update.
         /// </summary>
         /// <param name="obj">The object to insert or update.</param>
@@ -781,6 +795,22 @@ namespace SharpOrm
             Upsert(obj, toCheckColumns, updateColumns);
         }
 
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public int Upsert(T[] objs, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp = null)
+        {
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+
+            return Upsert(objs, toCheckColumns, updateColumns);
+        }
+
         /// <summary>
         /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
         /// </summary>
@@ -792,7 +822,24 @@ namespace SharpOrm
             if (toCheckColumns.Length < 1)
                 throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
 
-            return base.UpsertAsync(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns, token);
+            return base.UpsertAsync(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns, token);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        public async Task<int> UpsertAsync(T[] objs, string[] toCheckColumns, string[] updateColumns, CancellationToken token)
+        {
+            if (objs.Length == 0)
+                return 0;
+
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            return await base.UpsertAsync(GetObjectReader(ReadMode.ValidOnly, true).ReadRows(objs), toCheckColumns, updateColumns, token);
         }
 
         /// <summary>
@@ -807,7 +854,105 @@ namespace SharpOrm
             if (toCheckColumns.Length < 1)
                 throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
 
-            base.Upsert(GetObjectReader(true, true).ReadRow(obj), toCheckColumns, updateColumns);
+            base.Upsert(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="objs">Objects to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <exception cref="ArgumentException">Thrown when no columns are specified to check.</exception>
+        public int Upsert(T[] objs, string[] toCheckColumns, params string[] updateColumns)
+        {
+            if (objs.Length == 0)
+                return 0;
+
+            if (toCheckColumns.Length < 1)
+                throw new ArgumentException(Messages.AtLeastOneColumnRequired, nameof(toCheckColumns));
+
+            return base.Upsert(GetObjectReader(ReadMode.ValidOnly, true).ReadRows(objs), toCheckColumns, updateColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists.</param>
+        /// <param name="insertColumnsExp">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumnsExp"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public void Upsert(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp, Expression<ColumnExpression<T>> insertColumnsExp, bool excludeInserColumns = false)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+            var insertColumns = processor.ParseColumnNames(insertColumnsExp).ToArray();
+
+            base.Upsert(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns, insertColumns, excludeInserColumns);
+        }
+
+        /// <summary>
+        /// Inserts or updates an object in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="obj"/> is null.</exception>
+        public void Upsert(T obj, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            base.Upsert(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns, insertColumns, excludeInserColumns);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumnsExp">The columns to check for existing records.</param>
+        /// <param name="updateColumnsExp">The columns to update if a record exists.</param>
+        /// <param name="insertColumnsExp">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumnsExp"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task UpsertAsync(T obj, Expression<ColumnExpression<T>> toCheckColumnsExp, Expression<ColumnExpression<T>> updateColumnsExp, Expression<ColumnExpression<T>> insertColumnsExp, bool excludeInserColumns = false, CancellationToken token = default)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            var processor = new ExpressionProcessor<T>(Info, ExpressionConfig.New);
+            var toCheckColumns = processor.ParseColumnNames(toCheckColumnsExp).ToArray();
+            var updateColumns = processor.ParseColumnNames(updateColumnsExp).ToArray();
+            var insertColumns = processor.ParseColumnNames(insertColumnsExp).ToArray();
+
+            await base.UpsertAsync(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns, insertColumns, excludeInserColumns, token);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts or updates an object in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="obj">The object to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task UpsertAsync(T obj, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            await base.UpsertAsync(GetObjectReader(ReadMode.ValidOnly, true).ReadRow(obj), toCheckColumns, updateColumns, insertColumns, excludeInserColumns, token);
         }
 
         #endregion
@@ -1573,7 +1718,7 @@ namespace SharpOrm
             query._fkToLoad.AddRange(_fkToLoad);
         }
 
-        internal ObjectReader GetObjectReader(bool readPk, bool isCreate)
+        internal ObjectReader GetObjectReader(ReadMode pkReadMode, bool isCreate)
         {
             if (_objReader == null)
             {
@@ -1583,8 +1728,8 @@ namespace SharpOrm
             }
 
             _objReader.IgnoreTimestamps = IgnoreTimestamps;
+            _objReader.PrimaryKeyMode = pkReadMode;
             _objReader.IsCreate = isCreate;
-            _objReader.ReadPk = readPk;
 
             return _objReader;
         }
@@ -2004,20 +2149,17 @@ namespace SharpOrm
         /// <param name="toCheckColumns">The columns to check for existing records.</param>
         /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
+        public async Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
             if (row == null)
                 throw new ArgumentNullException(nameof(row));
 
-            if (toCheckColumns == null || toCheckColumns.Length == 0)
-                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
-
             ValidateReadonly();
 
-            if (Info.Config.NativeUpsertRows)
-                return UpsertAsync(new Row[] { row }, toCheckColumns, updateColumns, token);
-
-            return NonNativeUpsertAsync(row, toCheckColumns, updateColumns, token);
+            await new UpsertStrategy(this, row)
+                .SetCheckColumns(toCheckColumns)
+                .SetUpdateColumns(updateColumns)
+                .UpsertAsync(token);
         }
 
         /// <summary>
@@ -2032,15 +2174,10 @@ namespace SharpOrm
             if (row == null)
                 throw new ArgumentNullException(nameof(row));
 
-            if (toCheckColumns == null || toCheckColumns.Length == 0)
-                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
-
-            ValidateReadonly();
-
-            if (Info.Config.NativeUpsertRows)
-                Upsert(new Row[] { row }, toCheckColumns, updateColumns);
-            else
-                NonNativeUpsert(row, toCheckColumns, updateColumns);
+            new UpsertStrategy(this, row)
+               .SetCheckColumns(toCheckColumns)
+               .SetUpdateColumns(updateColumns)
+               .Upsert();
         }
 
         /// <summary>
@@ -2052,18 +2189,28 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
-            updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
+            return await new UpsertStrategy(this, rows)
+                .SetCheckColumns(toCheckColumns)
+                .SetUpdateColumns(updateColumns)
+                .UpsertAsync(token);
+        }
 
-            if (!Config.NativeUpsertRows)
-            {
-                foreach (var row in rows)
-                    await NonNativeUpsertAsync(row, toCheckColumns, updateColumns, token);
-
-                return 0;
-            }
-
-            using (var cmd = GetCommand().AddCancellationToken(token))
-                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + await cmd.ExecuteNonQueryAsync();
+        /// <summary>
+        /// Asynchronously inserts or updates multiple rows in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="rows">The rows to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
+        public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
+        {
+            return await new UpsertStrategy(this, rows)
+                .SetCheckColumns(toCheckColumns)
+                .SetUpdateColumns(updateColumns)
+                .SetInsertColumns(excludeInserColumns, insertColumns)
+                .UpsertAsync(token);
         }
 
         /// <summary>
@@ -2076,73 +2223,78 @@ namespace SharpOrm
         /// <exception cref="ArgumentNullException">Thrown when rows or toCheckColumns are null or empty.</exception>
         public int Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns = null)
         {
-            updateColumns = FixUpdateColumns(rows, toCheckColumns, updateColumns);
-
-            if (!Config.NativeUpsertRows)
-            {
-                foreach (var row in rows)
-                    NonNativeUpsert(row, toCheckColumns, updateColumns);
-
+            if (rows.Length == 0)
                 return 0;
-            }
 
-            using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().Upsert(rows, toCheckColumns, updateColumns)) + cmd.ExecuteNonQuery();
+            return new UpsertStrategy(this, rows)
+               .SetCheckColumns(toCheckColumns)
+               .SetUpdateColumns(updateColumns)
+               .Upsert();
         }
 
-        private string[] FixUpdateColumns(Row[] rows, string[] toCheckColumns, string[] updateColumns)
+        /// <summary>
+        /// Inserts or updates multiple rows in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="rows">The rows to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <returns>The number of affected rows.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when rows or toCheckColumns are null or empty.</exception>
+        public int Upsert(Row[] rows, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false)
         {
-            if (rows == null || rows.Length == 0)
-                throw new ArgumentNullException(nameof(rows), "Rows cannot be null or empty.");
+            if (rows.Length == 0)
+                return 0;
 
-            if (toCheckColumns == null || toCheckColumns.Length == 0)
-                throw new ArgumentNullException(nameof(toCheckColumns), "ToCheckColumns cannot be null or empty.");
-
-            ValidateReadonly();
-
-            if (updateColumns == null || updateColumns.Length == 0)
-                return rows[0].Cells.Select(x => x.Name).Where(x => !toCheckColumns.Contains(x)).ToArray();
-
-            return updateColumns;
+            return new UpsertStrategy(this, rows)
+               .SetCheckColumns(toCheckColumns)
+               .SetUpdateColumns(updateColumns)
+               .SetInsertColumns(excludeInserColumns, insertColumns)
+               .Upsert();
         }
 
-        private void NonNativeUpsert(Row row, string[] toCheckColumns, string[] updateColumns)
+        /// <summary>
+        /// Inserts or updates a row in the database based on the specified columns to check, update, and insert.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        public void Upsert(Row row, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false)
         {
-            ValidateReadonly();
+            if (row == null)
+                throw new ArgumentNullException(nameof(row));
 
-            using (var query = Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, row[column]);
-
-                if (query.Any()) query.Update(row.Cells.Where(x => AnyColumn(updateColumns, x.Name)));
-                else query.Insert(row.Cells);
-            }
+            new UpsertStrategy(this, row)
+               .SetCheckColumns(toCheckColumns)
+               .SetUpdateColumns(updateColumns)
+               .SetInsertColumns(excludeInserColumns, insertColumns)
+               .Upsert();
         }
 
-        private async Task NonNativeUpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns, CancellationToken token)
+        /// <summary>
+        /// Asynchronously inserts or updates a row in the database based on the specified columns to check and update.
+        /// </summary>
+        /// <param name="row">The row to insert or update.</param>
+        /// <param name="toCheckColumns">The columns to check for existing records.</param>
+        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist. If null, all columns will be inserted.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
         {
-            ValidateReadonly();
+            if (row == null)
+                throw new ArgumentNullException(nameof(row));
 
-            using (var query = Clone(false))
-            {
-                foreach (var column in toCheckColumns)
-                    query.Where(column, row[column]);
-
-                if (query.Any()) await query.UpdateAsync(row.Cells.Where(x => AnyColumn(updateColumns, x.Name)), token);
-                else await query.InsertAsync(row.Cells, token);
-            }
-        }
-
-        private static bool AnyColumn(string[] columns, string column)
-        {
-            if (columns == null || columns.Length == 0) return true;
-
-            for (int i = 0; i < columns.Length; i++)
-                if (columns[i].Equals(column, StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-            return false;
+            await new UpsertStrategy(this, row)
+                .SetCheckColumns(toCheckColumns)
+                .SetUpdateColumns(updateColumns)
+                .SetInsertColumns(excludeInserColumns, insertColumns)
+                .UpsertAsync(token);
         }
 
         /// <summary>
@@ -2331,8 +2483,14 @@ namespace SharpOrm
         public async Task<int> BulkInsertAsync(IEnumerable<Row> rows, CancellationToken token)
         {
             using (var cmd = GetCommand().AddCancellationToken(token))
-                return await cmd.SetExpressionWithAffectedRowsAsync(GetGrammar().BulkInsert(rows)) +
+            {
+                var expression = GetGrammar().BulkInsert(rows);
+                if (expression.IsEmpty)
+                    return 0;
+
+                return await cmd.SetExpressionWithAffectedRowsAsync(expression) +
                     await cmd.ExecuteWithRecordsAffectedAsync();
+            }
         }
 
         /// <summary>
@@ -2342,7 +2500,13 @@ namespace SharpOrm
         public int BulkInsert(IEnumerable<Row> rows)
         {
             using (var cmd = GetCommand())
-                return cmd.SetExpressionWithAffectedRows(GetGrammar().BulkInsert(rows)) + cmd.ExecuteWithRecordsAffected();
+            {
+                var expression = GetGrammar().BulkInsert(rows);
+                if (expression.IsEmpty)
+                    return 0;
+
+                return cmd.SetExpressionWithAffectedRows(expression) + cmd.ExecuteWithRecordsAffected();
+            }
         }
 
         /// <summary>

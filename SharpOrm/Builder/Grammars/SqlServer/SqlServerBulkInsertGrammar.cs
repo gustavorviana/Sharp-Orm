@@ -17,7 +17,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             using (var @enum = rows.GetEnumerator())
             {
                 if (!@enum.MoveNext())
-                    throw new InvalidOperationException(Messages.NoColumnsInserted);
+                    return;
 
                 Build(@enum.Current);
 

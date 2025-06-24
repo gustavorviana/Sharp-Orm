@@ -15,7 +15,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets the maximum number of parameters allowed in a database query.
         /// </summary>
-        public virtual int DbParamsLimit { get; } = 2099;
+        public int DbParamsLimit { get; set; } = 2000;
 
         /// <summary>
         /// Indicates whether the DBMS supports native upsert rows.
