@@ -21,8 +21,4 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\SharpOrm\SharpOrm.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="SqlMethods\Mappers\" />
-	</ItemGroup>
 </Project>

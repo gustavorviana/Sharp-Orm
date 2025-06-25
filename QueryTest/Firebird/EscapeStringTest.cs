@@ -4,7 +4,7 @@ using SharpOrm;
 using SharpOrm.Fb;
 using Xunit.Abstractions;
 
-namespace QueryTest.Firebirdsql
+namespace QueryTest.Firebird
 {
     public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new FbQueryConfig { EscapeStrings = true })
     {
@@ -16,7 +16,7 @@ namespace QueryTest.Firebirdsql
             using var query = new Query(TestTableUtils.TABLE);
             query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
 
-            QueryAssert.Equal("SELECT * FROM `TestTable` WHERE `Name` = \"Mike\" AND `Date` = ? AND `Alias` = \"\\\"Mik\\\";\\'Mik\\'#--\"", query.Grammar().Select());
+            QueryAssert.Equal("SELECT * FROM \"TestTable\" WHERE \"Name\" = 'Mike' AND \"Date\" = ? AND \"Alias\" = '\"Mik\";''Mik''#--'", query.Grammar().Select());
         }
     }
 }

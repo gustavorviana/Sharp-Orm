@@ -1,7 +1,6 @@
 ﻿using BaseTest.Utils;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
-using SharpOrm.Builder;
 using SharpOrm.Fb;
 using static QueryTest.Builder.Expressions.ExpressionProcessorTests;
 
@@ -19,7 +18,7 @@ namespace QueryTest.Firebird
             string value2 = "value2";
             var column = ParseColumn<SampleClass>(x => string.Concat("Value", value2, x.Name)).LoadDeferred(info, true)!;
 
-            Assert.Equal("CONCAT(?,?,`Name`) AS `Concat`", column.ToString());
+            Assert.Equal("?||?||\"Name\" AS \"Concat\"", column.ToString());
         }
 
         [Fact]
@@ -27,7 +26,7 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Substring(0, 10)).LoadDeferred(info, true);
 
-            Assert.Equal("SUBSTRING(`Name`,0,10) AS `Name`", column.ToString());
+            Assert.Equal("SUBSTRING(\"Name\" FROM 0 FOR 10) AS \"Name\"", column.ToString());
         }
 
         [Fact]
@@ -35,7 +34,7 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Trim()).LoadDeferred(info, true);
 
-            Assert.Equal("TRIM(`Name`) AS `Name`", column.ToString());
+            Assert.Equal("TRIM(\"Name\") AS \"Name\"", column.ToString());
         }
 
         [Fact]
@@ -43,7 +42,7 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.TrimStart()).LoadDeferred(info, true);
 
-            Assert.Equal("LTRIM(`Name`) AS `Name`", column.ToString());
+            Assert.Equal("TRIM(LEADING FROM \"Name\") AS \"Name\"", column.ToString());
         }
 
         [Fact]
@@ -51,7 +50,31 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.TrimEnd()).LoadDeferred(info, true);
 
-            Assert.Equal("RTRIM(`Name`) AS `Name`", column.ToString());
+            Assert.Equal("TRIM(TRAILING FROM \"Name\") AS \"Name\"", column.ToString());
+        }
+
+        [Fact]
+        public void StringLength()
+        {
+            var column = ParseColumn<SampleClass>(x => x.Name!.Length).LoadDeferred(info, true);
+
+            Assert.Equal("CHAR_LENGTH(\"Name\") AS \"Name\"", column.ToString());
+        }
+
+        [Fact]
+        public void StringToLower()
+        {
+            var column = ParseColumn<SampleClass>(x => x.Name!.ToLower()).LoadDeferred(info, true);
+
+            Assert.Equal("LOWER(\"Name\") AS \"Name\"", column.ToString());
+        }
+
+        [Fact]
+        public void StringToUpper()
+        {
+            var column = ParseColumn<SampleClass>(x => x.Name!.ToUpper()).LoadDeferred(info, true);
+
+            Assert.Equal("UPPER(\"Name\") AS \"Name\"", column.ToString());
         }
 
         [Fact]
@@ -59,7 +82,7 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, 10)).LoadDeferred(info, true);
 
-            Assert.Equal("SUBSTRING(`Name`,`StartIndex`,10) AS `Name`", column.ToString());
+            Assert.Equal("SUBSTRING(\"Name\" FROM \"StartIndex\" FOR 10) AS \"Name\"", column.ToString());
         }
 
         [Fact]
@@ -67,7 +90,15 @@ namespace QueryTest.Firebird
         {
             var column = ParseColumn<SampleClass>(x => x.Name!.Substring(x.StartIndex, x.EndIndex)).LoadDeferred(info, true);
 
-            Assert.Equal("SUBSTRING(`Name`,`StartIndex`,`EndIndex`) AS `Name`", column.ToString());
+            Assert.Equal("SUBSTRING(\"Name\" FROM \"StartIndex\" FOR \"EndIndex\") AS \"Name\"", column.ToString());
+        }
+
+        [Fact]
+        public void StringToString()
+        {
+            var column = ParseColumn<SampleClass>(x => x.Name!.ToString()).LoadDeferred(info, true);
+
+            Assert.Equal("\"Name\" AS \"Name\"", column.ToString());
         }
     }
 }

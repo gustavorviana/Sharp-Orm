@@ -51,18 +51,18 @@ namespace SharpOrm.SqlMethods.Mappers
             return "yyyy-MM-dd HH:mm:ss";
         }
 
-        internal static void WriteArgs(QueryBuilder builder, object[] args, int offset = 0, bool firstComma = true)
+        internal static void WriteArgs(QueryBuilder builder, object[] args, int offset = 0, bool firstComma = true, string separator = ",")
         {
             if (args.Length == 0)
                 return;
 
             if (firstComma)
-                builder.Add(',');
+                builder.Add(separator);
 
             builder.AddParameter(args[offset]);
 
             for (int i = offset + 1; i < args.Length; i++)
-                builder.Add(',').AddParameter(args[i]);
+                builder.Add(separator).AddParameter(args[i]);
         }
     }
 }

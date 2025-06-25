@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars;
 using SharpOrm.Fb.Grammars;
+using SharpOrm.Fb.SqlMethods.Mappers;
 using System.Text;
 
 namespace SharpOrm.Fb
@@ -22,6 +23,11 @@ namespace SharpOrm.Fb
         /// <param name="safeModificationsOnly">If true, only safe modifications are allowed.</param>
         public FbQueryConfig(bool safeModificationsOnly) : base(safeModificationsOnly)
         {
+        }
+
+        protected override void RegisterMethods()
+        {
+            Methods.Add(new FirebirdStringMethods());
         }
 
         /// <summary>
