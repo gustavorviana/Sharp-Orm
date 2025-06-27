@@ -27,8 +27,7 @@ namespace SharpOrm.DataTranslation
             var pathList = memberPath.ToList();
             if (pathList.Count == 0) return null;
 
-            var rootNode = GetOrAddChild(pathList[0], silent);
-            var currentNode = rootNode;
+            var currentNode = GetOrAddChild(pathList[0], silent);
 
             for (int i = 1; i < pathList.Count; i++)
                 currentNode = currentNode.GetOrAddChild(pathList[i], silent);

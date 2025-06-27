@@ -13,7 +13,7 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     public class TranslationRegistry : IEquatable<TranslationRegistry>, ICloneable
     {
-        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
+        private readonly NativeSqlTranslation _native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
         private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
 
@@ -28,8 +28,8 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public bool EmptyStringToNull
         {
-            get => native.EmptyStringToNull;
-            set => native.EmptyStringToNull = value;
+            get => _native.EmptyStringToNull;
+            set => _native.EmptyStringToNull = value;
         }
 
         /// <summary>
@@ -52,8 +52,8 @@ namespace SharpOrm.DataTranslation
         /// </remarks>
         public string GuidFormat
         {
-            get => native.GuidFormat;
-            set => native.GuidFormat = value;
+            get => _native.GuidFormat;
+            set => _native.GuidFormat = value;
         }
 
         /// <summary>
@@ -64,8 +64,8 @@ namespace SharpOrm.DataTranslation
         /// </remarks>
         public string DateFormat
         {
-            get => native.dateTranslation.Format;
-            set => native.dateTranslation.Format = value;
+            get => _native.dateTranslation.Format;
+            set => _native.dateTranslation.Format = value;
         }
 
         /// <summary>
@@ -73,8 +73,8 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public CultureInfo Culture
         {
-            get => native.numericTranslation.Culture;
-            set => native.numericTranslation.Culture = value;
+            get => _native.numericTranslation.Culture;
+            set => _native.numericTranslation.Culture = value;
         }
 
         /// <summary>
@@ -83,8 +83,8 @@ namespace SharpOrm.DataTranslation
         /// <value>The serialization format for enums.</value>
         public EnumSerialization EnumSerialization
         {
-            get => native.EnumSerialization;
-            set => native.EnumSerialization = value;
+            get => _native.EnumSerialization;
+            set => _native.EnumSerialization = value;
         }
 
         /// <summary>
@@ -93,8 +93,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo DbTimeZone
         {
-            get => native.DbTimeZone;
-            set => native.DbTimeZone = value;
+            get => _native.DbTimeZone;
+            set => _native.DbTimeZone = value;
         }
 
         /// <summary>
@@ -103,8 +103,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo TimeZone
         {
-            get => native.TimeZone;
-            set => native.TimeZone = value;
+            get => _native.TimeZone;
+            set => _native.TimeZone = value;
         }
 
         /// <summary>
@@ -190,8 +190,8 @@ namespace SharpOrm.DataTranslation
             if (Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
                 return conversor;
 
-            if (native.CanWork(type))
-                return native;
+            if (_native.CanWork(type))
+                return _native;
 
             return null;
         }
@@ -277,7 +277,7 @@ namespace SharpOrm.DataTranslation
         public bool Equals(TranslationRegistry other)
         {
             return !(other is null) &&
-                   EqualityComparer<NativeSqlTranslation>.Default.Equals(native, other.native) &&
+                   EqualityComparer<NativeSqlTranslation>.Default.Equals(_native, other._native) &&
                    EqualityComparer<ISqlTranslation[]>.Default.Equals(Translators, other.Translators) &&
                    GuidFormat == other.GuidFormat &&
                    EqualityComparer<TimeZoneInfo>.Default.Equals(DbTimeZone, other.DbTimeZone) &&
@@ -287,7 +287,7 @@ namespace SharpOrm.DataTranslation
         public override int GetHashCode()
         {
             int hashCode = 836003443;
-            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(native);
+            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(_native);
             hashCode = hashCode * -1521134295 + EqualityComparer<ISqlTranslation[]>.Default.GetHashCode(Translators);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(GuidFormat);
             hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(DbTimeZone);
