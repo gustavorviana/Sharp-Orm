@@ -506,7 +506,7 @@ namespace SharpOrm
 
             try
             {
-                _foreignKeyRegister.ApplySelectToQuery(this);
+                ConfigurePendingColumns();
                 using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(Info.Config.NewGrammar(this).Select()))
                     foreach (var item in ConfigureFkLoader(cmd.ExecuteEnumerable<K>(true)))
                         yield return item;
@@ -1685,6 +1685,7 @@ namespace SharpOrm
         {
             Query<T> query = new Query<T>(Info.TableName, Manager);
             query.Token = Token;
+            query._pendingSelect = _pendingSelect;
 
             if (withWhere)
                 query.Info.LoadFrom(Info);
@@ -1724,13 +1725,17 @@ namespace SharpOrm
 
         public override string ToString()
         {
-            if (_pendingSelect)
-            {
-                _pendingSelect = false;
-                _foreignKeyRegister.ApplySelectToQuery(this);
-            }
-
+            ConfigurePendingColumns();
             return base.ToString();
+        }
+
+        private void ConfigurePendingColumns()
+        {
+            if (!_pendingSelect)
+                return;
+
+            _pendingSelect = false;
+            _foreignKeyRegister.ApplySelectToQuery(this);
         }
 
         public override QueryBase Where(object column, string operation, object value)

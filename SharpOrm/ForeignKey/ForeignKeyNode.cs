@@ -31,6 +31,7 @@ namespace SharpOrm.DataTranslation
         {
             ColumnInfo = columnInfo ?? throw new ArgumentNullException(nameof(columnInfo));
             ParentIsCollection = CheckParentIsCollection(parent);
+
             Prefix = isCollection ? Member.Name : prefix + Member.Name;
             IsCollection = isCollection;
             TableParent = parent.Name;
@@ -62,7 +63,8 @@ namespace SharpOrm.DataTranslation
 
         private Column GetColumn(ColumnInfo column, string prefix)
         {
-            return new Column($"{Name.TryGetAlias()}.{column.Name}", $"{prefix}{column.Name}");
+            var alias = IsCollection ? "" : $"{prefix}{column.Name}";
+            return new Column($"{Name.TryGetAlias()}.{column.Name}", alias);
         }
 
         public override IEnumerable<Column> GetAllColumn()
