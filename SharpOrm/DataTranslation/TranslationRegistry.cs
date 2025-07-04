@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Msg;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -15,7 +16,8 @@ namespace SharpOrm.DataTranslation
     {
         private readonly NativeSqlTranslation _native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
-        private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
+        private readonly ConcurrentDictionary<Type, TableInfo> _mappedTables = new ConcurrentDictionary<Type, TableInfo>();
+        private readonly ConcurrentDictionary<Type, ISqlTranslation> _cachedTranslations = new ConcurrentDictionary<Type, ISqlTranslation>();
 
         public static TranslationRegistry Default
         {
@@ -32,10 +34,20 @@ namespace SharpOrm.DataTranslation
             set => _native.EmptyStringToNull = value;
         }
 
+        private ISqlTranslation[] _sqlTranslations = DotnetUtils.EmptyArray<ISqlTranslation>();
+
         /// <summary>
         /// Custom value translators.
         /// </summary>
-        public ISqlTranslation[] Translators { get; set; } = DotnetUtils.EmptyArray<ISqlTranslation>();
+        public ISqlTranslation[] Translators
+        {
+            get => _sqlTranslations;
+            set
+            {
+                _sqlTranslations = value;
+                _cachedTranslations.Clear();
+            }
+        }
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
@@ -187,13 +199,16 @@ namespace SharpOrm.DataTranslation
         {
             type = GetValidTypeFor(type);
 
-            if (Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
-                return conversor;
+            return _cachedTranslations.GetOrAdd(type, pendingTipe =>
+            {
+                if (Translators?.FirstOrDefault(c => c.CanWork(pendingTipe)) is ISqlTranslation conversor)
+                    return conversor;
 
-            if (_native.CanWork(type))
-                return _native;
+                if (_native.CanWork(pendingTipe))
+                    return _native;
 
-            return null;
+                return null;
+            });
         }
 
         /// <summary>
@@ -228,14 +243,14 @@ namespace SharpOrm.DataTranslation
         internal TableInfo AddTableMap<T>(TableMap<T> map)
         {
             var type = typeof(T);
-            if (_manualMapped.Any(x => x.Type == type))
+            if (_mappedTables.ContainsKey(type))
                 throw new InvalidOperationException(Messages.Table.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));
 
             var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
-            _manualMapped.Add(table);
+            _mappedTables.TryAdd(type, table);
             return table;
         }
 
@@ -246,8 +261,7 @@ namespace SharpOrm.DataTranslation
         /// <returns></returns>
         public string GetTableName(Type type)
         {
-            if (GetManualMap(type) is TableInfo table) return table.Name;
-            return TableInfo.GetNameOf(type);
+            return GetTable(type)?.Name;
         }
 
         /// <summary>
@@ -257,14 +271,13 @@ namespace SharpOrm.DataTranslation
         /// <returns></returns>
         public TableInfo GetTable(Type type)
         {
-#pragma warning disable CS0618 // O tipo ou membro é obsoleto
-            return GetManualMap(type) ?? new TableInfo(type, this);
-#pragma warning restore CS0618 // O tipo ou membro é obsoleto
-        }
+            if (type == typeof(Row))
+                return null;
 
-        internal TableInfo GetManualMap(Type type)
-        {
-            return _manualMapped.FirstOrDefault(x => x.Type == type);
+            return _mappedTables.GetOrAdd(type, (pendingType) =>
+            {
+                return new TableInfo(type, this);
+            });
         }
 
         #region IEquatable

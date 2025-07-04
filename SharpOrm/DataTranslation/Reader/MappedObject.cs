@@ -75,7 +75,8 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(record, registry);
 
-            if (registry.GetManualMap(type) is TableInfo table)
+            var table = registry.GetTable(type);
+            if (table != null && table.IsManualMap)
                 return new MappedManualObj(table, registry, record);
 
             return Create(record, type, nestedMode, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyRegister, registry);
