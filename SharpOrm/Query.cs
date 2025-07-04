@@ -2762,7 +2762,7 @@ namespace SharpOrm
             return builder.SetExpression(Info.Config.NewGrammar(this).Select())
                 .SetExpression(Info.Config.NewGrammar(this).Select())
                 .AddCancellationToken(token)
-                .ExecuteEnumerable<T>(builder.leaveOpen);
+                .ExecuteEnumerable<T>(builder._leaveOpen);
         }
 
         /// <summary>
