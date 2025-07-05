@@ -331,7 +331,7 @@ namespace SharpOrm.Builder
         /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
         /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public QueryBase OrWhere(object column, string operation, object value)
+        public virtual QueryBase OrWhere(object column, string operation, object value)
         {
             return this.WriteWhere(column, operation, value, OR);
         }

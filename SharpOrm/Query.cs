@@ -1748,6 +1748,17 @@ namespace SharpOrm
 
             return base.Where(column, operation, value);
         }
+
+        public override QueryBase OrWhere(object column, string operation, object value)
+        {
+            if (column is string strCol)
+                return base.OrWhere(new SafeWhere(strCol, operation, value));
+
+            if (column is Column col)
+                return base.OrWhere(new SafeWhere(col, operation, value));
+
+            return base.OrWhere(column, operation, value);
+        }
     }
 
     /// <summary>
