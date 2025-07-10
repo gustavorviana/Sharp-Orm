@@ -1738,26 +1738,27 @@ namespace SharpOrm
             _foreignKeyRegister.ApplySelectToQuery(this);
         }
 
-        public override QueryBase Where(object column, string operation, object value)
+        public new Query<T> Where(object column, string operation, object value)
         {
-            if (column is string strCol)
-                return base.Where(new SafeWhere(strCol, operation, value));
-
-            if (column is Column col)
-                return base.Where(new SafeWhere(col, operation, value));
-
-            return base.Where(column, operation, value);
+            base.Where(column, operation, value);
+            return this;
         }
 
-        public override QueryBase OrWhere(object column, string operation, object value)
+        public new Query<T> OrWhere(object column, string operation, object value)
+        {
+            base.OrWhere(column, operation, value);
+            return this;
+        }
+
+        protected internal override QueryBase WriteWhere(object column, string operation, object value, string type)
         {
             if (column is string strCol)
-                return base.OrWhere(new SafeWhere(strCol, operation, value));
+                return base.Where(new SafeWhere(strCol, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             if (column is Column col)
-                return base.OrWhere(new SafeWhere(col, operation, value));
+                return base.Where(new SafeWhere(col, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
 
-            return base.OrWhere(column, operation, value);
+            return base.WriteWhere(column, operation, value, type);
         }
     }
 

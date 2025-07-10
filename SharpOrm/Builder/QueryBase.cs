@@ -62,7 +62,7 @@ namespace SharpOrm.Builder
         /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
-            return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
+            return this.Where(expressible.ToSafeExpression(Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -84,7 +84,12 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(SqlExpression expression)
         {
-            this.WriteWhereType(AND);
+            return Where(expression, AND);
+        }
+
+        protected virtual QueryBase Where(SqlExpression expression, string type)
+        {
+            this.WriteWhereType(type);
             this.Info.Where.AddParameter(expression);
             return this;
         }
@@ -136,10 +141,10 @@ namespace SharpOrm.Builder
         /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
         /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public virtual QueryBase Where(object column, string operation, object value)
+        public QueryBase Where(object column, string operation, object value)
         {
             ValidateQueryValue(operation, ref value);
-            return this.WriteWhere(column, operation, value, AND);
+            return WriteWhere(column, operation, value, AND);
         }
 
         private static void ValidateQueryValue(string operation, ref object value)
@@ -269,9 +274,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(SqlExpression expression)
         {
-            this.WriteWhereType(OR);
-            this.Info.Where.AddParameter(expression);
-            return this;
+            return Where(expression, OR);
         }
 
         /// <summary>
@@ -331,9 +334,9 @@ namespace SharpOrm.Builder
         /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
         /// <param name="value">The value to compare with.</param>
         /// <returns></returns>
-        public virtual QueryBase OrWhere(object column, string operation, object value)
+        public QueryBase OrWhere(object column, string operation, object value)
         {
-            return this.WriteWhere(column, operation, value, OR);
+            return WriteWhere(column, operation, value, OR);
         }
 
         /// <summary>
@@ -488,7 +491,7 @@ namespace SharpOrm.Builder
             throw new InvalidOperationException(Messages.Query.ColumnsMustSuportAnyOfTypes);
         }
 
-        internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
+        internal protected virtual QueryBase WriteWhere(object column, string operation, object value, string type)
         {
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
