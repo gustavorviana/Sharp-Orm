@@ -2,6 +2,7 @@
 using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -248,6 +249,47 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Adds a value to the query, wrapping it in parentheses if it is a list operation or an expression list.
+        /// </summary>
+        /// <param name="value">The value to add to the query.</param>
+        /// <param name="isListOperation">Indicates whether the value should be treated as a list operation (e.g., IN clause).</param>
+        /// <returns>The current instance of <see cref="QueryBuilder"/>.</returns>
+        public QueryBuilder AddValue(object value, bool isListOperation)
+        {
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && isListOperation;
+            if (isExpressionList)
+                Add('(');
+
+            WriteValue(value);
+
+            if (isExpressionList)
+                Add(')');
+
+            return this;
+        }
+
+        /// <summary>
+        /// Loads the value object and converts it to a sql values.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private QueryBuilder WriteValue(object value)
+        {
+            if (value is ICollection collection)
+                return WriteEnumerableAsValue(collection, true);
+
+            if (value is Query query)
+                return WriteQuery(query);
+
+            return AddParameter(value);
+        }
+
+        public QueryBuilder WriteQuery(Query query)
+        {
+            return Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
+        }
+
+        /// <summary>
         /// Adds an values to the query.
         /// </summary>
         /// <param name="expression">The values to add.</param>
@@ -431,13 +473,13 @@ namespace SharpOrm.Builder
             if (!@enum.MoveNext())
                 return this.Add("1!=1");
 
-            this.Add('(');
-            this.AddParameter(@enum.Current, allowAlias);
+            Add('(');
+            AddParameter(@enum.Current, allowAlias);
 
             while (@enum.MoveNext())
-                this.Add(", ").AddParameter(@enum.Current, allowAlias);
+                Add(", ").AddParameter(@enum.Current, allowAlias);
 
-            return this.Add(')');
+            return Add(')');
         }
 
         /// <summary>

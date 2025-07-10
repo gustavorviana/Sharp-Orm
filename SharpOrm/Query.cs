@@ -1738,12 +1738,26 @@ namespace SharpOrm
             _foreignKeyRegister.ApplySelectToQuery(this);
         }
 
+        /// <summary>
+        /// Adds a clause to "WHERE" (If there are any previous clauses, "AND" is entered before the new clause).
+        /// </summary>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns></returns>
         public new Query<T> Where(object column, string operation, object value)
         {
             base.Where(column, operation, value);
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR WHERE clause with a specified operation and value.
+        /// </summary>
+        /// <param name="column">The column to perform the comparison on.</param>
+        /// <param name="operation">The operation to perform (e.g., "=", "LIKE", ">", etc.).</param>
+        /// <param name="value">The value to compare with.</param>
+        /// <returns></returns>
         public new Query<T> OrWhere(object column, string operation, object value)
         {
             base.OrWhere(column, operation, value);
@@ -1752,11 +1766,12 @@ namespace SharpOrm
 
         protected internal override QueryBase WriteWhere(object column, string operation, object value, string type)
         {
+            var isList = IsCollection(operation);
             if (column is string strCol)
-                return base.Where(new SafeWhere(strCol, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
+                return base.Where(new SafeWhere(strCol, operation, value, isList).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             if (column is Column col)
-                return base.Where(new SafeWhere(col, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
+                return base.Where(new SafeWhere(col, operation, value, isList).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             return base.WriteWhere(column, operation, value, type);
         }
