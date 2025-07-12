@@ -12,7 +12,7 @@ namespace SharpOrm.Builder.Grammars.Mysql.Builder
             sql.Append("CONSTRAINT ")
                 .Append($"`{constraint.GetEffectiveName()}` ")
                 .Append("PRIMARY KEY ")
-                .Append($"(`{string.Join("`, `", constraint.Columns)}`)");
+                .Append($"(`{string.Join("`,`", constraint.Columns)}`)");
 
             return new SqlExpression(sql.ToString());
         }

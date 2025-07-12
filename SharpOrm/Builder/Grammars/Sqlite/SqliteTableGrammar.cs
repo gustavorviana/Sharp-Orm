@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.Sqlite.Builder;
 using SharpOrm.Builder.Grammars.Sqlite.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
 using SharpOrm.Builder.Grammars.Table.Constraints;
@@ -32,6 +33,11 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             ColumnTypes.Add(new SqliteNumberWithoutDecimalColumnTypeMap());
             ColumnTypes.Add(new SqliteNumberWithDecimalColumnTypeMap());
             ColumnTypes.Add(new SqliteStringColumnTypeMap());
+
+            ConstraintBuilders.Add(new SqlitePrimaryKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteForeignKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteUniqueConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteCheckConstraintBuilder());
         }
 
         protected override DbName LoadName()

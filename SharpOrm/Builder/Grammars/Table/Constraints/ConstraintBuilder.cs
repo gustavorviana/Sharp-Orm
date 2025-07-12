@@ -28,5 +28,13 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <returns>The SQL expression representing the constraint.</returns>
         public abstract SqlExpression Build(Constraint constraint);
         public abstract bool CanWork(Type type);
+
+        protected static string GetRuleText(DbRule rule)
+        {
+            if (rule == DbRule.Cascade) return "CASCADE";
+            if (rule == DbRule.SetNull) return "SET NULL";
+            if (rule == DbRule.SetDefault) return "SET DEFAULT";
+            return "NO ACTION";
+        }
     }
 }

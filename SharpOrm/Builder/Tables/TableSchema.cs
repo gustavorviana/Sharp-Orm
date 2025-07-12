@@ -123,8 +123,10 @@ namespace SharpOrm.Builder
             constraints.Clear();
 
             var primaryKeys = columns.PrimaryKeys.Select(x => x.ColumnName).ToArray();
+            var isPkAutoIncrement = columns.PrimaryKeys.Any(x => x.AutoIncrement);
+
             if (primaryKeys.Length > 0)
-                constraints.Add(new PrimaryKeyConstraint(Name, primaryKeys));
+                constraints.Add(new PrimaryKeyConstraint(Name, primaryKeys) { AutoIncrement = isPkAutoIncrement });
 
             var uniques = columns.Where(x => x.Unique).Select(x => x.ColumnName).ToArray();
             if (uniques.Length > 0)

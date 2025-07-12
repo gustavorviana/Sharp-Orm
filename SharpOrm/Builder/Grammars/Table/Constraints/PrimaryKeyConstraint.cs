@@ -13,6 +13,8 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
 
         public bool? IsClustered { get; set; }
 
+        public bool AutoIncrement { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PrimaryKeyConstraint"/> class.
         /// </summary>
