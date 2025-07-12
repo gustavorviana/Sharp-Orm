@@ -1,4 +1,8 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
+using SharpOrm.Builder.Grammars.SqlServer.Builder;
+using SharpOrm.Builder.Grammars.SqlServer.ColumnTypes;
+using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.IO;
@@ -18,6 +22,26 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         /// <param name="schema">The table schema.</param>
         public SqlServerTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
+            ColumnTypes.Add(new ColumnType(typeof(int), "INT"));
+            ColumnTypes.Add(new ColumnType(typeof(long), "BIGINT"));
+            ColumnTypes.Add(new ColumnType(typeof(short), "SMALLINT"));
+            ColumnTypes.Add(new ColumnType(typeof(byte), "TINYINT"));
+            ColumnTypes.Add(new ColumnType(typeof(float), "REAL"));
+            ColumnTypes.Add(new ColumnType(typeof(double), "FLOAT"));
+            ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
+            ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
+            ColumnTypes.Add(new ColumnType(typeof(char), "NCHAR(1)"));
+            ColumnTypes.Add(new ColumnType(typeof(DateTime), "DATETIME"));
+            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TIME"));
+            ColumnTypes.Add(new ColumnType(typeof(byte[]), "VARBINARY(MAX)"));
+            ColumnTypes.Add(new ColumnType(typeof(MemoryStream), "VARBINARY(MAX)"));
+            ColumnTypes.Add(new ColumnType(typeof(Guid), "UNIQUEIDENTIFIER"));
+            ColumnTypes.Add(new SqlServerStringColumnTypeMap(false));
+
+            ConstraintBuilders.Add(new SqlServerPrimaryKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqlServerForeignKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqlServerUniqueConstraintBuilder());
+            ConstraintBuilders.Add(new SqlServerCheckConstraintBuilder());
         }
 
         protected override DbName LoadName()
@@ -58,79 +82,9 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             return query.Add(')').ToExpression();
         }
 
-        private string GetColumnDefinition(DataColumn column)
+        private SqlExpression GetColumnDefinition(DataColumn column)
         {
-            if (column.ColumnName.Contains("."))
-                throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
-
-            long seed = column.AutoIncrementSeed;
-            if (seed <= 0)
-                seed = 1;
-
-            long step = column.AutoIncrementStep;
-            if (step <= 0)
-                step = 1;
-
-            string columnName = Config.ApplyNomenclature(column.ColumnName);
-            string dataType = GetSqlDataType(column);
-            string identity = column.AutoIncrement ? string.Concat(" IDENTITY(", seed, ",", step, ")") : string.Empty;
-            string nullable = column.AllowDBNull ? "NULL" : "NOT NULL";
-
-            return string.Concat(columnName, " ", dataType, identity, " ", nullable);
-        }
-
-        private string GetSqlDataType(DataColumn column)
-        {
-            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
-                return map.GetTypeString(column);
-
-            if (GetExpectedColumnType(column) is string typeColumn)
-                return typeColumn;
-
-            var dataType = column.DataType;
-            if (dataType == typeof(int))
-                return "INT";
-
-            if (dataType == typeof(long))
-                return "BIGINT";
-
-            if (dataType == typeof(short))
-                return "SMALLINT";
-
-            if (dataType == typeof(byte))
-                return "TINYINT";
-
-            if (dataType == typeof(float))
-                return "REAL";
-
-            if (dataType == typeof(double))
-                return "FLOAT";
-
-            if (dataType == typeof(decimal))
-                return "DECIMAL";
-
-            if (dataType == typeof(bool))
-                return "BIT";
-
-            if (dataType == typeof(string))
-                return string.Concat("VARCHAR(", column.MaxLength < 1 ? "MAX" : (object)column.MaxLength, ")");
-
-            if (dataType == typeof(char))
-                return "NCHAR(1)";
-
-            if (dataType == typeof(DateTime))
-                return "DATETIME";
-
-            if (dataType == typeof(TimeSpan))
-                return "TIME";
-
-            if (dataType == typeof(byte[]) || dataType == typeof(MemoryStream))
-                return "VARBINARY(MAX)";
-
-            if (dataType == typeof(Guid))
-                return "UNIQUEIDENTIFIER";
-
-            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
+            return new SqlServerColumnBuilder(Config, GetColumnType(column), column).Build();
         }
 
         private SqlExpression CreateBased()

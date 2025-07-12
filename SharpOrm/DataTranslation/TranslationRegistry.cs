@@ -141,6 +141,12 @@ namespace SharpOrm.DataTranslation
             throw new NotSupportedException(string.Format(Messages.TypeNotSupported, expectedType.FullName));
         }
 
+
+        public bool IsDateOrTime(Type type)
+        {
+            return _native.dateTranslation.CanWork(type);
+        }
+
         /// <summary>
         /// Converts a value from the database to C#.
         /// </summary>

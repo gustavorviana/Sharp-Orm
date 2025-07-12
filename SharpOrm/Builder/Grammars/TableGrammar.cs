@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.Builder.Grammars.Table.Constraints;
+using SharpOrm.Msg;
+using System;
 using System.Data;
 using System.Linq;
 
@@ -13,6 +16,9 @@ namespace SharpOrm.Builder.Grammars
         /// Gets the read-only query information.
         /// </summary>
         protected readonly IReadonlyQueryInfo queryInfo;
+
+        protected ColumnTypeProvider ColumnTypes { get; set; } = new ColumnTypeProvider();
+        protected ItemsProvider<ConstraintBuilder> ConstraintBuilders { get; set; } = new ItemsProvider<ConstraintBuilder>();
 
 
         /// <summary>
@@ -106,17 +112,26 @@ namespace SharpOrm.Builder.Grammars
             return new SqlExpression(string.Concat("TRUNCATE TABLE ", ApplyNomenclature(Name.Name)));
         }
 
+        protected string GetColumnType(DataColumn column)
+        {
+            if (column.ExtendedProperties.TryGet(ExtendedPropertyKeys.ColumnType, out var type) && type is string strType)
+                return strType;
+
+            if (GetCustomColumnTypeMap(column) is IColumnTypeMap map)
+                return map.Build(column);
+
+            return ColumnTypes.BuildType(column) ??
+                throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, column.DataType.Name));
+        }
+
         /// <summary>
         /// Gets the custom column type map for the specified column.
         /// </summary>
         /// <param name="column">The data column.</param>
         /// <returns>The custom column type map.</returns>
-        protected ColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
+        protected IColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {
-            return queryInfo
-                .Config
-                .CustomColumnTypes?
-                .FirstOrDefault(x => x.CanWork(column.DataType));
+            return queryInfo.Config.CustomColumnTypes.Get(column);
         }
 
         /// <summary>
@@ -176,30 +191,6 @@ namespace SharpOrm.Builder.Grammars
         protected string ApplyNomenclature(string name)
         {
             return queryInfo.Config.ApplyNomenclature(name);
-        }
-
-        /// <summary>
-        /// Gets the size of the GUID based on the configured format.
-        /// </summary>
-        /// <returns>The size of the GUID.</returns>
-        /// <remarks>Ref: https://learn.microsoft.com/pt-br/dotnet/api/system.guid.tostring?view=net-8.0</remarks>
-        protected int GetGuidSize()
-        {
-            switch (Config.Translation.GuidFormat)
-            {
-                case "N": return 32;
-                case "D": return 36;
-                case "B":
-                case "P": return 38;
-                default: return 68;
-            }
-        }
-
-        protected string GetExpectedColumnType(DataColumn column)
-        {
-            return column.ExtendedProperties.ContainsKey(nameof(ColumnAttribute.TypeName)) ?
-                column.ExtendedProperties[nameof(ColumnAttribute.TypeName)] as string :
-                null;
         }
     }
 }

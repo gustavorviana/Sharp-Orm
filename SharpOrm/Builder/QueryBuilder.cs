@@ -25,7 +25,7 @@ namespace SharpOrm.Builder
         /// A list of parameters for the SQL query.
         /// </summary>
         protected readonly List<object> parameters = new List<object>();
-        private readonly IReadonlyQueryInfo info;
+        private readonly IReadonlyQueryInfo _info;
 
         internal SoftDeleteAttribute softDelete = null;
         public Trashed Trashed { get; internal set; } = Trashed.With;
@@ -35,6 +35,8 @@ namespace SharpOrm.Builder
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
         public bool Empty => this.query.Length == 0;
+
+        public bool NoParameters { get; set; }
 
         /// <summary>
         /// Gets the parameters.
@@ -77,7 +79,7 @@ namespace SharpOrm.Builder
         {
         }
 
-        internal QueryBuilder(QueryBuilder builder) : this(builder.info)
+        internal QueryBuilder(QueryBuilder builder) : this(builder._info)
         {
             paramInterceptor = builder.paramInterceptor;
 
@@ -90,7 +92,7 @@ namespace SharpOrm.Builder
         /// <param name="info">The query information.</param>
         public QueryBuilder(IReadonlyQueryInfo info)
         {
-            this.info = info;
+            _info = info;
             Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
@@ -206,15 +208,15 @@ namespace SharpOrm.Builder
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            val = (this.info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
+            val = (_info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
             if (paramInterceptor != null)
                 val = paramInterceptor(val);
 
             if (ToQueryValue(val) is string sql)
                 return this.Add(sql);
 
-            if (this.info?.Config?.EscapeStrings == true && val is string strVal)
-                return this.Add(this.info.Config.EscapeString(strVal));
+            if (NeedEscapeString() && val is string strVal)
+                return this.Add(_info.Config.EscapeString(strVal));
 
             if (!(val is byte[]) && val is ICollection)
                 throw new NotSupportedException();
@@ -223,6 +225,11 @@ namespace SharpOrm.Builder
                 return this.InternalAddParam(ms.ToArray());
 
             return this.InternalAddParam(val);
+        }
+
+        private bool NeedEscapeString()
+        {
+            return NoParameters || _info?.Config?.EscapeStrings == true;
         }
 
         /// <summary>
@@ -296,7 +303,7 @@ namespace SharpOrm.Builder
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
         public QueryBuilder AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {
-            return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
+            return this.Add(expression.ToSafeExpression(_info, allowAlias), allowAlias);
         }
 
         /// <summary>
@@ -352,7 +359,7 @@ namespace SharpOrm.Builder
                 if (string.IsNullOrEmpty(strColumn))
                     throw new Exception(Messages.Query.EmptyColumnName);
 
-                return this.Add(this.info.Config.ApplyNomenclature(strColumn));
+                return this.Add(_info.Config.ApplyNomenclature(strColumn));
             }
 
             if (TryDeferredExpression(ref column, allowAlias))
@@ -370,7 +377,7 @@ namespace SharpOrm.Builder
         private bool TryDeferredExpression(ref object column, bool allowAlias)
         {
             if (column is ISqlExpressible iExp && !(column is IDeferredSqlExpression))
-                column = iExp.ToSafeExpression(this.info, allowAlias);
+                column = iExp.ToSafeExpression(_info, allowAlias);
 
             if (column is IDeferredSqlExpression deferrer)
             {
@@ -543,8 +550,8 @@ namespace SharpOrm.Builder
             builder.AppendAndReplace(this.query.ToString(), '?', count =>
             {
                 var param = this.parameters[count - 1];
-                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
-                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info, throwOnDeferrerFail));
+                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(_info, true));
+                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(_info, throwOnDeferrerFail));
                 else builder.Append('?');
             });
 
@@ -559,7 +566,7 @@ namespace SharpOrm.Builder
             if (Trashed == Trashed.With)
                 return new StringBuilder();
 
-            StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
+            StringBuilder sb = new StringBuilder(_info.Config.ApplyNomenclature(this.softDelete.ColumnName));
 
             if (this.Trashed == Trashed.Only) sb.Append(" = 1");
             else sb.Append(" = 0");

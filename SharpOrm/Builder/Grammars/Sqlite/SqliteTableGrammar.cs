@@ -1,4 +1,6 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.Sqlite.ColumnTypes;
+using SharpOrm.Builder.Grammars.Table;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
@@ -19,6 +21,15 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         /// <param name="schema">The table schema.</param>
         public SqliteTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
         {
+            ColumnTypes.Add(new ColumnType(typeof(long), "NUMERIC"));
+            ColumnTypes.Add(new ColumnType(typeof(char), "TEXT(1)"));
+            ColumnTypes.Add(new ColumnType(typeof(DateTime), "TEXT(19)"));
+            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TEXT(8)"));
+            ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
+            ColumnTypes.Add(new GuidColumnType(config.Translation, "TEXT"));
+            ColumnTypes.Add(new SqliteNumberWithoutDecimalColumnTypeMap());
+            ColumnTypes.Add(new SqliteNumberWithDecimalColumnTypeMap());
+            ColumnTypes.Add(new SqliteStringColumnTypeMap());
         }
 
         protected override DbName LoadName()
@@ -53,49 +64,10 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                 throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
-            string dataType = GetSqliteDataType(column);
+            string dataType = GetColumnType(column);
             string nullable = column.AllowDBNull ? " NULL" : " NOT NULL";
 
             return string.Concat(columnName, " ", dataType, nullable);
-        }
-
-        private string GetSqliteDataType(DataColumn column)
-        {
-            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
-                return map.GetTypeString(column);
-
-            if (GetExpectedColumnType(column) is string typeColumn)
-                return typeColumn;
-
-            var dataType = column.DataType;
-            if (dataType == typeof(long))
-                return "NUMERIC";
-
-            if (TranslationUtils.IsNumberWithoutDecimal(dataType) || dataType == typeof(bool))
-                return "INTEGER";
-
-            if (TranslationUtils.IsNumberWithDecimal(dataType))
-                return "REAL";
-
-            if (dataType == typeof(string))
-                return column.MaxLength < 1 ? "TEXT" : string.Concat("TEXT(", column.MaxLength, ")");
-
-            if (dataType == typeof(char))
-                return "TEXT(1)";
-
-            if (dataType == typeof(DateTime))
-                return "TEXT(19)";
-
-            if (dataType == typeof(TimeSpan))
-                return "TEXT(8)";
-
-            if (dataType == typeof(byte[]))
-                return "BLOB";
-
-            if (dataType == typeof(Guid))
-                return string.Concat("TEXT(", GetGuidSize(), ")");
-
-            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
         }
 
         protected override void WritePk(QueryBuilder query)
