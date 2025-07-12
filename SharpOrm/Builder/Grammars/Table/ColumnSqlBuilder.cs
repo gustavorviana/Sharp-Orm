@@ -6,7 +6,7 @@ namespace SharpOrm.Builder.Grammars.Table
     /// <summary>
     /// Base class for building SQL column definitions and extracting column metadata from <see cref="DataColumn"/>.
     /// </summary>
-    public abstract class ColumnBuilder
+    public abstract class ColumnSqlBuilder
     {
         /// <summary>
         /// Gets the <see cref="DataColumn"/> associated with this builder.
@@ -21,27 +21,17 @@ namespace SharpOrm.Builder.Grammars.Table
         private readonly string _type;
 
         /// <summary>
-        /// Gets a value indicating whether the column is indexed.
-        /// </summary>
-        public bool Indexed => GetBoolean(ExtendedPropertyKeys.IsIndex);
-
-        /// <summary>
-        /// Gets a value indicating whether the column has a foreign key constraint.
-        /// </summary>
-        public bool HasForeignKey => HasProperty(ExtendedPropertyKeys.ReferencedTable);
-
-        /// <summary>
         /// Gets a value indicating whether the column is computed.
         /// </summary>
         protected bool IsComputed => HasProperty(ExtendedPropertyKeys.ComputedExpression);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ColumnBuilder"/> class.
+        /// Initializes a new instance of the <see cref="ColumnSqlBuilder"/> class.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="type">The SQL type of the column.</param>
         /// <param name="column">The <see cref="DataColumn"/> to build from.</param>
-        protected ColumnBuilder(QueryConfig config, string type, DataColumn column)
+        protected ColumnSqlBuilder(QueryConfig config, string type, DataColumn column)
         {
             _type = type;
             Column = column;
@@ -196,16 +186,6 @@ namespace SharpOrm.Builder.Grammars.Table
         /// Gets the SQL type of the column.
         /// </summary>
         protected string GetColumnType() => _type;
-
-        /// <summary>
-        /// Gets the index name for the column.
-        /// </summary>
-        protected string GetIndexName() => GetString(ExtendedPropertyKeys.IndexName);
-
-        /// <summary>
-        /// Gets the index type for the column.
-        /// </summary>
-        protected string GetIndexType() => GetString(ExtendedPropertyKeys.IndexType);
 
         /// <summary>
         /// Gets the foreign table name for the column.

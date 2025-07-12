@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
+﻿using SharpOrm.Builder.Grammars.Mysql.Builder;
+using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
 using SharpOrm.Msg;
 using System;
@@ -13,12 +14,14 @@ namespace SharpOrm.Builder.Grammars.Mysql
     /// </summary>
     public class MysqlTableGrammar : TableGrammar
     {
+        protected override IIndexSqlBuilder IndexBuilder { get; } = new MySqlIndexBuilder();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MysqlTableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public MysqlTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
+        public MysqlTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
             //Ref: https://medium.com/dbconvert/mysql-and-sql-servers-data-types-mapping-4cedc95de638
             ColumnTypes.Add(new ColumnType(typeof(int), "INT"));
@@ -35,6 +38,11 @@ namespace SharpOrm.Builder.Grammars.Mysql
             ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
             ColumnTypes.Add(new MysqlStringColumnType());
             ColumnTypes.Add(new GuidColumnType(config.Translation, "CHAR"));
+
+            ConstraintBuilders.Add(new MySqlPrimaryKeyConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlForeignKeyConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlUniqueConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlCheckConstraintBuilder());
         }
 
         public override SqlExpression Exists()
@@ -54,15 +62,14 @@ namespace SharpOrm.Builder.Grammars.Mysql
 
         public override SqlExpression Create()
         {
-            if (Schema.BasedQuery != null)
+            if (BasedQuery != null)
                 return CreateBased();
 
             var query = GetCreateTableQuery()
                 .Add('(')
                 .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteUnique(query);
-            WritePk(query);
+            WriteConstraints(query);
 
             return query.Add(')').ToExpression();
         }
@@ -70,7 +77,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
         private SqlExpression CreateBased()
         {
             return GetCreateTableQuery()
-                .Add(new MysqlGrammar(Schema.BasedQuery).Select())
+                .Add(new MysqlGrammar(BasedQuery).Select())
                 .ToExpression();
         }
 

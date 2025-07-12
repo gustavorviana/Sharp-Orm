@@ -17,14 +17,14 @@ namespace SharpOrm.Builder
     public class TableInfo
     {
         private readonly object _readLock = new object();
-        internal readonly TranslationRegistry registry;
+        internal readonly TranslationRegistry _registry;
         private ObjectReaderBase _reader = null;
 
         public Type Type { get; }
         /// <summary>
         /// Gets the name of the table.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; internal set; }
         /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
@@ -38,15 +38,15 @@ namespace SharpOrm.Builder
 
         internal TableInfo(Type type, TranslationRegistry registry, string name, SoftDeleteAttribute softDelete, HasTimestampAttribute timestamp, IEnumerable<ColumnTreeInfo> columns)
         {
-            this.IsManualMap = true;
+            IsManualMap = true;
 
-            this.Timestamp = timestamp;
-            this.registry = registry;
-            this.Type = type;
-            this.Name = name;
+            Timestamp = timestamp;
+            _registry = registry;
+            Type = type;
+            Name = name;
 
-            this.Columns = columns.ToArray();
-            this.SoftDelete = softDelete;
+            Columns = columns.ToArray();
+            SoftDelete = softDelete;
         }
 
         internal TableInfo(Type type, TranslationRegistry registry)
@@ -54,12 +54,12 @@ namespace SharpOrm.Builder
             if (type == null || type.IsAbstract || type == typeof(Row))
                 throw new InvalidOperationException(Messages.Table.InvalidType);
 
-            this.Type = type;
-            this.registry = registry;
-            this.Name = GetNameOf(type);
-            this.Columns = GetColumns().ToArray();
-            this.SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
-            this.Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
+            Type = type;
+            _registry = registry;
+            Name = GetNameOf(type);
+            Columns = GetColumns().ToArray();
+            SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
+            Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
@@ -78,10 +78,10 @@ namespace SharpOrm.Builder
         private IEnumerable<ColumnInfo> GetColumns()
         {
             foreach (var prop in this.Type.GetProperties(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
-                yield return new ColumnInfo(registry, prop);
+                yield return new ColumnInfo(_registry, prop);
 
             foreach (var field in this.Type.GetFields(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
-                yield return new ColumnInfo(registry, field);
+                yield return new ColumnInfo(_registry, field);
         }
 
         /// <summary>

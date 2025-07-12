@@ -42,7 +42,7 @@ namespace SharpOrm.DataTranslation
             if (memberColumnInfo == null)
                 throw new InvalidOperationException($"Column not found for member {member.Name} in table {TableInfo.Name}");
 
-            var memberTableInfo = TableInfo.registry.GetTable(GetMemberType(member, out var isCollection));
+            var memberTableInfo = TableInfo._registry.GetTable(GetMemberType(member, out var isCollection));
             node = CreateNode(memberColumnInfo, memberTableInfo, isCollection, silent);
             _nodes.Add(node);
             return node;

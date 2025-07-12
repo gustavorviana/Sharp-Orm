@@ -17,7 +17,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <summary>
         /// Gets the table name that owns this constraint.
         /// </summary>
-        public string Table { get; }
+        public string Table { get; internal set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Constraint"/> class.

@@ -26,7 +26,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer.Builder
             if (constraint.IsClustered.HasValue)
                 sql.Append(constraint.IsClustered.Value ? "CLUSTERED " : "NONCLUSTERED ");
 
-            sql.Append($"([{string.Join("], [", constraint.Columns)}])");
+            sql.Append($"([{string.Join("],[", constraint.Columns)}])");
 
             return new SqlExpression(sql.ToString());
         }

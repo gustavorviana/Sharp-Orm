@@ -4,6 +4,7 @@ using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Linq;
+using Constraint = SharpOrm.Builder.Grammars.Table.Constraints.Constraint;
 
 namespace SharpOrm.Builder.Grammars
 {
@@ -19,12 +20,12 @@ namespace SharpOrm.Builder.Grammars
 
         protected ColumnTypeProvider ColumnTypes { get; set; } = new ColumnTypeProvider();
         protected ItemsProvider<ConstraintBuilder> ConstraintBuilders { get; set; } = new ItemsProvider<ConstraintBuilder>();
-
+        protected abstract IIndexSqlBuilder IndexBuilder { get; }
 
         /// <summary>
         /// Gets the table schema.
         /// </summary>
-        public TableSchema Schema { get; }
+        public ITableSchema Schema { get; }
 
 
         /// <summary>
@@ -37,18 +38,23 @@ namespace SharpOrm.Builder.Grammars
         /// </summary>
         public virtual DbName Name { get; }
 
+        protected Query BasedQuery => Schema.Metadata.GetOrDefault<Query>(Metadatas.BasedQuery);
+
         /// <summary>
         /// Gets the query information for the base table.
         /// </summary>
-        protected QueryInfo BasedTable => Schema.BasedQuery.Info;
+        protected QueryInfo BasedTable => BasedQuery?.Info;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public TableGrammar(QueryConfig config, TableSchema schema)
+        public TableGrammar(QueryConfig config, ITableSchema schema)
         {
+            if (schema is TableSchema obsoleteSchema)
+                obsoleteSchema.Build();
+
             Schema = schema;
             Name = LoadName();
             queryInfo = new ReadonlyQueryInfo(config, Name);
@@ -134,44 +140,25 @@ namespace SharpOrm.Builder.Grammars
             return queryInfo.Config.CustomColumnTypes.Get(column);
         }
 
-        /// <summary>
-        /// Writes the primary key constraint to the query.
-        /// </summary>
-        /// <param name="query">The query builder.</param>
-        protected virtual void WritePk(QueryBuilder query)
-        {
-            var pks = GetPrimaryKeys();
-            if (pks.Length != 0)
-                query.AddFormat(",CONSTRAINT {0} PRIMARY KEY (", Config.ApplyNomenclature(string.Concat("PK_", Name))).AddJoin(",", pks.Select(x => Config.ApplyNomenclature(x.ColumnName))).Add(')');
-        }
-
-        /// <summary>
-        /// Gets the primary key columns.
-        /// </summary>
-        /// <returns>The primary key columns.</returns>
-        protected DataColumn[] GetPrimaryKeys()
-        {
-            return Schema.Columns.PrimaryKeys;
-        }
 
         /// <summary>
         /// Writes the unique constraint to the query.
         /// </summary>
         /// <param name="query">The query builder.</param>
-        protected void WriteUnique(QueryBuilder query)
+        protected void WriteConstraints(QueryBuilder query)
         {
-            var uniques = GetUniqueKeys();
-            if (uniques.Length != 0)
-                query.AddFormat(",CONSTRAINT {0} UNIQUE (", Config.ApplyNomenclature(string.Concat("UC_", Name))).AddJoin(",", uniques.Select(x => Config.ApplyNomenclature(x.ColumnName))).Add(')');
+            foreach (var item in Schema.Constraints.OrderBy(x => x is PrimaryKeyConstraint))
+                query.Add(',').Add(BuildConstraint(item));
         }
 
-        /// <summary>
-        /// Gets the unique key columns.
-        /// </summary>
-        /// <returns>The unique key columns.</returns>
-        protected DataColumn[] GetUniqueKeys()
+        private SqlExpression BuildConstraint(Constraint constraint)
         {
-            return Schema.Columns.Where(x => x.Unique).ToArray();
+            var type = constraint.GetType();
+            var builder = ConstraintBuilders.Get(type);
+            if (builder == null)
+                throw new InvalidOperationException($"No ConstraintBuilder found for constraint type '{type.FullName}'.");
+
+            return builder.Build(constraint);
         }
 
         /// <summary>

@@ -13,9 +13,11 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents a collection of data columns for a table schema.
     /// </summary>
+
+    [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
     public class TableColumnCollection : ICollection<DataColumn>
     {
-        private readonly List<DataColumn> columns;
+        internal readonly List<DataColumn> _columns;
         private readonly List<DataColumn> primaryKeys = new List<DataColumn>();
 
         /// <summary>
@@ -28,7 +30,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public TableColumnCollection()
         {
-            this.columns = new List<DataColumn>();
+            this._columns = new List<DataColumn>();
         }
 
         /// <summary>
@@ -37,13 +39,13 @@ namespace SharpOrm.Builder
         /// <param name="columns">The columns to initialize the collection with.</param>
         public TableColumnCollection(params DataColumn[] columns)
         {
-            this.columns = new List<DataColumn>(columns);
+            this._columns = new List<DataColumn>(columns);
         }
 
         /// <summary>
         /// Gets the number of columns in the collection.
         /// </summary>
-        public int Count => this.columns.Count;
+        public int Count => this._columns.Count;
 
         /// <summary>
         /// Gets a value indicating whether the collection is read-only.
@@ -55,7 +57,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="index">The zero-based index of the column to get.</param>
         /// <returns>The column at the specified index.</returns>
-        public DataColumn this[int index] => this.columns[index];
+        public DataColumn this[int index] => this._columns[index];
 
         /// <summary>
         /// Sets the specified column as a primary key.
@@ -74,7 +76,7 @@ namespace SharpOrm.Builder
         /// <returns>The current instance of <see cref="TableColumnCollection"/>.</returns>
         public TableColumnCollection SetPk(int index)
         {
-            var column = this.columns[index];
+            var column = this._columns[index];
             if (!IsPk(column))
                 primaryKeys.Add(column);
 
@@ -88,7 +90,7 @@ namespace SharpOrm.Builder
         /// <returns>True if the column is a primary key; otherwise, false.</returns>
         public bool IsPk(string name)
         {
-            return this.IsPk(this.columns.FirstOrDefault(x => x.ColumnName == name));
+            return this.IsPk(this._columns.FirstOrDefault(x => x.ColumnName == name));
         }
 
         /// <summary>
@@ -195,7 +197,7 @@ namespace SharpOrm.Builder
         public DataColumn Add(string columnName, Type type, int maxLength = -1)
         {
             var column = new DataColumn(columnName, type) { MaxLength = maxLength };
-            this.columns.Add(column);
+            this._columns.Add(column);
             return column;
         }
 
@@ -247,7 +249,7 @@ namespace SharpOrm.Builder
         /// <param name="item">The column to add.</param>
         public void Add(DataColumn item)
         {
-            this.columns.Add(item);
+            this._columns.Add(item);
         }
 
         /// <summary>
@@ -256,7 +258,7 @@ namespace SharpOrm.Builder
         /// <param name="columns">The columns to add.</param>
         public void AddRange(IEnumerable<DataColumn> columns)
         {
-            this.columns.AddRange(columns);
+            this._columns.AddRange(columns);
         }
 
         /// <summary>
@@ -264,7 +266,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public void Clear()
         {
-            this.columns.Clear();
+            this._columns.Clear();
             this.primaryKeys.Clear();
         }
 
@@ -275,7 +277,7 @@ namespace SharpOrm.Builder
         /// <returns>True if the collection contains a column with the specified name; otherwise, false.</returns>
         public bool Contains(string name)
         {
-            return this.columns.Any(x => x.ColumnName == name);
+            return this._columns.Any(x => x.ColumnName == name);
         }
 
         /// <summary>
@@ -285,7 +287,7 @@ namespace SharpOrm.Builder
         /// <returns>The index of the column.</returns>
         public int IndexOf(DataColumn item)
         {
-            return this.columns.IndexOf(item);
+            return this._columns.IndexOf(item);
         }
 
         /// <summary>
@@ -295,8 +297,8 @@ namespace SharpOrm.Builder
         /// <returns>The index of the column, or -1 if the column is not found.</returns>
         public int IndexOf(string columnName)
         {
-            for (int i = 0; i < this.columns.Count; i++)
-                if (this.columns[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))
+            for (int i = 0; i < this._columns.Count; i++)
+                if (this._columns[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))
                     return i;
 
             return -1;
@@ -310,7 +312,7 @@ namespace SharpOrm.Builder
         public bool Remove(DataColumn item)
         {
             this.primaryKeys.Remove(item);
-            return this.columns.Remove(item);
+            return this._columns.Remove(item);
         }
 
         /// <summary>
@@ -337,7 +339,7 @@ namespace SharpOrm.Builder
         /// <param name="index">The index of the column to remove.</param>
         public void RemoveAt(int index)
         {
-            this.columns.RemoveAt(index);
+            this._columns.RemoveAt(index);
         }
 
         /// <summary>
@@ -347,7 +349,7 @@ namespace SharpOrm.Builder
         /// <returns>True if the collection contains the column; otherwise, false.</returns>
         public bool Contains(DataColumn item)
         {
-            return this.columns.Contains(item);
+            return this._columns.Contains(item);
         }
 
         /// <summary>
@@ -357,11 +359,11 @@ namespace SharpOrm.Builder
         /// <param name="arrayIndex">The zero-based index in the array at which copying begins.</param>
         public void CopyTo(DataColumn[] array, int arrayIndex)
         {
-            this.columns.CopyTo(array, arrayIndex);
+            this._columns.CopyTo(array, arrayIndex);
         }
 
-        public IEnumerator<DataColumn> GetEnumerator() => this.columns.GetEnumerator();
+        public IEnumerator<DataColumn> GetEnumerator() => this._columns.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => this.columns.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this._columns.GetEnumerator();
     }
 }

@@ -141,7 +141,7 @@ namespace SharpOrm.Builder
         /// <param name="schema">The table schema.</param>
         /// <returns>A new instance of <see cref="TableGrammar"/>.</returns>
         /// <exception cref="NotSupportedException">Thrown when the derived class does not support creating/editing/removing tables.</exception>
-        public virtual TableGrammar NewTableGrammar(TableSchema schema)
+        public virtual TableGrammar NewTableGrammar(ITableSchema schema)
         {
             throw new NotSupportedException(string.Format(Messages.TableManagementNotSupported, GetType().FullName));
         }

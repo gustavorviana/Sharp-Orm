@@ -82,7 +82,7 @@ namespace QueryTest.Mysql
             cols.Add<int>("Status2").Unique = true;
 
             var grammar = GetTableGrammar(new TableSchema("MyTable", cols));
-            var expected = new SqlExpression("CREATE TABLE `MyTable` (`Id` INT NOT NULL AUTO_INCREMENT,`Name` TEXT DEFAULT NULL,`Status` INT DEFAULT NULL,`Status2` INT DEFAULT NULL,CONSTRAINT `UC_MyTable` UNIQUE (`Status`,`Status2`),CONSTRAINT `PK_MyTable` PRIMARY KEY (`Id`))");
+            var expected = new SqlExpression("CREATE TABLE `MyTable` (`Id` INT NOT NULL AUTO_INCREMENT,`Name` TEXT DEFAULT NULL,`Status` INT DEFAULT NULL,`Status2` INT DEFAULT NULL,CONSTRAINT `UC_MyTable_Status_Status2` UNIQUE (`Status`,`Status2`),CONSTRAINT `PK_MyTable` PRIMARY KEY (`Id`))");
 
             Assert.Equal(expected, grammar.Create());
         }

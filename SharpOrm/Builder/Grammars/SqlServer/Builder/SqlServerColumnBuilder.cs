@@ -3,7 +3,7 @@ using System.Data;
 
 namespace SharpOrm.Builder.Grammars.SqlServer.Builder
 {
-    public class SqlServerColumnBuilder : ColumnBuilder
+    public class SqlServerColumnBuilder : ColumnSqlBuilder
     {
         public SqlServerColumnBuilder(QueryConfig config, string type, DataColumn column)
             : base(config, type, column)

@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.Sqlite.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.Builder.Grammars.Table.Constraints;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
@@ -14,12 +15,13 @@ namespace SharpOrm.Builder.Grammars.Sqlite
     /// </summary>
     public class SqliteTableGrammar : TableGrammar
     {
+        protected override IIndexSqlBuilder IndexBuilder { get; } = new SqliteIndexBuilder();
         /// <summary>
         /// Initializes a new instance of the <see cref="SqliteTableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public SqliteTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
+        public SqliteTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
             ColumnTypes.Add(new ColumnType(typeof(long), "NUMERIC"));
             ColumnTypes.Add(new ColumnType(typeof(char), "TEXT(1)"));
@@ -42,18 +44,17 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
         public override SqlExpression Create()
         {
-            if (Schema.BasedQuery != null)
+            if (BasedQuery != null)
                 return CreateBased();
 
-            if (GetPrimaryKeys().Length > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
+            if (Schema.Constraints.OfType<PrimaryKeyConstraint>().Count() > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
                 throw new InvalidOperationException(Messages.Sqlite.MultiplePrimaryKeyWithAutoIncrementError);
 
             var query = GetCreateTableQuery()
                  .Add('(')
                  .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteUnique(query);
-            WritePk(query);
+            WriteConstraints(query);
 
             return query.Add(')').ToExpression();
         }
@@ -70,18 +71,6 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             return string.Concat(columnName, " ", dataType, nullable);
         }
 
-        protected override void WritePk(QueryBuilder query)
-        {
-            var pks = GetPrimaryKeys().OrderBy(x => x.AutoIncrement).ToArray();
-            if (pks.Length == 0)
-                return;
-
-            if (pks.Count(x => x.AutoIncrement) > 1)
-                throw new NotSupportedException(Messages.Sqlite.MultipleAutoIncrementError);
-
-            query.Add(",PRIMARY KEY (").AddJoin(",", pks.Select(BuildAutoIncrement)).Add(')');
-        }
-
         private string BuildAutoIncrement(DataColumn column)
         {
             string name = Config.ApplyNomenclature(column.ColumnName);
@@ -92,7 +81,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         {
             return GetCreateTableQuery()
                 .Add(" AS ")
-                .Add(new SqliteGrammar(Schema.BasedQuery).Select())
+                .Add(new SqliteGrammar(BasedQuery).Select())
                 .ToExpression();
         }
 

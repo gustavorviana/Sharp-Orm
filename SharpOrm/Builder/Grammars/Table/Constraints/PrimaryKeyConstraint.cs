@@ -19,8 +19,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <param name="tableName">The name of the table that contains the primary key.</param>
         /// <param name="columns">The columns that make up the primary key.</param>
         /// <param name="name">The name of the primary key constraint.</param>
-        public PrimaryKeyConstraint(string tableName, string[] columns, string name = null)
-            : base(name, tableName)
+        public PrimaryKeyConstraint(string tableName, string[] columns, string name = null) : base(tableName, name)
         {
             if (columns == null || columns.Length == 0)
                 throw new ArgumentException("Primary key must have at least one column.", nameof(columns));

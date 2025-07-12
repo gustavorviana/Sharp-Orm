@@ -1,5 +1,4 @@
-﻿using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
-using SharpOrm.Builder.Grammars.SqlServer.Builder;
+﻿using SharpOrm.Builder.Grammars.SqlServer.Builder;
 using SharpOrm.Builder.Grammars.SqlServer.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
 using SharpOrm.Msg;
@@ -15,12 +14,14 @@ namespace SharpOrm.Builder.Grammars.SqlServer
     /// </summary>
     public class SqlServerTableGrammar : TableGrammar
     {
+        protected override IIndexSqlBuilder IndexBuilder { get; } = new SqlServerIndexBuilder();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerTableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public SqlServerTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
+        public SqlServerTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
             ColumnTypes.Add(new ColumnType(typeof(int), "INT"));
             ColumnTypes.Add(new ColumnType(typeof(long), "BIGINT"));
@@ -69,15 +70,14 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         public override SqlExpression Create()
         {
-            if (Schema.BasedQuery != null)
+            if (BasedQuery != null)
                 return CreateBased();
 
             var query = GetBuilder()
                 .AddFormat("CREATE TABLE [{0}] (", Name.Name)
                 .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteUnique(query);
-            WritePk(query);
+            WriteConstraints(query);
 
             return query.Add(')').ToExpression();
         }
@@ -92,14 +92,14 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             QueryBuilder query = GetBuilder();
             query.Add("SELECT ");
 
-            if (Schema.BasedQuery.Limit is int limit && Schema.BasedQuery.Offset is null)
+            if (BasedQuery.Limit is int limit && BasedQuery.Offset is null)
                 query.Add($"TOP(").Add(limit).Add(") ");
 
             WriteColumns(query, BasedTable.Select);
 
             query.Add(" INTO [").Add(Name).Add("]");
 
-            var qGrammar = new SqlServerSelectGrammar(Schema.BasedQuery);
+            var qGrammar = new SqlServerSelectGrammar(BasedQuery);
             query.Add(qGrammar.GetSelectFrom());
 
             return query.ToExpression();

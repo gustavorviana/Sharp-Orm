@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Builder.Tables;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -12,13 +13,13 @@ namespace SharpOrm.Builder
     /// Represents a mapping between a type <typeparamref name="T"/> and a database table.
     /// </summary>
     /// <typeparam name="T">The type to be mapped to the table.</typeparam>
-    public class TableMap<T>
+    public class ModelMapper<T> : IModelMapper
     {
         private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
         private TableInfo table;
 
-        internal SoftDeleteAttribute softDelete { get; set; }
-        internal HasTimestampAttribute timestamp { get; set; }
+        internal SoftDeleteAttribute _softDelete { get; set; }
+        internal HasTimestampAttribute _timestamp { get; set; }
 
         private string _name;
         /// <summary>
@@ -42,16 +43,16 @@ namespace SharpOrm.Builder
         /// </summary>
         public TranslationRegistry Registry { get; }
 
-        public TableMap(QueryConfig config) : this(config.Translation, config.NestedMapMode)
+        public ModelMapper(QueryConfig config) : this(config.Translation, config.NestedMapMode)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TableMap{T}"/> class.
+        /// Initializes a new instance of the <see cref="ModelMapper{T}"/> class.
         /// Automatically maps the properties and fields of the specified type <typeparamref name="T"/>.
         /// </summary>
         /// <param name="registry">The translation registry to be used for the mapping.</param>
-        public TableMap(TranslationRegistry registry, NestedMode nestedMode = NestedMode.All)
+        public ModelMapper(TranslationRegistry registry, NestedMode nestedMode = NestedMode.All)
         {
             this.Name = typeof(T).Name;
             this.Registry = registry;
@@ -67,15 +68,21 @@ namespace SharpOrm.Builder
                     else if (nestedMode == NestedMode.All) this.Nodes.Add(new MemberTreeNode(field).MapChildren(field, true));
         }
 
-        public TableMap<T> SoftDelete(string column, string dateColumn = null)
+        public ModelMapper<T> ApplyConfiguration(IModelMapperConfiguration<T> configuration)
         {
-            this.softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
+            configuration.Configure(this);
             return this;
         }
 
-        public TableMap<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
+        public ModelMapper<T> SoftDelete(string column, string dateColumn = null)
         {
-            this.timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
+            this._softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
+            return this;
+        }
+
+        public ModelMapper<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
+        {
+            this._timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
             return this;
         }
 
@@ -83,8 +90,8 @@ namespace SharpOrm.Builder
         /// Sets the key property for the table using the specified expression.
         /// </summary>
         /// <param name="expression">An expression selecting the property to be used as the key.</param>
-        /// <returns>The current <see cref="TableMap{T}"/> instance.</returns>
-        public TableMap<T> HasKey(Expression<Func<T, object>> expression)
+        /// <returns>The current <see cref="ModelMapper{T}"/> instance.</returns>
+        public ModelMapper<T> HasKey(Expression<Func<T, object>> expression)
         {
             this.Property(expression).SetKey(true);
             return this;
@@ -116,7 +123,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="prefix">The prefix to use for the nested property.</param>
         /// <returns></returns>
-        public TableMap<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
+        public ModelMapper<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
         {
             var column = GetColumnFromExpression(expression, false, out _);
             column.MapChildren(column.Member, subNested);

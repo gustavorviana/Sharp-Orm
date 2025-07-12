@@ -219,7 +219,7 @@ namespace SharpOrm.DataTranslation
 
         protected TableInfo GetTable(Type type)
         {
-            return _table.registry.GetTable(type);
+            return _table._registry.GetTable(type);
         }
 
         /// <summary>

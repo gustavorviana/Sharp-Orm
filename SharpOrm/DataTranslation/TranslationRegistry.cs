@@ -246,16 +246,16 @@ namespace SharpOrm.DataTranslation
             return null;
         }
 
-        internal TableInfo AddTableMap<T>(TableMap<T> map)
+        internal TableInfo AddTableMap<T>(ModelMapper<T> map)
         {
             var type = typeof(T);
             if (_mappedTables.ContainsKey(type))
                 throw new InvalidOperationException(Messages.Table.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
-                throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));
+                throw new ArgumentNullException(typeof(ModelMapper<T>).FullName + "." + nameof(ModelMapper<T>.Name));
 
-            var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
+            var table = new TableInfo(type, map.Registry, map.Name, map._softDelete, map._timestamp, map.GetFields());
             _mappedTables.TryAdd(type, table);
             return table;
         }

@@ -17,8 +17,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <param name="tableName">The name of the table that contains the unique constraint.</param>
         /// <param name="columns">The columns that make up the unique constraint.</param>
         /// <param name="name">The name of the unique constraint.</param>
-        public UniqueConstraint(string tableName, string[] columns, string name = null)
-            : base(name, tableName)
+        public UniqueConstraint(string tableName, string[] columns, string name = null) : base(tableName, name)
         {
             if (columns == null || columns.Length == 0)
                 throw new ArgumentException("Unique constraint must have at least one column.", nameof(columns));
