@@ -32,7 +32,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
 
         public override string GetDefaultName()
         {
-            return $"PK_{Table}";
+            return $"PK_{Table}_{string.Join("_", Columns)}";
         }
 
         public override bool Equals(object obj)

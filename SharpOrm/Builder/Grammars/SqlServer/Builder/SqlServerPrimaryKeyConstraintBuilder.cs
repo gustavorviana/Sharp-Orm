@@ -10,18 +10,9 @@ namespace SharpOrm.Builder.Grammars.SqlServer.Builder
         {
             var sql = new StringBuilder();
 
-            sql.Append("CONSTRAINT ");
-
-            if (!string.IsNullOrEmpty(constraint.Name))
-            {
-                sql.Append($"[{constraint.Name}] ");
-            }
-            else
-            {
-                sql.Append($"[PK_{constraint.Table}] ");
-            }
-
-            sql.Append("PRIMARY KEY ");
+            sql.Append("CONSTRAINT ")
+                .Append($"[{constraint.GetEffectiveName()}] ")
+                .Append("PRIMARY KEY ");
 
             if (constraint.IsClustered.HasValue)
                 sql.Append(constraint.IsClustered.Value ? "CLUSTERED " : "NONCLUSTERED ");

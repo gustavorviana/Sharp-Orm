@@ -33,7 +33,7 @@ namespace QueryTest.Builder.Grammar.Table.Constraints
             var defaultName = constraint.GetDefaultName();
 
             // Assert
-            Assert.Equal("PK_Users", defaultName);
+            Assert.Equal("PK_Users_Id_CompanyId", defaultName);
         }
 
         [Fact]
