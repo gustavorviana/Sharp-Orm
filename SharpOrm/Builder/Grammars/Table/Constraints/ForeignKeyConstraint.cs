@@ -53,8 +53,6 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <param name="referencedTable">The name of the referenced table.</param>
         /// <param name="referencedColumn">The name of the referenced column. Defaults to "Id".</param>
         /// <param name="constraintName">The name of the foreign key constraint.</param>
-        /// <param name="onDelete">The ON DELETE action. Defaults to null (no action).</param>
-        /// <param name="onUpdate">The ON UPDATE action. Defaults to null (no action).</param>
         public ForeignKeyConstraint(
             string foreignTable,
             string foreignKeyColumn,
@@ -63,13 +61,13 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
             string constraintName = null)
             : base(referencedTable, constraintName)
         {
-            if (string.IsNullOrEmpty(foreignTable))
+            if (string.IsNullOrWhiteSpace(foreignTable))
                 throw new ArgumentException("Foreign table name cannot be null or empty.", nameof(foreignTable));
 
-            if (string.IsNullOrEmpty(foreignKeyColumn))
+            if (string.IsNullOrWhiteSpace(foreignKeyColumn))
                 throw new ArgumentException("Foreign key column name cannot be null or empty.", nameof(foreignKeyColumn));
 
-            if (string.IsNullOrEmpty(referencedColumn))
+            if (string.IsNullOrWhiteSpace(referencedColumn))
                 throw new ArgumentException("Referenced column name cannot be null or empty.", nameof(referencedColumn));
 
             ConstraintName = constraintName;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.Comparers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -45,7 +46,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
                    base.Equals(other) &&
                    Name == other.Name &&
                    Table == other.Table &&
-                   EqualityComparer<string[]>.Default.Equals(Columns, other.Columns);
+                   SequenceEqualityComparer<string>.Default.Equals(Columns, other.Columns);
         }
 
         public override int GetHashCode()
@@ -54,7 +55,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
             hashCode = hashCode * -1521134295 + base.GetHashCode();
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Table);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(Columns);
+            hashCode = hashCode * -1521134295 + SequenceEqualityComparer<string>.Default.GetHashCode(Columns);
             return hashCode;
         }
 

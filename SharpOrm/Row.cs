@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Comparers;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Collections;
@@ -188,16 +189,16 @@ namespace SharpOrm
         public bool Equals(Row other)
         {
             return other != null &&
-                   EqualityComparer<Cell[]>.Default.Equals(Cells, other.Cells) &&
-                   EqualityComparer<string[]>.Default.Equals(ColumnNames, other.ColumnNames) &&
+                   SequenceEqualityComparer<Cell>.Default.Equals(Cells, other.Cells) &&
+                   SequenceEqualityComparer<string>.Default.Equals(ColumnNames, other.ColumnNames) &&
                    Count == other.Count;
         }
 
         public override int GetHashCode()
         {
             int hashCode = 1707470412;
-            hashCode = hashCode * -1521134295 + EqualityComparer<Cell[]>.Default.GetHashCode(Cells);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(ColumnNames);
+            hashCode = hashCode * -1521134295 + SequenceEqualityComparer<Cell>.Default.GetHashCode(Cells);
+            hashCode = hashCode * -1521134295 + SequenceEqualityComparer<string>.Default.GetHashCode(ColumnNames);
             hashCode = hashCode * -1521134295 + Count.GetHashCode();
             return hashCode;
         }

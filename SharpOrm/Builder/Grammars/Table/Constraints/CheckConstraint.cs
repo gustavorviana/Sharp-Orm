@@ -17,16 +17,15 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <param name="tableName">The name of the table that contains the check constraint.</param>
         /// <param name="expression">The check expression.</param>
         /// <param name="name">The name of the check constraint.</param>
-        public CheckConstraint(string tableName, string expression, string name)
-            : base(name, tableName)
+        public CheckConstraint(string tableName, string expression, string name = null)
+            : base(tableName, name)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentException("Check name cannot be null or empty.", nameof(name));
-
-            if (string.IsNullOrEmpty(expression))
+            if (string.IsNullOrWhiteSpace(expression))
                 throw new ArgumentException("Check expression cannot be null or empty.", nameof(expression));
 
             Expression = expression;
+            if (string.IsNullOrEmpty(name))
+                Name = GetDefaultName();
         }
 
         /// <summary>

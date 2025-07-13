@@ -12,7 +12,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <summary>
         /// Gets the name of the constraint.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; protected set; }
 
         /// <summary>
         /// Gets the table name that owns this constraint.
@@ -26,7 +26,7 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         /// <param name="tableName">The name of the table that owns this constraint.</param>
         protected Constraint(string tableName, string name = null)
         {
-            if (string.IsNullOrEmpty(tableName))
+            if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty.", nameof(tableName));
 
             Name = name;
@@ -75,6 +75,11 @@ namespace SharpOrm.Builder.Grammars.Table.Constraints
         public static bool operator !=(Constraint left, Constraint right)
         {
             return !(left == right);
+        }
+
+        public override string ToString()
+        {
+            return GetEffectiveName();
         }
     }
 }
