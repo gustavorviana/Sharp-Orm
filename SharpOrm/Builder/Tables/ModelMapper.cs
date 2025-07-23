@@ -28,13 +28,13 @@ namespace SharpOrm.Builder
         /// </summary>
         public string Name
         {
-            get => this._name;
+            get => _name;
             set
             {
-                if (this.table != null)
+                if (table != null)
                     throw new InvalidOperationException(Messages.Table.CannotChangeAfterBuild);
 
-                this._name = value;
+                _name = value;
             }
         }
 
@@ -54,18 +54,18 @@ namespace SharpOrm.Builder
         /// <param name="registry">The translation registry to be used for the mapping.</param>
         public ModelMapper(TranslationRegistry registry, NestedMode nestedMode = NestedMode.All)
         {
-            this.Name = typeof(T).Name;
-            this.Registry = registry;
+            Name = typeof(T).Name;
+            Registry = registry;
 
             foreach (var property in typeof(T).GetProperties(Bindings.PublicInstance))
                 if (ColumnInfo.CanWork(property))
-                    if (MemberTreeNode.IsNative(property.PropertyType)) this.Nodes.Add(new MemberTreeNode(property));
-                    else if (nestedMode == NestedMode.All) this.Nodes.Add(new MemberTreeNode(property).MapChildren(property, true));
+                    if (MemberTreeNode.IsNative(property.PropertyType)) Nodes.Add(new MemberTreeNode(property));
+                    else if (nestedMode == NestedMode.All) Nodes.Add(new MemberTreeNode(property).MapChildren(property, true));
 
             foreach (var field in typeof(T).GetFields(Bindings.PublicInstance))
                 if (ColumnInfo.CanWork(field))
-                    if (MemberTreeNode.IsNative(field.FieldType)) this.Nodes.Add(new MemberTreeNode(field));
-                    else if (nestedMode == NestedMode.All) this.Nodes.Add(new MemberTreeNode(field).MapChildren(field, true));
+                    if (MemberTreeNode.IsNative(field.FieldType)) Nodes.Add(new MemberTreeNode(field));
+                    else if (nestedMode == NestedMode.All) Nodes.Add(new MemberTreeNode(field).MapChildren(field, true));
         }
 
         public ModelMapper<T> ApplyConfiguration(IModelMapperConfiguration<T> configuration)
@@ -76,13 +76,13 @@ namespace SharpOrm.Builder
 
         public ModelMapper<T> SoftDelete(string column, string dateColumn = null)
         {
-            this._softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
+            _softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
             return this;
         }
 
         public ModelMapper<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
         {
-            this._timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
+            _timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
             return this;
         }
 
@@ -93,7 +93,7 @@ namespace SharpOrm.Builder
         /// <returns>The current <see cref="ModelMapper{T}"/> instance.</returns>
         public ModelMapper<T> HasKey(Expression<Func<T, object>> expression)
         {
-            this.Property(expression).SetKey(true);
+            Property(expression).SetKey(true);
             return this;
         }
 
@@ -105,7 +105,7 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped column.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression, string columnName)
         {
-            return this.Property(expression).HasColumnName(columnName);
+            return Property(expression).HasColumnName(columnName);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace SharpOrm.Builder
         {
             List<MemberInfo> root = new List<MemberInfo>();
 
-            foreach (var child in this.Nodes)
+            foreach (var child in Nodes)
             {
                 root.Add(child.Member);
 
@@ -191,10 +191,10 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="TableInfo"/> representing the built table mapping.</returns>
         public TableInfo Build()
         {
-            if (this.Nodes.Count == 0) return null;
-            if (this.table != null) return this.table;
+            if (Nodes.Count == 0) return null;
+            if (table != null) return table;
 
-            return this.table = this.Registry.AddTableMap(this);
+            return table = Registry.AddTableMap(this);
         }
 
         public Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
