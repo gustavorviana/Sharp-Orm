@@ -1,7 +1,4 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.Builder.Grammars;
-using System;
-using System.Reflection;
+﻿using SharpOrm.Builder.Grammars;
 
 namespace SharpOrm.Builder
 {
@@ -10,8 +7,6 @@ namespace SharpOrm.Builder
     /// </summary>
     public class JoinQuery : QueryBase, IGrammarOptions
     {
-        internal MemberInfo MemberInfo { get; set; }
-
         /// <summary>
         /// Gets or sets the options for customizing the execution of the grammar.
         /// </summary>
@@ -29,11 +24,6 @@ namespace SharpOrm.Builder
         /// <param name="table">The name of the table.</param>
         public JoinQuery(QueryConfig config, string table) : this(config, new DbName(table))
         {
-        }
-
-        internal JoinQuery(QueryConfig config, DbName table, Type rootType) : base(config, table)
-        {
-            ((IRootTypeMap)Info).RootType = rootType;
         }
 
         /// <summary>

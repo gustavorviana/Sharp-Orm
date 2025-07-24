@@ -1,4 +1,5 @@
-﻿using SharpOrm.DataTranslation;
+﻿using SharpOrm.Comparers;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Collections;
@@ -16,21 +17,21 @@ namespace SharpOrm
     /// </remarks>
     public sealed class Row : IReadOnlyList<Cell>, IEquatable<Row>
     {
-        private readonly Cell[] cells;
-        private readonly string[] names;
+        private readonly Cell[] _cells;
+        private readonly string[] _names;
 
         /// <summary>
         /// Gets or sets the cell at the specified index.
         /// </summary>
         /// <param name="index">The index of the cell to get or set.</param>
         /// <returns>The cell at the specified index.</returns>
-        public Cell this[int index] => this.cells[index];
+        public Cell this[int index] => _cells[index];
 
         /// <summary>
         /// Gets an array of all cells in the row.
         /// </summary>
         /// <returns>An array of all cells in the row.</returns>
-        public Cell[] Cells => this.cells;
+        public Cell[] Cells => _cells;
 
         /// <summary>
         /// A read-only collection of cells representing a single row of data.
@@ -38,7 +39,7 @@ namespace SharpOrm
         /// <remarks>
         /// Provides read-only indexed access to the cells of the row, as well as the ability to check for the existence of a specific column and to retrieve a cell by column name. Also provides an ordered array of column names and a string representation of the row.
         /// </remarks>
-        public string[] ColumnNames => this.names;
+        public string[] ColumnNames => _names;
 
         /// <summary>
         /// Indexer that allows access to a row's cell by column name.
@@ -50,7 +51,7 @@ namespace SharpOrm
         {
             get
             {
-                if (!(this.GetCell(columnName) is Cell cell))
+                if (!(GetCell(columnName) is Cell cell))
                     throw new ArgumentException(string.Format(Messages.Table.ColumnNotFound, columnName));
 
                 return cell.Value;
@@ -71,8 +72,14 @@ namespace SharpOrm
         /// <param name="cells">The cells in the row.</param>
         public Row(params Cell[] cells)
         {
-            this.names = cells.Select(column => column.Name).ToArray();
-            this.cells = cells;
+            _names = cells.Select(column => column.Name).ToArray();
+            _cells = cells;
+        }
+
+        public Row(IEnumerable<Cell> cells)
+        {
+            _cells = cells.ToArray();
+            _names = _cells.Select(column => column.Name).ToArray();
         }
 
         /// <summary>
@@ -82,7 +89,7 @@ namespace SharpOrm
         /// <returns>True if the column exists in the row; otherwise, false.</returns>
         public bool HasColumn(string columnName)
         {
-            return this.names.Contains(columnName, StringComparer.OrdinalIgnoreCase);
+            return _names.Contains(columnName, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -95,7 +102,7 @@ namespace SharpOrm
         /// <exception cref="ArgumentNullException">Thrown if the object is null or <see cref="DBNull"/>.</exception>
         public static Row Parse(object obj, bool readPk = true, bool readFk = false, TranslationRegistry registry = null)
         {
-            return Parse(obj, obj.GetType(), readPk, readFk);
+            return Parse(obj, obj.GetType(), readPk, readFk, registry);
         }
 
         /// <summary>
@@ -123,7 +130,7 @@ namespace SharpOrm
         /// <returns>True if the row contains a cell with the specified column name; otherwise, false.</returns>
         public bool Has(string column)
         {
-            return this.GetCell(column) != null;
+            return GetCell(column) != null;
         }
 
         /// <summary>
@@ -133,7 +140,7 @@ namespace SharpOrm
         /// <returns>The cell with the specified column name.</returns>
         public Cell GetCell(string column)
         {
-            foreach (var cell in this.Cells)
+            foreach (var cell in _cells)
                 if (cell.Name.Equals(column, StringComparison.OrdinalIgnoreCase))
                     return cell;
 
@@ -143,7 +150,7 @@ namespace SharpOrm
         /// <summary>
         /// Gets the number of cells in the row.
         /// </summary>
-        public int Count => cells.Length;
+        public int Count => _cells.Length;
 
         /// <summary>
         /// Gets an array of cells in the row, sorted by column name.
@@ -151,22 +158,22 @@ namespace SharpOrm
         /// <returns>An array of cells in the row, sorted by column name.</returns>
         public Cell[] GetOrdenedCells()
         {
-            return this.cells.OrderBy(c => c.Name).ToArray();
+            return _cells.OrderBy(c => c.Name).ToArray();
         }
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection of cells.
         /// </summary>
         /// <returns>An enumerator that can be used to iterate through the collection of cells.</returns>
-        public IEnumerator<Cell> GetEnumerator() => cells.AsEnumerable().GetEnumerator();
+        public IEnumerator<Cell> GetEnumerator() => _cells.AsEnumerable().GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => cells.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _cells.GetEnumerator();
 
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder("Row");
 
-            foreach (var cell in this.cells)
+            foreach (var cell in _cells)
                 builder.AppendFormat(" ({0}: {1})", cell.Name, cell.Value);
 
             return builder.ToString();
@@ -182,20 +189,16 @@ namespace SharpOrm
         public bool Equals(Row other)
         {
             return other != null &&
-                   EqualityComparer<Cell[]>.Default.Equals(cells, other.cells) &&
-                   EqualityComparer<string[]>.Default.Equals(names, other.names) &&
-                   EqualityComparer<Cell[]>.Default.Equals(Cells, other.Cells) &&
-                   EqualityComparer<string[]>.Default.Equals(ColumnNames, other.ColumnNames) &&
+                   SequenceEqualityComparer<Cell>.Default.Equals(Cells, other.Cells) &&
+                   SequenceEqualityComparer<string>.Default.Equals(ColumnNames, other.ColumnNames) &&
                    Count == other.Count;
         }
 
         public override int GetHashCode()
         {
             int hashCode = 1707470412;
-            hashCode = hashCode * -1521134295 + EqualityComparer<Cell[]>.Default.GetHashCode(cells);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(names);
-            hashCode = hashCode * -1521134295 + EqualityComparer<Cell[]>.Default.GetHashCode(Cells);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(ColumnNames);
+            hashCode = hashCode * -1521134295 + SequenceEqualityComparer<Cell>.Default.GetHashCode(Cells);
+            hashCode = hashCode * -1521134295 + SequenceEqualityComparer<string>.Default.GetHashCode(ColumnNames);
             hashCode = hashCode * -1521134295 + Count.GetHashCode();
             return hashCode;
         }

@@ -34,5 +34,10 @@ namespace SharpOrm.Builder.Expressions
             for (int i = 1; i < @params.Length; i++)
                 builder.Append(", ").Append(@params[i].ParameterType.Name);
         }
+
+        public override Type GetMemberType()
+        {
+            return Member.ReturnType;
+        }
     }
 }

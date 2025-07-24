@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.ForeignKey;
 using System.Linq.Expressions;
 
 namespace BaseTest.Utils
@@ -10,14 +11,12 @@ namespace BaseTest.Utils
 
         internal ExpressionColumn ParseColumn<T>(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            ((IRootTypeMap)info).RootType = typeof(T);
             return ParseColumns(expression, config).First();
         }
 
-        internal ExpressionProcessor<T> GetProcessor<T>(ExpressionConfig config = ExpressionConfig.All)
+        internal ExpressionProcessor<T> GetProcessor<T>(ExpressionConfig config = ExpressionConfig.All, IForeignKeyNode? parent = null)
         {
-            ((IRootTypeMap)info).RootType = typeof(T);
-            return new ExpressionProcessor<T>(info, config);
+            return new ExpressionProcessor<T>(info, parent?.RootInfo?.Config?.Translation, config, parent);
         }
 
         internal IEnumerable<ExpressionColumn> ParseColumns<T>(Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
@@ -28,7 +27,6 @@ namespace BaseTest.Utils
         protected static QueryInfo GetQueryInfo<T>(QueryConfig config, DbName name = default)
         {
             var info = new QueryInfo(config, name);
-            ((IRootTypeMap)info).RootType = typeof(T);
             return info;
         }
     }

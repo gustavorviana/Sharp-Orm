@@ -2,6 +2,7 @@
 using BaseTest.Utils;
 using SharpOrm.DataTranslation;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QueryTest.DataTranslation
 {
@@ -26,7 +27,12 @@ namespace QueryTest.DataTranslation
             {
                 Id = 1,
                 Name = "My Name",
-                Description = "My Description"
+                Description = "My Description",
+                SubItem = new SubItem
+                {
+                    Id = 2,
+                    Name = "Sub Item Name"
+                }
             }).ToArray();
 
             Assert.Equal(3, cells.Length);
@@ -80,7 +86,7 @@ namespace QueryTest.DataTranslation
         public void ValidateTest()
         {
             var result = Assert.Throws<ValidationException>(() => GetObjectReaderWithValidation().ReadCells(new Item()).ToArray());
-            Assert.Equal("The Item field is required.", result.Message);
+            Assert.Equal("The Name field is required.", result.Message);
         }
 
         [Fact]
@@ -91,6 +97,34 @@ namespace QueryTest.DataTranslation
             reader.IsCreate = true;
 
             string[] expected = ["Id", "Name", "Street", "City", "CreatedAt", "UpdatedAt"];
+
+            var columns = reader.GetColumnNames();
+            CollectionAssert.ContainsAll(expected, columns);
+        }
+
+        [Fact]
+        public void ColumnsWithDatabaseGeneratedTest()
+        {
+            var reader = ObjectReader.OfType<Item>(Translation);
+            reader.ReadPk = true;
+            reader.IsCreate = true;
+            reader.ReadDatabaseGenerated = true;
+
+            string[] expected = ["Id", "Name", "Description", "IsValidName"];
+
+            var columns = reader.GetColumnNames();
+            CollectionAssert.ContainsAll(expected, columns);
+        }
+
+        [Fact]
+        public void ColumnsWithoutDatabaseGeneratedTest()
+        {
+            var reader = ObjectReader.OfType<Item>(Translation);
+            reader.ReadPk = true;
+            reader.IsCreate = true;
+            reader.ReadDatabaseGenerated = false;
+
+            string[] expected = ["Id", "Name", "Description"];
 
             var columns = reader.GetColumnNames();
             CollectionAssert.ContainsAll(expected, columns);
@@ -150,6 +184,17 @@ namespace QueryTest.DataTranslation
             public string? Name { get; set; }
 
             public string? Description { get; set; }
+
+            public SubItem? SubItem { get; set; }
+
+            [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+            public bool IsValidName { get; set; }
+        }
+
+        private class SubItem
+        {
+            public int Id { get; set; }
+            public string? Name { get; set; }
         }
     }
 }

@@ -75,15 +75,36 @@ namespace SharpOrm.Builder
         #region IsCollection
         public static bool IsCollection(Type type)
         {
-            if (type.IsArray)
+            if (type.IsArray || IsGenericCollection(type))
+                return true;
+
+            if (GetCollectionInterfaces().Contains(type))
                 return true;
 
             var interfaces = type.GetInterfaces();
+            return GetCollectionInterfaces().Any(x => interfaces.Contains(x));
+        }
 
+        private static bool IsGenericCollection(Type type)
+        {
             if (!type.IsGenericType)
-                return GetCollectionInterfaces().Any(x => interfaces.Contains(x));
+                return false;
 
+            var typeDefinition = type.GetGenericTypeDefinition();
+            if (GetGenericCollectionInterfaces().Contains(typeDefinition))
+                return true;
+
+            var interfaces = type.GetInterfaces();
             return GetGenericCollectionInterfaces().Any(x => HasGenericInterface(interfaces, x));
+        }
+
+        public static Type GetCollectionElementType(Type type)
+        {
+            if (type.IsArray)
+                return type.GetElementType();
+
+            var args = type.GetGenericArguments();
+            return args.Length > 0 ? args[0] : type;
         }
 
         private static IEnumerable<Type> GetGenericCollectionInterfaces()

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Globalization;
+using System.Linq;
 
 namespace SharpOrm.DataTranslation
 {
@@ -100,10 +100,7 @@ namespace SharpOrm.DataTranslation
         {
             if (string.IsNullOrWhiteSpace(value)) return false;
 
-            for (int i = 0; i < value.Length; i++)
-                if (!char.IsNumber(value[i])) return false;
-
-            return true;
+            return value.All(char.IsNumber);
         }
 
         /// <summary>

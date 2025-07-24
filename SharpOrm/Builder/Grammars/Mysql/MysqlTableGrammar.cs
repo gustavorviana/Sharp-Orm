@@ -1,4 +1,7 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.Builder.Grammars.Mysql.Builder;
+using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
+using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Linq;
@@ -11,13 +14,35 @@ namespace SharpOrm.Builder.Grammars.Mysql
     /// </summary>
     public class MysqlTableGrammar : TableGrammar
     {
+        protected override IIndexSqlBuilder IndexBuilder { get; } = new MySqlIndexBuilder();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MysqlTableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public MysqlTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
+        public MysqlTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
+            //Ref: https://medium.com/dbconvert/mysql-and-sql-servers-data-types-mapping-4cedc95de638
+            ColumnTypes.Add(new ColumnType(typeof(int), "INT"));
+            ColumnTypes.Add(new ColumnType(typeof(long), "BIGINT"));
+            ColumnTypes.Add(new ColumnType(typeof(short), "SMALLINT"));
+            ColumnTypes.Add(new ColumnType(typeof(byte), "TINYINT"));
+            ColumnTypes.Add(new ColumnType(typeof(float), "FLOAT"));
+            ColumnTypes.Add(new ColumnType(typeof(double), "DOUBLE"));
+            ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
+            ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
+            ColumnTypes.Add(new ColumnType(typeof(char), "CHAR(1)"));
+            ColumnTypes.Add(new ColumnType(typeof(DateTime), "DATETIME"));
+            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TIME"));
+            ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
+            ColumnTypes.Add(new MysqlStringColumnType());
+            ColumnTypes.Add(new GuidColumnType(config.Translation, "CHAR"));
+
+            ConstraintBuilders.Add(new MySqlPrimaryKeyConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlForeignKeyConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlUniqueConstraintBuilder());
+            ConstraintBuilders.Add(new MySqlCheckConstraintBuilder());
         }
 
         public override SqlExpression Exists()
@@ -37,15 +62,14 @@ namespace SharpOrm.Builder.Grammars.Mysql
 
         public override SqlExpression Create()
         {
-            if (Schema.BasedQuery != null)
+            if (BasedQuery != null)
                 return CreateBased();
 
             var query = GetCreateTableQuery()
                 .Add('(')
                 .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteUnique(query);
-            WritePk(query);
+            WriteConstraints(query);
 
             return query.Add(')').ToExpression();
         }
@@ -53,7 +77,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
         private SqlExpression CreateBased()
         {
             return GetCreateTableQuery()
-                .Add(new MysqlGrammar(Schema.BasedQuery).Select())
+                .Add(new MysqlGrammar(BasedQuery).Select())
                 .ToExpression();
         }
 
@@ -89,86 +113,11 @@ namespace SharpOrm.Builder.Grammars.Mysql
                 throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
             string columnName = Config.ApplyNomenclature(column.ColumnName);
-            string dataType = GetMySqlDataType(column);
+            string dataType = GetColumnType(column);
             string autoIncrement = column.AutoIncrement ? " AUTO_INCREMENT" : string.Empty;
             string nullable = column.AllowDBNull ? "DEFAULT NULL" : "NOT NULL";
 
             return string.Concat(columnName, " ", dataType, " ", nullable, autoIncrement);
-        }
-
-        //Ref: https://medium.com/dbconvert/mysql-and-sql-servers-data-types-mapping-4cedc95de638
-        private string GetMySqlDataType(DataColumn column)
-        {
-            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
-                return map.GetTypeString(column);
-
-            if (GetExpectedColumnType(column) is string typeColumn)
-                return typeColumn;
-
-            var dataType = column.DataType;
-            if (dataType == typeof(int))
-                return "INT";
-
-            if (dataType == typeof(long))
-                return "BIGINT";
-
-            if (dataType == typeof(short))
-                return "SMALLINT";
-
-            if (dataType == typeof(byte))
-                return "TINYINT";
-
-            if (dataType == typeof(float))
-                return "FLOAT";
-
-            if (dataType == typeof(double))
-                return "DOUBLE";
-
-            if (dataType == typeof(decimal))
-                return "DECIMAL";
-
-            if (dataType == typeof(bool))
-                return "BIT";
-
-            if (dataType == typeof(string))
-                return GetStringType(column.MaxLength);
-
-            if (dataType == typeof(char))
-                return "CHAR(1)";
-
-            if (dataType == typeof(DateTime))
-                return "DATETIME";
-
-            if (dataType == typeof(TimeSpan))
-                return "TIME";
-
-            if (dataType == typeof(byte[]))
-                return "BLOB";
-
-            if (dataType == typeof(Guid))
-                return string.Concat("CHAR(", GetGuidSize(), ")");
-
-            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
-        }
-
-        private string GetStringType(int maxSize)
-        {
-            if (maxSize <= 0)
-                maxSize = 65535;
-
-            if (maxSize == 255)
-                return "TINYTEXT";
-
-            if (maxSize <= 16383)
-                return string.Concat("VARCHAR(", maxSize, ")");
-
-            if (maxSize <= 65635)
-                return "TEXT";
-
-            if (maxSize <= 16777215)
-                return "MEDIUMTEXT";
-
-            return "LONGTEXT";
         }
     }
 }

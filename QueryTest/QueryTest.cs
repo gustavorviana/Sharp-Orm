@@ -33,7 +33,7 @@ namespace QueryTest
             using var query = new Query(TestTableUtils.TABLE);
             query.Config.DbParamsLimit = 1;
 
-            Assert.Equal(2, 
+            Assert.Equal(2,
                 query.BulkInsert(
                     new Row(new Cell("Column", "Value")),
                     new Row(new Cell("Column", "Value"))
@@ -125,6 +125,7 @@ namespace QueryTest
 
             // Assert
             Assert.NotNull(result);
+
             Assert.Contains(
                 result.Info.Orders, o => o.Column.Name == nameof(Address.City) &&
                 o.Order == SharpOrm.OrderBy.Asc &&
@@ -330,7 +331,7 @@ namespace QueryTest
         [Fact]
         public void JoinTExpression()
         {
-            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] ON [Address].[Id] = [c].[address_id]";
+            var expected = "SELECT [c].[Id], [c].[Name], [c].[Email], [c].[address_id], [Address].[Id] AS [Address_c_Id], [Address].[Name] AS [Address_c_Name], [Address].[Street] AS [Address_c_Street], [Address].[City] AS [Address_c_City] FROM [Customers] [c] INNER JOIN [Address] ON [Address].[Id] = [c].[address_id]";
             var query = new Query<Customer>("c");
             query.Join(x => x.Address!, x => x.Id, x => x.AddressId);
 

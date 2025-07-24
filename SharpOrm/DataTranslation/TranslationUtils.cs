@@ -10,7 +10,7 @@ namespace SharpOrm.DataTranslation
         /// <summary>
         /// An array of native types used for fast type checking and conversion.
         /// </summary>
-        private static readonly Type[] nativeTypes = new Type[]
+        private static readonly Type[] _nativeTypes = new Type[]
         {
             typeof(bool),
             typeof(DBNull),
@@ -27,10 +27,13 @@ namespace SharpOrm.DataTranslation
 
         public static bool IsNative(Type type, bool ignoreBuffer)
         {
-            if (type is null) return true;
-            if (Nullable.GetUnderlyingType(type) is Type nType) type = nType;
+            if (type is null)
+                return true;
 
-            return type.IsPrimitive || type.IsEnum || nativeTypes.Contains(type) || IsNumeric(type) || !ignoreBuffer && IsBuffer(type);
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                return IsNative(Nullable.GetUnderlyingType(type), ignoreBuffer);
+
+            return type.IsPrimitive || type.IsEnum || _nativeTypes.Contains(type) || IsNumeric(type) || !ignoreBuffer && IsBuffer(type);
         }
 
         /// <summary>

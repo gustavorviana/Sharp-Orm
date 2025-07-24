@@ -18,9 +18,14 @@ namespace SharpOrm.Builder.Expressions
             }
         }
 
+        public override Type GetMemberType()
+        {
+            return ReflectionUtils.GetMemberType(Member);
+        }
+
         public override string ToString()
         {
-            return this.Name;
+            return Name;
         }
     }
 }

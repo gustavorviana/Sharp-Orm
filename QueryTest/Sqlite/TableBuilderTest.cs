@@ -81,7 +81,7 @@ namespace QueryTest.Sqlite
             cols.Add<int>("Status2").Unique = true;
 
             var grammar = GetTableGrammar(new TableSchema("MyTable", cols));
-            var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Name\" TEXT NULL,\"Status\" INTEGER NULL,\"Status2\" INTEGER NULL,CONSTRAINT \"UC_MyTable\" UNIQUE (\"Status\",\"Status2\"),PRIMARY KEY (\"Id\" AUTOINCREMENT))");
+            var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\"Name\" TEXT NULL,\"Status\" INTEGER NULL,\"Status2\" INTEGER NULL,CONSTRAINT \"UC_MyTable_Status_Status2\" UNIQUE (\"Status\",\"Status2\"))");
 
             Assert.Equal(expected, grammar.Create());
         }

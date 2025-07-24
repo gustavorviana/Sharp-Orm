@@ -10,13 +10,14 @@ namespace SharpOrm.Builder
     /// <summary>
     /// SQL clause creator. Provides methods to build SQL SELECT, INSERT, UPDATE and DELETE queries. Allows defining WHERE, ORDER BY, GROUP BY, JOIN and other clauses.
     /// </summary>
-    public class QueryBase
+    public class QueryBase : IWithQueryInfo
     {
         #region Fields\Const
         internal const string AND = "AND";
         internal const string OR = "OR";
 
         protected internal QueryBaseInfo Info { get; }
+        QueryInfo IWithQueryInfo.Info => Info as QueryInfo;
 
         private static string[] AvailableOperations { get; } = {
             "=",
@@ -35,6 +36,7 @@ namespace SharpOrm.Builder
             "IS",
             "IS NOT"
         };
+
         #endregion
 
         /// <summary>
@@ -43,12 +45,12 @@ namespace SharpOrm.Builder
         /// <param name="config">The configuration to use for the query.</param>
         public QueryBase(QueryConfig config, DbName table)
         {
-            this.Info = new QueryInfo(config, table);
+            Info = new QueryInfo(config, table);
         }
 
         protected QueryBase(QueryInfo info)
         {
-            this.Info = info;
+            Info = info;
         }
 
         #region Where
@@ -60,7 +62,7 @@ namespace SharpOrm.Builder
         /// <returns>The QueryBase instance to allow for method chaining.</returns>
         public QueryBase Where(ISqlExpressible expressible, bool allowAlias = false)
         {
-            return this.Where(expressible.ToSafeExpression(this.Info.ToReadOnly(), allowAlias));
+            return this.Where(expressible.ToSafeExpression(Info.ToReadOnly(), allowAlias));
         }
 
         /// <summary>
@@ -82,7 +84,12 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(SqlExpression expression)
         {
-            this.WriteWhereType(AND);
+            return Where(expression, AND);
+        }
+
+        protected virtual QueryBase Where(SqlExpression expression, string type)
+        {
+            this.WriteWhereType(type);
             this.Info.Where.AddParameter(expression);
             return this;
         }
@@ -137,7 +144,7 @@ namespace SharpOrm.Builder
         public QueryBase Where(object column, string operation, object value)
         {
             ValidateQueryValue(operation, ref value);
-            return this.WriteWhere(column, operation, value, AND);
+            return WriteWhere(column, operation, value, AND);
         }
 
         private static void ValidateQueryValue(string operation, ref object value)
@@ -215,7 +222,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase Exists(Query query)
         {
-            return this.WriteExists(query, false, AND);
+            return WriteExists(query, false, AND);
         }
 
         /// <summary>
@@ -225,7 +232,7 @@ namespace SharpOrm.Builder
         /// <returns>A QueryBase instance for method chaining.</returns>
         public QueryBase Exists(SqlExpression exp)
         {
-            return this.WriteExists(exp, false, AND);
+            return WriteExists(exp, false, AND);
         }
 
         /// <summary>
@@ -267,9 +274,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(SqlExpression expression)
         {
-            this.WriteWhereType(OR);
-            this.Info.Where.AddParameter(expression);
-            return this;
+            return Where(expression, OR);
         }
 
         /// <summary>
@@ -331,7 +336,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(object column, string operation, object value)
         {
-            return this.WriteWhere(column, operation, value, OR);
+            return WriteWhere(column, operation, value, OR);
         }
 
         /// <summary>
@@ -439,14 +444,14 @@ namespace SharpOrm.Builder
             this.WriteWhereType(whereType);
 
             if (not) this.Info.Where.Add("NOT ");
-            this.Info.Where.Add("EXISTS ");
+            Info.Where.Add("EXISTS ");
 
             if (queryObj is Query query)
             {
                 if (query.Info.Select.Length == 1 && query.Info.Select.First().IsAll())
                     query.Info.Select = new[] { (Column)"1" };
 
-                this.WriteQuery(query);
+                Info.Where.WriteQuery(query);
             }
             else
             {
@@ -486,36 +491,28 @@ namespace SharpOrm.Builder
             throw new InvalidOperationException(Messages.Query.ColumnsMustSuportAnyOfTypes);
         }
 
-        internal protected QueryBase WriteWhere(object column, string operation, object value, string type)
+        internal protected virtual QueryBase WriteWhere(object column, string operation, object value, string type)
         {
             if (column == null)
                 throw new ArgumentNullException(nameof(column));
 
             CheckIsAvailableOperation(operation);
-            this.WriteWhereType(type);
+            WriteWhereType(type);
 
             if (value is ICollection collection && collection.Count == 0)
             {
-                this.Info.Where.Add("1!=1");
+                Info.Where.Add("1!=1");
                 return this;
             }
 
-            this.Info.Where.AddColumn(column, false);
-            this.Info.Where.Add().Add(operation).Add();
-
-            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && IsCollection(operation);
-            if (isExpressionList)
-                this.Info.Where.Add('(');
-
-            this.WriteValue(value);
-
-            if (isExpressionList)
-                this.Info.Where.Add(')');
+            Info.Where.AddColumn(column, false);
+            Info.Where.Add().Add(operation).Add();
+            Info.Where.AddValue(value, IsCollection(operation));
 
             return this;
         }
 
-        private static bool IsCollection(string operation)
+        protected static bool IsCollection(string operation)
         {
             return operation.EqualsIgnoreCase("in") || operation.EqualsIgnoreCase("not in");
         }
@@ -529,27 +526,6 @@ namespace SharpOrm.Builder
             if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
             if (!AvailableOperations.ContainsIgnoreCase(operation))
                 throw new DatabaseException(string.Format(Messages.Query.InvalidOperation, operation));
-        }
-
-        /// <summary>
-        /// Loads the value object and converts it to a sql values.
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        protected QueryBuilder WriteValue(object value)
-        {
-            if (value is ICollection collection)
-                return this.Info.Where.WriteEnumerableAsValue(collection, true);
-
-            if (value is Query query)
-                return this.WriteQuery(query);
-
-            return this.Info.Where.AddParameter(value);
-        }
-
-        private QueryBuilder WriteQuery(Query query)
-        {
-            return this.Info.Where.Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
         }
 
         internal QueryBuilder WriteWhereType(string type)

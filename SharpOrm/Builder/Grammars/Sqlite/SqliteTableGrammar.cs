@@ -1,9 +1,14 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.Sqlite.Builder;
+using SharpOrm.Builder.Grammars.Sqlite.ColumnTypes;
+using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.Builder.Grammars.Table.Constraints;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder.Grammars.Sqlite
 {
@@ -12,13 +17,28 @@ namespace SharpOrm.Builder.Grammars.Sqlite
     /// </summary>
     public class SqliteTableGrammar : TableGrammar
     {
+        protected override IIndexSqlBuilder IndexBuilder { get; } = new SqliteIndexBuilder();
         /// <summary>
         /// Initializes a new instance of the <see cref="SqliteTableGrammar"/> class with the specified configuration and schema.
         /// </summary>
         /// <param name="config">The query configuration.</param>
         /// <param name="schema">The table schema.</param>
-        public SqliteTableGrammar(QueryConfig config, TableSchema schema) : base(config, schema)
+        public SqliteTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
+            ColumnTypes.Add(new ColumnType(typeof(long), "NUMERIC"));
+            ColumnTypes.Add(new ColumnType(typeof(char), "TEXT(1)"));
+            ColumnTypes.Add(new ColumnType(typeof(DateTime), "TEXT(19)"));
+            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TEXT(8)"));
+            ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
+            ColumnTypes.Add(new GuidColumnType(config.Translation, "TEXT"));
+            ColumnTypes.Add(new SqliteNumberWithoutDecimalColumnTypeMap());
+            ColumnTypes.Add(new SqliteNumberWithDecimalColumnTypeMap());
+            ColumnTypes.Add(new SqliteStringColumnTypeMap());
+
+            ConstraintBuilders.Add(new SqlitePrimaryKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteForeignKeyConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteUniqueConstraintBuilder());
+            ConstraintBuilders.Add(new SqliteCheckConstraintBuilder());
         }
 
         protected override DbName LoadName()
@@ -31,83 +51,42 @@ namespace SharpOrm.Builder.Grammars.Sqlite
 
         public override SqlExpression Create()
         {
-            if (Schema.BasedQuery != null)
+            if (BasedQuery != null)
                 return CreateBased();
 
-            if (GetPrimaryKeys().Length > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
+            if (Schema.Constraints.OfType<PrimaryKeyConstraint>().Count() > 1 && Schema.Columns.Count(x => x.AutoIncrement) > 0)
                 throw new InvalidOperationException(Messages.Sqlite.MultiplePrimaryKeyWithAutoIncrementError);
 
             var query = GetCreateTableQuery()
                  .Add('(')
                  .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteUnique(query);
-            WritePk(query);
+            foreach (var item in Schema.Constraints.Where(x => !(x is PrimaryKeyConstraint pk) || (!pk.AutoIncrement && pk.Columns.Length > 1)))
+                query.Add(',').Add(BuildConstraint(item));
 
             return query.Add(')').ToExpression();
         }
 
-        private string GetColumnDefinition(DataColumn column)
+        private SqlExpression GetColumnDefinition(DataColumn column)
         {
             if (column.ColumnName.Contains("."))
                 throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
-            string columnName = Config.ApplyNomenclature(column.ColumnName);
-            string dataType = GetSqliteDataType(column);
-            string nullable = column.AllowDBNull ? " NULL" : " NOT NULL";
+            var pk = Schema.Constraints.OfType<PrimaryKeyConstraint>().FirstOrDefault(x => x.Columns.Contains(column.ColumnName));
 
-            return string.Concat(columnName, " ", dataType, nullable);
-        }
+            var builder = new QueryBuilder();
+            builder
+                .Add(Config.ApplyNomenclature(column.ColumnName))
+                .Add(' ')
+                .Add(GetColumnType(column))
+                .Add(' ');
 
-        private string GetSqliteDataType(DataColumn column)
-        {
-            if (GetCustomColumnTypeMap(column) is ColumnTypeMap map)
-                return map.GetTypeString(column);
+            if (pk != null && pk.Columns.Length == 1)
+                builder.Add(BuildConstraint(pk)).Add(' ');
 
-            if (GetExpectedColumnType(column) is string typeColumn)
-                return typeColumn;
+            builder.Add(column.AllowDBNull ? "NULL" : "NOT NULL");
 
-            var dataType = column.DataType;
-            if (dataType == typeof(long))
-                return "NUMERIC";
-
-            if (TranslationUtils.IsNumberWithoutDecimal(dataType) || dataType == typeof(bool))
-                return "INTEGER";
-
-            if (TranslationUtils.IsNumberWithDecimal(dataType))
-                return "REAL";
-
-            if (dataType == typeof(string))
-                return column.MaxLength < 1 ? "TEXT" : string.Concat("TEXT(", column.MaxLength, ")");
-
-            if (dataType == typeof(char))
-                return "TEXT(1)";
-
-            if (dataType == typeof(DateTime))
-                return "TEXT(19)";
-
-            if (dataType == typeof(TimeSpan))
-                return "TEXT(8)";
-
-            if (dataType == typeof(byte[]))
-                return "BLOB";
-
-            if (dataType == typeof(Guid))
-                return string.Concat("TEXT(", GetGuidSize(), ")");
-
-            throw new ArgumentException(string.Format(Messages.Table.UnsupportedType, dataType.Name));
-        }
-
-        protected override void WritePk(QueryBuilder query)
-        {
-            var pks = GetPrimaryKeys().OrderBy(x => x.AutoIncrement).ToArray();
-            if (pks.Length == 0)
-                return;
-
-            if (pks.Count(x => x.AutoIncrement) > 1)
-                throw new NotSupportedException(Messages.Sqlite.MultipleAutoIncrementError);
-
-            query.Add(",PRIMARY KEY (").AddJoin(",", pks.Select(BuildAutoIncrement)).Add(')');
+            return builder.ToExpression();
         }
 
         private string BuildAutoIncrement(DataColumn column)
@@ -120,7 +99,7 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         {
             return GetCreateTableQuery()
                 .Add(" AS ")
-                .Add(new SqliteGrammar(Schema.BasedQuery).Select())
+                .Add(new SqliteGrammar(BasedQuery).Select())
                 .ToExpression();
         }
 

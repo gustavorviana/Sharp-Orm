@@ -17,7 +17,7 @@ namespace QueryTest.DataTranslation.Reader
         public void ManualPropMapTest()
         {
             var reader = new MockDataReader(new Cell("TestName", "Prop1 Name"), new Cell("MyId", 1), new Cell("Lvl3Name", "My Custom Name"), new Cell("Date", DateTime.Today));
-            var tm = new TableMap<MyClass>(new TranslationRegistry());
+            var tm = new ModelMapper<MyClass>(new TranslationRegistry());
 
             tm.Property(x => x.Prop1, "TestName");
             tm.Property(x => x.Level1.Id, "MyId");
@@ -36,7 +36,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void AutoMapTest()
         {
-            var tm = new TableMap<MyClass>(new TranslationRegistry());
+            var tm = new ModelMapper<MyClass>(new TranslationRegistry());
             var table = tm.Build();
 
             Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Level2_Level3_MyLevelName"));
@@ -50,7 +50,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void ReadComplexObjectTest()
         {
-            var tm = new TableMap<MyClass>(new TranslationRegistry());
+            var tm = new ModelMapper<MyClass>(new TranslationRegistry());
             var table = tm.Build();
 
             var instance = new MyClass
@@ -74,7 +74,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void SetComplexObjectTest()
         {
-            var tm = new TableMap<MyClass>(new TranslationRegistry());
+            var tm = new ModelMapper<MyClass>(new TranslationRegistry());
             var table = tm.Build();
 
             var instance = new MyClass();
@@ -87,7 +87,7 @@ namespace QueryTest.DataTranslation.Reader
         public void FindColumnByNameTest()
         {
             var reg = new TranslationRegistry();
-            var tm = new TableMap<MyClass>(reg);
+            var tm = new ModelMapper<MyClass>(reg);
             tm.Property(x => x.Date, "BeginDate");
             tm.Build();
 
@@ -123,7 +123,7 @@ namespace QueryTest.DataTranslation.Reader
             );
 
             var reg = new TranslationRegistry();
-            var tm = new TableMap<DynamicMappedTable>(reg);
+            var tm = new ModelMapper<DynamicMappedTable>(reg);
             tm.Property(x => x.User.Name, "name");
             tm.Property(x => x.User.Nick, "nick");
             tm.Property(x => x.CreatedAt, "record_created");
@@ -152,7 +152,7 @@ namespace QueryTest.DataTranslation.Reader
         public void MapNestedTest()
         {
             var reg = new TranslationRegistry();
-            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            var tm = new ModelMapper<RootNestedObject>(reg, NestedMode.Attribute);
             tm.MapNested(x => x.Child1, "WithPrefix");
             tm.Build();
 
@@ -169,7 +169,7 @@ namespace QueryTest.DataTranslation.Reader
         public void MapSubNestedTest()
         {
             var reg = new TranslationRegistry();
-            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            var tm = new ModelMapper<RootNestedObject>(reg, NestedMode.Attribute);
             tm.MapNested(x => x.Child1, "WithPrefix", true);
             tm.Build();
 
@@ -187,7 +187,7 @@ namespace QueryTest.DataTranslation.Reader
         public void MapManualNestedTest()
         {
             var reg = new TranslationRegistry();
-            var tm = new TableMap<RootNestedObject>(reg, NestedMode.Attribute);
+            var tm = new ModelMapper<RootNestedObject>(reg, NestedMode.Attribute);
             tm.Property(x => x.Id, "RootId");
             tm.Property(x => x.Child1!.Id, "Child1MappedId");
             tm.Property(x => x.Child1!.ChildId, "Child1MappedChildId");
@@ -210,7 +210,7 @@ namespace QueryTest.DataTranslation.Reader
             Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetPrefixedNestedObjectReader);
 
             var reg = new TranslationRegistry();
-            var tm = new TableMap<RootNestedObject>(reg);
+            var tm = new ModelMapper<RootNestedObject>(reg);
             tm.Property(x => x.Id, "Id");
             tm.MapNested(x => x.Child1, "WithPrefix");
             tm.Build();

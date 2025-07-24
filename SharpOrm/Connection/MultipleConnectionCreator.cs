@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Collections;
+using System;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
@@ -7,50 +8,83 @@ using System.Data.SqlClient;
 namespace SharpOrm.Connection
 {
     /// <summary>
-    /// Provides a multiple connection creator implementation using <see cref="SqlConnection"/>.
+    /// A generic version of <see cref="MultipleConnectionCreator"/> that uses a specific <see cref="DbConnection"/> type.
     /// </summary>
-    public class MultipleConnectionCreator : MultipleConnectionCreator<SqlConnection>
+    /// <typeparam name="T">A type of <see cref="DbConnection"/> that has a parameterless constructor.</typeparam>
+    public class MultipleConnectionCreator<T> : MultipleConnectionCreator where T : DbConnection, new()
     {
-        public MultipleConnectionCreator(QueryConfig config, string connectionString) : base(config, connectionString)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultipleConnectionCreator{T}"/> class.
+        /// </summary>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
+        public MultipleConnectionCreator(QueryConfig config, string connectionString)
+            : base(typeof(T), config, connectionString)
         {
+        }
+
+        /// <summary>
+        /// Returns a single instance of the configured <see cref="T"/>.
+        /// </summary>
+        /// <returns>A <see cref="T"/> instance.</returns>
+        public new T GetConnection()
+        {
+            return (T)base.GetConnection();
         }
     }
 
     /// <summary>
-    /// Generic class for multiple connection creation.
+    /// Provides a connection creator that generates a new instance of <see cref="DbConnection"/> for each request.
     /// </summary>
-    /// <typeparam name="T">The type of the <see cref="DbConnection"/> used for creating connections.</typeparam>
-    public class MultipleConnectionCreator<T> : ConnectionCreator where T : DbConnection, new()
+    public class MultipleConnectionCreator : ConnectionCreator
     {
         private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
         private readonly string _connectionString;
+        private readonly Type _dbConnectionType;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultipleConnectionCreator"/> class.
+        /// Initializes a new instance of the <see cref="MultipleConnectionCreator"/> class using <see cref="SqlConnection"/> as the connection type.
         /// </summary>
-        /// <param name="config">The query configuration.</param>
-        /// <param name="connectionString">The connection string for the database.</param>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
         public MultipleConnectionCreator(QueryConfig config, string connectionString)
+            : this(typeof(SqlConnection), config, connectionString)
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultipleConnectionCreator"/> class with a specific connection type.
+        /// </summary>
+        /// <param name="connectionType">The type of <see cref="DbConnection"/> to instantiate.</param>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
+        public MultipleConnectionCreator(Type connectionType, QueryConfig config, string connectionString)
+        {
+            ValidateConnectionType(connectionType);
+
+            _dbConnectionType = connectionType;
             _connectionString = connectionString;
             Config = config;
         }
 
         /// <summary>
-        /// Gets a database connection.
+        /// Creates and returns a new instance of <see cref="DbConnection"/>.
         /// </summary>
+        /// <returns>A new <see cref="DbConnection"/> instance.</returns>
         public override DbConnection GetConnection()
         {
             ThrowIfDisposed();
-            var connection = new T { ConnectionString = _connectionString };
+            var connection = Activator.CreateInstance(_dbConnectionType) as DbConnection;
+            connection.ConnectionString = _connectionString;
 
             connections.Add(connection);
             return AutoOpenConnection ? connection.OpenIfNeeded() : connection;
         }
 
         /// <summary>
-        /// Safely disposes a database connection.
+        /// Safely disposes a connection by closing and disposing it.
         /// </summary>
+        /// <param name="connection">The connection to dispose.</param>
         public override void SafeDisposeConnection(DbConnection connection)
         {
             if (connection.State == ConnectionState.Open)
@@ -59,20 +93,23 @@ namespace SharpOrm.Connection
             connection.Dispose();
         }
 
-        /// <summary>
-        /// Releases the resources used by the <see cref="MultipleConnectionCreator"/> object.
-        /// </summary>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
 
-            if (disposing) connections.Dispose();
-            else connections.Clear();
+            if (disposing)
+                connections.Dispose();
+            else
+                connections.Clear();
         }
 
+        /// <summary>
+        /// Clones this <see cref="MultipleConnectionCreator"/> with the same configuration.
+        /// </summary>
+        /// <returns>A new instance of <see cref="MultipleConnectionCreator"/> with the same settings.</returns>
         public override ConnectionCreator Clone()
         {
-            return new MultipleConnectionCreator<T>(Config, _connectionString)
+            return new MultipleConnectionCreator(_dbConnectionType, Config, _connectionString)
             {
                 AutoOpenConnection = AutoOpenConnection
             };

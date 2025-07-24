@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Msg;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -13,9 +14,10 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     public class TranslationRegistry : IEquatable<TranslationRegistry>, ICloneable
     {
-        private readonly NativeSqlTranslation native = new NativeSqlTranslation();
+        private readonly NativeSqlTranslation _native = new NativeSqlTranslation();
         private static TranslationRegistry _default = new TranslationRegistry();
-        private readonly List<TableInfo> _manualMapped = new List<TableInfo>();
+        private readonly ConcurrentDictionary<Type, TableInfo> _mappedTables = new ConcurrentDictionary<Type, TableInfo>();
+        private readonly ConcurrentDictionary<Type, ISqlTranslation> _cachedTranslations = new ConcurrentDictionary<Type, ISqlTranslation>();
 
         public static TranslationRegistry Default
         {
@@ -28,14 +30,24 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public bool EmptyStringToNull
         {
-            get => native.EmptyStringToNull;
-            set => native.EmptyStringToNull = value;
+            get => _native.EmptyStringToNull;
+            set => _native.EmptyStringToNull = value;
         }
+
+        private ISqlTranslation[] _sqlTranslations = DotnetUtils.EmptyArray<ISqlTranslation>();
 
         /// <summary>
         /// Custom value translators.
         /// </summary>
-        public ISqlTranslation[] Translators { get; set; } = DotnetUtils.EmptyArray<ISqlTranslation>();
+        public ISqlTranslation[] Translators
+        {
+            get => _sqlTranslations;
+            set
+            {
+                _sqlTranslations = value;
+                _cachedTranslations.Clear();
+            }
+        }
 
         /// <summary>
         /// Format in which the GUID should be read and written in the database.
@@ -52,8 +64,8 @@ namespace SharpOrm.DataTranslation
         /// </remarks>
         public string GuidFormat
         {
-            get => native.GuidFormat;
-            set => native.GuidFormat = value;
+            get => _native.GuidFormat;
+            set => _native.GuidFormat = value;
         }
 
         /// <summary>
@@ -64,8 +76,8 @@ namespace SharpOrm.DataTranslation
         /// </remarks>
         public string DateFormat
         {
-            get => native.dateTranslation.Format;
-            set => native.dateTranslation.Format = value;
+            get => _native.dateTranslation.Format;
+            set => _native.dateTranslation.Format = value;
         }
 
         /// <summary>
@@ -73,8 +85,8 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public CultureInfo Culture
         {
-            get => native.numericTranslation.Culture;
-            set => native.numericTranslation.Culture = value;
+            get => _native.numericTranslation.Culture;
+            set => _native.numericTranslation.Culture = value;
         }
 
         /// <summary>
@@ -83,8 +95,8 @@ namespace SharpOrm.DataTranslation
         /// <value>The serialization format for enums.</value>
         public EnumSerialization EnumSerialization
         {
-            get => native.EnumSerialization;
-            set => native.EnumSerialization = value;
+            get => _native.EnumSerialization;
+            set => _native.EnumSerialization = value;
         }
 
         /// <summary>
@@ -93,8 +105,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo DbTimeZone
         {
-            get => native.DbTimeZone;
-            set => native.DbTimeZone = value;
+            get => _native.DbTimeZone;
+            set => _native.DbTimeZone = value;
         }
 
         /// <summary>
@@ -103,8 +115,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo TimeZone
         {
-            get => native.TimeZone;
-            set => native.TimeZone = value;
+            get => _native.TimeZone;
+            set => _native.TimeZone = value;
         }
 
         /// <summary>
@@ -127,6 +139,12 @@ namespace SharpOrm.DataTranslation
                 return conversor.ToSqlValue(value, expectedType);
 
             throw new NotSupportedException(string.Format(Messages.TypeNotSupported, expectedType.FullName));
+        }
+
+
+        public bool IsDateOrTime(Type type)
+        {
+            return _native.dateTranslation.CanWork(type);
         }
 
         /// <summary>
@@ -187,13 +205,16 @@ namespace SharpOrm.DataTranslation
         {
             type = GetValidTypeFor(type);
 
-            if (Translators?.FirstOrDefault(c => c.CanWork(type)) is ISqlTranslation conversor)
-                return conversor;
+            return _cachedTranslations.GetOrAdd(type, pendingTipe =>
+            {
+                if (Translators?.FirstOrDefault(c => c.CanWork(pendingTipe)) is ISqlTranslation conversor)
+                    return conversor;
 
-            if (native.CanWork(type))
-                return native;
+                if (_native.CanWork(pendingTipe))
+                    return _native;
 
-            return null;
+                return null;
+            });
         }
 
         /// <summary>
@@ -203,7 +224,10 @@ namespace SharpOrm.DataTranslation
         /// <returns>The valid type.</returns>
         public static Type GetValidTypeFor(Type expectedType)
         {
-            if (expectedType != null && Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
+            if (expectedType == null)
+                return null;
+
+            if (Nullable.GetUnderlyingType(expectedType) is Type underlyingType)
                 return underlyingType;
 
             return expectedType;
@@ -222,17 +246,17 @@ namespace SharpOrm.DataTranslation
             return null;
         }
 
-        internal TableInfo AddTableMap<T>(TableMap<T> map)
+        internal TableInfo AddTableMap<T>(ModelMapper<T> map)
         {
             var type = typeof(T);
-            if (_manualMapped.Any(x => x.Type == type))
+            if (_mappedTables.ContainsKey(type))
                 throw new InvalidOperationException(Messages.Table.AlreadyMapped);
 
             if (string.IsNullOrEmpty(map.Name))
-                throw new ArgumentNullException(typeof(TableMap<T>).FullName + "." + nameof(TableMap<T>.Name));
+                throw new ArgumentNullException(typeof(ModelMapper<T>).FullName + "." + nameof(ModelMapper<T>.Name));
 
-            var table = new TableInfo(type, map.Registry, map.Name, map.softDelete, map.timestamp, map.GetFields());
-            _manualMapped.Add(table);
+            var table = new TableInfo(type, map.Registry, map.Name, map._softDelete, map._timestamp, map.GetFields());
+            _mappedTables.TryAdd(type, table);
             return table;
         }
 
@@ -243,8 +267,7 @@ namespace SharpOrm.DataTranslation
         /// <returns></returns>
         public string GetTableName(Type type)
         {
-            if (GetManualMap(type) is TableInfo table) return table.Name;
-            return TableInfo.GetNameOf(type);
+            return GetTable(type)?.Name;
         }
 
         /// <summary>
@@ -254,14 +277,13 @@ namespace SharpOrm.DataTranslation
         /// <returns></returns>
         public TableInfo GetTable(Type type)
         {
-#pragma warning disable CS0618 // O tipo ou membro é obsoleto
-            return GetManualMap(type) ?? new TableInfo(type, this);
-#pragma warning restore CS0618 // O tipo ou membro é obsoleto
-        }
+            if (type == typeof(Row))
+                return null;
 
-        internal TableInfo GetManualMap(Type type)
-        {
-            return _manualMapped.FirstOrDefault(x => x.Type == type);
+            return _mappedTables.GetOrAdd(type, (pendingType) =>
+            {
+                return new TableInfo(type, this);
+            });
         }
 
         #region IEquatable
@@ -274,7 +296,7 @@ namespace SharpOrm.DataTranslation
         public bool Equals(TranslationRegistry other)
         {
             return !(other is null) &&
-                   EqualityComparer<NativeSqlTranslation>.Default.Equals(native, other.native) &&
+                   EqualityComparer<NativeSqlTranslation>.Default.Equals(_native, other._native) &&
                    EqualityComparer<ISqlTranslation[]>.Default.Equals(Translators, other.Translators) &&
                    GuidFormat == other.GuidFormat &&
                    EqualityComparer<TimeZoneInfo>.Default.Equals(DbTimeZone, other.DbTimeZone) &&
@@ -284,7 +306,7 @@ namespace SharpOrm.DataTranslation
         public override int GetHashCode()
         {
             int hashCode = 836003443;
-            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(native);
+            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(_native);
             hashCode = hashCode * -1521134295 + EqualityComparer<ISqlTranslation[]>.Default.GetHashCode(Translators);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(GuidFormat);
             hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(DbTimeZone);

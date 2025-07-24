@@ -40,7 +40,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Custom mapping of columns in the database.
         /// </summary>
-        public ColumnTypeMap[] CustomColumnTypes { get; set; } = DotnetUtils.EmptyArray<ColumnTypeMap>();
+        public ColumnTypeProvider CustomColumnTypes { get; set; } = new ColumnTypeProvider();
 
         /// <summary>
         /// Registry of SQL methods.
@@ -60,6 +60,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// If enabled, allows the query to create an object only with its primary key when there is no depth and allows reading the id of a foreign object on insert or update.
         /// </summary>
+        [Obsolete("This interface will be removed in version 4.0. To follow market standards, only the foreign key id property should be populated, not the full object.")]
         public bool LoadForeign { get; set; }
 
         /// <summary>
@@ -140,7 +141,7 @@ namespace SharpOrm.Builder
         /// <param name="schema">The table schema.</param>
         /// <returns>A new instance of <see cref="TableGrammar"/>.</returns>
         /// <exception cref="NotSupportedException">Thrown when the derived class does not support creating/editing/removing tables.</exception>
-        public virtual TableGrammar NewTableGrammar(TableSchema schema)
+        public virtual TableGrammar NewTableGrammar(ITableSchema schema)
         {
             throw new NotSupportedException(string.Format(Messages.TableManagementNotSupported, GetType().FullName));
         }

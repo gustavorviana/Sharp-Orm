@@ -1,6 +1,5 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
 using SharpOrm.Builder.Grammars.Mysql;
-using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 

@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Connection;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using SharpOrm.SqlMethods;
 using System;
@@ -97,7 +98,7 @@ namespace SharpOrm
 
         private ExpressionColumn[] GetColumns<T>(Query query, Expression<ColumnExpression<T>> expression, ExpressionConfig config = ExpressionConfig.All)
         {
-            var processor = new ExpressionProcessor<T>(query.Info, config) { ForceTablePrefix = true };
+            var processor = new ExpressionProcessor<T>(query as IFkNodeRoot, config);
             return processor.ParseColumns(expression).ToArray();
         }
 
