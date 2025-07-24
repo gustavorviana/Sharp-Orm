@@ -8,6 +8,7 @@ using SharpOrm.Msg;
 using System;
 using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace SharpOrm.Builder.Grammars.Sqlite
 {
@@ -60,21 +61,32 @@ namespace SharpOrm.Builder.Grammars.Sqlite
                  .Add('(')
                  .AddJoin(",", Schema.Columns.Select(GetColumnDefinition));
 
-            WriteConstraints(query);
+            foreach (var item in Schema.Constraints.Where(x => !(x is PrimaryKeyConstraint pk) || (!pk.AutoIncrement && pk.Columns.Length > 1)))
+                query.Add(',').Add(BuildConstraint(item));
 
             return query.Add(')').ToExpression();
         }
 
-        private string GetColumnDefinition(DataColumn column)
+        private SqlExpression GetColumnDefinition(DataColumn column)
         {
             if (column.ColumnName.Contains("."))
                 throw new InvalidOperationException(Messages.Query.ColumnNotSuportDot);
 
-            string columnName = Config.ApplyNomenclature(column.ColumnName);
-            string dataType = GetColumnType(column);
-            string nullable = column.AllowDBNull ? " NULL" : " NOT NULL";
+            var pk = Schema.Constraints.OfType<PrimaryKeyConstraint>().FirstOrDefault(x => x.Columns.Contains(column.ColumnName));
 
-            return string.Concat(columnName, " ", dataType, nullable);
+            var builder = new QueryBuilder();
+            builder
+                .Add(Config.ApplyNomenclature(column.ColumnName))
+                .Add(' ')
+                .Add(GetColumnType(column))
+                .Add(' ');
+
+            if (pk != null && pk.Columns.Length == 1)
+                builder.Add(BuildConstraint(pk)).Add(' ');
+
+            builder.Add(column.AllowDBNull ? "NULL" : "NOT NULL");
+
+            return builder.ToExpression();
         }
 
         private string BuildAutoIncrement(DataColumn column)

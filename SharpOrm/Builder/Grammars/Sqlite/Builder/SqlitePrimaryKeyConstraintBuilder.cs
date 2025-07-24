@@ -13,14 +13,16 @@ namespace SharpOrm.Builder.Grammars.Sqlite.Builder
         protected override SqlExpression Build(PrimaryKeyConstraint constraint)
         {
             var sql = new StringBuilder()
-                .Append("PRIMARY KEY ");
+                .Append("PRIMARY KEY");
 
-            if (!constraint.AutoIncrement)
-                return new SqlExpression(sql.Append($"(\"{string.Join("\",\"", constraint.Columns)}\")").ToString());
+            if (!constraint.AutoIncrement && constraint.Columns.Length > 1)
+                return new SqlExpression(sql.Append($" (\"{string.Join("\",\"", constraint.Columns)}\")").ToString());
 
             if (constraint.Columns.Length > 1)
                 throw new InvalidOperationException("SQLite only supports AUTOINCREMENT on single-column primary keys.");
-            sql.Append($"(\"{constraint.Columns.First()}\" AUTOINCREMENT)");
+
+            if (constraint.AutoIncrement)
+                sql.Append(" AUTOINCREMENT");
 
             return new SqlExpression(sql.ToString());
         }

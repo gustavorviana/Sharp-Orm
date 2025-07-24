@@ -151,7 +151,7 @@ namespace SharpOrm.Builder.Grammars
                 query.Add(',').Add(BuildConstraint(item));
         }
 
-        private SqlExpression BuildConstraint(Constraint constraint)
+        protected SqlExpression BuildConstraint(Constraint constraint)
         {
             var type = constraint.GetType();
             var builder = ConstraintBuilders.Get(type);
