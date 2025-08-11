@@ -174,7 +174,7 @@ namespace SharpOrm.Builder
             for (int i = 0; i < total - 1; i++)
             {
                 InternalSetExpression(collection.Expressions[i]);
-                result += InternalExecuteWithRecordsAffected(CommandBehavior.Default);
+                result += InternalExecuteWithRecordsAffected(CommandBehavior.Default, true);
             }
 
             InternalSetExpression(collection.Expressions[total - 1]);
@@ -441,7 +441,7 @@ namespace SharpOrm.Builder
         public int ExecuteWithRecordsAffected(CommandBehavior behavior = CommandBehavior.Default)
         {
             OpenIfNeeded();
-            return InternalExecuteWithRecordsAffected(behavior);
+            return InternalExecuteWithRecordsAffected(behavior, true);
         }
 
         /// <summary>
@@ -452,10 +452,10 @@ namespace SharpOrm.Builder
         public async Task<int> ExecuteWithRecordsAffectedAsync(CommandBehavior behavior = CommandBehavior.Default)
         {
             await OpenIfNeededAsync();
-            return InternalExecuteWithRecordsAffected(behavior);
+            return InternalExecuteWithRecordsAffected(behavior, true);
         }
 
-        private int InternalExecuteWithRecordsAffected(CommandBehavior behavior)
+        private int InternalExecuteWithRecordsAffected(CommandBehavior behavior, bool leaveOpen)
         {
             try
             {
@@ -473,7 +473,8 @@ namespace SharpOrm.Builder
             }
             finally
             {
-                manager.CloseByEndOperation();
+                if (!leaveOpen)
+                    manager.CloseByEndOperation();
             }
         }
 

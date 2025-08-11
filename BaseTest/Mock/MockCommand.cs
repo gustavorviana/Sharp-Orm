@@ -38,6 +38,7 @@ namespace BaseTest.Mock
 
         public override int ExecuteNonQuery()
         {
+            CheckConnectionOpen();
             if (OnExecuteNonQuery == null)
             {
                 ((MockConnection)DbConnection).OnFallback(this);
@@ -73,11 +74,18 @@ namespace BaseTest.Mock
 
         private MockDataReader GetReader()
         {
+            CheckConnectionOpen();
             var reader = OnGetReader?.Invoke(this);
             if (reader == null)
                 return new MockDataReader(i => null!, 0);
 
             return reader;
+        }
+
+        private void CheckConnectionOpen()
+        {
+            if (this.Connection!.State != ConnectionState.Open)
+                throw new ConnectionClosedException();
         }
     }
 }
