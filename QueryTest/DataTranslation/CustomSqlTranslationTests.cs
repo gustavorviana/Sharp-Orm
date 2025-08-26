@@ -26,6 +26,16 @@ namespace QueryTest.DataTranslation
             Assert.NotNull(query.FirstOrDefault());
         }
 
+        [Fact]
+        public void CustomIdTranslationTest()
+        {
+            var owner = new CustomIdClass { Id = new CustomId { Id = 10 } };
+            TableInfo table = Translation.GetTable(typeof(CustomIdClass));
+
+            var cell = table.GetObjCells(owner, true, false).FirstOrDefault();
+            Assert.Equal(10, cell?.Value);
+        }
+
         #region Classes
         private class CustomClassInfo
         {
@@ -71,6 +81,42 @@ namespace QueryTest.DataTranslation
             {
                 return value;
             }
+        }
+
+        internal class CustomIdTranslation : ISqlTranslation
+        {
+            public bool CanWork(Type type) => type == typeof(int) || type == typeof(CustomId);
+
+            public object FromSqlValue(object value, Type expectedType)
+            {
+                if (value is not int intValue)
+                    throw new InvalidDataException("Value is not an integer");
+
+                return new CustomId { Id = intValue };
+            }
+
+            public object ToSqlValue(object value, Type type)
+            {
+                if (value is int intValue)
+                    return intValue;
+
+                if (value is CustomId customId)
+                    return customId.Id;
+
+                throw new InvalidDataException("Value is not an integer or CustomId");
+            }
+        }
+
+        private class CustomIdClass
+        {
+            [Column("Id")]
+            public CustomId Id { get; set; }
+        }
+
+        [SqlConverter(typeof(CustomIdTranslation))]
+        private struct CustomId
+        {
+            public int Id { get; set; }
         }
         #endregion
     }
