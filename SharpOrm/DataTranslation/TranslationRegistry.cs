@@ -213,6 +213,9 @@ namespace SharpOrm.DataTranslation
                 if (_native.CanWork(pendingTipe))
                     return _native;
 
+                if (type.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
+                    return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
+
                 return null;
             });
         }
@@ -242,6 +245,9 @@ namespace SharpOrm.DataTranslation
         {
             if (member.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
+
+            if (ReflectionUtils.GetMemberType(member).GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute typeAttribute)
+                return (ISqlTranslation)Activator.CreateInstance(typeAttribute.Type);
 
             return null;
         }
