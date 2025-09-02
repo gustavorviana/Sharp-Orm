@@ -24,7 +24,7 @@ namespace SharpOrm.Connection
         private readonly ConnectionCreator creator;
         private bool finishedTransaction = false;
         internal bool _autoCommit = false;
-        private bool disposed;
+        private bool _disposed;
 
         /// <summary>
         /// Event that occurs when the ConnectionManager instance is disposed.
@@ -78,7 +78,7 @@ namespace SharpOrm.Connection
             {
                 try
                 {
-                    if (creator?.Management == ConnectionManagement.LeaveOpen || _management == ConnectionManagement.LeaveOpen)
+                    if (creator?.Management == ConnectionManagement.LeaveOpen || Management == ConnectionManagement.LeaveOpen)
                         return false;
 
                     return this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
@@ -144,7 +144,7 @@ namespace SharpOrm.Connection
             Config = creator.Config;
 
             Connection.Disposed += DisposeByConnection;
-            _management = GetManagement(creator, transactionIsolationLevel);
+            Management = GetManagement(creator, transactionIsolationLevel);
             if (!(transactionIsolationLevel is IsolationLevel isolationLevel))
                 return;
 
@@ -211,10 +211,10 @@ namespace SharpOrm.Connection
 
         private void DisposeByConnection(object sender, EventArgs e)
         {
-            if (this.disposed) return;
+            if (this._disposed) return;
             this.Connection.Disposed -= DisposeByConnection;
             GC.SuppressFinalize(this);
-            this.disposed = true;
+            this._disposed = true;
 
             this.Disposed?.Invoke(this, EventArgs.Empty);
         }
@@ -246,20 +246,20 @@ namespace SharpOrm.Connection
         /// <returns>A new <see cref="ConnectionManager"/> instance with the specified cloning options.</returns>
         public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false, bool? safeOperations = null)
         {
-            var clone = this.InternalClone();
+            var clone = InternalClone();
 
             if (listenDispose)
-                this.Disposed += (sender, e) => this.Dispose();
+                Disposed += (sender, e) => clone.Dispose();
 
             if (cloneConfig)
-                clone.Config = this.Config.Clone(safeOperations);
+                clone.Config = Config.Clone(safeOperations);
 
             return clone;
         }
 
         private ConnectionManager InternalClone()
         {
-            if (disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
             if (creator != null && Transaction != null)
@@ -310,7 +310,7 @@ namespace SharpOrm.Connection
 
         private ConnectionManager CopyOptionsFrom(ConnectionManager manager, bool copyManagement = true)
         {
-            if (copyManagement) _management = manager._management;
+            if (copyManagement) _management = manager.Management;
 
             OnError = manager.OnError;
             CommandTimeout = manager.CommandTimeout;
@@ -340,12 +340,19 @@ namespace SharpOrm.Connection
             if (this.Connection.State == System.Data.ConnectionState.Open)
                 return;
 
-            await this.Connection.OpenAsync(token);
+            try
+            {
+                await Connection.OpenAsync(token);
+            }
+            catch (TaskCanceledException)
+            {
+                throw new OperationCanceledException();
+            }
 
 #if NET5_0_OR_GREATER
-            try { await this.Connection.CloseAsync(); } catch { }
+            try { await Connection.CloseAsync(); } catch { }
 #else
-            try { this.Connection.Close(); } catch { }
+            try { Connection.Close(); } catch { }
 #endif
         }
 
@@ -357,7 +364,7 @@ namespace SharpOrm.Connection
 
         public Version GetServerVersion()
         {
-            if (disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
             if (creator != null)
@@ -419,7 +426,10 @@ namespace SharpOrm.Connection
 
         internal CommandBuilder GetCommand()
         {
-            return new CommandBuilder(this);
+            return new CommandBuilder(this)
+            {
+                Timeout = CommandTimeout
+            };
         }
 
         internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry, bool leaveOpen)
@@ -508,7 +518,10 @@ namespace SharpOrm.Connection
         public static T ExecuteTransaction<T>(TransactionAction<T> func)
         {
             T value = default;
-            ExecuteTransaction((transaction) => value = func(transaction));
+            ExecuteTransaction((transaction) =>
+            {
+                value = func(transaction);
+            });
             return value;
         }
         #endregion
@@ -524,7 +537,7 @@ namespace SharpOrm.Connection
         /// </summary>
         public void Dispose()
         {
-            if (this.disposed) return;
+            if (_disposed) return;
 
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
@@ -532,7 +545,7 @@ namespace SharpOrm.Connection
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposed)
+            if (_disposed)
                 return;
 
             try
@@ -542,7 +555,7 @@ namespace SharpOrm.Connection
             }
             finally
             {
-                disposed = true;
+                _disposed = true;
                 this.Disposed?.Invoke(this, EventArgs.Empty);
             }
         }

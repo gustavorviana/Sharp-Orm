@@ -103,11 +103,11 @@ namespace SharpOrm.Connection
             if (type == null)
                 throw new ArgumentNullException(nameof(type), "Type cannot be null.");
 
-            if (!typeof(DbConnection).IsAssignableFrom(type))
-                throw new ArgumentException($"Type '{type.FullName}' must inherit from DbConnection.", nameof(type));
-
             if (!type.IsClass)
                 throw new ArgumentException($"Type '{type.FullName}' must be a class.", nameof(type));
+
+            if (!typeof(DbConnection).IsAssignableFrom(type))
+                throw new ArgumentException($"Type '{type.FullName}' must inherit from DbConnection.", nameof(type));
 
             if (type.IsAbstract)
                 throw new ArgumentException($"Type '{type.FullName}' cannot be abstract.", nameof(type));
