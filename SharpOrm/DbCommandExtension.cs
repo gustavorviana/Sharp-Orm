@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -137,13 +138,42 @@ namespace SharpOrm
         /// Create a new DbCommand with a SQL query and the query's arguments.
         /// </summary>
         /// <param name="connection"></param>
+        /// <param name="config">Query configuration for parameter naming.</param>
         /// <param name="query">Query to be executed (to signal an argument, use '?').</param>
         /// <param name="args">Arguments to be used.</param>
         /// <returns></returns>
+        public static DbCommand CreateCommand(this DbConnection connection, QueryConfig config, string query, params object[] args)
+        {
+            connection.OpenIfNeeded();
+            return connection.CreateCommand().SetQuery(config, query, args);
+        }
+
+        /// <summary>
+        /// Create a new DbCommand with a SQL query and the query's arguments.
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="query">Query to be executed (to signal an argument, use '?').</param>
+        /// <param name="args">Arguments to be used.</param>
+        /// <returns></returns>
+        [Obsolete("This method will be removed in version 4.0. Use CreateCommand overload that accepts QueryConfig for proper parameter naming.", false)]
         public static DbCommand CreateCommand(this DbConnection connection, string query, params object[] args)
         {
             connection.OpenIfNeeded();
             return connection.CreateCommand().SetQuery(query, args);
+        }
+
+        /// <summary>
+        /// Apply SQL query and argument to command using QueryConfig for parameter naming.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="config">Query configuration for parameter naming.</param>
+        /// <param name="query">Query to be executed (to signal an argument, use '?').</param>
+        /// <param name="args">Arguments to be used.</param>
+        /// <returns></returns>
+        public static DbCommand SetQuery(this DbCommand command, QueryConfig config, string query, params object[] args)
+        {
+            var builder = new QueryBuilder(new ReadonlyQueryInfo(config, new DbName("temp")));
+            return command.SetExpression(config, builder.Add(query, args).ToExpression());
         }
 
         /// <summary>
@@ -153,9 +183,31 @@ namespace SharpOrm
         /// <param name="query">Query to be executed (to signal an argument, use '?').</param>
         /// <param name="args">Arguments to be used.</param>
         /// <returns></returns>
+        [Obsolete("This method will be removed in version 4.0. Use SetQuery overload that accepts QueryConfig for proper parameter naming.", false)]
         public static DbCommand SetQuery(this DbCommand command, string query, params object[] args)
         {
             return command.SetExpression(new QueryBuilder().Add(query, args).ToExpression());
+        }
+
+        /// <summary>
+        /// Apply SqlExpression to command using QueryConfig for parameter naming.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="expression">Expression to be executed.</param>
+        /// <param name="config">Query configuration for parameter naming.</param>
+        /// <returns></returns>
+        public static DbCommand SetExpression(this DbCommand command, QueryConfig config, SqlExpression expression)
+        {
+            command.CommandText = DecodeExpressionString(expression, config);
+            command.Parameters.Clear();
+
+            for (int i = 0; i < expression.Parameters.Length; i++)
+            {
+                string paramName = GetParameterName(expression, i, config);
+                command.AddParam(paramName, expression.Parameters[i]);
+            }
+
+            return command;
         }
 
         /// <summary>
@@ -164,6 +216,7 @@ namespace SharpOrm
         /// <param name="command"></param>
         /// <param name="expression">Expression to be executed.</param>
         /// <returns></returns>
+        [Obsolete("This method will be removed in version 4.0. Use SetExpressionWithConfig method that properly handles parameter naming through QueryConfig.", false)]
         public static DbCommand SetExpression(this DbCommand command, SqlExpression expression)
         {
             command.CommandText = DecodeExpressionString(expression);
@@ -175,9 +228,38 @@ namespace SharpOrm
             return command;
         }
 
+        internal static string DecodeExpressionString(SqlExpression expression, QueryConfig config)
+        {
+            string rawExpressionString = expression.ToString();
+            var result = new StringBuilder();
+
+            int paramIndex = 0;
+
+            for (int i = 0; i < rawExpressionString.Length; i++)
+                if (rawExpressionString[i] == '?') result.Append(GetParameterName(expression, paramIndex++, config));
+                else result.Append(rawExpressionString[i]);
+
+            return result.ToString();
+        }
+
+        [Obsolete]
         internal static string DecodeExpressionString(SqlExpression expression)
         {
             return expression.ToString().Replace('?', expression.GetParamName);
+        }
+
+        private static string GetParameterName(SqlExpression expression, int index, QueryConfig config)
+        {
+            // Check if the parameter is a QueryParam first
+            if (expression.Parameters[index] is QueryParam param)
+                return param.Name;
+
+            // Use QueryConfig if available
+            if (config != null)
+                return config.CreateParameterName(index + 1);
+
+            // Fallback to old method for backwards compatibility
+            return expression.GetParamName(index + 1);
         }
     }
 }

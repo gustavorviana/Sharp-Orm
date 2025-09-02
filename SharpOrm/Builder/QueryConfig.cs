@@ -191,5 +191,15 @@ namespace SharpOrm.Builder
 
             return builder.Append(escapeChar).ToString();
         }
+
+        /// <summary>
+        /// Creates a parameter name for the SQL query.
+        /// </summary>
+        /// <param name="index">The parameter index.</param>
+        /// <returns>The parameter name.</returns>
+        public virtual string CreateParameterName(int index)
+        {
+            return $"@p{index}";
+        }
     }
 }
