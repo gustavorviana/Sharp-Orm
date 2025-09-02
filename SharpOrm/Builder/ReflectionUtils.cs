@@ -104,6 +104,28 @@ namespace SharpOrm.Builder
                 targetProp.SetValue(target, srcProp.GetValue(source));
         }
 
+        public static void CloneFields(object source, object target, params string[] exceptNames)
+        {
+            var type = source.GetType();
+            if (type != target.GetType())
+                throw new ArgumentException("Source and target must be of the same type");
+
+            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                if (!Array.Exists(exceptNames, n => n == field.Name))
+                    field.SetValue(target, field.GetValue(source));
+        }
+
+        public static void CloneProperties(object source, object target, params string[] exceptNames)
+        {
+            var type = source.GetType();
+            if (type != target.GetType())
+                throw new ArgumentException("Source and target must be of the same type");
+
+            foreach (var prop in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+                if (prop.CanRead && prop.CanWrite && !Array.Exists(exceptNames, n => n == prop.Name))
+                    prop.SetValue(target, prop.GetValue(source));
+        }
+
         public static bool IsNullable(Type type)
         {
             return Nullable.GetUnderlyingType(type) != null;
