@@ -1,10 +1,14 @@
 ﻿using DbRunTest.Comparators;
+using SharpOrm.Builder.Tables;
+using SharpOrm.Builder.Tables.Loaders;
 using SharpOrm.DataTranslation;
+using SharpOrm.DataTranslation.Reader;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -28,25 +32,21 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets an array of column information for the table.
         /// </summary>
-        public ColumnInfo[] Columns { get; }
+        public ColumnCollection Columns { get; }
 
         public SoftDeleteAttribute SoftDelete { get; }
 
         public HasTimestampAttribute Timestamp { get; }
 
-        internal bool IsManualMap { get; }
-
-        internal TableInfo(Type type, TranslationRegistry registry, string name, SoftDeleteAttribute softDelete, HasTimestampAttribute timestamp, IEnumerable<ColumnTreeInfo> columns)
+        internal TableInfo(ITableInfo info)
         {
-            IsManualMap = true;
+            Timestamp = info.Timestamp;
+            _registry = info.Registry;
+            Type = info.Type;
+            Name = info.Name;
 
-            Timestamp = timestamp;
-            _registry = registry;
-            Type = type;
-            Name = name;
-
-            Columns = columns.ToArray();
-            SoftDelete = softDelete;
+            Columns = info.ColumnLoader.LoadColumns();
+            SoftDelete = info.SoftDelete;
         }
 
         internal TableInfo(Type type, TranslationRegistry registry)
@@ -57,31 +57,22 @@ namespace SharpOrm.Builder
             Type = type;
             _registry = registry;
             Name = GetNameOf(type);
-            Columns = GetColumns().ToArray();
+            Columns = new ColumnLoader(type, registry).LoadColumns().Build();
             SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
             Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
         }
 
         public ColumnInfo[] GetPrimaryKeys()
         {
-            return this.Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
+            return Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
         }
 
         public IEnumerable<ColumnInfo> GetColumns<T>(Expression<ColumnExpression<T>>[] calls, bool except)
         {
             var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
 
-            if (except) this.Columns.Where(x => !props.ContainsIgnoreCase(x.PropName));
-            return this.Columns.Where(x => props.ContainsIgnoreCase(x.PropName));
-        }
-
-        private IEnumerable<ColumnInfo> GetColumns()
-        {
-            foreach (var prop in this.Type.GetProperties(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
-                yield return new ColumnInfo(_registry, prop);
-
-            foreach (var field in this.Type.GetFields(Bindings.PublicInstance).Where(ColumnInfo.CanWork))
-                yield return new ColumnInfo(_registry, field);
+            if (except) Columns.Where(x => !props.ContainsIgnoreCase(x.PropName));
+            return Columns.Where(x => props.ContainsIgnoreCase(x.PropName));
         }
 
         /// <summary>
@@ -187,7 +178,7 @@ namespace SharpOrm.Builder
 
         public override string ToString()
         {
-            return string.Format("{0}: {1}", this.Name, this.Type);
+            return string.Format("{0}: {1}", Name, Type);
         }
 
         internal static string GetNameOf(Type type)
@@ -208,7 +199,7 @@ namespace SharpOrm.Builder
 
         public ColumnInfo GetColumn(string name)
         {
-            return this.Columns.FirstOrDefault(c => c.Name == name);
+            return Columns.Find(name);
         }
 
         internal ColumnInfo GetColumn(MemberInfo member)

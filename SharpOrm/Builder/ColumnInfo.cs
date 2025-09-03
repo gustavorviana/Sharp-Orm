@@ -79,6 +79,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="fieldInfo">The field information.</param>
+        [Obsolete]
         public ColumnInfo(TranslationRegistry registry, FieldInfo fieldInfo) : this(fieldInfo, fieldInfo.FieldType, registry, registry.GetOf(fieldInfo))
         {
         }
@@ -88,6 +89,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="propertyInfo">The property information.</param>
+        [Obsolete]
         public ColumnInfo(TranslationRegistry registry, PropertyInfo propertyInfo) : this(propertyInfo, propertyInfo.PropertyType, registry, registry.GetOf(propertyInfo))
         {
         }
@@ -100,7 +102,7 @@ namespace SharpOrm.Builder
             IsNative = TranslationUtils.IsNative(type, false);
             MapNested = member.GetCustomAttribute<MapNestedAttribute>();
 
-            ForeignInfo = GetForeign();
+            ForeignInfo = GetForeign(member);
 
             ColumnAttribute colAttr = GetAttribute<ColumnAttribute>();
 
@@ -134,9 +136,15 @@ namespace SharpOrm.Builder
             return member.GetCustomAttribute<KeyAttribute>() != null || member.Name.Equals("id", StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static bool CanWork(PropertyInfo prop)
+        internal static bool CanWork(MemberInfo member)
         {
-            return prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null;
+            if (member.GetCustomAttribute<NotMappedAttribute>() != null)
+                return false;
+
+            if (member is PropertyInfo prop)
+                return prop.CanRead && prop.CanWrite;
+
+            return member is FieldInfo field && !field.IsInitOnly;
         }
 
         internal static bool CanWork(FieldInfo field)
@@ -144,15 +152,20 @@ namespace SharpOrm.Builder
             return !field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null;
         }
 
-        private ForeignAttribute GetForeign()
+        internal static ForeignAttribute GetForeign(MemberInfo info)
         {
-            if (this.GetAttribute<ForeignAttribute>() is ForeignAttribute fka)
+            if (info.GetCustomAttribute<ForeignAttribute>() is ForeignAttribute fka)
                 return fka;
 
-            var attr = this.GetAttribute<ForeignKeyAttribute>();
+            var attr = info.GetCustomAttribute<ForeignKeyAttribute>();
             if (attr == null) return null;
 
             return new ForeignAttribute(attr.Name);
+        }
+
+        internal static bool IsForeign(MemberInfo prop)
+        {
+            return prop.GetCustomAttribute<ForeignAttribute>() != null || prop.GetCustomAttribute<ForeignKeyAttribute>() != null;
         }
 
         public static string GetName(MemberInfo member)

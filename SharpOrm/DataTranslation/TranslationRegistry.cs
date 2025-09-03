@@ -120,6 +120,11 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Gets or sets the mode for mapping nested objects.
+        /// </summary>
+        public NestedMode NestedMapMode { get; set; } = NestedMode.Attribute;
+
+        /// <summary>
         /// Converts a C# value to the database.
         /// </summary>
         /// <param name="value">The value to be converted.</param>
@@ -261,7 +266,7 @@ namespace SharpOrm.DataTranslation
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException(typeof(ModelMapper<T>).FullName + "." + nameof(ModelMapper<T>.Name));
 
-            var table = new TableInfo(type, map.Registry, map.Name, map._softDelete, map._timestamp, map.GetFields());
+            var table = new TableInfo(map);
             _mappedTables.TryAdd(type, table);
             return table;
         }

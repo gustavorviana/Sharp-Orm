@@ -12,6 +12,7 @@ namespace BaseTest.Fixtures
         public DbFixtureBase()
         {
             Creator = MakeConnectionCreator();
+            Creator.Config.Translation = new SharpOrm.DataTranslation.TranslationRegistry();
             Manager = MakeManager();
         }
 

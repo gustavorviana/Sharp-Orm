@@ -4,6 +4,7 @@ using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using SharpOrm.Msg;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,7 +82,7 @@ namespace SharpOrm.Builder
 
             var table = registry.GetTable(typeof(T));
             var cols = new TableColumnCollection();
-            cols.AddColumns(table.Columns);
+            cols.AddColumns(table.Columns.ToArray());
 
             return Create(new TableSchema(table.Name, cols) { Temporary = temporary }, manager);
         }

@@ -15,7 +15,7 @@ namespace QueryTest.DataTranslation
         public void DefaultRegistry_ShouldHaveDefaultSettings()
         {
             // Act
-            var registry = TranslationRegistry.Default;
+            var registry = new TranslationRegistry();
 
             // Assert
             Assert.NotNull(registry);

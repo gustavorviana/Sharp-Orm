@@ -1,0 +1,16 @@
+﻿using System.Collections.Generic;
+
+namespace SharpOrm.Builder.Tables.Loaders
+{
+    /// <summary>
+    /// Interface for objects that can load column information.
+    /// </summary>
+    public interface IColumnLoader
+    {
+        /// <summary>
+        /// Loads column information based on the implementation strategy.
+        /// </summary>
+        /// <returns>An enumerable of column information.</returns>
+        ColumnCollection LoadColumns();
+    }
+}
