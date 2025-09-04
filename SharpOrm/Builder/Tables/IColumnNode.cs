@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-
-namespace SharpOrm.Builder.Tables
+﻿namespace SharpOrm.Builder.Tables
 {
-    public interface IColumnNode
+    public interface IColumnNode : IWithColumnNode
     {
-        IReadOnlyList<IColumnNode> Children { get; }
         ColumnInfo Column { get; }
+        bool IsCollection { get; }
     }
 }

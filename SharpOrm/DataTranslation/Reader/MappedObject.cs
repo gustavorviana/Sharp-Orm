@@ -8,8 +8,10 @@ using System.Linq;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
+    /// **Obsolete:** This class is deprecated and will be replaced by <see cref="SharpOrm.DataTranslation.Mappers.ObjectRecordMapper"/> in version 4.0.
     /// Represents an object that can be mapped from a database record.
     /// </summary>
+    [Obsolete("MappedObject is deprecated and will be replaced by ObjectRecordMapper in version 4.0.")]
     public class MappedObject : IMappedObject
     {
         private readonly List<MappedObject> _childrens = new List<MappedObject>();
@@ -72,6 +74,9 @@ namespace SharpOrm.DataTranslation.Reader
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
+            if (type == typeof(Row))
+                return new MappedRowObject(registry);
+
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(record, registry);
 
@@ -80,9 +85,6 @@ namespace SharpOrm.DataTranslation.Reader
 
         internal static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)
         {
-            if (type == typeof(Row))
-                return new MappedRowObject(registry);
-
             return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue())
             {
                 Node = node
@@ -121,7 +123,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         private void MapNodeChildrens(IDataRecord record, IColumnNode node)
         {
-            if (node.Children.Count == 0)
+            if (node.Nodes.Count == 0)
             {
                 MapNode(record, node);
                 return;
@@ -130,7 +132,7 @@ namespace SharpOrm.DataTranslation.Reader
             //var owner = new MappedObject(node.Column.Type, _registry, _fkQueue) { _parentColumn = node.Column, _parent = this };
             //owner.InitActivator(record);
 
-            foreach (var children in node.Children)
+            foreach (var children in node.Nodes)
                 MapNodeChildrens(record, children);
 
             //_childrens.Add(owner);
@@ -146,7 +148,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         private bool NodeExists(IColumnNode node)
         {
-            return !Node?.Exists(node.Column.column) ?? false;
+            return !Node?.Exists(node.Column._column) ?? false;
         }
 
         private void RegisterForeignNode(ForeignKeyNode node, IDataRecord record)
@@ -172,7 +174,7 @@ namespace SharpOrm.DataTranslation.Reader
             InitActivator(record);
 
             foreach (var info in node.Columns)
-                if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo.column))
+                if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo._column))
                     AddIfValidId(record, info.Alias + info.ForeignInfo.ForeignKey, info.ColumnInfo, true);
                 else if (NeedMapAsValue(info.ColumnInfo))
                     AddIfValidId(record, info.Alias, info.ColumnInfo);
@@ -280,7 +282,7 @@ namespace SharpOrm.DataTranslation.Reader
 
             public override bool Equals(object obj)
             {
-                return Column.column.Equals(obj);
+                return Column._column.Equals(obj);
             }
 
             public override string ToString()

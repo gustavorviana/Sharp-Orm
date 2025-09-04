@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
     public class ColumnInfo : IEquatable<ColumnInfo>, IColumnInfo
     {
         #region Properties
-        protected internal readonly MemberInfo column;
+        protected internal readonly MemberInfo _column;
         public ValidationAttribute[] Validations { get; }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets the type of the declaring class.
         /// </summary>
-        public Type DeclaringType => this.column.DeclaringType;
+        public Type DeclaringType => _column.DeclaringType;
 
         /// <summary>
         /// Gets the type of the column.
@@ -67,7 +67,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool DatabaseGenerated { get; }
 
-        public string PropName => this.column?.Name;
+        public string PropName => _column?.Name;
 
         public MapNestedAttribute MapNested { get; }
 
@@ -97,7 +97,7 @@ namespace SharpOrm.Builder
         private ColumnInfo(MemberInfo member, Type type, TranslationRegistry registry, ISqlTranslation translation)
         {
             Type = type;
-            column = member;
+            _column = member;
             Translation = translation ?? registry.GetFor(Type);
             IsNative = TranslationUtils.IsNative(type, false);
             MapNested = member.GetCustomAttribute<MapNestedAttribute>();
@@ -110,14 +110,14 @@ namespace SharpOrm.Builder
             Name = colAttr?.Name ?? member.Name;
             Order = colAttr?.Order ?? -1;
 
-            Key = Iskey(column);
-            Validations = column.GetCustomAttributes<ValidationAttribute>().ToArray();
+            Key = Iskey(_column);
+            Validations = _column.GetCustomAttributes<ValidationAttribute>().ToArray();
             DatabaseGenerated = GetAttribute<DatabaseGeneratedAttribute>() != null;
         }
 
         internal ColumnInfo(MemberInfo member, IColumnInfo map, TranslationRegistry registry)
         {
-            column = member;
+            _column = member;
             Type = ReflectionUtils.GetMemberType(member);
             IsNative = TranslationUtils.IsNative(Type, false);
 
@@ -180,7 +180,7 @@ namespace SharpOrm.Builder
         /// <returns>The attribute instance if found; otherwise, <c>null</c>.</returns>
         public T GetAttribute<T>() where T : Attribute
         {
-            return this.column.GetCustomAttribute<T>();
+            return _column.GetCustomAttribute<T>();
         }
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace SharpOrm.Builder
         /// <param name="value">The value to set.</param>
         public void Set(object owner, object value)
         {
-            this.SetRaw(owner, this.Translation.FromSqlValue(value, this.GetValidValueType()));
+            SetRaw(owner, Translation.FromSqlValue(value, GetValidValueType()));
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace SharpOrm.Builder
         /// <param name="value">The raw value to set.</param>
         public virtual void SetRaw(object owner, object value)
         {
-            ReflectionUtils.SetMemberValue(this.column, owner, value);
+            ReflectionUtils.SetMemberValue(_column, owner, value);
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace SharpOrm.Builder
         /// <returns>The raw value of the column.</returns>
         public virtual object GetRaw(object owner)
         {
-            return ReflectionUtils.GetMemberValue(this.column, owner);
+            return ReflectionUtils.GetMemberValue(_column, owner);
         }
 
         protected Type GetValidValueType()
@@ -273,7 +273,7 @@ namespace SharpOrm.Builder
             if (value == DBNull.Value)
                 value = null;
 
-            context.MemberName = column.Name;
+            context.MemberName = _column.Name;
 
             for (int i = 0; i < Validations.Length; i++)
                 Validations[i].Validate(value, context);

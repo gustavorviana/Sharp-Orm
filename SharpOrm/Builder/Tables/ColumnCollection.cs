@@ -1,18 +1,12 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace SharpOrm.Builder.Tables
 {
-    public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, ITreeAdd<ColumnCollection.ColumnNode>
+    public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, ITreeAdd<ColumnCollection.ColumnNode>, IWithColumnNode
     {
         private readonly Dictionary<string, List<ColumnInfo>> _columnLookup = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
         private readonly List<ColumnNode> _nodes = new List<ColumnNode>();
@@ -53,7 +47,7 @@ namespace SharpOrm.Builder.Tables
             var currentNode = _nodes.FirstOrDefault(x => x.Column.PropName == path[0]);
 
             for (int i = 1; i < path.Length && currentNode != null; i++)
-                currentNode = currentNode.Children.FirstOrDefault(x => x.Column.PropName == path[i]);
+                currentNode = currentNode.Nodes.FirstOrDefault(x => x.Column.PropName == path[i]);
 
             return currentNode;
         }
@@ -109,26 +103,28 @@ namespace SharpOrm.Builder.Tables
             private readonly ColumnCollection _owner;
 
             public ColumnInfo Column { get; }
-            public List<ColumnNode> Children { get; } = new List<ColumnNode>();
+            public List<ColumnNode> Nodes { get; } = new List<ColumnNode>();
 
-            IReadOnlyList<IColumnNode> IColumnNode.Children => Children;
+            IReadOnlyList<IColumnNode> IWithColumnNode.Nodes => Nodes;
+
+            public bool IsCollection { get; }
 
             public ColumnNode(ColumnCollection root, ColumnInfo column)
             {
                 _owner = root ?? throw new ArgumentNullException(nameof(root));
                 Column = column ?? throw new ArgumentNullException(nameof(column));
-                Children = new List<ColumnNode>();
+                IsCollection = ReflectionUtils.IsCollection(column.Type);
             }
 
             internal IEnumerable<ColumnInfo> Flatten()
             {
-                if (Children.Count == 0)
+                if (Nodes.Count == 0)
                 {
                     yield return Column;
                     yield break;
                 }
 
-                foreach (var child in Children)
+                foreach (var child in Nodes)
                     foreach (var descendant in child.Flatten())
                         yield return descendant;
             }
@@ -137,10 +133,10 @@ namespace SharpOrm.Builder.Tables
             {
                 var node = new ColumnNode(_owner, column);
 
-                if (Children.Count == 0)
+                if (Nodes.Count == 0)
                     _owner.RemoveLookup(Column);
 
-                Children.Add(node);
+                Nodes.Add(node);
                 _owner.AddLookup(column);
 
                 return node;
@@ -148,12 +144,12 @@ namespace SharpOrm.Builder.Tables
 
             internal ColumnNode Build()
             {
-                if (Children.Count == 0)
+                if (Nodes.Count == 0)
                     return this;
 
                 _owner.RemoveLookup(Column);
 
-                foreach (var child in Children)
+                foreach (var child in Nodes)
                     child.Build();
 
                 return this;

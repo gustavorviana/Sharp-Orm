@@ -2,7 +2,6 @@
 using SharpOrm.Builder.Tables;
 using SharpOrm.Builder.Tables.Loaders;
 using SharpOrm.DataTranslation;
-using SharpOrm.DataTranslation.Reader;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -139,7 +138,7 @@ namespace SharpOrm.Builder
 
         internal object GetValue(object owner, MemberInfo column)
         {
-            if (!(this.Columns.FirstOrDefault(c => c.column == column) is ColumnInfo col))
+            if (!(this.Columns.FirstOrDefault(c => c._column == column) is ColumnInfo col))
                 throw new KeyNotFoundException(string.Format(Messages.Table.KeyNotFound, column.Name, this.Type.FullName));
 
             return col.Get(owner);
@@ -204,7 +203,7 @@ namespace SharpOrm.Builder
 
         internal ColumnInfo GetColumn(MemberInfo member)
         {
-            return Columns.FirstOrDefault(c => MemberInfoComparator.Default.Equals(c.column, member));
+            return Columns.FirstOrDefault(c => MemberInfoComparator.Default.Equals(c._column, member));
         }
     }
 }

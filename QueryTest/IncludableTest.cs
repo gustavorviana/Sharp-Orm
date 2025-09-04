@@ -45,8 +45,8 @@ namespace QueryTest
             );
 
             CollectionAssert.ContainsAll(
-                node.Columns.Select(x => x.ColumnInfo.column),
-                node.TableInfo.Columns.Select(x => x.column)
+                node.Columns.Select(x => x.ColumnInfo._column),
+                node.TableInfo.Columns.Select(x => x._column)
             );
 
             CollectionAssert.ContainsAll(

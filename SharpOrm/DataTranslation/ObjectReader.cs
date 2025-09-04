@@ -194,7 +194,7 @@ namespace SharpOrm.DataTranslation
 
             public ColumnInfo[] GetColumns(IEnumerable<ColumnInfo> columns)
             {
-                return columns.Where(x => _members.Contains(x.column) == _needContains).ToArray();
+                return columns.Where(x => _members.Contains(x._column) == _needContains).ToArray();
             }
         }
 

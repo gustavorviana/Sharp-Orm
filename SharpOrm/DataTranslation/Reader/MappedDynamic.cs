@@ -6,8 +6,11 @@ using System.Dynamic;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
+    /// **Obsolete:** This class is deprecated and will be removed in version 4.0.
     /// Represents a dynamically mapped object from a database record.
+    /// Use <see cref="DynamicRecordMapper"/> instead.
     /// </summary>
+    [Obsolete("MappedDynamic is deprecated and will be removed in version 4.0. Use DynamicRecordMapper instead.")]
     public class MappedDynamic : IMappedObject
     {
         private readonly List<DbColumnReader> columns = new List<DbColumnReader>();
