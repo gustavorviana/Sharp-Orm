@@ -1,11 +1,15 @@
-﻿using System;
+﻿using SharpOrm.Collections;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace SharpOrm.Builder.Tables
 {
+    [DebuggerDisplay("Count = {Count}")]
+    [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
     public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, ITreeAdd<ColumnCollection.ColumnNode>, IWithColumnNode
     {
         private readonly Dictionary<string, List<ColumnInfo>> _columnLookup = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
@@ -16,6 +20,11 @@ namespace SharpOrm.Builder.Tables
         public int Count => _columnLookup.Count;
 
         public IEnumerator<ColumnInfo> GetEnumerator() => _columnLookup.Values.Select(x => x.FirstOrDefault()).GetEnumerator();
+
+        internal ColumnCollection()
+        {
+
+        }
 
         public ColumnInfo Find(string name)
         {
@@ -156,6 +165,19 @@ namespace SharpOrm.Builder.Tables
             }
 
             ITreeAdd<ColumnCollection.ColumnNode> ITreeAdd<ColumnCollection.ColumnNode>.Add(ColumnInfo column) => Add(column);
+        }
+
+        internal sealed class ColumnCollection_DebugView
+        {
+            private readonly ColumnCollection _collection;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public ColumnInfo[] Items => _collection.ToArray();
+
+            public ColumnCollection_DebugView(ColumnCollection collection)
+            {
+                _collection = collection;
+            }
         }
     }
 }

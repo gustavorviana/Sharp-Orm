@@ -1,10 +1,10 @@
 ﻿using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.DataTranslation;
-using SharpOrm.DataTranslation.Mappers;
+using SharpOrm.DataTranslation.Reader;
 using System.Dynamic;
 
-namespace QueryTest.DataTranslation.Mappers
+namespace QueryTest.DataTranslation.Reader
 {
     public class DynamicRecordMapperTests : DbMockTest
     {
@@ -24,7 +24,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("Active", active)
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             mapper.MoveNext();
@@ -52,7 +52,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("OptionalField", null)
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             mapper.MoveNext();
@@ -83,7 +83,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("ByteField", (byte)255)
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             mapper.MoveNext();
@@ -105,7 +105,7 @@ namespace QueryTest.DataTranslation.Mappers
             // Arrange
             var reader = GetReader(); // Empty reader
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             mapper.MoveNext();
@@ -123,7 +123,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("Name", "Test")
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             var result = mapper.MoveNext();
@@ -141,7 +141,7 @@ namespace QueryTest.DataTranslation.Mappers
         {
             // Arrange
             var reader = GetReader(); // Empty reader
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             var result = mapper.MoveNext();
@@ -165,7 +165,7 @@ namespace QueryTest.DataTranslation.Mappers
                 3 // 3 records
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             var results = new List<dynamic>();
@@ -194,7 +194,7 @@ namespace QueryTest.DataTranslation.Mappers
         public void Constructor_WithNullReader_ShouldThrowArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DynamicRecordMapper(null, Translation));
+            Assert.Throws<ArgumentNullException>(() => new DynamicRecordReader(null, Translation));
         }
 
         [Fact]
@@ -204,7 +204,7 @@ namespace QueryTest.DataTranslation.Mappers
             var reader = GetReader(new Cell("Id", 1));
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DynamicRecordMapper(reader, null));
+            Assert.Throws<ArgumentNullException>(() => new DynamicRecordReader(reader, null));
         }
 
         [Fact]
@@ -219,7 +219,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("TestString", "original_value")
             );
 
-            var mapper = new DynamicRecordMapper(reader, customRegistry);
+            var mapper = new DynamicRecordReader(reader, customRegistry);
 
             // Act
             mapper.MoveNext();
@@ -240,7 +240,7 @@ namespace QueryTest.DataTranslation.Mappers
                 new Cell("Column.With.Dots", "value3")
             );
 
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act
             mapper.MoveNext();
@@ -258,7 +258,7 @@ namespace QueryTest.DataTranslation.Mappers
         {
             // Arrange
             var reader = GetReader(new Cell("Id", 1));
-            var mapper = new DynamicRecordMapper(reader, Translation);
+            var mapper = new DynamicRecordReader(reader, Translation);
 
             // Act & Assert
             Assert.Throws<NotSupportedException>(() => ((System.Collections.IEnumerator)mapper).Reset());

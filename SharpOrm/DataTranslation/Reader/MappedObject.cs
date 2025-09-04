@@ -8,7 +8,7 @@ using System.Linq;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
-    /// **Obsolete:** This class is deprecated and will be replaced by <see cref="SharpOrm.DataTranslation.Mappers.ObjectRecordMapper"/> in version 4.0.
+    /// **Obsolete:** This class is deprecated and will be replaced by <see cref="Reader.ObjectRecordReader"/> in version 4.0.
     /// Represents an object that can be mapped from a database record.
     /// </summary>
     [Obsolete("MappedObject is deprecated and will be replaced by ObjectRecordMapper in version 4.0.")]

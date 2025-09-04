@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Data;
+using System.Threading;
 
-namespace SharpOrm.DataTranslation.Mappers
+namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
     /// Provides a base implementation for mapping data from an <see cref="IDataReader"/> to objects.
@@ -11,6 +12,8 @@ namespace SharpOrm.DataTranslation.Mappers
     /// </summary>
     public abstract class BaseRecordReader : IEnumerator, IEnumerable
     {
+        public CancellationToken Token { get; set; }
+
         /// <summary>
         /// Gets the <see cref="IDataReader"/> used to read database records.
         /// </summary>
@@ -40,14 +43,22 @@ namespace SharpOrm.DataTranslation.Mappers
 
         public bool MoveNext()
         {
-            if (!Reader.Read())
+            try
+            {
+                if (Token.IsCancellationRequested || !Reader.Read())
+                {
+                    Current = null;
+                    return false;
+                }
+
+                Current = OnRead();
+                return true;
+            }
+            catch (Exception)
             {
                 Current = null;
-                return false;
+                throw;
             }
-
-            Current = OnRead();
-            return true;
         }
 
         /// <summary>

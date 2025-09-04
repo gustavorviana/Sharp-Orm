@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Dynamic;
 
-namespace SharpOrm.DataTranslation.Mappers
+namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
     /// Maps the columns of an <see cref="IDataRecord"/> to a dynamic object (<see cref="ExpandoObject"/>).
@@ -13,14 +13,14 @@ namespace SharpOrm.DataTranslation.Mappers
     /// Implements <see cref="BaseRecordReader"/> to provide a standardized way to map database records
     /// to dynamic objects, especially useful when the target structure is not known at compile time.
     /// </summary>
-    public class DynamicRecordMapper : BaseRecordReader
+    internal class DynamicRecordReader : BaseRecordReader
     {
         private readonly List<DbColumn> _columns = new List<DbColumn>();
 
         public new dynamic Current => base.Current;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DynamicRecordMapper"/> class.
+        /// Initializes a new instance of the <see cref="DynamicRecordReader"/> class.
         /// Prepares internal column mappings based on the given <see cref="IDataRecord"/>.
         /// </summary>
         /// <param name="record">The database record containing column names and types.</param>
@@ -28,7 +28,7 @@ namespace SharpOrm.DataTranslation.Mappers
         /// The translation registry to handle type conversions. 
         /// If null, the default registry (<see cref="TranslationRegistry.Default"/>) is used.
         /// </param>
-        public DynamicRecordMapper(IDataReader reader, TranslationRegistry registry) : base(reader, registry)
+        public DynamicRecordReader(IDataReader reader, TranslationRegistry registry) : base(reader, registry)
         {
             for (int i = 0; i < reader.FieldCount; i++)
                 _columns.Add(new DbColumn(registry, reader.GetName(i), reader.GetFieldType(i)));

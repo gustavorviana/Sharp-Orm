@@ -1,17 +1,16 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
-using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Collections.Generic;
 using System.Data;
 
-namespace SharpOrm.DataTranslation.Mappers
+namespace SharpOrm.DataTranslation.Reader
 {
-    public class ObjectRecordMapper : BaseRecordReader
+    internal class ObjectRecordReader : BaseRecordReader
     {
         private readonly ReaderObject _mainObject;
 
-        public ObjectRecordMapper(TableInfo table, IDataReader reader, TranslationRegistry registry) : base(reader, registry)
+        public ObjectRecordReader(TableInfo table, IDataReader reader, TranslationRegistry registry) : base(reader, registry)
         {
             _mainObject = new ReaderObject(table.Type, table.Columns, reader, registry);
         }
