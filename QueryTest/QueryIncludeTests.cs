@@ -64,7 +64,7 @@ namespace QueryTest
             var address2 = _query.Include(x => x.Address);
             var address3 = address2.Include(x => x.Address);
 
-            var orders1 = _query.Include(x => x.Orders);
+            var orders1 = address3.Include(x => x.Orders);
             var orders2 = _query.Include(x => x.Orders);
 
             Assert.Equal(orders1, orders2);
