@@ -80,7 +80,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(record, registry);
 
-            return Create(record, type, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyRegister, registry);
+            return Create(record, type, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyNode, registry);
         }
 
         internal static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)

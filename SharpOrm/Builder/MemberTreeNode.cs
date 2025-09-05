@@ -62,17 +62,17 @@ namespace SharpOrm.Builder
             return new MemberTreeNode(memberInfo, attr).MapChildren(memberInfo, mode);
         }
 
-        internal static bool NeedMapNested(MemberInfo member, NestedMode mode)
+        private static bool NeedMapNested(MemberInfo member, NestedMode mode)
         {
             return ReflectionUtils.GetMemberType(member).GetCustomAttribute<OwnedAttribute>() != null || mode == NestedMode.All;
         }
 
-        internal static MapNestedAttribute GetNestedInfo(MemberInfo member)
+        private static MapNestedAttribute GetNestedInfo(MemberInfo member)
         {
             return member.GetCustomAttribute<MapNestedAttribute>();
         }
 
-        internal static bool IsValueMember(MemberInfo member)
+        private static bool IsValueMember(MemberInfo member)
         {
             return TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false) ||
                 ColumnInfo.IsForeign(member) ||

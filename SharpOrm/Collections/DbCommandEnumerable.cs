@@ -24,8 +24,6 @@ namespace SharpOrm.Collections
         internal NestedMode mode = NestedMode.Attribute;
         private readonly CancellationToken _token;
         private readonly DbCommand _command;
-        internal IFkQueue _fkQueue;
-        private bool _hasFirstRun;
 
         /// <summary>
         /// Gets or sets a value indicating whether to dispose the command after execution.
@@ -89,10 +87,6 @@ namespace SharpOrm.Collections
 
         private void CheckRun()
         {
-            if (_hasFirstRun)
-                throw new InvalidOperationException(Messages.EnumerableCanExecuteOnce);
-
-            _hasFirstRun = true;
             _command.Connection.OpenIfNeeded();
         }
 
@@ -103,6 +97,7 @@ namespace SharpOrm.Collections
             {
                 var enumerator = _readerFactory.OfType(typeof(T), reader, _translation);
                 enumerator.Token = _token;
+
                 return enumerator;
             }
 
@@ -112,7 +107,7 @@ namespace SharpOrm.Collections
         [Obsolete]
         private IMappedObject CreateMappedObj(IDataReader reader)
         {
-            return MappedObject.Create(reader, typeof(T), mode, _fkQueue, _translation);
+            return MappedObject.Create(reader, typeof(T), mode, null, _translation);
         }
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator

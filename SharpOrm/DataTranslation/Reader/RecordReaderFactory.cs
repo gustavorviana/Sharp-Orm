@@ -11,6 +11,8 @@ namespace SharpOrm.DataTranslation.Reader
 
     public class RecordReaderFactory : IRecordReaderFactory
     {
+        internal ForeignInfo ForeignInfo { get; set; }
+
         public BaseRecordReader OfType(Type type, IDataReader reader, TranslationRegistry registry)
         {
             if (type == null)
@@ -25,7 +27,7 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new DynamicRecordReader(reader, registry);
 
-            return new ObjectRecordReader(registry.GetTable(type), reader, registry);
+            return new ObjectRecordReader(ForeignInfo, registry.GetTable(type), reader);
         }
     }
 }

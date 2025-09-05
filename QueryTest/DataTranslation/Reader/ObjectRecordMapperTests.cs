@@ -22,7 +22,7 @@ namespace QueryTest.DataTranslation.Reader
             );
 
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             mapper.MoveNext();
@@ -49,7 +49,7 @@ namespace QueryTest.DataTranslation.Reader
             );
 
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             mapper.MoveNext();
@@ -76,7 +76,7 @@ namespace QueryTest.DataTranslation.Reader
             );
 
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             mapper.MoveNext();
@@ -95,7 +95,7 @@ namespace QueryTest.DataTranslation.Reader
             // Arrange
             var reader = GetReader(new Cell("Id", 1), new Cell("Name", "Test"));
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             var result = mapper.MoveNext();
@@ -112,7 +112,7 @@ namespace QueryTest.DataTranslation.Reader
             // Arrange
             var reader = GetReader(); // Empty reader
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             var result = mapper.MoveNext();
@@ -137,7 +137,7 @@ namespace QueryTest.DataTranslation.Reader
             );
 
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             var results = new List<CustomerWithoutAddress>();
@@ -160,7 +160,7 @@ namespace QueryTest.DataTranslation.Reader
             // Arrange
             var reader = GetReader(new Cell("Id", 1));
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act & Assert
             Assert.Throws<NotSupportedException>(() => ((System.Collections.IEnumerator)mapper).Reset());
@@ -173,18 +173,7 @@ namespace QueryTest.DataTranslation.Reader
             var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ObjectRecordReader(tableInfo, null, Translation));
-        }
-
-        [Fact]
-        public void Constructor_WithNullRegistry_ShouldThrowArgumentNullException()
-        {
-            // Arrange
-            var reader = GetReader(new Cell("Id", 1));
-            var tableInfo = Translation.GetTable(typeof(CustomerWithoutAddress));
-
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ObjectRecordReader(tableInfo, reader, null));
+            Assert.Throws<ArgumentNullException>(() => new ObjectRecordReader(null, tableInfo, null));
         }
 
         [Fact]
@@ -205,7 +194,7 @@ namespace QueryTest.DataTranslation.Reader
 
             Translation.NestedMapMode = SharpOrm.Builder.NestedMode.All;
             var tableInfo = Translation.GetTable(typeof(ComplexNestedObject));
-            var mapper = new ObjectRecordReader(tableInfo, reader, Translation);
+            var mapper = new ObjectRecordReader(null, tableInfo, reader);
 
             // Act
             mapper.MoveNext();

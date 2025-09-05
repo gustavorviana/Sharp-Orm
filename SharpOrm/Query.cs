@@ -508,7 +508,7 @@ namespace SharpOrm
             {
                 ConfigurePendingColumns();
                 using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(Info.Config.NewGrammar(this).Select()))
-                    foreach (var item in ConfigureFkLoader(cmd.ExecuteEnumerable<K>(true)))
+                    foreach (var item in ExecuteEnumerableWithForeign<K>(cmd))
                         yield return item;
             }
             finally
@@ -517,14 +517,18 @@ namespace SharpOrm
             }
         }
 
-        private IEnumerable<K> ConfigureFkLoader<K>(DbCommandEnumerable<K> enumerable)
+        private IEnumerable<K> ExecuteEnumerableWithForeign<K>(CommandBuilder builder)
         {
             FkLoaders fkLoaders = new FkLoaders(Manager, _foreignKeyRegister, Token);
+            builder.ForeignInfo = new DataTranslation.Reader.ForeignInfo(fkLoaders, _foreignKeyRegister)
+            {
+                LoadForeign = Config.LoadForeign
+            };
 
-            enumerable._fkQueue = fkLoaders;
-            var list = enumerable.ToList();
+            var result = builder.ExecuteEnumerable<K>(true).ToList();
             fkLoaders.LoadForeigns();
-            return list;
+
+            return result;
         }
 
         /// <summary>

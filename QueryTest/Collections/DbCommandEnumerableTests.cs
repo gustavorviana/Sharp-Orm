@@ -49,21 +49,6 @@ namespace QueryTest.Collections
         }
 
         [Fact]
-        public void GetEnumerator_ShouldThrowExceptionOnSecondCall()
-        {
-            // Arrange
-            var reader = GetReader();
-            _command.ExecuteReader().Returns(reader);
-            var enumerable = new DbCommandEnumerable<Customer>(_command, Translation);
-
-            // Act & Assert
-            enumerable.GetEnumerator(); // First call should work
-
-            var exception = Assert.Throws<InvalidOperationException>(() => enumerable.GetEnumerator());
-            Assert.Equal(Messages.EnumerableCanExecuteOnce, exception.Message);
-        }
-
-        [Fact]
         public void GetEnumerator_NonGeneric_ShouldOpen_connectionOnFirstCall()
         {
             // Arrange
@@ -77,23 +62,6 @@ namespace QueryTest.Collections
             // Assert
             _connection.Received(1).OpenIfNeeded();
             _command.Received(1).ExecuteReader();
-        }
-
-        [Fact]
-        public void GetEnumerator_NonGeneric_ShouldThrowExceptionOnSecondCall()
-        {
-            // Arrange
-            var reader = GetReader();
-            _command.ExecuteReader().Returns(reader);
-            var enumerable = new DbCommandEnumerable<Customer>(_command, Translation);
-
-            // Act & Assert
-            ((System.Collections.IEnumerable)enumerable).GetEnumerator(); // First call should work
-
-            var exception = Assert.Throws<InvalidOperationException>(
-                () => ((System.Collections.IEnumerable)enumerable).GetEnumerator()
-            );
-            Assert.Equal(Messages.EnumerableCanExecuteOnce, exception.Message);
         }
 
         [Fact]

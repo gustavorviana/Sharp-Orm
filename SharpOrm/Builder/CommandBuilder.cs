@@ -2,6 +2,7 @@
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
+using SharpOrm.DataTranslation.Reader;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -23,6 +24,8 @@ namespace SharpOrm.Builder
         private readonly ConnectionManager _manager;
         private readonly DbCommand command;
         private DbDataReader reader;
+
+        internal ForeignInfo ForeignInfo { get; set; }
 
         /// <summary>
         /// Gets or sets the command timeout.
@@ -257,7 +260,7 @@ namespace SharpOrm.Builder
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public DbCommandEnumerable<T> ExecuteEnumerable<T>(bool disposeCommand = true)
         {
-            return new DbCommandEnumerable<T>(command, _registry, _manager.Management, _tokenSource.Token)
+            return new DbCommandEnumerable<T>(new RecordReaderFactory { ForeignInfo = ForeignInfo }, command, _registry, _manager.Management, _tokenSource.Token)
             {
                 DisposeCommand = disposeCommand,
                 manager = _manager,

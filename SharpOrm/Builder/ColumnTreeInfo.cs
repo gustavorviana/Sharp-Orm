@@ -43,6 +43,11 @@ namespace SharpOrm.Builder
             base.SetRaw(owner, Translation.FromSqlValue(value, GetValidValueType()));
         }
 
+        internal void InternaRawSet(object owner, object value)
+        {
+            base.SetRaw(owner, value);
+        }
+
         internal object InternalGet(object owner)
         {
             var value = InternalGetRaw(owner);
