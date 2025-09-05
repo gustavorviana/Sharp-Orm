@@ -1,5 +1,6 @@
 ﻿using BaseTest.Models;
 using BaseTest.Utils;
+using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,7 +10,7 @@ namespace QueryTest.DataTranslation
     public class ObjectReaderTests : DbMockFallbackTest
     {
         [Fact]
-        public void ValidateWithOptionalTest()
+        public void Except_WhenCalledWithOptionalValidation_ShouldExecuteSuccessfully()
         {
             var reader = GetObjectReaderWithValidation();
 
@@ -18,7 +19,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadCellsWithValidKeyTest()
+        public void ReadCells_WhenPrimaryKeyModeIsValidOnlyAndObjectHasValidKey_ShouldReturnOnlyValidKeyColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.ValidOnly;
@@ -49,7 +50,43 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadCellsWithInvalidValidKeyTest()
+        public void ReadCells_Test2()
+        {
+            var mapper = new ModelMapper<Item>(Translation);
+            mapper.MapNested(x => x.SubItem);
+            mapper.Build();
+
+            var reader = GetObjectReaderWithValidation(false);
+            reader.PrimaryKeyMode = ReadMode.ValidOnly;
+            reader.Except<Item>(x => new { x.SubItem!.Id, x.SubItem!.Name });
+
+            var cells = reader.ReadCells(new Item
+            {
+                Id = 1,
+                Name = "My Name",
+                Description = "My Description",
+                SubItem = new SubItem
+                {
+                    Id = 2,
+                    Name = "Sub Item Name"
+                }
+            }).ToArray();
+
+            Assert.Equal(3, cells.Length);
+            Assert.Equal("Id", cells[0].Name);
+            Assert.Equal("Name", cells[1].Name);
+            Assert.Equal("Description", cells[2].Name);
+
+            Assert.Equal(1, cells[0].Value);
+            Assert.Equal("My Name", cells[1].Value);
+            Assert.Equal("My Description", cells[2].Value);
+
+            cells = [.. reader.ReadCells(new Item())];
+            Assert.DoesNotContain(cells, x => x.Name == "Id");
+        }
+
+        [Fact]
+        public void ReadCells_WhenPrimaryKeyModeIsAllAndObjectHasInvalidKey_ShouldReturnAllColumnsWithDefaultValues()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.All;
@@ -69,7 +106,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadCellsWithoutKeyTest()
+        public void ReadCells_WhenPrimaryKeyModeIsNone_ShouldExcludePrimaryKeyColumn()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.None;
@@ -83,14 +120,14 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ValidateTest()
+        public void ReadCells_WhenValidationEnabledAndRequiredFieldMissing_ShouldThrowValidationException()
         {
             var result = Assert.Throws<ValidationException>(() => GetObjectReaderWithValidation().ReadCells(new Item()).ToArray());
             Assert.Equal("The Name field is required.", result.Message);
         }
 
         [Fact]
-        public void ColumnsTest()
+        public void GetColumnNames_WhenIsCreateTrueAndReadPkTrue_ShouldReturnAllExpectedColumns()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
             reader.ReadPk = true;
@@ -103,7 +140,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ColumnsWithDatabaseGeneratedTest()
+        public void GetColumnNames_WhenReadDatabaseGeneratedTrue_ShouldIncludeDatabaseGeneratedColumns()
         {
             var reader = ObjectReader.OfType<Item>(Translation);
             reader.ReadPk = true;
@@ -117,7 +154,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ColumnsWithoutDatabaseGeneratedTest()
+        public void GetColumnNames_WhenReadDatabaseGeneratedFalse_ShouldExcludeDatabaseGeneratedColumns()
         {
             var reader = ObjectReader.OfType<Item>(Translation);
             reader.ReadPk = true;
@@ -131,7 +168,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ColumnsWithoutTimestampsTest()
+        public void GetColumnNames_WhenIgnoreTimestampsTrue_ShouldExcludeTimestampColumns()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
             reader.IgnoreTimestamps = true;
@@ -144,7 +181,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void CreateColumnsTest()
+        public void GetColumnNames_WhenIsCreateTrue_ShouldExcludePrimaryKeyFromColumnList()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
             reader.IsCreate = true;
@@ -155,9 +192,8 @@ namespace QueryTest.DataTranslation
             CollectionAssert.ContainsAll(expected, columns);
         }
 
-
         [Fact]
-        public void UpdateColumnsTest()
+        public void GetColumnNames_WhenIsCreateFalse_ShouldIncludeUpdateTimestampOnly()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
             reader.ReadPk = false;
@@ -169,14 +205,14 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ThrowsArgumentException()
+        public void ReadCells_WhenObjectTypeDoesNotMatch_ShouldThrowArgumentException()
         {
             var reader = GetObjectReaderWithValidation(false);
             Assert.Throws<ArgumentException>(() => reader.ReadCells(new Customer()).ToArray());
         }
 
         [Fact]
-        public void OnlyColumnsTest()
+        public void ReadCells_WhenOnlySpecificColumnsSelected_ShouldReturnOnlySelectedColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.Only("Name", "Description");
@@ -195,7 +231,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void OnlyWithExpressionTest()
+        public void ReadCells_WhenOnlyWithExpressionUsed_ShouldReturnOnlySpecifiedProperty()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.Only<Item>(x => x.Name);
@@ -213,7 +249,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ExceptColumnsTest()
+        public void ReadCells_WhenExceptSpecificColumnsUsed_ShouldExcludeSpecifiedColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.Except("Id");
@@ -232,7 +268,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ExceptWithExpressionTest()
+        public void ReadCells_WhenExceptWithExpressionUsed_ShouldExcludeSpecifiedProperty()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.ReadPk = true;
@@ -252,16 +288,16 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadRowsMultipleObjectsTest()
+        public void ReadRows_WhenMultipleObjectsProvided_ShouldReturnCorrespondingRows()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.ValidOnly;
 
             var items = new[]
             {
-        new Item { Id = 1, Name = "Item 1", Description = "Desc 1" },
-        new Item { Id = 2, Name = "Item 2", Description = "Desc 2" }
-    };
+               new Item { Id = 1, Name = "Item 1", Description = "Desc 1" },
+               new Item { Id = 2, Name = "Item 2", Description = "Desc 2" }
+           };
 
             var rows = reader.ReadRows(items);
 
@@ -276,7 +312,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadRowSingleObjectTest()
+        public void ReadRow_WhenSingleObjectProvided_ShouldReturnSingleRow()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.ValidOnly;
@@ -291,7 +327,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void HasValidKeyTrueTest()
+        public void HasValidKey_WhenObjectHasValidKey_ShouldReturnTrue()
         {
             var reader = GetObjectReaderWithValidation(false);
 
@@ -302,7 +338,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void HasValidKeyFalseTest()
+        public void HasValidKey_WhenObjectHasInvalidKey_ShouldReturnFalse()
         {
             var reader = GetObjectReaderWithValidation(false);
 
@@ -313,7 +349,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadDatabaseGeneratedTrueTest()
+        public void ReadCells_WhenReadDatabaseGeneratedTrue_ShouldIncludeDatabaseGeneratedColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.ReadDatabaseGenerated = true;
@@ -332,7 +368,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadDatabaseGeneratedFalseTest()
+        public void ReadCells_WhenReadDatabaseGeneratedFalse_ShouldExcludeDatabaseGeneratedColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.ReadDatabaseGenerated = false;
@@ -350,7 +386,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ValidationExceptionWithSpecificPropertyTest()
+        public void ReadCells_WhenValidationEnabledAndSpecificPropertyInvalid_ShouldThrowValidationExceptionWithPropertyName()
         {
             var reader = GetObjectReaderWithValidation(true);
 
@@ -366,7 +402,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void NullForeignKeyObjectTest()
+        public void ReadCells_WhenForeignKeyObjectIsNull_ShouldHandleNullForeignKey()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.ReadFk = true;
@@ -386,7 +422,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void CombinedFiltersTest()
+        public void ReadCells_WhenCombiningOnlyAndExceptFilters_ShouldApplyBothFilters()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.Only("Name", "Description", "Id");
@@ -407,7 +443,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void TimestampsWithIgnoreTest()
+        public void ReadCells_WhenIgnoreTimestampsTrue_ShouldExcludeTimestampColumns()
         {
             var reader = ObjectReader.OfType<AddressWithTimeStamp>(Translation);
             reader.IgnoreTimestamps = true;
@@ -427,7 +463,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void MultipleExceptColumnsTest()
+        public void ReadCells_WhenExceptMultipleColumns_ShouldExcludeAllSpecifiedColumns()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.Except("Id", "Description");
@@ -447,7 +483,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void CreateObjectReaderObsoleteMethodTest()
+        public void Create_WhenUsingObsoleteMethod_ShouldCreateObjectReaderInstance()
         {
 #pragma warning disable CS0618
             var reader = ObjectReader.Create<Item>(Translation);
@@ -458,7 +494,7 @@ namespace QueryTest.DataTranslation
         }
 
         [Fact]
-        public void ReadCellsWithLowercaseNameTest()
+        public void ReadCells_WhenOnlyWithLowercaseName_ShouldMatchPropertyCaseInsensitive()
         {
             var reader = GetObjectReaderWithValidation(false);
             reader.PrimaryKeyMode = ReadMode.ValidOnly;

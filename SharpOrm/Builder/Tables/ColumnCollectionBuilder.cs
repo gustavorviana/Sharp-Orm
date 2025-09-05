@@ -51,7 +51,7 @@ namespace SharpOrm.Builder.Tables
 
         public ColumnCollection Build()
         {
-            var builtNodes = _nodes.Select(x => x.Build()).ToArray();
+            var builtNodes = _nodes.Select(x => x.Build()).Where(x => x != null).ToArray();
 
             var finalLookup = _columnLookup.ToDictionary(
                 kvp => kvp.Key,
@@ -65,7 +65,7 @@ namespace SharpOrm.Builder.Tables
         {
             ITreeNodes<BuilderNode> node = this;
             foreach (var item in member.Path)
-                node = node?.Nodes?.FirstOrDefault(x => x.Column.Name == member.Name);
+                node = node?.Nodes?.FirstOrDefault(x => x.Column._column.Name == item.Member.Name);
 
             if (node == null)
                 return false;
@@ -85,10 +85,10 @@ namespace SharpOrm.Builder.Tables
         {
             private readonly ColumnCollectionBuilder _owner;
             private readonly List<BuilderNode> _nodes = new List<BuilderNode>();
+            private bool _isLeaf = true;
 
             public ColumnInfo Column { get; }
             public bool IsCollection { get; }
-            public bool IsValidValue => Column.Translation != null;
 
             List<BuilderNode> ITreeNodes<BuilderNode>.Nodes => _nodes;
 
@@ -106,6 +106,7 @@ namespace SharpOrm.Builder.Tables
                 if (_nodes.Count == 0)
                     _owner.RemoveLookup(Column);
 
+                _isLeaf = false;
                 _nodes.Add(node);
                 _owner.AddLookup(column);
 
@@ -114,12 +115,16 @@ namespace SharpOrm.Builder.Tables
 
             internal ColumnCollection.ColumnNode Build()
             {
-                var childNodes = _nodes.Select(x => x.Build()).ToArray();
+                if (!_isLeaf && _nodes.Count == 0)
+                    return null;
 
-                if (_nodes.Count > 0)
-                    _owner.RemoveLookup(Column);
-
+                var childNodes = _nodes.Select(x => x.Build()).Where(x => x != null).ToArray();
                 return new ColumnCollection.ColumnNode(Column, childNodes);
+            }
+
+            public override string ToString()
+            {
+                return $"BuilderNode: Member({Column._column.Name}); Column({Column.Name}); Nodes({_nodes.Count})";
             }
         }
     }

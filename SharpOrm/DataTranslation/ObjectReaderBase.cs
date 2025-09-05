@@ -167,7 +167,7 @@ namespace SharpOrm.DataTranslation
 
         protected IEnumerable<SqlMember> GetMembers<K>(Expression<ColumnExpression<K>> expression)
         {
-            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New, null).ParseExpression(expression);
+            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New | ExpressionConfig.SubMembers, null).ParseExpression(expression);
         }
 
         protected bool CanReadColumn(ColumnInfo column)
