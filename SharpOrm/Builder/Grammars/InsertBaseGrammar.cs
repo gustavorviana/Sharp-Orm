@@ -15,9 +15,10 @@ namespace SharpOrm.Builder.Grammars
 
         protected void Build(IEnumerable<Cell> cells)
         {
-            AppendInsertHeader(cells.Select(c => c.Name).ToArray());
+            var insertCells = cells.ToList();
+            AppendInsertHeader(insertCells.Select(c => c.Name).ToArray());
             Builder.Add("VALUES ");
-            AppendInsertCells(cells);
+            AppendInsertCells(insertCells);
         }
 
         protected void AppendInsertHeader(string[] columns)

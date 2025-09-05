@@ -279,6 +279,22 @@ namespace SharpOrm.Builder
                 Validations[i].Validate(value, context);
         }
 
+        public ValidationResult[] GetValidationResults(ValidationContext context, object value)
+        {
+            if (value == DBNull.Value)
+                value = null;
+
+            context.MemberName = _column.Name;
+
+            var results = new List<ValidationResult>(Validations.Length);
+
+            for (int i = 0; i < Validations.Length; i++)
+                if (Validations[i].GetValidationResult(value, context) is ValidationResult result)
+                    results.Add(result);
+
+            return results.ToArray();
+        }
+
         public override string ToString()
         {
             return string.Format("{0}: {1}", this.Name, this.Type);

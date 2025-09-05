@@ -57,7 +57,7 @@ namespace SharpOrm.Builder.Tables.Loaders
                 if (MemberTreeNode.MapNode(property, NestedMode) is MemberTreeNode node)
                     Nodes.Add(node);
 
-            foreach (var member in _type.GetMembers(Bindings.PublicInstance))
+            foreach (var member in _type.GetFields(Bindings.PublicInstance))
                 if (MemberTreeNode.MapNode(member, NestedMode) is MemberTreeNode node)
                     Nodes.Add(node);
         }
@@ -67,18 +67,18 @@ namespace SharpOrm.Builder.Tables.Loaders
             if (_columns != null)
                 return _columns;
 
-            _columns = new ColumnCollection();
+            var builder = new ColumnCollectionBuilder();
 
             List<MemberInfo> root = new List<MemberInfo>();
 
             foreach (var child in Nodes)
             {
                 root.Add(child.Member);
-                child.BuildTree(root, _columns, Registry, string.Empty);
+                child.BuildTree(root, builder, Registry, string.Empty);
                 root.RemoveAt(root.Count - 1);
             }
 
-            return _columns.Build();
+            return _columns = builder.Build();
         }
 
         internal MemberTreeNode GetOrAdd(MemberInfo member)

@@ -56,7 +56,7 @@ namespace SharpOrm.Builder
             Type = type;
             _registry = registry;
             Name = GetNameOf(type);
-            Columns = new ColumnLoader(type, registry).LoadColumns().Build();
+            Columns = new ColumnLoader(type, registry).LoadColumns();
             SoftDelete = type.GetCustomAttribute<SoftDeleteAttribute>();
             Timestamp = type.GetCustomAttribute<HasTimestampAttribute>();
         }

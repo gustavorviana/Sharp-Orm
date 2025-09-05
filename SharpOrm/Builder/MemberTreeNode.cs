@@ -87,7 +87,7 @@ namespace SharpOrm.Builder
             return _columnInfo = new ColumnMapInfo(Member, registry);
         }
 
-        internal void BuildTree(List<MemberInfo> root, ITreeAdd<ColumnCollection.ColumnNode> owner, TranslationRegistry registry, string prefix, bool isRootPrefix = false)
+        internal void BuildTree(List<MemberInfo> root, ITreeAdd<ColumnCollectionBuilder.BuilderNode> owner, TranslationRegistry registry, string prefix, bool isRootPrefix = false)
         {
             owner = owner.Add(Build(root, registry, GetValidName(root, prefix, this, isRootPrefix)));
 

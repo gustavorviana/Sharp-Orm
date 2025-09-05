@@ -9,9 +9,9 @@ using static QueryTest.DataTranslation.Reader.ObjectActivatorTests;
 
 namespace QueryTest.DataTranslation.Reader
 {
-    public class ManualMapTests : DbMockTest
+    public class ModelMapperTests : DbMockTest
     {
-        public ManualMapTests(ITestOutputHelper? output) : base(output)
+        public ModelMapperTests(ITestOutputHelper? output) : base(output)
         {
             Translation.NestedMapMode = NestedMode.All;
         }
@@ -21,6 +21,15 @@ namespace QueryTest.DataTranslation.Reader
         {
             var tm = new ModelMapper<MyClass>(Translation);
             var table = tm.Build();
+
+            Assert.Equal(3, table.Columns.Nodes.Count);
+
+            Assert.Equal(2, table.Columns.Nodes[0].Nodes.Count);
+            Assert.Single(table.Columns.Nodes[0].Nodes[0].Nodes);
+            Assert.Empty(table.Columns.Nodes[0].Nodes[1].Nodes);
+
+            Assert.Empty(table.Columns.Nodes[1].Nodes);
+            Assert.Empty(table.Columns.Nodes[2].Nodes);
 
             Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Level2_Level3_MyLevelName"));
             Assert.NotNull(table.Columns.FirstOrDefault(x => x.Name == "Level1_Id"));

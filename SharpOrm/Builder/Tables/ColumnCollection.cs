@@ -10,21 +10,20 @@ namespace SharpOrm.Builder.Tables
 {
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
-    public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, ITreeAdd<ColumnCollection.ColumnNode>, IWithColumnNode
+    public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, IWithColumnNode
     {
-        private readonly Dictionary<string, List<ColumnInfo>> _columnLookup = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
-        private readonly List<ColumnNode> _nodes = new List<ColumnNode>();
-
-        public IReadOnlyList<IColumnNode> Nodes => _nodes;
+        private readonly Dictionary<string, ColumnInfo[]> _columnLookup;
+        public IReadOnlyList<IColumnNode> Nodes { get; }
 
         public int Count => _columnLookup.Count;
 
-        public IEnumerator<ColumnInfo> GetEnumerator() => _columnLookup.Values.Select(x => x.FirstOrDefault()).GetEnumerator();
-
-        internal ColumnCollection()
+        internal ColumnCollection(ColumnNode[] nodes, Dictionary<string, ColumnInfo[]> columnLookup)
         {
-
+            Nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
+            _columnLookup = columnLookup ?? throw new ArgumentNullException(nameof(columnLookup));
         }
+
+        public IEnumerator<ColumnInfo> GetEnumerator() => _columnLookup.Values.Select(x => x.FirstOrDefault()).GetEnumerator();
 
         public ColumnInfo Find(string name)
         {
@@ -48,12 +47,12 @@ namespace SharpOrm.Builder.Tables
             return FindInTree(path)?.Column;
         }
 
-        private ColumnNode FindInTree(string[] path)
+        private IColumnNode FindInTree(string[] path)
         {
             if (path == null || path.Length == 0)
                 return null;
 
-            var currentNode = _nodes.FirstOrDefault(x => x.Column.PropName == path[0]);
+            var currentNode = Nodes.FirstOrDefault(x => x.Column.PropName == path[0]);
 
             for (int i = 1; i < path.Length && currentNode != null; i++)
                 currentNode = currentNode.Nodes.FirstOrDefault(x => x.Column.PropName == path[i]);
@@ -63,71 +62,24 @@ namespace SharpOrm.Builder.Tables
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        ITreeAdd<ColumnCollection.ColumnNode> ITreeAdd<ColumnCollection.ColumnNode>.Add(ColumnInfo column)
+        internal class ColumnNode : IColumnNode
         {
-            if (column == null)
-                throw new ArgumentNullException(nameof(column));
-
-            var node = new ColumnNode(this, column);
-            _nodes.Add(node);
-            AddLookup(column);
-
-            return node;
-        }
-
-        private void AddLookup(ColumnInfo column)
-        {
-            if (!_columnLookup.TryGetValue(column.Name, out var list))
-            {
-                list = new List<ColumnInfo>();
-                _columnLookup.Add(column.Name, list);
-            }
-
-            list.Add(column);
-        }
-
-        private bool RemoveLookup(ColumnInfo column)
-        {
-            if (_columnLookup.TryGetValue(column.Name, out var list))
-            {
-                list.Remove(column);
-                if (list.Count == 0)
-                    _columnLookup.Remove(column.Name);
-                return true;
-            }
-            return false;
-
-        }
-
-        internal ColumnCollection Build()
-        {
-            foreach (var item in _nodes)
-                item.Build();
-
-            return this;
-        }
-
-        internal class ColumnNode : ITreeAdd<ColumnCollection.ColumnNode>, IColumnNode
-        {
-            private readonly ColumnCollection _owner;
-
             public ColumnInfo Column { get; }
-            public List<ColumnNode> Nodes { get; } = new List<ColumnNode>();
+            public ColumnNode[] Nodes { get; }
+            public bool IsCollection { get; }
 
             IReadOnlyList<IColumnNode> IWithColumnNode.Nodes => Nodes;
 
-            public bool IsCollection { get; }
-
-            public ColumnNode(ColumnCollection root, ColumnInfo column)
+            internal ColumnNode(ColumnInfo column, ColumnNode[] nodes)
             {
-                _owner = root ?? throw new ArgumentNullException(nameof(root));
                 Column = column ?? throw new ArgumentNullException(nameof(column));
+                Nodes = nodes ?? DotnetUtils.EmptyArray<ColumnNode>();
                 IsCollection = ReflectionUtils.IsCollection(column.Type);
             }
 
             internal IEnumerable<ColumnInfo> Flatten()
             {
-                if (Nodes.Count == 0)
+                if (Nodes.Length == 0)
                 {
                     yield return Column;
                     yield break;
@@ -137,34 +89,6 @@ namespace SharpOrm.Builder.Tables
                     foreach (var descendant in child.Flatten())
                         yield return descendant;
             }
-
-            internal ColumnNode Add(ColumnInfo column)
-            {
-                var node = new ColumnNode(_owner, column);
-
-                if (Nodes.Count == 0)
-                    _owner.RemoveLookup(Column);
-
-                Nodes.Add(node);
-                _owner.AddLookup(column);
-
-                return node;
-            }
-
-            internal ColumnNode Build()
-            {
-                if (Nodes.Count == 0)
-                    return this;
-
-                _owner.RemoveLookup(Column);
-
-                foreach (var child in Nodes)
-                    child.Build();
-
-                return this;
-            }
-
-            ITreeAdd<ColumnCollection.ColumnNode> ITreeAdd<ColumnCollection.ColumnNode>.Add(ColumnInfo column) => Add(column);
         }
 
         internal sealed class ColumnCollection_DebugView

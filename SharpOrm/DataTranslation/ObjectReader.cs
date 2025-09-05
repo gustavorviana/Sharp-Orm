@@ -1,10 +1,11 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Expressions;
+using SharpOrm.Builder.Tables;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SharpOrm.DataTranslation
 {
@@ -13,10 +14,9 @@ namespace SharpOrm.DataTranslation
     /// </summary>
     public class ObjectReader : ObjectReaderBase
     {
-        private ColumnInfo[] _columns;
-        private ICachedColumnLoader _cachedColumns = new DefaultCachedColumnLoader();
+        private IColumnsFilter _filter = new DefaultFilter();
+        private ColumnCollection _columns;
         private bool _hasPendingChanges;
-
 
         private readonly bool _hasUpdateColumn;
         private readonly bool _hasCreateColumn;
@@ -27,7 +27,7 @@ namespace SharpOrm.DataTranslation
         /// <param name="table">The table information.</param>
         public ObjectReader(TableInfo table) : base(table)
         {
-            _columns = GetValidColumns().ToArray();
+            _columns = table.Columns;
             _hasUpdateColumn = !string.IsNullOrEmpty(table.Timestamp?.UpdatedAtColumn);
             _hasCreateColumn = !string.IsNullOrEmpty(table.Timestamp?.CreatedAtColumn);
         }
@@ -38,6 +38,7 @@ namespace SharpOrm.DataTranslation
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="registry">The translation registry.</param>
         /// <returns>An <see cref="ObjectReader"/> for the specified type.</returns>
+        [Obsolete("This method is obsolete and will be removed in version 4.0. Use IObjectReaderFactory.OfType() instead.")]
         public static ObjectReaderBase OfType<T>(TranslationRegistry registry)
         {
             return Create<T>(registry);
@@ -73,32 +74,57 @@ namespace SharpOrm.DataTranslation
         /// <returns>An enumerable of cells representing the object.</returns>
         public override IEnumerable<Cell> ReadCells(object owner)
         {
+            if (owner == null)
+                throw new ArgumentNullException(nameof(owner));
+
+            if (!ReflectionUtils.SameType(owner.GetType(), _table.Type))
+                throw new ArgumentException($"The type of the provided object ({owner.GetType().FullName}) does not match the expected type ({_table.Type.FullName}).", nameof(owner));
+
             ApplyPendingChanges();
-            return ReadObjectCells(new ValidationContext(owner));
+            var visited = new HashSet<object>();
+            return ReadObjectCells(visited, owner);
         }
 
-        private IEnumerable<Cell> ReadObjectCells(ValidationContext context)
+        private IEnumerable<Cell> ReadObjectCells(HashSet<object> visited, object owner)
         {
-            for (int i = 0; i < _columns.Length; i++)
-            {
-                if (IsTimeStamps(_columns[i].Name))
-                    continue;
+            if (visited.Contains(owner))
+                yield break;
 
-                var cell = GetCell(context, _columns[i]);
-                if (cell != null) yield return cell;
-            }
+            visited.Add(owner);
 
-            if (_hasCreateColumn && IsCreate)
+            var context = new ValidationContext(owner);
+
+            foreach (var cell in _columns.Nodes.SelectMany(node => ReadObjectCells(context, node)))
+                yield return cell;
+
+            if (!IgnoreTimestamps && _hasCreateColumn && IsCreate)
                 yield return new Cell(_table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
 
-            if (_hasUpdateColumn)
+            if (!IgnoreTimestamps && _hasUpdateColumn)
                 yield return new Cell(_table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
+        }
+
+        private IEnumerable<Cell> ReadObjectCells(ValidationContext context, IColumnNode node)
+        {
+            if (node.Nodes.Count == 0)
+            {
+                if (IsTimeStamps(node.Column.Name) || !(GetCell(context, node.Column) is Cell cell))
+                    yield break;
+
+                yield return cell;
+                yield break;
+            }
+
+            context = new ValidationContext(GetRawValue(node.Column, context.ObjectInstance));
+
+            foreach (var cell in node.Nodes.SelectMany(childNode => ReadObjectCells(context, childNode)))
+                yield return cell;
         }
 
         private Cell GetCell(ValidationContext context, ColumnInfo column)
         {
             if (column.ForeignInfo != null)
-                return new Cell(column.ForeignInfo.ForeignKey, GetFkValue(context.ObjectInstance, column.GetRaw(context.ObjectInstance), column));
+                return new Cell(column.ForeignInfo.ForeignKey, GetFkValue(context.ObjectInstance, GetRawValue(column, context.ObjectInstance), column));
 
             object value = ProcessValue(column, context.ObjectInstance);
             if (column.Key && !CanUseKeyValue(value))
@@ -117,10 +143,10 @@ namespace SharpOrm.DataTranslation
             var table = GetTable(type);
             var pkColumn = table.Columns.First(c => c.Key);
 
-            if (TranslationUtils.IsInvalidPk(value) || !(fkColumn.GetRaw(owner) is object fkInstance))
+            if (TranslationUtils.IsInvalidPk(value) || !(GetRawValue(fkColumn, owner) is object fkInstance))
                 return null;
 
-            return pkColumn.Get(fkInstance);
+            return GetValue(pkColumn, fkInstance);
         }
 
         private static Type GetValidType(Type type)
@@ -138,77 +164,161 @@ namespace SharpOrm.DataTranslation
 
         protected override void SetExpression<K>(Expression<ColumnExpression<K>> expression, bool needContains)
         {
-            _cachedColumns = new CachedMemberColumnLoader(GetMembers(expression).Select(x => x.Member).ToArray(), needContains);
+            _filter = new MemberColumnFilter(GetMembers(expression).ToArray(), needContains);
             _hasPendingChanges = true;
         }
 
         protected override void SetColumns(string[] columns, bool needContains)
         {
-            _cachedColumns = new CachedNameColumnLoader(columns, needContains);
-            _hasPendingChanges = true;
+            _filter = new NamesFilter(columns, needContains);
         }
 
-        protected override void OnCriterioChange()
+        protected override void OnCriteriaChange()
         {
             _hasPendingChanges = true;
         }
 
         private void ApplyPendingChanges()
         {
-            if (!_hasPendingChanges || _cachedColumns == null)
+            if (!_hasPendingChanges)
                 return;
 
             _hasPendingChanges = false;
-            _columns = _cachedColumns.GetColumns(GetValidColumns());
+            _columns = _filter.FilterColumns(this, _table.Columns);
         }
 
-        private class CachedNameColumnLoader : ICachedColumnLoader
+        #region IColumnFilter
+        private interface IColumnsFilter
         {
-            private readonly bool _needContains;
-            private readonly string[] _columns;
+            ColumnCollection FilterColumns(ObjectReader reader, ColumnCollection columns);
+        }
 
-            public CachedNameColumnLoader(string[] columns, bool needContains)
+        private class DefaultFilter : IColumnsFilter
+        {
+            public ColumnCollection FilterColumns(ObjectReader reader, ColumnCollection columns)
             {
-                _columns = columns;
+                var builder = new ColumnCollectionBuilder();
+
+                foreach (var node in columns.Nodes.Cast<ColumnCollection.ColumnNode>())
+                    AddNodeToBuilder(reader, builder, node);
+
+                return builder.Build();
+            }
+
+            private void AddNodeToBuilder(ObjectReader reader, ITreeAdd<ColumnCollectionBuilder.BuilderNode> builder, ColumnCollection.ColumnNode sourceNode)
+            {
+                if (sourceNode.Nodes.Length == 0)
+                {
+                    if (reader.CanReadColumn(sourceNode.Column) && CanUse(sourceNode))
+                        builder.Add(sourceNode.Column);
+
+                    return;
+                }
+
+                var parentBuilder = builder.Add(sourceNode.Column);
+                foreach (var childNode in sourceNode.Nodes.Cast<ColumnCollection.ColumnNode>())
+                    AddNodeToBuilder(reader, parentBuilder, childNode);
+            }
+
+            protected virtual bool CanUse(IColumnNode node)
+            {
+                return true;
+            }
+        }
+
+        private class NamesFilter : DefaultFilter
+        {
+            private readonly string[] _names;
+            private readonly bool _needContains;
+
+            public NamesFilter(string[] names, bool needContains)
+            {
+                _names = names ?? DotnetUtils.EmptyArray<string>();
                 _needContains = needContains;
             }
 
-            public ColumnInfo[] GetColumns(IEnumerable<ColumnInfo> columns)
+            protected override bool CanUse(IColumnNode node)
             {
-                if (_columns?.Length > 0)
-                    return columns.Where(x => _columns.ContainsIgnoreCase(x.Name) == _needContains).ToArray();
-
-                return columns.ToArray();
+                return _names.Length == 0 || _names.Contains(node.Column.Name, StringComparer.OrdinalIgnoreCase) == _needContains;
             }
         }
 
-        private class CachedMemberColumnLoader : ICachedColumnLoader
+        private class MemberColumnFilter : IColumnsFilter
         {
+            private readonly SqlMember[] _members;
             private readonly bool _needContains;
-            private readonly MemberInfo[] _members;
-            public CachedMemberColumnLoader(MemberInfo[] members, bool needContains)
+
+            public MemberColumnFilter(SqlMember[] members, bool needContains)
             {
                 _members = members;
                 _needContains = needContains;
             }
 
-            public ColumnInfo[] GetColumns(IEnumerable<ColumnInfo> columns)
+            public ColumnCollection FilterColumns(ObjectReader reader, ColumnCollection columns)
             {
-                return columns.Where(x => _members.Contains(x._column) == _needContains).ToArray();
+                if (_needContains)
+                    return FilterNeededContainsColumn(reader, columns);
+
+                return MakeBuilder(reader, columns).Build();
+            }
+
+            private ColumnCollection FilterNeededContainsColumn(ObjectReader reader, ColumnCollection columns)
+            {
+                var builder = new ColumnCollectionBuilder();
+                ITreeAdd<ColumnCollectionBuilder.BuilderNode> target = builder;
+
+                foreach (var member in _members)
+                {
+                    IWithColumnNode node = GetRootNode(member, columns);
+                    if (node is IColumnNode info)
+                        target = target.Add(info.Column);
+
+                    for (int i = 1; i < member.Path.Length; i++)
+                    {
+                        node = node.Nodes.First(x => x.Column.PropName == member.Path[0].Name);
+                        target = target.Add((node as IColumnNode).Column);
+                    }
+
+                    var column = (node.Nodes.First(x => x.Column.PropName == member.Name) as IColumnNode).Column;
+                    if (reader.CanReadColumn(column))
+                        target.Add(column);
+                }
+
+                return builder.Build();
+            }
+
+            private IWithColumnNode GetRootNode(SqlMember member, ColumnCollection columns)
+            {
+                if (member.Path.Length == 0)
+                    return columns;
+
+                return columns.Nodes.First(x => x.Column.PropName == member.Path[0].Name);
+            }
+
+            private ColumnCollectionBuilder MakeBuilder(ObjectReader reader, ColumnCollection columns)
+            {
+                var builder = new ColumnCollectionBuilder();
+
+                foreach (var node in columns.Nodes)
+                    CopyNode(reader, builder, node);
+
+                foreach (var member in _members)
+                    builder.Remove(member);
+
+                return builder;
+            }
+
+            private void CopyNode(ObjectReader reader, ITreeAdd<ColumnCollectionBuilder.BuilderNode> target, IColumnNode node)
+            {
+                if (node.Nodes.Count == 0 && !reader.CanReadColumn(node.Column))
+                    return;
+
+                target = target.Add(node.Column);
+
+                foreach (var childNode in node.Nodes)
+                    CopyNode(reader, target, childNode);
             }
         }
-
-        private class DefaultCachedColumnLoader : ICachedColumnLoader
-        {
-            public ColumnInfo[] GetColumns(IEnumerable<ColumnInfo> columns)
-            {
-                return columns.ToArray();
-            }
-        }
-
-        private interface ICachedColumnLoader
-        {
-            ColumnInfo[] GetColumns(IEnumerable<ColumnInfo> columns);
-        }
+        #endregion
     }
 }
