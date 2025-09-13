@@ -17,7 +17,7 @@ namespace QueryTest.Firebird
             using var query = new Query<SoftDeleteDateAddress>();
             var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
 
-            QueryAssert.Equal($"UPDATE \"SoftDeleteDateAddress\" SET \"deleted\" = 1, \"deleted_at\" = ? WHERE \"deleted\" = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
+            QueryAssert.Equal($"UPDATE SoftDeleteDateAddress SET deleted = 1, deleted_at = ? WHERE deleted = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace QueryTest.Firebird
             var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteDateAddress));
 
             var result = query.Grammar().RestoreSoftDeleted(tableInfo.SoftDelete);
-            QueryAssert.Equal($"UPDATE \"SoftDeleteDateAddress\" SET \"deleted\" = 0, \"deleted_at\" = NULL WHERE \"deleted\" = 1", result);
+            QueryAssert.Equal($"UPDATE SoftDeleteDateAddress SET deleted = 0, deleted_at = NULL WHERE deleted = 1", result);
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace QueryTest.Firebird
             using var query = new Query<SoftDeleteAddress>();
             var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteAddress));
 
-            QueryAssert.Equal($"UPDATE \"SoftDeleteAddress\" SET \"deleted\" = 1 WHERE \"deleted\" = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
+            QueryAssert.Equal($"UPDATE SoftDeleteAddress SET deleted = 1 WHERE deleted = 0", query.Grammar().SoftDelete(tableInfo.SoftDelete));
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace QueryTest.Firebird
             var tableInfo = Config.Translation.GetTable(typeof(SoftDeleteAddress));
 
             var result = query.Grammar().RestoreSoftDeleted(tableInfo.SoftDelete);
-            QueryAssert.Equal($"UPDATE \"SoftDeleteAddress\" SET \"deleted\" = 0 WHERE \"deleted\" = 1", result);
+            QueryAssert.Equal($"UPDATE SoftDeleteAddress SET deleted = 0 WHERE deleted = 1", result);
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace QueryTest.Firebird
         {
             using var query = new Query(TestTableUtils.TABLE);
 
-            QueryAssert.Equal("DELETE FROM \"TestTable\"", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM TestTable", query.Grammar().Delete());
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
             query.Limit = 5;
             
-            QueryAssert.Equal("DELETE FROM \"TestTable\" ROWS 5", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM TestTable ROWS 5", query.Grammar().Delete());
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace QueryTest.Firebird
             query.Limit = 5;
             query.Where("Name", "Test");
 
-            QueryAssert.Equal("DELETE FROM \"TestTable\" WHERE \"Name\" = ? ROWS 5", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM TestTable WHERE Name = ? ROWS 5", query.Grammar().Delete());
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
             query.OrderBy("id");
 
-            QueryAssert.Equal("DELETE FROM \"TestTable\" ORDER BY \"id\" ASC", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM TestTable ORDER BY id ASC", query.Grammar().Delete());
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
             query.Where("id", "=", 1);
 
-            QueryAssert.Equal("DELETE FROM \"TestTable\" WHERE \"id\" = 1", query.Grammar().Delete());
+            QueryAssert.Equal("DELETE FROM TestTable WHERE id = 1", query.Grammar().Delete());
         }
 
         [Fact]

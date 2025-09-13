@@ -34,6 +34,22 @@ namespace SharpOrm.Builder
             return b.ToString();
         }
 
+        public static Type GetTopMostBaseType(Type type)
+        {
+            if (type == null) return null;
+
+            Type current = type;
+            while (current.BaseType != null && current.BaseType != typeof(object))
+                current = current.BaseType;
+
+            return current;
+        }
+
+        public static bool SameType(Type type1, Type type2)
+        {
+            return GetTopMostBaseType(type1) == GetTopMostBaseType(type2);
+        }
+
         public static object GetMemberValue(MemberInfo member, object owner)
         {
             if (TryGetValue(member, owner, out object value))
@@ -87,7 +103,6 @@ namespace SharpOrm.Builder
             if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
                 targetProp.SetValue(target, srcProp.GetValue(source));
         }
-
 
         public static bool IsNullable(Type type)
         {

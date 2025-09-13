@@ -31,6 +31,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             => new SqlServerUpsertGrammar(Query);
 
         protected override IBulkInsertGrammar GetBulkInsertGrammar()
-            => new SqlServerBulkInsertGrammar(Query);
+            => new BulkInsertGrammar(Query);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using BaseTest.Utils;
 using Bogus;
 using SharpOrm.DataTranslation;
-using System.Runtime.Serialization;
 
 namespace QueryTest.DataTranslation
 {

@@ -6,6 +6,7 @@ using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.SqlServer;
+using System.Text;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
@@ -30,6 +31,29 @@ namespace QueryTest.SqlServer
                 new SqlExpression("INSERT INTO [TestTable] ([id], [name]) VALUES (1, ?), (2, ?), (3, ?), (4, ?), (5, ?)", "T1", "T2", "T3", "T4", "T5"),
                 expression
             );
+        }
+
+        [Fact]
+        public void Insert2KRows()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            var rows = Enumerable.Range(1, 2000).Select(i => NewRow(i, $"T{i}")).ToArray();
+            var expression = query.Grammar().BulkInsert(rows);
+
+            var builder = new StringBuilder();
+
+            for (int i = 1; i <= 2000; i++)
+            {
+                if (i == 1001)
+                    builder.AppendLine().AppendLine("\\");
+
+                if (i == 1 || i == 1001)
+                    builder.Append($"INSERT INTO [TestTable] ([id], [name]) VALUES ({i}, ?)");
+                else builder.Append($", ({i}, ?)");
+            }
+
+            builder.AppendLine();
+            Assert.Equal(builder.ToString(), expression.ToString());
         }
 
         [Fact]
@@ -176,7 +200,7 @@ namespace QueryTest.SqlServer
         [Fact]
         public void InsertLotWithParamsLimit()
         {
-            using var query = new Query(TestTableUtils.TABLE, GetManager(new SqlServerQueryConfig { DbParamsLimit = 10}));
+            using var query = new Query(TestTableUtils.TABLE, GetManager(new SqlServerQueryConfig { DbParamsLimit = 10 }));
             var grammar = query.Grammar();
             var rows = Tables.Address.RandomRows(7);
 

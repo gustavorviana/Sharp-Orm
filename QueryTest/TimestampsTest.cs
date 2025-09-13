@@ -42,7 +42,7 @@ namespace QueryTest
         public void MappedWithUpdatedOnlyInsert()
         {
             var translation = new TranslationRegistry();
-            var mapper = new TableMap<Address>(translation);
+            var mapper = new ModelMapper<Address>(translation);
             mapper.HasTimeStamps(null, "UpdatedAt");
             mapper.HasKey(x => x.Id).Build();
 
@@ -60,7 +60,7 @@ namespace QueryTest
         public void MappedWithCreateOnlyUpdate()
         {
             var translation = new TranslationRegistry();
-            var mapper = new TableMap<Address>(translation);
+            var mapper = new ModelMapper<Address>(translation);
             mapper.HasTimeStamps("CreatedAt", null);
             mapper.HasKey(x => x.Id).Build();
 

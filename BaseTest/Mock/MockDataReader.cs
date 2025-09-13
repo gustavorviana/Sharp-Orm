@@ -9,7 +9,7 @@ namespace BaseTest.Mock
     {
         private MockCommand? command;
         private readonly CancellationTokenSource tokenSrc = new();
-        private readonly Func<int, Row> rowsCall;
+        private readonly Func<int, Row> _rowsCall;
         public int ReadDelay { get; set; }
         public int Size { get; }
 
@@ -22,11 +22,11 @@ namespace BaseTest.Mock
 
         public MockDataReader(Func<int, Row> rowsCall, int size)
         {
-            this.rowsCall = rowsCall;
+            _rowsCall = rowsCall;
             Size = size;
 
             if (size > 0)
-                currentRow = this.rowsCall(0);
+                currentRow = _rowsCall(0);
         }
 
         public static MockDataReader FromFaker<T>(Faker<T> faker, int items) where T : class
@@ -88,7 +88,7 @@ namespace BaseTest.Mock
             if (currentIndex < Size - 1)
             {
                 currentIndex++;
-                currentRow = rowsCall(currentIndex);
+                currentRow = _rowsCall(currentIndex);
 
                 return true;
             }

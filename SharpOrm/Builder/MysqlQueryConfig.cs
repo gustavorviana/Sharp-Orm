@@ -104,7 +104,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="schema">The table schema.</param>
         /// <returns>A new instance of <see cref="MysqlTableGrammar"/>.</returns>
-        public override TableGrammar NewTableGrammar(TableSchema schema)
+        public override TableGrammar NewTableGrammar(ITableSchema schema)
         {
             return new MysqlTableGrammar(this, schema);
         }

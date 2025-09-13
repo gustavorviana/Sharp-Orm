@@ -1,4 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
+using SharpOrm.ForeignKey;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -10,16 +11,20 @@ namespace SharpOrm.Builder.Expressions
 {
     internal class ExpressionProcessor<T>
     {
-        private readonly IReadonlyQueryInfo info;
-        private readonly ExpressionConfig config;
-        private readonly SqlExpressionVisitor visitor;
-        public bool ForceTablePrefix { get => visitor.ForceTablePrefix; set => visitor.ForceTablePrefix = value; }
+        private readonly IReadonlyQueryInfo _info;
+        private readonly ExpressionConfig _config;
+        private readonly SqlExpressionVisitor _visitor;
 
-        public ExpressionProcessor(IReadonlyQueryInfo info, ExpressionConfig config)
+        internal ExpressionProcessor(IFkNodeRoot root, ExpressionConfig config) : this(root.ForeignKeyRegister.RootInfo, root.ForeignKeyRegister?.RootInfo?.Config?.Translation, config, root.ForeignKeyRegister)
         {
-            this.info = info;
-            this.config = config;
-            this.visitor = new SqlExpressionVisitor(typeof(T), info, config);
+
+        }
+
+        internal ExpressionProcessor(IReadonlyQueryInfo info, TranslationRegistry registry, ExpressionConfig config, IForeignKeyNode parent)
+        {
+            _info = info;
+            _config = config;
+            _visitor = new SqlExpressionVisitor(typeof(T), registry, info, config, parent);
         }
 
         internal IEnumerable<string> ParseColumnNames(Expression<ColumnExpression<T>> expression)
@@ -42,7 +47,7 @@ namespace SharpOrm.Builder.Expressions
                 throw new NotSupportedException(Messages.Expressions.NativeTypeInTableName);
 
             memberInfo = member.Member;
-            return info.Config.Translation.GetTableName(ReflectionUtils.GetMemberType(member.Member));
+            return _info.Config.Translation.GetTableName(ReflectionUtils.GetMemberType(member.Member));
         }
 
         private SqlMember ProcessMemberInfo(SqlMember info)
@@ -68,7 +73,7 @@ namespace SharpOrm.Builder.Expressions
 
         private ExpressionColumn BuildColumn(SqlMember member)
         {
-            var sqlExpression = info.Config.Methods.ApplyMember(info, ProcessMemberInfo(member), ForceTablePrefix);
+            var sqlExpression = _info.Config.Methods.ApplyMember(_info, ProcessMemberInfo(member), _visitor._parent);
             return new ExpressionColumn(member.Member, sqlExpression)
             {
                 Alias = member.Alias ?? (member.Childs.Length > 0 ? member.Name : null)
@@ -78,12 +83,12 @@ namespace SharpOrm.Builder.Expressions
         public SqlMember ParseExpressionField<R>(Expression<ColumnExpression<T, R>> expression)
         {
             if (!(expression.Body is NewExpression newExpression))
-                return visitor.Visit(expression.Body);
+                return _visitor.Visit(expression.Body);
 
-            if (!config.HasFlag(ExpressionConfig.New))
+            if (!_config.HasFlag(ExpressionConfig.New))
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
-            return visitor.Visit(
+            return _visitor.Visit(
                newExpression.Arguments.First(),
                newExpression.Members.First().Name
            );
@@ -103,17 +108,17 @@ namespace SharpOrm.Builder.Expressions
             }
             else
             {
-                yield return visitor.Visit(expression.Body);
+                yield return _visitor.Visit(expression.Body);
             }
         }
 
         private IEnumerable<SqlMember> ParseExpression(NewExpression newExpression)
         {
-            if (!config.HasFlag(ExpressionConfig.New))
+            if (!_config.HasFlag(ExpressionConfig.New))
                 throw new NotSupportedException(Messages.Expressions.NewExpressionDisabled);
 
             for (int i = 0; i < newExpression.Members.Count; i++)
-                yield return visitor.Visit(
+                yield return _visitor.Visit(
                     newExpression.Arguments[i],
                     newExpression.Members[i].Name
                 );

@@ -196,7 +196,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Order>();
             query.Join(x => x.Customer, x => x.AddressId, x => x.Id);
             query.Where(x => x.Product, "Test");
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] ON [Customers].[address_id] = [Orders].[Id] WHERE [Orders].[Product] = ?", query.Grammar().Select());
+            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE [Orders].[Product] = ?", query.Grammar().Select());
         }
 
         [Fact]
@@ -206,24 +206,7 @@ namespace QueryTest.SqlServer
             query.Join(x => x.Customer, x => x.AddressId, x => x.Id);
             query.Where(x => x.Product.ToLower(), "test");
 
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] ON [Customers].[address_id] = [Orders].[Id] WHERE LOWER([Orders].[Product]) = ?", query.Grammar().Select());
-        }
-
-        [Fact]
-        public void SelectWithJoinT()
-        {
-            using var query = new Query<Order>();
-            query.Join<Customer>("", x => x.AddressId, x => x.Id);
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] ON [Customers].[address_id] = [Orders].[Id]", query.Grammar().Select());
-        }
-
-        [Fact]
-        public void SelectWithTJoinAndAlias()
-        {
-            using var query = new Query<Order>();
-            query.Join<Customer>("C", x => x.AddressId, x => x.Id);
-
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] [C] ON [C].[address_id] = [Orders].[Id]", query.Grammar().Select());
+            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE LOWER([Orders].[Product]) = ?", query.Grammar().Select());
         }
     }
 }

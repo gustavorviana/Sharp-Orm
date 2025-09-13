@@ -14,9 +14,9 @@ namespace QueryTest.Firebird
             var today = DateTime.Today;
 
             using var query = new Query(TestTableUtils.TABLE);
-            query.Where("Name", "Mike").Where("Date", today).Where("Alias", "\"Mik\";'Mik'#--");
+            query.Where("Name", "Mike").Where("Date", today).Where("Alias", "Mik;'Mik'#--");
 
-            QueryAssert.Equal("SELECT * FROM \"TestTable\" WHERE \"Name\" = 'Mike' AND \"Date\" = ? AND \"Alias\" = '\"Mik\";''Mik''#--'", query.Grammar().Select());
+            QueryAssert.Equal("SELECT * FROM TestTable WHERE Name = 'Mike' AND Date = ? AND Alias = 'Mik;''Mik''#--'", query.Grammar().Select());
         }
     }
 }

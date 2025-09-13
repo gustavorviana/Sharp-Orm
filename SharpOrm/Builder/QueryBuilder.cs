@@ -2,6 +2,7 @@
 using SharpOrm.Builder.Expressions;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
+using SharpOrm.SqlMethods;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace SharpOrm.Builder
         /// A list of parameters for the SQL query.
         /// </summary>
         protected readonly List<object> parameters = new List<object>();
-        private readonly IReadonlyQueryInfo info;
+        private readonly IReadonlyQueryInfo _info;
 
         internal SoftDeleteAttribute softDelete = null;
         public Trashed Trashed { get; internal set; } = Trashed.With;
@@ -34,6 +35,8 @@ namespace SharpOrm.Builder
         /// Gets a value indicating whether this instance is empty.
         /// </summary>
         public bool Empty => this.query.Length == 0;
+
+        public bool NoParameters { get; set; }
 
         /// <summary>
         /// Gets the parameters.
@@ -76,7 +79,7 @@ namespace SharpOrm.Builder
         {
         }
 
-        internal QueryBuilder(QueryBuilder builder) : this(builder.info)
+        internal QueryBuilder(QueryBuilder builder) : this(builder._info)
         {
             paramInterceptor = builder.paramInterceptor;
 
@@ -89,7 +92,7 @@ namespace SharpOrm.Builder
         /// <param name="info">The query information.</param>
         public QueryBuilder(IReadonlyQueryInfo info)
         {
-            this.info = info;
+            _info = info;
             Parameters = new ReadOnlyCollection<object>(parameters);
         }
 
@@ -205,15 +208,15 @@ namespace SharpOrm.Builder
             if (val is ISqlExpressible iExp)
                 return this.AddExpression(iExp, allowAlias);
 
-            val = (this.info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
+            val = (_info?.Config?.Translation ?? TranslationRegistry.Default).ToSql(val);
             if (paramInterceptor != null)
                 val = paramInterceptor(val);
 
             if (ToQueryValue(val) is string sql)
                 return this.Add(sql);
 
-            if (this.info?.Config?.EscapeStrings == true && val is string strVal)
-                return this.Add(this.info.Config.EscapeString(strVal));
+            if (NeedEscapeString() && val is string strVal)
+                return this.Add(_info.Config.EscapeString(strVal));
 
             if (!(val is byte[]) && val is ICollection)
                 throw new NotSupportedException();
@@ -222,6 +225,11 @@ namespace SharpOrm.Builder
                 return this.InternalAddParam(ms.ToArray());
 
             return this.InternalAddParam(val);
+        }
+
+        private bool NeedEscapeString()
+        {
+            return NoParameters || _info?.Config?.EscapeStrings == true;
         }
 
         /// <summary>
@@ -248,13 +256,54 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Adds a value to the query, wrapping it in parentheses if it is a list operation or an expression list.
+        /// </summary>
+        /// <param name="value">The value to add to the query.</param>
+        /// <param name="isListOperation">Indicates whether the value should be treated as a list operation (e.g., IN clause).</param>
+        /// <returns>The current instance of <see cref="QueryBuilder"/>.</returns>
+        public QueryBuilder AddValue(object value, bool isListOperation)
+        {
+            bool isExpressionList = (value is SqlExpression || value is ISqlExpressible) && isListOperation;
+            if (isExpressionList)
+                Add('(');
+
+            WriteValue(value);
+
+            if (isExpressionList)
+                Add(')');
+
+            return this;
+        }
+
+        /// <summary>
+        /// Loads the value object and converts it to a sql values.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private QueryBuilder WriteValue(object value)
+        {
+            if (value is ICollection collection)
+                return WriteEnumerableAsValue(collection, true);
+
+            if (value is Query query)
+                return WriteQuery(query);
+
+            return AddParameter(value);
+        }
+
+        public QueryBuilder WriteQuery(Query query)
+        {
+            return Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
+        }
+
+        /// <summary>
         /// Adds an values to the query.
         /// </summary>
         /// <param name="expression">The values to add.</param>
         /// <param name="allowAlias">Whether to allow aliases in the parameter name.</param>
         public QueryBuilder AddExpression(ISqlExpressible expression, bool allowAlias = true)
         {
-            return this.Add(expression.ToSafeExpression(this.info, allowAlias), allowAlias);
+            return this.Add(expression.ToSafeExpression(_info, allowAlias), allowAlias);
         }
 
         /// <summary>
@@ -310,7 +359,7 @@ namespace SharpOrm.Builder
                 if (string.IsNullOrEmpty(strColumn))
                     throw new Exception(Messages.Query.EmptyColumnName);
 
-                return this.Add(this.info.Config.ApplyNomenclature(strColumn));
+                return this.Add(_info.Config.ApplyNomenclature(strColumn));
             }
 
             if (TryDeferredExpression(ref column, allowAlias))
@@ -328,7 +377,7 @@ namespace SharpOrm.Builder
         private bool TryDeferredExpression(ref object column, bool allowAlias)
         {
             if (column is ISqlExpressible iExp && !(column is IDeferredSqlExpression))
-                column = iExp.ToSafeExpression(this.info, allowAlias);
+                column = iExp.ToSafeExpression(_info, allowAlias);
 
             if (column is IDeferredSqlExpression deferrer)
             {
@@ -431,13 +480,13 @@ namespace SharpOrm.Builder
             if (!@enum.MoveNext())
                 return this.Add("1!=1");
 
-            this.Add('(');
-            this.AddParameter(@enum.Current, allowAlias);
+            Add('(');
+            AddParameter(@enum.Current, allowAlias);
 
             while (@enum.MoveNext())
-                this.Add(", ").AddParameter(@enum.Current, allowAlias);
+                Add(", ").AddParameter(@enum.Current, allowAlias);
 
-            return this.Add(')');
+            return Add(')');
         }
 
         /// <summary>
@@ -501,8 +550,8 @@ namespace SharpOrm.Builder
             builder.AppendAndReplace(this.query.ToString(), '?', count =>
             {
                 var param = this.parameters[count - 1];
-                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(this.info, true));
-                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(this.info, throwOnDeferrerFail));
+                if (param is MemberInfoColumn colInfo) builder.Append(colInfo.ToExpression(_info, true));
+                else if (withDeferrer && param is DeferredValue deferrer) builder.Append(deferrer.ToExpression(_info, throwOnDeferrerFail));
                 else builder.Append('?');
             });
 
@@ -517,7 +566,7 @@ namespace SharpOrm.Builder
             if (Trashed == Trashed.With)
                 return new StringBuilder();
 
-            StringBuilder sb = new StringBuilder(this.info.Config.ApplyNomenclature(this.softDelete.ColumnName));
+            StringBuilder sb = new StringBuilder(_info.Config.ApplyNomenclature(this.softDelete.ColumnName));
 
             if (this.Trashed == Trashed.Only) sb.Append(" = 1");
             else sb.Append(" = 0");
@@ -564,13 +613,13 @@ namespace SharpOrm.Builder
 
         private class DeferredValue : IDeferredSqlExpression
         {
-            private readonly IDeferredSqlExpression original;
-            private readonly bool alias;
+            private readonly IDeferredSqlExpression _original;
+            private readonly bool _alias;
 
             public DeferredValue(IDeferredSqlExpression original, bool alias)
             {
-                this.original = original;
-                this.alias = alias;
+                _original = original;
+                _alias = alias;
             }
 
             public SqlExpression ToExpression(IReadonlyQueryInfo info)
@@ -582,7 +631,7 @@ namespace SharpOrm.Builder
             {
                 try
                 {
-                    return original.ToExpression(info);
+                    return _original.ToSafeExpression(info, _alias);
                 }
                 catch (Exception)
                 {
@@ -591,6 +640,11 @@ namespace SharpOrm.Builder
 
                     return new SqlExpression("!");
                 }
+            }
+
+            public override string ToString()
+            {
+                return _original.ToString();
             }
         }
     }

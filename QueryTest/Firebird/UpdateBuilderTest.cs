@@ -13,14 +13,14 @@ namespace QueryTest.Firebird
     {
         [Theory]
         [InlineData(Trashed.With, "")]
-        [InlineData(Trashed.Except, " WHERE \"deleted\" = 0")]
-        [InlineData(Trashed.Only, " WHERE \"deleted\" = 1")]
+        [InlineData(Trashed.Except, " WHERE deleted = 0")]
+        [InlineData(Trashed.Only, " WHERE deleted = 1")]
         public void UpdateSoftDeleted(Trashed visibility, string expectedWhere)
         {
             using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
             Cell[] cells = [new Cell("Name", "My Name"), new Cell("Street", "My Street")];
 
-            QueryAssert.Equal($"UPDATE \"SoftDeleteDateAddress\" SET \"Name\" = ?, \"Street\" = ?{expectedWhere}", query.Grammar().Update(cells));
+            QueryAssert.Equal($"UPDATE SoftDeleteDateAddress SET Name = ?, Street = ?{expectedWhere}", query.Grammar().Update(cells));
         }
 
         [Fact]
@@ -30,7 +30,7 @@ namespace QueryTest.Firebird
             var row = new Row(new Cell("name", "MyTestName"), new Cell("alias", "Test"), new Cell("value", null), new Cell("status", Status.Success));
 
             QueryAssert.EqualDecoded(
-                "UPDATE \"TestTable\" SET \"name\" = @p1, \"alias\" = @p2, \"value\" = NULL, \"status\" = 1",
+                "UPDATE TestTable SET name = @p1, alias = @p2, value = NULL, status = 1",
                 ["MyTestName", "Test"],
                 query.Grammar().Update(row.Cells)
             );
@@ -43,7 +43,7 @@ namespace QueryTest.Firebird
             query.Where("id", "=", 1);
 
             QueryAssert.Equal(
-                "UPDATE \"TestTable\" SET \"name\" = \"nick\" WHERE \"id\" = 1",
+                "UPDATE TestTable SET name = nick WHERE id = 1",
                 query.Grammar().Update([new Cell("name", new Column("nick"))])
             );
         }
@@ -59,7 +59,7 @@ namespace QueryTest.Firebird
             var caseVal = new Case().When("alias", "IS", null, CaseMsg).Else(ElseMsg);
 
             QueryAssert.EqualDecoded(
-                "UPDATE \"TestTable\" SET \"name\" = @p1, \"alias\" = CASE WHEN \"alias\" IS NULL THEN @p2 ELSE @p3 END, \"value\" = NULL, \"status\" = 1",
+                "UPDATE TestTable SET name = @p1, alias = CASE WHEN alias IS NULL THEN @p2 ELSE @p3 END, value = NULL, status = 1",
                 ["MyTestName", CaseMsg, ElseMsg],
                 query.Grammar().Update([new Cell("name", "MyTestName"), new Cell("alias", caseVal), new Cell("value", null), new Cell("status", Status.Success)])
             );
@@ -80,7 +80,7 @@ namespace QueryTest.Firebird
             query.Where("id", "=", 1);
 
             QueryAssert.EqualDecoded(
-                "UPDATE \"TestTable\" SET \"name\" = @p1 WHERE \"id\" = 1",
+                "UPDATE TestTable SET name = @p1 WHERE id = 1",
                 ["MyName"],
                 query.Grammar().Update([new Cell("name", "MyName")])
             );

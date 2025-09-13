@@ -34,6 +34,11 @@ namespace SharpOrm.Builder
 
         internal static IEnumerable<MemberInfo> GetMemberPath(Expression<ColumnExpression<T>> propertyExpression, bool allowNativeType)
         {
+            return GetMemberPath((LambdaExpression)propertyExpression, allowNativeType);
+        }
+
+        internal static IEnumerable<MemberInfo> GetMemberPath(LambdaExpression propertyExpression, bool allowNativeType)
+        {
             var memberExpression = GetMemberExpression(propertyExpression);
 
             if (!allowNativeType)
@@ -46,7 +51,7 @@ namespace SharpOrm.Builder
             }
         }
 
-        internal static MemberExpression GetMemberExpression(Expression<ColumnExpression<T>> expression)
+        internal static MemberExpression GetMemberExpression(LambdaExpression expression)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression));
             if (expression.Body is MemberExpression mExp) return mExp;

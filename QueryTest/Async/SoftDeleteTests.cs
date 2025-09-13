@@ -5,19 +5,19 @@ using SharpOrm;
 
 namespace QueryTest.Async
 {
-	public class SoftDeleteTests : DbMockFallbackTest
+    public class SoftDeleteTests : DbMockFallbackTest
     {
-		[Theory]
-		[InlineData(Trashed.With, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
-		[InlineData(Trashed.Only, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
-		[InlineData(Trashed.Except, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
-		public async Task DeleteWithDateAsync(Trashed trashed, string expected)
-		{
-			using var fallback = RegisterFallback();
-			using var query = new Query<SoftDeleteDateAddress> { Trashed = trashed };
-			await query.DeleteAsync(default);
+        [Theory]
+        [InlineData(Trashed.With, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        [InlineData(Trashed.Only, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        [InlineData(Trashed.Except, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
+        public async Task DeleteWithDateAsync(Trashed trashed, string expected)
+        {
+            using var fallback = RegisterFallback();
+            using var query = new Query<SoftDeleteDateAddress> { Trashed = trashed };
+            await query.DeleteAsync(default);
 
-			Assert.Equal(expected, fallback.ToString());
+            Assert.Equal(expected, fallback.ToString());
         }
 
         [Theory]

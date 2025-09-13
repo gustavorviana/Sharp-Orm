@@ -100,27 +100,13 @@ namespace SharpOrm.Builder
 
             ValidateConnectionManager(schema, manager);
 
-            var clone = schema.Clone();
-            FixName(clone);
+            var clone = schema.Clone();;
 
             var grammar = manager.Config.NewTableGrammar(clone);
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
             return new DbTable(grammar, manager) { _isLocalManager = isLocalManager };
-        }
-
-        private static void FixName(TableSchema schema)
-        {
-            if (string.IsNullOrEmpty(schema.Name) && (!schema.Temporary || !RandomNameForTempTable))
-                throw new ArgumentNullException(nameof(schema.Name));
-
-            if (!schema.Temporary)
-                return;
-
-            var id = Guid.NewGuid().ToString("N");
-            if (string.IsNullOrEmpty(schema.Name)) schema.Name = id;
-            else schema.Name = string.Concat(Guid.NewGuid().ToString("N"), "_", schema.Name);
         }
 
         /// <summary>

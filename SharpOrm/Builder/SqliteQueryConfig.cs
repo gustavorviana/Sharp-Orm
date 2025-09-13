@@ -46,7 +46,7 @@ namespace SharpOrm.Builder
             return new SqliteGrammar(query);
         }
 
-        public override TableGrammar NewTableGrammar(TableSchema schema)
+        public override TableGrammar NewTableGrammar(ITableSchema schema)
         {
             return new SqliteTableGrammar(this, schema);
         }

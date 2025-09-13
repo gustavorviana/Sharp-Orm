@@ -17,7 +17,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM TestTable", sqlExpression);
         }
 
         [Fact]
@@ -30,7 +30,7 @@ namespace QueryTest.Firebird
             query.OrderBy(OrderBy.Asc, "Id");
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT \"nick\", \"name\" FROM \"TestTable\") \"count\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT nick, name FROM TestTable) count", sqlExpression);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace QueryTest.Firebird
             query.Select("Column").Distinct = true;
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(DISTINCT \"Column\") FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(DISTINCT Column) FROM TestTable", sqlExpression);
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace QueryTest.Firebird
             query.Select("nick", "name").Distinct = true;
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT \"nick\", \"name\" FROM \"TestTable\") \"count\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT nick, name FROM TestTable) count", sqlExpression);
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace QueryTest.Firebird
             query.Distinct = true;
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT * FROM \"TestTable\") \"count\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT * FROM TestTable) count", sqlExpression);
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace QueryTest.Firebird
             query.Select("t.*").Distinct = true;
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT \"t\".* FROM \"TestTable\" \"t\") \"count\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM (SELECT DISTINCT t.* FROM TestTable t) count", sqlExpression);
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace QueryTest.Firebird
             query.Distinct = true;
 
             var sqlExpression = query.Grammar().Count((Column)"COUNT(DISTINCT name)");
-            QueryAssert.Equal("SELECT COUNT(DISTINCT name) FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(DISTINCT name) FROM TestTable", sqlExpression);
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace QueryTest.Firebird
             query.Where("Column", null);
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\" WHERE \"Column\" IS NULL", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM TestTable WHERE Column IS NULL", sqlExpression);
         }
 
 
@@ -105,7 +105,7 @@ namespace QueryTest.Firebird
             query.OrderBy(OrderBy.Asc, "Id");
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM TestTable", sqlExpression);
         }
 
         [Fact]
@@ -118,7 +118,7 @@ namespace QueryTest.Firebird
 
             var sqlExpression = query.Grammar().Count();
             QueryAssert.EqualDecoded(
-                "SELECT COUNT(*) FROM \"TestTable\" INNER JOIN \"Table2\" \"t2\" ON \"t2\".\"IdTable\" = \"TestTable\".\"Id\" WHERE \"t2\".\"Column\" = @p1",
+                "SELECT COUNT(*) FROM TestTable INNER JOIN Table2 t2 ON t2.IdTable = TestTable.Id WHERE t2.Column = @p1",
                 ["Value"],
                 sqlExpression
             );
@@ -131,7 +131,7 @@ namespace QueryTest.Firebird
             query.OrderBy(OrderBy.Asc, "Id");
 
             var sqlExpression = query.Grammar().Count();
-            QueryAssert.Equal("SELECT COUNT(*) FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(*) FROM TestTable", sqlExpression);
         }
 
         [Fact]
@@ -140,7 +140,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().Count(new Column("ColName"));
-            QueryAssert.Equal("SELECT COUNT(\"ColName\") FROM \"TestTable\"", sqlExpression);
+            QueryAssert.Equal("SELECT COUNT(ColName) FROM TestTable", sqlExpression);
         }
     }
 }

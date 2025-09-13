@@ -3,7 +3,6 @@ using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
-using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite

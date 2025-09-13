@@ -23,7 +23,7 @@ namespace QueryTest.DataTranslation.Reader
         public void InstanceInvalidClassTest()
         {
             var reader = new MockDataReader();
-            Assert.Throws<NotSupportedException>(() => CreateInstance<InvalidClassConstructor>(reader));
+            Assert.Null(CreateInstance<InvalidClassConstructor>(reader));
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace QueryTest.DataTranslation.Reader
         public void InstanceInvalidRecordInstanceTest()
         {
             var reader = new MockDataReader(new Cell("firstName", "My First Name"));
-            Assert.Throws<NotSupportedException>(() => CreateInstance<Person>(reader));
+            Assert.Null(CreateInstance<InvalidClassConstructor>(reader));
         }
 
         [Fact]

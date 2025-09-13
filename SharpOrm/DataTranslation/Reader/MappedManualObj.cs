@@ -24,7 +24,7 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
         #endregion
 
-        public static MappedManualObj FromMap<T>(TableMap<T> map, IDataRecord record)
+        public static MappedManualObj FromMap<T>(ModelMapper<T> map, IDataRecord record)
         {
             return new MappedManualObj(typeof(T), map.GetFields(), map.Registry, record);
         }

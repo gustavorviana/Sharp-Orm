@@ -1,12 +1,10 @@
-﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.Msg;
+﻿using SharpOrm.Msg;
 using System;
 
 namespace SharpOrm.Builder
 {
-    internal class ReadonlyQueryInfo : IReadonlyQueryInfo, IRootTypeMap
+    internal class ReadonlyQueryInfo : IReadonlyQueryInfo
     {
-        Type IRootTypeMap.RootType { get; set; }
         public QueryConfig Config { get; }
 
         public DbName TableName { get; }

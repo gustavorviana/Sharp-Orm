@@ -18,7 +18,7 @@ namespace QueryTest.Firebird
             var rows = new Row[] { NewRow(1, "T1"), NewRow(2, "T2"), NewRow(3, "T3"), NewRow(4, "T4"), NewRow(5, "T5") };
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"id\", \"name\") VALUES (1, @p1), (2, @p2), (3, @p3), (4, @p4), (5, @p5)",
+                "INSERT INTO TestTable (id, name) VALUES (1, @p1), (2, @p2), (3, @p3), (4, @p4), (5, @p5)",
                  ["T1", "T2", "T3", "T4", "T5"],
                  query.Grammar().BulkInsert(rows)
             );
@@ -36,7 +36,7 @@ namespace QueryTest.Firebird
             query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"id\", \"name\", \"value\") VALUES (1, @p1, NULL) RETURNING 1",
+                "INSERT INTO TestTable (id, name, value) VALUES (1, @p1, NULL) RETURNING 1",
                 ["T1"],
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, 1), new Cell(TestTableUtils.NAME, "T1"), new Cell("value", null)])
             );
@@ -49,7 +49,7 @@ namespace QueryTest.Firebird
             query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"id\", \"name\", \"value\") VALUES (1, @p1, NULL)",
+                "INSERT INTO TestTable (id, name, value) VALUES (1, @p1, NULL)",
                 ["T1"],
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, 1), new Cell(TestTableUtils.NAME, "T1"), new Cell("value", null)], false)
             );
@@ -66,7 +66,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().InsertQuery(selectQuery, ["UserId", "Status"]);
-            QueryAssert.Equal("INSERT INTO \"TestTable\" (\"UserId\", \"Status\") SELECT \"Id\", 1 FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+            QueryAssert.Equal("INSERT INTO TestTable (UserId, Status) SELECT Id, 1 FROM User WHERE id = 1", sqlExpression);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
 
             var sqlExpression = query.Grammar().InsertQuery(selectQuery, []);
-            QueryAssert.Equal("INSERT INTO \"TestTable\" SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+            QueryAssert.Equal("INSERT INTO TestTable SELECT Id, Status FROM User WHERE id = 1", sqlExpression);
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace QueryTest.Firebird
             };
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"Id\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\") VALUES (1, @p1, NULL, @p2, 2.1, @p3, 1) RETURNING 1",
+                "INSERT INTO TestTable (Id, Name, Nick, record_created, Number, custom_id, custom_status) VALUES (1, @p1, NULL, @p2, 2.1, @p3, 1) RETURNING 1",
                 [table.Name, table.CreatedAt, table.CustomId?.ToString(Translation.GuidFormat)!],
                 query.Grammar().Insert(Row.Parse(table, typeof(TestTable), true, false).Cells)
             );
@@ -114,7 +114,7 @@ namespace QueryTest.Firebird
             query.WhereInColumn(123, "TokenAtacado", "TokenVarejo", "TokenIndustria");
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"id\", \"name\", \"value\") VALUES (1, @p1, NULL)",
+                "INSERT INTO TestTable (id, name, value) VALUES (1, @p1, NULL)",
                 ["T1"],
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, 1), new Cell(TestTableUtils.NAME, "T1"), new Cell("value", null)])
             );
@@ -126,7 +126,7 @@ namespace QueryTest.Firebird
             using var query = new Query(TestTableUtils.TABLE);
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"id\") VALUES (1) RETURNING 1",
+                "INSERT INTO TestTable (id) VALUES (1) RETURNING 1",
                 [],
                 query.Grammar().Insert([new Cell(TestTableUtils.ID, (SqlExpression)"1")])
             );
@@ -138,7 +138,7 @@ namespace QueryTest.Firebird
             using var query = new Query<TestTable>();
 
             QueryAssert.EqualDecoded(
-                "INSERT INTO \"TestTable\" (\"custom_status\") VALUES (1) RETURNING \"Id\"",
+                "INSERT INTO TestTable (custom_status) VALUES (1) RETURNING Id",
                 [],
                 query.Grammar().Insert([new Cell(TestTableUtils.STATUS, (SqlExpression)"1")])
             );
@@ -149,8 +149,8 @@ namespace QueryTest.Firebird
         {
             using var query = new Query(TestTableUtils.TABLE);
 
-            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT \"Id\", 1 FROM \"User\" WHERE \"id\" = 1"), ["UserId", "Status"]);
-            QueryAssert.Equal("INSERT INTO \"TestTable\" (\"UserId\", \"Status\") SELECT \"Id\", 1 FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT Id, 1 FROM User WHERE id = 1"), ["UserId", "Status"]);
+            QueryAssert.Equal("INSERT INTO TestTable (UserId, Status) SELECT Id, 1 FROM User WHERE id = 1", sqlExpression);
         }
 
         [Fact]
@@ -158,8 +158,8 @@ namespace QueryTest.Firebird
         {
             using var query = new Query(TestTableUtils.TABLE);
 
-            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1"), []);
-            QueryAssert.Equal("INSERT INTO \"TestTable\" SELECT \"Id\", \"Status\" FROM \"User\" WHERE \"id\" = 1", sqlExpression);
+            var sqlExpression = query.Grammar().InsertExpression(new SqlExpression("SELECT Id, Status FROM User WHERE id = 1"), []);
+            QueryAssert.Equal("INSERT INTO TestTable SELECT Id, Status FROM User WHERE id = 1", sqlExpression);
         }
     }
 }

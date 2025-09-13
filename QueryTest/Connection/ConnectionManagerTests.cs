@@ -1,4 +1,5 @@
 ﻿using BaseTest.Utils;
+using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
 
@@ -34,5 +35,29 @@ public class ConnectionManagerTests : DbMockFallbackTest
 
         Assert.Equal(EXPECTED_INITIAL_TIMEOUT, initialTimeout);
         Assert.Equal(EXPECTED_TIMEOUT, timeout);
+    }
+    [Fact]
+    public void GetQuery_ShouldReturnNonNullAndSameManager()
+    {
+        // Act
+        var query = Manager.GetQuery("Query");
+        var queryWithTableName = Manager.GetQuery(new DbName("Table"));
+
+        var genericQuery = Manager.GetQuery<object>();
+        var genericQueryWithConfig = Manager.GetQuery<object>("Alias");
+        var genericQueryWithTableName = Manager.GetQuery<object>(new DbName("Table"));
+
+        // Assert
+        Assert.NotNull(query);
+        Assert.NotNull(genericQuery);
+        Assert.NotNull(genericQueryWithConfig);
+        Assert.NotNull(queryWithTableName);
+        Assert.NotNull(genericQueryWithTableName);
+
+        Assert.Same(Manager, query.Manager);
+        Assert.Same(Manager, genericQuery.Manager);
+        Assert.Same(Manager, genericQueryWithConfig.Manager);
+        Assert.Same(Manager, queryWithTableName.Manager);
+        Assert.Same(Manager, genericQueryWithTableName.Manager);
     }
 }

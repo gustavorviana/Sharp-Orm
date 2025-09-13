@@ -2,6 +2,7 @@
 using SharpOrm.Builder.Grammars;
 using SharpOrm.Fb.Grammars;
 using SharpOrm.Fb.SqlMethods.Mappers;
+using SharpOrm.SqlMethods.Mappers.Firebird;
 using System.Text;
 
 namespace SharpOrm.Fb
@@ -28,6 +29,8 @@ namespace SharpOrm.Fb
         protected override void RegisterMethods()
         {
             Methods.Add(new FirebirdStringMethods());
+            Methods.Add(new FirebirdDateProperties());
+            Methods.Add(new FirebirdDateMethods());
         }
 
         /// <summary>
@@ -40,7 +43,7 @@ namespace SharpOrm.Fb
             return new FbGrammar(query);
         }
 
-        public override TableGrammar NewTableGrammar(TableSchema schema)
+        public override TableGrammar NewTableGrammar(ITableSchema schema)
         {
             return new FbTableGrammar(this, schema);
         }
@@ -52,18 +55,19 @@ namespace SharpOrm.Fb
         /// <returns>The name with Firebird nomenclature applied (wrapped in double quotes).</returns>
         public override string ApplyNomenclature(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                return name;
+            return name;
+            //if (string.IsNullOrEmpty(name))
+            //    return name;
 
-            // For Firebird, we wrap identifiers in double quotes to handle case sensitivity
-            // and special characters properly
-            if (name.StartsWith("\"") && name.EndsWith("\""))
-                return name;
+            //// For Firebird, we wrap identifiers in double quotes to handle case sensitivity
+            //// and special characters properly
+            //if (name.StartsWith("\"") && name.EndsWith("\""))
+            //    return name;
 
-            if (name == "*")
-                return name;
+            //if (name == "*")
+            //    return name;
 
-            return name.SanitizeSqlName('"', '"');
+            //return name.SanitizeSqlName('"', '"');
         }
 
         /// <summary>

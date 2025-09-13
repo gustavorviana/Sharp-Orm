@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -10,17 +11,18 @@ namespace SharpOrm.DataTranslation.Reader
     /// </summary>
     public class MappedObject : IMappedObject
     {
-        #region Properties\Fields
-        private readonly List<MappedObject> childrens = new List<MappedObject>();
-        private readonly List<MappedColumn> fkColumns = new List<MappedColumn>();
-        private readonly List<MappedColumn> columns = new List<MappedColumn>();
-        private readonly TranslationRegistry registry;
+        private readonly List<MappedObject> _childrens = new List<MappedObject>();
+        private readonly List<MappedColumn> _columns = new List<MappedColumn>();
+        private readonly TranslationRegistry _registry;
         private readonly object _lock = new object();
-        private ObjectActivator objectActivator;
-        private readonly NestedMode nestedMode;
-        private readonly IFkQueue enqueueable;
-        private ColumnInfo parentColumn;
-        private MappedObject parent;
+        private ObjectActivator _objectActivator;
+        private readonly NestedMode _nestedMode;
+        private readonly IFkQueue _fkQueue;
+        private ColumnInfo _parentColumn;
+        private MappedObject _parent;
+        private bool IsCollection { get; }
+
+        internal ForeignKeyNodeBase Node { get; set; }
 
         /// <summary>
         /// Gets the type of the mapped object.
@@ -28,7 +30,6 @@ namespace SharpOrm.DataTranslation.Reader
         public Type Type { get; }
 
         private object instance;
-        #endregion
 
         /// <summary>
         /// Reads and maps an object of type <typeparamref name="T"/> from the database record.
@@ -50,6 +51,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="enqueueable">The foreign key queue. If null, a default queue is used.</param>
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             return Create(record, type, NestedMode.Attribute, enqueueable, registry);
@@ -64,6 +66,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="registry">The translation registry. If null, the default registry is used.</param>
         /// <param name="nestedMode">The nested mode to use for mapping.</param>
         /// <returns>An <see cref="IMappedObject"/> for the specified type.</returns>
+        [Obsolete("It will be removed in version 4.0.")]
         public static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable = null, TranslationRegistry registry = null)
         {
             if (registry == null)
@@ -72,32 +75,83 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(record, registry);
 
-            if (registry.GetManualMap(type) is TableInfo table)
+            var table = registry.GetTable(type);
+            if (table != null && table.IsManualMap)
                 return new MappedManualObj(table, registry, record);
 
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode).Map(registry, record, string.Empty);
+            return Create(record, type, nestedMode, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyRegister, registry);
         }
 
-        private MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
+        internal static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)
         {
-            this.Type = type;
-            this.registry = registry;
-            this.enqueueable = enqueueable;
-            this.nestedMode = nestedMode;
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode)
+            {
+                Node = node
+            }.Map(record, string.Empty);
         }
 
-        private MappedObject Map(TranslationRegistry registry, IDataRecord record, string prefix)
+        internal MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
         {
-            if (this.Type == typeof(Row))
+            Type = type;
+            IsCollection = RuntimeList.IsCollection(type);
+            _registry = registry;
+            _fkQueue = enqueueable;
+            _nestedMode = nestedMode;
+        }
+
+        internal MappedObject Map(IDataRecord record, string prefix)
+        {
+            if (Type == typeof(Row))
                 return this;
 
-            if (!Type.IsArray)
-                objectActivator = new ObjectActivator(Type, record, registry);
+            if (!IsCollection)
+                _objectActivator = new ObjectActivator(Type, record, _registry);
 
-            foreach (var column in registry.GetTable(this.Type).Columns)
-                if (column.ForeignInfo != null) AddIfValidId(record, fkColumns, column.ForeignInfo.ForeignKey, column);
-                else if (NeedMapAsValue(column)) AddIfValidId(record, columns, GetName(column, prefix), column);
-                else MapNested(column, record, prefix);
+            foreach (var column in _registry.GetTable(Type).Columns)
+                if (column.ForeignInfo != null && (!(Node?.Exists(column.column) ?? false)))
+                    AddIfValidId(record, prefix + column.ForeignInfo.ForeignKey, column, true);
+                else if (NeedMapAsValue(column))
+                    AddIfValidId(record, GetName(column, prefix), column);
+                else
+                    MapNested(column, record, prefix);
+
+            if (Node != null)
+                foreach (var node in Node.Nodes)
+                    RegisterForeignNode(node, record);
+
+            return this;
+        }
+
+        private void RegisterForeignNode(ForeignKeyNode node, IDataRecord record)
+        {
+            if (node.ColumnInfo.ForeignInfo != null && ReflectionUtils.IsCollection(node.ColumnInfo.Type))
+            {
+                int index = record.GetIndexOf(node.ColumnInfo.ForeignInfo.ForeignKey);
+                AddOrUpdateColumn(new MappedFkColumn(_registry, _fkQueue, node, index));
+                return;
+            }
+
+            var nodeObj = new MappedObject(node.ColumnInfo.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = node.ColumnInfo, _parent = this };
+            nodeObj.MapNodeColumns(node, record);
+
+            _childrens.Add(nodeObj);
+
+            foreach (var subNode in node.Nodes)
+                nodeObj.RegisterForeignNode(subNode, record);
+        }
+
+        private MappedObject MapNodeColumns(ForeignKeyNode node, IDataRecord record)
+        {
+            if (!node.IsCollection)
+                _objectActivator = new ObjectActivator(Type, record, _registry);
+
+            foreach (var info in node.Columns)
+                if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo.column))
+                    AddIfValidId(record, info.Alias + info.ForeignInfo.ForeignKey, info.ColumnInfo, true);
+                else if (NeedMapAsValue(info.ColumnInfo))
+                    AddIfValidId(record, info.Alias, info.ColumnInfo);
+                else
+                    MapNested(info.ColumnInfo, record, info.Alias);
 
             return this;
         }
@@ -107,8 +161,8 @@ namespace SharpOrm.DataTranslation.Reader
             if (!IsValidNested(column))
                 return;
 
-            childrens.Add(new MappedObject(column.Type, this.registry, enqueueable, nestedMode) { parentColumn = column, parent = this }
-                    .Map(registry, record, GetColumnPrefix(column, prefix)));
+            _childrens.Add(new MappedObject(column.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = column, _parent = this }
+                    .Map(record, GetColumnPrefix(column, prefix)));
         }
 
         private static string GetColumnPrefix(ColumnInfo column, string prefix)
@@ -125,7 +179,7 @@ namespace SharpOrm.DataTranslation.Reader
         private bool IsValidNested(ColumnInfo column)
         {
             return column.MapNested != null ||
-                (nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
+                (_nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
         }
 
         private bool IsRootType(ColumnInfo column)
@@ -141,11 +195,27 @@ namespace SharpOrm.DataTranslation.Reader
             return column.IsNative || !(column.Translation is NativeSqlTranslation);
         }
 
-        private void AddIfValidId(IDataRecord record, List<MappedColumn> columns, string name, ColumnInfo column)
+        private void AddIfValidId(IDataRecord record, string name, ColumnInfo column, bool isFk = false)
         {
             int index = record.GetIndexOf(name);
-            if (index != -1)
-                columns.Add(new MappedColumn(column, index));
+            if (index < 0)
+                return;
+
+            AddOrUpdateColumn(isFk ? new MappedUnusedFkColumn(_registry, _fkQueue, column, index) : new MappedColumn(column, index));
+        }
+
+        private bool NeedLoadForeign(ColumnInfo column)
+        {
+            return column.ForeignInfo != null &&
+                !ReflectionUtils.IsCollection(column.Type) &&
+                _fkQueue is FkLoaders fkLoader &&
+                fkLoader.Config.LoadForeign;
+        }
+
+        private void AddOrUpdateColumn(MappedColumn column)
+        {
+            _columns.Remove(column);
+            _columns.Add(column);
         }
 
         private static string GetName(ColumnInfo column, string prefix)
@@ -158,7 +228,7 @@ namespace SharpOrm.DataTranslation.Reader
             lock (_lock)
             {
                 if (Type == typeof(Row))
-                    return record.ReadRow(registry);
+                    return record.ReadRow(_registry);
 
                 NewObject(record);
 
@@ -171,13 +241,15 @@ namespace SharpOrm.DataTranslation.Reader
 
         private object NewObject(IDataRecord record)
         {
-            instance = objectActivator.CreateInstance(record);
+            instance = _objectActivator.CreateInstance(record);
+            if (instance == null)
+                return null;
 
-            for (int i = 0; i < childrens.Count; i++)
+            for (int i = 0; i < _childrens.Count; i++)
             {
-                var children = childrens[i];
-                if (!children.Type.IsArray)
-                    children.parentColumn.SetRaw(children.parent.instance, children.NewObject(record));
+                var children = _childrens[i];
+                if (!children.IsCollection)
+                    children._parentColumn.SetRaw(children._parent.instance, children.NewObject(record));
             }
 
             return instance;
@@ -185,26 +257,24 @@ namespace SharpOrm.DataTranslation.Reader
 
         private void SetValue(int index, object value)
         {
-            if (enqueueable != null)
-                EnqueueFk(index, value);
+            if (instance == null)
+                return;
 
-            for (int i = 0; i < columns.Count; i++)
+            for (int i = 0; i < _columns.Count; i++)
             {
-                var column = columns[i];
+                var column = _columns.ElementAt(i);
 
                 if (column.Index == index)
                     column.Set(instance, value);
             }
 
-            for (int i = 0; i < childrens.Count; i++)
-                childrens[i].SetValue(index, value);
+            for (int i = 0; i < _childrens.Count; i++)
+                _childrens[i].SetValue(index, value);
         }
 
-        private void EnqueueFk(int index, object value)
+        public override string ToString()
         {
-            foreach (var column in fkColumns)
-                if (column.Index == index)
-                    enqueueable.EnqueueForeign(instance, registry, value, column.Column);
+            return Type.ToString();
         }
 
         private class MappedColumn
@@ -218,9 +288,60 @@ namespace SharpOrm.DataTranslation.Reader
                 Index = index;
             }
 
-            public void Set(object owner, object value)
+            public virtual void Set(object owner, object value)
             {
                 Column.Set(owner, value);
+            }
+
+            public override int GetHashCode()
+            {
+                return Column.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Column.column.Equals(obj);
+            }
+
+            public override string ToString()
+            {
+                return Column.ToString();
+            }
+        }
+
+        private class MappedUnusedFkColumn : MappedColumn
+        {
+            private readonly TranslationRegistry _registry;
+            private readonly IFkQueue _fkQueue;
+
+            public MappedUnusedFkColumn(TranslationRegistry registry, IFkQueue fkQueue, ColumnInfo column, int index) : base(column, index)
+            {
+                _fkQueue = fkQueue;
+                _registry = registry;
+            }
+
+            public override void Set(object owner, object value)
+            {
+                Column.SetRaw(owner, ObjIdFkQueue.MakeObjWithId(_registry, Column, value));
+            }
+        }
+
+        private class MappedFkColumn : MappedColumn
+        {
+            private readonly IFkQueue _fkQueue;
+            private readonly TranslationRegistry _registry;
+            private readonly ForeignKeyNode _node;
+
+            public MappedFkColumn(TranslationRegistry registry, IFkQueue fkQueue, ForeignKeyNode node, int index) : base(node.ColumnInfo, index)
+            {
+                _node = node;
+                _fkQueue = fkQueue;
+                _registry = registry;
+            }
+
+            public override void Set(object owner, object value)
+            {
+                _fkQueue.EnqueueForeign(owner, _registry, value, _node);
             }
         }
     }
