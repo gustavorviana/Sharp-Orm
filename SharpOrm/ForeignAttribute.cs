@@ -23,7 +23,6 @@ namespace SharpOrm
         /// 
         /// </summary>
         /// <param name="foreignKey">Name of the column in the other table.</param>
-        /// <param name="localKey">Name of the column in the current table.</param>
         /// <exception cref="ArgumentNullException"></exception>
         public ForeignAttribute(string foreignKey)
         {
