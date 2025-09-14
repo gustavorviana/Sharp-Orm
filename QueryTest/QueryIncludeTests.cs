@@ -101,7 +101,7 @@ namespace QueryTest
 
             Connection.QueryReaders.Add(
                 "SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status], [Customer].[Id] AS [Customer_c_Id], [Customer].[Name] AS [Customer_c_Name], [Customer].[Email] AS [Customer_c_Email], [Customer].[address_id] AS [Customer_c_address_id], [Customer_Address].[Id] AS [Customer_Address_c_Id], [Customer_Address].[Name] AS [Customer_Address_c_Name], [Customer_Address].[Street] AS [Customer_Address_c_Street], [Customer_Address].[City] AS [Customer_Address_c_City] FROM [Orders] LEFT JOIN [Customers] [Customer] ON [Customer].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 10",
-                () => GetReader(builder.ToRow().Cells)
+                () => GetReader(builder.GetCells())
             );
 
             using var fallback = RegisterFallback();
