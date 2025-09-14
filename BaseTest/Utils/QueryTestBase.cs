@@ -11,7 +11,7 @@ namespace BaseTest.Utils
     {
         protected readonly DbFixtureBase fixture;
         protected virtual QueryConfig Config => fixture.Creator.Config;
-        protected virtual TranslationRegistry Translation => Config.Translation;
+        protected virtual TranslationRegistry Translation { get; } = new TranslationRegistry();
         protected ConnectionManager Manager => fixture.Manager;
         public ConnectionCreator Creator => fixture.Creator;
 

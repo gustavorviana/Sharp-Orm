@@ -120,6 +120,11 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Gets or sets the mode for mapping nested objects.
+        /// </summary>
+        public NestedMode NestedMapMode { get; set; } = NestedMode.Attribute;
+
+        /// <summary>
         /// Converts a C# value to the database.
         /// </summary>
         /// <param name="value">The value to be converted.</param>
@@ -213,6 +218,9 @@ namespace SharpOrm.DataTranslation
                 if (_native.CanWork(pendingTipe))
                     return _native;
 
+                if (type.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
+                    return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
+
                 return null;
             });
         }
@@ -243,6 +251,9 @@ namespace SharpOrm.DataTranslation
             if (member.GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute attribute)
                 return (ISqlTranslation)Activator.CreateInstance(attribute.Type);
 
+            if (ReflectionUtils.GetMemberType(member).GetCustomAttribute<SqlConverterAttribute>() is SqlConverterAttribute typeAttribute)
+                return (ISqlTranslation)Activator.CreateInstance(typeAttribute.Type);
+
             return null;
         }
 
@@ -255,7 +266,7 @@ namespace SharpOrm.DataTranslation
             if (string.IsNullOrEmpty(map.Name))
                 throw new ArgumentNullException(typeof(ModelMapper<T>).FullName + "." + nameof(ModelMapper<T>.Name));
 
-            var table = new TableInfo(type, map.Registry, map.Name, map._softDelete, map._timestamp, map.GetFields());
+            var table = new TableInfo(map);
             _mappedTables.TryAdd(type, table);
             return table;
         }
@@ -295,23 +306,49 @@ namespace SharpOrm.DataTranslation
 
         public bool Equals(TranslationRegistry other)
         {
-            return !(other is null) &&
-                   EqualityComparer<NativeSqlTranslation>.Default.Equals(_native, other._native) &&
-                   EqualityComparer<ISqlTranslation[]>.Default.Equals(Translators, other.Translators) &&
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return _native.Equals(other._native) &&
+                   DotnetUtils.SequenceEqual(Translators, other.Translators) &&
                    GuidFormat == other.GuidFormat &&
                    EqualityComparer<TimeZoneInfo>.Default.Equals(DbTimeZone, other.DbTimeZone) &&
-                   EqualityComparer<TimeZoneInfo>.Default.Equals(TimeZone, other.TimeZone);
+                   EqualityComparer<TimeZoneInfo>.Default.Equals(TimeZone, other.TimeZone) &&
+                   EnumSerialization == other.EnumSerialization &&
+                   Culture.Equals(other.Culture) &&
+                   DateFormat == other.DateFormat &&
+                   EmptyStringToNull == other.EmptyStringToNull;
         }
 
         public override int GetHashCode()
         {
             int hashCode = 836003443;
-            hashCode = hashCode * -1521134295 + EqualityComparer<NativeSqlTranslation>.Default.GetHashCode(_native);
-            hashCode = hashCode * -1521134295 + EqualityComparer<ISqlTranslation[]>.Default.GetHashCode(Translators);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(GuidFormat);
-            hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(DbTimeZone);
-            hashCode = hashCode * -1521134295 + EqualityComparer<TimeZoneInfo>.Default.GetHashCode(TimeZone);
+            hashCode = hashCode * -1521134295 + GetTranslatorsHashCode();
+            hashCode = hashCode * -1521134295 + (GuidFormat?.GetHashCode() ?? 0);
+            hashCode = hashCode * -1521134295 + (DbTimeZone?.GetHashCode() ?? 0);
+            hashCode = hashCode * -1521134295 + (TimeZone?.GetHashCode() ?? 0);
+            hashCode = hashCode * -1521134295 + EnumSerialization.GetHashCode();
+            hashCode = hashCode * -1521134295 + (Culture?.GetHashCode() ?? 0);
+            hashCode = hashCode * -1521134295 + (DateFormat?.GetHashCode() ?? 0);
+            hashCode = hashCode * -1521134295 + EmptyStringToNull.GetHashCode();
             return hashCode;
+        }
+
+        private int GetTranslatorsHashCode()
+        {
+            if (Translators == null)
+                return 0;
+
+            unchecked
+            {
+                int hash = 836003443;
+                foreach (var translator in Translators)
+                    hash = hash * -1521134295 + (translator?.GetType().GetHashCode() ?? 0);
+                return hash;
+            }
         }
 
         public static bool operator ==(TranslationRegistry left, TranslationRegistry right)
@@ -330,14 +367,13 @@ namespace SharpOrm.DataTranslation
 
         public TranslationRegistry Clone()
         {
-            return new TranslationRegistry
-            {
-                DbTimeZone = DbTimeZone,
-                GuidFormat = GuidFormat,
-                TimeZone = TimeZone,
-                Translators = Translators,
-                EnumSerialization = EnumSerialization
-            };
+            var clone = new TranslationRegistry();
+            var type = typeof(TranslationRegistry);
+
+            ReflectionUtils.CloneFields(this, clone, "_native");
+            ReflectionUtils.CloneProperties(this, clone);
+
+            return clone;
         }
     }
 }

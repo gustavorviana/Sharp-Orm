@@ -31,6 +31,14 @@ namespace SharpOrm.Connection
         {
             return (T)base.GetConnection();
         }
+
+        public override ConnectionCreator Clone()
+        {
+            return new MultipleConnectionCreator<T>(Config, _connectionString)
+            {
+                AutoOpenConnection = AutoOpenConnection
+            };
+        }
     }
 
     /// <summary>
@@ -39,7 +47,7 @@ namespace SharpOrm.Connection
     public class MultipleConnectionCreator : ConnectionCreator
     {
         private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
-        private readonly string _connectionString;
+        protected readonly string _connectionString;
         private readonly Type _dbConnectionType;
 
         /// <summary>

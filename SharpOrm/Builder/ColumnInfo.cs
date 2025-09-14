@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
     public class ColumnInfo : IEquatable<ColumnInfo>, IColumnInfo
     {
         #region Properties
-        protected internal readonly MemberInfo column;
+        protected internal readonly MemberInfo _column;
         public ValidationAttribute[] Validations { get; }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets the type of the declaring class.
         /// </summary>
-        public Type DeclaringType => this.column.DeclaringType;
+        public Type DeclaringType => _column.DeclaringType;
 
         /// <summary>
         /// Gets the type of the column.
@@ -67,7 +67,7 @@ namespace SharpOrm.Builder
         /// </summary>
         public bool DatabaseGenerated { get; }
 
-        public string PropName => this.column?.Name;
+        public string PropName => _column?.Name;
 
         public MapNestedAttribute MapNested { get; }
 
@@ -79,6 +79,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="fieldInfo">The field information.</param>
+        [Obsolete]
         public ColumnInfo(TranslationRegistry registry, FieldInfo fieldInfo) : this(fieldInfo, fieldInfo.FieldType, registry, registry.GetOf(fieldInfo))
         {
         }
@@ -88,6 +89,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="registry">The translation registry.</param>
         /// <param name="propertyInfo">The property information.</param>
+        [Obsolete]
         public ColumnInfo(TranslationRegistry registry, PropertyInfo propertyInfo) : this(propertyInfo, propertyInfo.PropertyType, registry, registry.GetOf(propertyInfo))
         {
         }
@@ -95,12 +97,12 @@ namespace SharpOrm.Builder
         private ColumnInfo(MemberInfo member, Type type, TranslationRegistry registry, ISqlTranslation translation)
         {
             Type = type;
-            column = member;
+            _column = member;
             Translation = translation ?? registry.GetFor(Type);
             IsNative = TranslationUtils.IsNative(type, false);
             MapNested = member.GetCustomAttribute<MapNestedAttribute>();
 
-            ForeignInfo = GetForeign();
+            ForeignInfo = GetForeign(member);
 
             ColumnAttribute colAttr = GetAttribute<ColumnAttribute>();
 
@@ -108,14 +110,14 @@ namespace SharpOrm.Builder
             Name = colAttr?.Name ?? member.Name;
             Order = colAttr?.Order ?? -1;
 
-            Key = Iskey(column);
-            Validations = column.GetCustomAttributes<ValidationAttribute>().ToArray();
+            Key = Iskey(_column);
+            Validations = _column.GetCustomAttributes<ValidationAttribute>().ToArray();
             DatabaseGenerated = GetAttribute<DatabaseGeneratedAttribute>() != null;
         }
 
         internal ColumnInfo(MemberInfo member, IColumnInfo map, TranslationRegistry registry)
         {
-            column = member;
+            _column = member;
             Type = ReflectionUtils.GetMemberType(member);
             IsNative = TranslationUtils.IsNative(Type, false);
 
@@ -134,9 +136,15 @@ namespace SharpOrm.Builder
             return member.GetCustomAttribute<KeyAttribute>() != null || member.Name.Equals("id", StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static bool CanWork(PropertyInfo prop)
+        internal static bool CanWork(MemberInfo member)
         {
-            return prop.CanRead && prop.CanWrite && prop.GetCustomAttribute<NotMappedAttribute>() == null;
+            if (member.GetCustomAttribute<NotMappedAttribute>() != null)
+                return false;
+
+            if (member is PropertyInfo prop)
+                return prop.CanRead && prop.CanWrite;
+
+            return member is FieldInfo field && !field.IsInitOnly;
         }
 
         internal static bool CanWork(FieldInfo field)
@@ -144,15 +152,20 @@ namespace SharpOrm.Builder
             return !field.IsInitOnly && field.GetCustomAttribute<NotMappedAttribute>() == null;
         }
 
-        private ForeignAttribute GetForeign()
+        internal static ForeignAttribute GetForeign(MemberInfo info)
         {
-            if (this.GetAttribute<ForeignAttribute>() is ForeignAttribute fka)
+            if (info.GetCustomAttribute<ForeignAttribute>() is ForeignAttribute fka)
                 return fka;
 
-            var attr = this.GetAttribute<ForeignKeyAttribute>();
+            var attr = info.GetCustomAttribute<ForeignKeyAttribute>();
             if (attr == null) return null;
 
             return new ForeignAttribute(attr.Name);
+        }
+
+        internal static bool IsForeign(MemberInfo prop)
+        {
+            return prop.GetCustomAttribute<ForeignAttribute>() != null || prop.GetCustomAttribute<ForeignKeyAttribute>() != null;
         }
 
         public static string GetName(MemberInfo member)
@@ -167,7 +180,7 @@ namespace SharpOrm.Builder
         /// <returns>The attribute instance if found; otherwise, <c>null</c>.</returns>
         public T GetAttribute<T>() where T : Attribute
         {
-            return this.column.GetCustomAttribute<T>();
+            return _column.GetCustomAttribute<T>();
         }
 
         /// <summary>
@@ -177,7 +190,7 @@ namespace SharpOrm.Builder
         /// <param name="value">The value to set.</param>
         public void Set(object owner, object value)
         {
-            this.SetRaw(owner, this.Translation.FromSqlValue(value, this.GetValidValueType()));
+            SetRaw(owner, Translation.FromSqlValue(value, GetValidValueType()));
         }
 
         /// <summary>
@@ -187,7 +200,7 @@ namespace SharpOrm.Builder
         /// <param name="value">The raw value to set.</param>
         public virtual void SetRaw(object owner, object value)
         {
-            ReflectionUtils.SetMemberValue(this.column, owner, value);
+            ReflectionUtils.SetMemberValue(_column, owner, value);
         }
 
         /// <summary>
@@ -207,7 +220,7 @@ namespace SharpOrm.Builder
         /// <returns>The raw value of the column.</returns>
         public virtual object GetRaw(object owner)
         {
-            return ReflectionUtils.GetMemberValue(this.column, owner);
+            return ReflectionUtils.GetMemberValue(_column, owner);
         }
 
         protected Type GetValidValueType()
@@ -260,15 +273,31 @@ namespace SharpOrm.Builder
             if (value == DBNull.Value)
                 value = null;
 
-            context.MemberName = column.Name;
+            context.MemberName = _column.Name;
 
             for (int i = 0; i < Validations.Length; i++)
                 Validations[i].Validate(value, context);
         }
 
+        public ValidationResult[] GetValidationResults(ValidationContext context, object value)
+        {
+            if (value == DBNull.Value)
+                value = null;
+
+            context.MemberName = _column.Name;
+
+            var results = new List<ValidationResult>(Validations.Length);
+
+            for (int i = 0; i < Validations.Length; i++)
+                if (Validations[i].GetValidationResult(value, context) is ValidationResult result)
+                    results.Add(result);
+
+            return results.ToArray();
+        }
+
         public override string ToString()
         {
-            return string.Format("{0}: {1}", this.Name, this.Type);
+            return string.Format("{0}: {1}", Name, Type);
         }
 
         #region IEquatable

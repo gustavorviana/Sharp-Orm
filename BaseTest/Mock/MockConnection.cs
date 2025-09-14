@@ -21,6 +21,8 @@ namespace BaseTest.Mock
 
         public bool ThrowIfNoQuery { get; set; }
 
+        public bool IsDisposed { get; private set; }
+
         [AllowNull]
         public override string ConnectionString { get; set; }
 
@@ -55,7 +57,7 @@ namespace BaseTest.Mock
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
-            return new MockTransaction(this);
+            return new MockTransaction(this, isolationLevel);
         }
 
         public void Reset()
@@ -105,6 +107,12 @@ namespace BaseTest.Mock
         internal MockDataReader? OnFallback(MockCommand cmd)
         {
             return OnQueryFallback != null ? OnQueryFallback(cmd) : null;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            IsDisposed = true;
         }
     }
 }

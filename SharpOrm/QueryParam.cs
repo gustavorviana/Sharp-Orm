@@ -62,6 +62,7 @@ namespace SharpOrm
         public QueryParam(string name, object value, ParameterDirection direction = ParameterDirection.Input)
         {
             Name = name.StartsWith("@") ? name : $"@{name}";
+            Direction = direction;
             _value = value;
         }
 

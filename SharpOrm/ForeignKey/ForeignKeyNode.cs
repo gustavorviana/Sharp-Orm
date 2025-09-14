@@ -18,7 +18,7 @@ namespace SharpOrm.DataTranslation
         public DbName TableParent { get; }
         public override DbName Name { get; }
 
-        public MemberInfo Member => ColumnInfo.column;
+        public MemberInfo Member => ColumnInfo._column;
         public string ParentKeyColumn => ColumnInfo.ForeignInfo?.ForeignKey;
         public string LocalKeyColumn => ColumnInfo.ForeignInfo?.LocalKey ?? "Id";
 

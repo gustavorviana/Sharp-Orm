@@ -81,7 +81,12 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Gets or sets the mode for mapping nested objects.
         /// </summary>
-        public NestedMode NestedMapMode { get; set; } = NestedMode.Attribute;
+        [Obsolete("Use Translation.NestedMapMode directly. This property will be removed in version 4.0.")]
+        public NestedMode NestedMapMode
+        {
+            get => Translation.NestedMapMode;
+            set => Translation.NestedMapMode = value;
+        }
 
         /// <summary>
         /// Create an instance that allows only safe modifications.
@@ -190,6 +195,16 @@ namespace SharpOrm.Builder
             }
 
             return builder.Append(escapeChar).ToString();
+        }
+
+        /// <summary>
+        /// Creates a parameter name for the SQL query.
+        /// </summary>
+        /// <param name="index">The parameter index.</param>
+        /// <returns>The parameter name.</returns>
+        public virtual string CreateParameterName(int index)
+        {
+            return $"@p{index}";
         }
     }
 }

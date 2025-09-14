@@ -29,6 +29,15 @@ namespace SharpOrm.Connection
         {
             return (T)base.GetConnection();
         }
+
+        public override ConnectionCreator Clone()
+        {
+            return new SingleConnectionCreator<T>(Config, _connectionString)
+            {
+                AutoOpenConnection = AutoOpenConnection,
+                Management = Management
+            };
+        }
     }
 
     /// <summary>
@@ -37,7 +46,7 @@ namespace SharpOrm.Connection
     public class SingleConnectionCreator : ConnectionCreator
     {
         private readonly object _lock = new object();
-        private readonly string _connectionString;
+        protected readonly string _connectionString;
         private readonly Type _dbConnectionType;
         private DbConnection _connection;
 

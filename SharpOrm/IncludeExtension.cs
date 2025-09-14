@@ -11,43 +11,27 @@ namespace SharpOrm
     internal static class IncludeExtension
     {
         public static IIncludable<TEntity, TProperty> Include<TEntity, TProperty>(
-        this IIncludable<TEntity, TProperty> source,
-        Expression<Func<TEntity, TProperty>> navigationPropertyPath)
-        where TEntity : class
+            this IIncludable<TEntity> source,
+            Expression<Func<TEntity, TProperty>> navigationPropertyPath)
+            where TEntity : class
         {
-            var sourceClass = source as Includable<TEntity, TProperty>;
-
-            return InternalInclude<TEntity, TProperty>(sourceClass.Register, navigationPropertyPath);
-        }
-
-        public static IIncludable<TEntity, TProperty> Include<TEntity, TPreviousProperty, TProperty>(
-        this IIncludable<TEntity, IEnumerable<TPreviousProperty>> source,
-        Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
-        where TEntity : class
-        {
-            var sourceClass = source as IIncludable;
-
-            return InternalInclude<TEntity, TProperty>(sourceClass.Register, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>((source as IIncludable).Register, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
-        this IIncludable<TEntity, IEnumerable<TPreviousProperty>> source,
-        Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
-        where TEntity : class
+            this IIncludable<TEntity, IEnumerable<TPreviousProperty>> source,
+            Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
+            where TEntity : class
         {
-            var sourceClass = source as IIncludable;
-
-            return InternalInclude<TEntity, TProperty>(sourceClass.Node, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>((source as IIncludable).Node, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
-        this IIncludable<TEntity, TPreviousProperty> source,
-        Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
-        where TEntity : class
+            this IIncludable<TEntity, TPreviousProperty> source,
+            Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
+            where TEntity : class
         {
-            var sourceClass = source as IIncludable;
-
-            return InternalInclude<TEntity, TProperty>(sourceClass.Node, navigationPropertyPath);
+            return InternalInclude<TEntity, TProperty>((source as IIncludable).Node, navigationPropertyPath);
         }
 
         internal static IIncludable<TEntity, TProperty> InternalInclude<TEntity, TProperty>(ForeignKeyNodeBase parent, LambdaExpression expression)

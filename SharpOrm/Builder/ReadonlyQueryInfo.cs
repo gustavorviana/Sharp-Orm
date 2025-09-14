@@ -15,8 +15,8 @@ namespace SharpOrm.Builder
 
         public ReadonlyQueryInfo(QueryConfig config, DbName tableName)
         {
-            this.Config = config ?? throw new ArgumentNullException(Messages.ConfigMustBeNotNull);
-            this.TableName = tableName;
+            Config = config ?? throw new ArgumentNullException(Messages.ConfigMustBeNotNull);
+            TableName = tableName;
         }
     }
 }

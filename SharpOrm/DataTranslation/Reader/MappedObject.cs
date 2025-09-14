@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,8 +8,10 @@ using System.Linq;
 namespace SharpOrm.DataTranslation.Reader
 {
     /// <summary>
+    /// **Obsolete:** This class is deprecated and will be replaced by <see cref="Reader.ObjectRecordReader"/> in version 4.0.
     /// Represents an object that can be mapped from a database record.
     /// </summary>
+    [Obsolete("MappedObject is deprecated and will be replaced by ObjectRecordMapper in version 4.0.")]
     public class MappedObject : IMappedObject
     {
         private readonly List<MappedObject> _childrens = new List<MappedObject>();
@@ -16,7 +19,6 @@ namespace SharpOrm.DataTranslation.Reader
         private readonly TranslationRegistry _registry;
         private readonly object _lock = new object();
         private ObjectActivator _objectActivator;
-        private readonly NestedMode _nestedMode;
         private readonly IFkQueue _fkQueue;
         private ColumnInfo _parentColumn;
         private MappedObject _parent;
@@ -72,54 +74,81 @@ namespace SharpOrm.DataTranslation.Reader
             if (registry == null)
                 registry = TranslationRegistry.Default;
 
+            if (type == typeof(Row))
+                return new MappedRowObject(registry);
+
             if (ReflectionUtils.IsDynamic(type))
                 return new MappedDynamic(record, registry);
 
-            var table = registry.GetTable(type);
-            if (table != null && table.IsManualMap)
-                return new MappedManualObj(table, registry, record);
-
-            return Create(record, type, nestedMode, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyRegister, registry);
+            return Create(record, type, enqueueable, (enqueueable as FkLoaders)?.ForeignKeyNode, registry);
         }
 
-        internal static IMappedObject Create(IDataRecord record, Type type, NestedMode nestedMode, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)
+        internal static IMappedObject Create(IDataRecord record, Type type, IFkQueue enqueueable, ForeignKeyNodeBase node, TranslationRegistry registry)
         {
-            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue(), nestedMode)
+            return new MappedObject(type, registry, enqueueable ?? new ObjIdFkQueue())
             {
                 Node = node
-            }.Map(record, string.Empty);
+            }.Map(record);
         }
 
-        internal MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable, NestedMode nestedMode)
+        internal MappedObject(Type type, TranslationRegistry registry, IFkQueue enqueueable)
         {
             Type = type;
             IsCollection = RuntimeList.IsCollection(type);
             _registry = registry;
             _fkQueue = enqueueable;
-            _nestedMode = nestedMode;
         }
 
-        internal MappedObject Map(IDataRecord record, string prefix)
+        internal MappedObject Map(IDataRecord record)
         {
-            if (Type == typeof(Row))
-                return this;
+            var table = _registry.GetTable(Type);
 
-            if (!IsCollection)
-                _objectActivator = new ObjectActivator(Type, record, _registry);
+            InitActivator(record);
 
-            foreach (var column in _registry.GetTable(Type).Columns)
-                if (column.ForeignInfo != null && (!(Node?.Exists(column.column) ?? false)))
-                    AddIfValidId(record, prefix + column.ForeignInfo.ForeignKey, column, true);
-                else if (NeedMapAsValue(column))
-                    AddIfValidId(record, GetName(column, prefix), column);
-                else
-                    MapNested(column, record, prefix);
+            foreach (var node in table.Columns.Nodes)
+                MapNodeChildrens(record, node);
 
             if (Node != null)
                 foreach (var node in Node.Nodes)
                     RegisterForeignNode(node, record);
 
             return this;
+        }
+
+        private void InitActivator(IDataRecord record)
+        {
+            if (!IsCollection && _objectActivator == null)
+                _objectActivator = new ObjectActivator(Type, record, _registry);
+        }
+
+        private void MapNodeChildrens(IDataRecord record, IColumnNode node)
+        {
+            if (node.Nodes.Count == 0)
+            {
+                MapNode(record, node);
+                return;
+            }
+
+            //var owner = new MappedObject(node.Column.Type, _registry, _fkQueue) { _parentColumn = node.Column, _parent = this };
+            //owner.InitActivator(record);
+
+            foreach (var children in node.Nodes)
+                MapNodeChildrens(record, children);
+
+            //_childrens.Add(owner);
+        }
+
+        private void MapNode(IDataRecord record, IColumnNode node)
+        {
+            if (node.Column.ForeignInfo != null && NodeExists(node))
+                AddIfValidId(record, node.Column.ForeignInfo.ForeignKey, node.Column, true);
+            else if (NeedMapAsValue(node.Column))
+                AddIfValidId(record, node.Column.Name, node.Column);
+        }
+
+        private bool NodeExists(IColumnNode node)
+        {
+            return !Node?.Exists(node.Column._column) ?? false;
         }
 
         private void RegisterForeignNode(ForeignKeyNode node, IDataRecord record)
@@ -131,7 +160,7 @@ namespace SharpOrm.DataTranslation.Reader
                 return;
             }
 
-            var nodeObj = new MappedObject(node.ColumnInfo.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = node.ColumnInfo, _parent = this };
+            var nodeObj = new MappedObject(node.ColumnInfo.Type, _registry, _fkQueue) { _parentColumn = node.ColumnInfo, _parent = this };
             nodeObj.MapNodeColumns(node, record);
 
             _childrens.Add(nodeObj);
@@ -142,49 +171,15 @@ namespace SharpOrm.DataTranslation.Reader
 
         private MappedObject MapNodeColumns(ForeignKeyNode node, IDataRecord record)
         {
-            if (!node.IsCollection)
-                _objectActivator = new ObjectActivator(Type, record, _registry);
+            InitActivator(record);
 
             foreach (var info in node.Columns)
-                if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo.column))
+                if (info.ForeignInfo != null && !node.Exists(info.ColumnInfo._column))
                     AddIfValidId(record, info.Alias + info.ForeignInfo.ForeignKey, info.ColumnInfo, true);
                 else if (NeedMapAsValue(info.ColumnInfo))
                     AddIfValidId(record, info.Alias, info.ColumnInfo);
-                else
-                    MapNested(info.ColumnInfo, record, info.Alias);
 
             return this;
-        }
-
-        private void MapNested(ColumnInfo column, IDataRecord record, string prefix)
-        {
-            if (!IsValidNested(column))
-                return;
-
-            _childrens.Add(new MappedObject(column.Type, _registry, _fkQueue, _nestedMode) { _parentColumn = column, _parent = this }
-                    .Map(record, GetColumnPrefix(column, prefix)));
-        }
-
-        private static string GetColumnPrefix(ColumnInfo column, string prefix)
-        {
-            if (!string.IsNullOrEmpty(column.MapNested?.Prefix))
-                return column.MapNested.Prefix;
-
-            if (string.IsNullOrEmpty(prefix))
-                return column.Name + '_';
-
-            return prefix;
-        }
-
-        private bool IsValidNested(ColumnInfo column)
-        {
-            return column.MapNested != null ||
-                (_nestedMode == NestedMode.All && !IsRootType(column) && !ReflectionUtils.IsCollection(column.Type));
-        }
-
-        private bool IsRootType(ColumnInfo column)
-        {
-            return column.Type == Type;
         }
 
         private static bool NeedMapAsValue(ColumnInfo column)
@@ -204,32 +199,16 @@ namespace SharpOrm.DataTranslation.Reader
             AddOrUpdateColumn(isFk ? new MappedUnusedFkColumn(_registry, _fkQueue, column, index) : new MappedColumn(column, index));
         }
 
-        private bool NeedLoadForeign(ColumnInfo column)
-        {
-            return column.ForeignInfo != null &&
-                !ReflectionUtils.IsCollection(column.Type) &&
-                _fkQueue is FkLoaders fkLoader &&
-                fkLoader.Config.LoadForeign;
-        }
-
         private void AddOrUpdateColumn(MappedColumn column)
         {
             _columns.Remove(column);
             _columns.Add(column);
         }
 
-        private static string GetName(ColumnInfo column, string prefix)
-        {
-            return column.AutoGenerated && prefix.Length != 0 ? (prefix + column.Name) : column.Name;
-        }
-
         public object Read(IDataRecord record)
         {
             lock (_lock)
             {
-                if (Type == typeof(Row))
-                    return record.ReadRow(_registry);
-
                 NewObject(record);
 
                 for (int i = 0; i < record.FieldCount; i++)
@@ -274,7 +253,10 @@ namespace SharpOrm.DataTranslation.Reader
 
         public override string ToString()
         {
-            return Type.ToString();
+            if (_parentColumn == null)
+                return Type.ToString();
+
+            return $"{_parentColumn.Name}: {Type}";
         }
 
         private class MappedColumn
@@ -300,7 +282,7 @@ namespace SharpOrm.DataTranslation.Reader
 
             public override bool Equals(object obj)
             {
-                return Column.column.Equals(obj);
+                return Column._column.Equals(obj);
             }
 
             public override string ToString()

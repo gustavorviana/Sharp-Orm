@@ -37,7 +37,7 @@ namespace BaseTest.Utils
 
         public static MockDataReader GetReader(params Cell[] cells)
         {
-            return new MockDataReader(i => new Row(cells), 1);
+            return new MockDataReader(cells);
         }
 
         public static MockDataReader GetReader(Func<int, Cell[]> createCallback, int qtd)

@@ -10,21 +10,20 @@ using System.Threading;
 
 namespace SharpOrm.DataTranslation
 {
-    [Obsolete]
     internal class FkLoaders : IFkQueue
     {
         #region Fields/Props
         private readonly Queue<ForeignInfo> _foreignKeyToLoad = new Queue<ForeignInfo>();
         private readonly CancellationToken _token;
 
-        public ForeignKeyRegister ForeignKeyRegister { get; }
+        public ForeignKeyNodeBase ForeignKeyNode { get; }
         public ConnectionManager Manager { get; }
         public QueryConfig Config => Manager.Config;
         #endregion
 
-        public FkLoaders(ConnectionManager manager, ForeignKeyRegister register, CancellationToken token)
+        public FkLoaders(ConnectionManager manager, ForeignKeyNodeBase node, CancellationToken token)
         {
-            ForeignKeyRegister = register;
+            ForeignKeyNode = node;
             _token = token;
 
             Manager = manager;
@@ -80,8 +79,17 @@ namespace SharpOrm.DataTranslation
 
         private DbObjectEnumerator CreateEnumerator(ForeignInfo info, DbDataReader reader)
         {
-            var mapped = MappedObject.Create(reader, ReflectionUtils.GetGenericArg(info.Type), Manager.Config.NestedMapMode, null, info.Node, Manager.Config.Translation);
-            return new DbObjectEnumerator(reader, mapped, _token);
+            var table = Config.Translation.GetTable(ReflectionUtils.GetGenericArg(info.Type));
+
+            var recordReader = new ObjectRecordReader(new Reader.ForeignInfo(this, ForeignKeyNode.Get(info.Node.ColumnInfo._column)),
+                table, 
+                reader
+            );
+            recordReader.Token = _token;
+            return new DbObjectEnumerator(Manager, reader, recordReader)
+            {
+                Token = _token
+            };
         }
 
         private void AddFkColumn(object owner, object fkValue, ForeignKeyNode node)

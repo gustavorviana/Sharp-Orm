@@ -40,7 +40,23 @@ namespace SharpOrm.Builder
 
         internal void InternalSet(object owner, object value)
         {
-            base.SetRaw(owner, this.Translation.FromSqlValue(value, this.GetValidValueType()));
+            base.SetRaw(owner, Translation.FromSqlValue(value, GetValidValueType()));
+        }
+
+        internal void InternaRawSet(object owner, object value)
+        {
+            base.SetRaw(owner, value);
+        }
+
+        internal object InternalGet(object owner)
+        {
+            var value = InternalGetRaw(owner);
+            return Translation.ToSqlValue(value, GetValidValueType());
+        }
+
+        internal object InternalGetRaw(object owner)
+        {
+            return base.GetRaw(owner);
         }
 
         public override void SetRaw(object owner, object value)

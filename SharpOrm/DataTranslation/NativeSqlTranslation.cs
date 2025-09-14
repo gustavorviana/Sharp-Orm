@@ -144,13 +144,13 @@ namespace SharpOrm.DataTranslation
             return numericTranslation.CanWork(type) && (!(value is string strVal) || TranslationUtils.IsNumericString(strVal));
         }
 
-        private string StringToSql(object value)
+        private object StringToSql(object value)
         {
             if (!(value is string strValue))
                 return value.ToString();
 
             if (EmptyStringToNull && string.IsNullOrEmpty(strValue))
-                return null;
+                return DBNull.Value;
 
             return strValue;
         }

@@ -1,6 +1,7 @@
-﻿using SharpOrm.DataTranslation;
-using System;
+﻿using SharpOrm.Builder.Tables;
+using SharpOrm.DataTranslation;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
 
@@ -12,11 +13,12 @@ namespace SharpOrm.Builder
 
         public List<MemberTreeNode> Children { get; } = new List<MemberTreeNode>();
         public MemberInfo Member { get; }
-        internal string prefix;
+        internal string _prefix;
 
-        public MemberTreeNode(MemberInfo member)
+        public MemberTreeNode(MemberInfo member, MapNestedAttribute nestedInfo)
         {
             Member = member;
+            _prefix = nestedInfo?.Prefix;
         }
 
         internal MemberTreeNode GetOrAdd(MemberInfo member)
@@ -25,31 +27,58 @@ namespace SharpOrm.Builder
             if (children != null)
                 return children;
 
-            children = new MemberTreeNode(member);
+            children = new MemberTreeNode(member, null);
             Children.Add(children);
             return children;
         }
 
-        internal MemberTreeNode MapChildren(MemberInfo member, bool nested)
+        internal MemberTreeNode MapChildren(MemberInfo parentMember, NestedMode mode)
         {
-            var type = ReflectionUtils.GetMemberType(member);
+            var type = ReflectionUtils.GetMemberType(parentMember);
 
-            foreach (var property in type.GetProperties(Bindings.PublicInstance))
-                if (ColumnInfo.CanWork(property))
-                    if (IsNative(property.PropertyType)) Children.Add(new MemberTreeNode(property));
-                    else Children.Add(new MemberTreeNode(property).MapChildren(property, nested));
+            if (IsValueMember(parentMember))
+                return this;
 
-            foreach (var field in type.GetFields(Bindings.PublicInstance))
-                if (ColumnInfo.CanWork(field))
-                    if (IsNative(field.FieldType)) Children.Add(new MemberTreeNode(field));
-                    else Children.Add(new MemberTreeNode(field).MapChildren(field, nested));
+            foreach (var member in type.GetProperties(Bindings.PublicInstance))
+                if (!Children.Any(x => x.Member == member) && MapNode(member, mode) is MemberTreeNode node)
+                    Children.Add(node);
+
+            foreach (var member in type.GetFields(Bindings.PublicInstance))
+                if (!Children.Any(x => x.Member == member) && MapNode(member, mode) is MemberTreeNode node)
+                    Children.Add(node);
 
             return this;
         }
 
-        internal static bool IsNative(Type type)
+        internal static MemberTreeNode MapNode(MemberInfo memberInfo, NestedMode mode)
         {
-            return TranslationUtils.IsNative(type, false) || ReflectionUtils.IsCollection(type);
+            if (!ColumnInfo.CanWork(memberInfo))
+                return null;
+
+            var attr = GetNestedInfo(memberInfo);
+            if (attr == null && !IsValueMember(memberInfo) && !NeedMapNested(memberInfo, mode))
+                return null;
+
+            return new MemberTreeNode(memberInfo, attr).MapChildren(memberInfo, mode);
+        }
+
+        private static bool NeedMapNested(MemberInfo member, NestedMode mode)
+        {
+            return ReflectionUtils.GetMemberType(member).GetCustomAttribute<OwnedAttribute>() != null || mode == NestedMode.All;
+        }
+
+        private static MapNestedAttribute GetNestedInfo(MemberInfo member)
+        {
+            return member.GetCustomAttribute<MapNestedAttribute>();
+        }
+
+        private static bool IsValueMember(MemberInfo member)
+        {
+            return TranslationUtils.IsNative(ReflectionUtils.GetMemberType(member), false) ||
+                ColumnInfo.IsForeign(member) ||
+                member.GetCustomAttribute<SqlConverterAttribute>() != null ||
+                member.GetCustomAttribute<ColumnAttribute>() != null ||
+                member.DeclaringType.GetCustomAttribute<SqlConverterAttribute>() != null;
         }
 
         internal ColumnMapInfo GetColumn(TranslationRegistry registry)
@@ -58,21 +87,14 @@ namespace SharpOrm.Builder
             return _columnInfo = new ColumnMapInfo(Member, registry);
         }
 
-        internal IEnumerable<ColumnTreeInfo> BuildTree(List<MemberInfo> root, TranslationRegistry registry, string prefix, bool isRootPrefix = false)
+        internal void BuildTree(List<MemberInfo> root, ITreeAdd<ColumnCollectionBuilder.BuilderNode> owner, TranslationRegistry registry, string prefix, bool isRootPrefix = false)
         {
-            if (Children.Count == 0)
-            {
-                yield return Build(root, registry, GetValidName(root, prefix, this, isRootPrefix));
-                yield break;
-            }
+            owner = owner.Add(Build(root, registry, GetValidName(root, prefix, this, isRootPrefix)));
 
             foreach (var child in Children)
             {
                 root.Add(child.Member);
-
-                foreach (var result in child.BuildTree(root, registry, child.Children.Count == 0 ? this.prefix ?? prefix : GetValidName(root, prefix, child), !string.IsNullOrEmpty(this.prefix)))
-                    yield return result;
-
+                child.BuildTree(root, owner, registry, child.Children.Count == 0 ? _prefix ?? prefix : GetValidName(root, prefix, child), !string.IsNullOrEmpty(_prefix));
                 root.RemoveAt(root.Count - 1);
             }
         }
@@ -94,7 +116,7 @@ namespace SharpOrm.Builder
         private string GetValidPrefix(string prefix)
         {
             if (string.IsNullOrEmpty(prefix))
-                return this.prefix;
+                return _prefix;
 
             return $"{prefix}_";
         }

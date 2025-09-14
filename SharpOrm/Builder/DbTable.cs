@@ -4,6 +4,7 @@ using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using SharpOrm.Msg;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,7 +82,7 @@ namespace SharpOrm.Builder
 
             var table = registry.GetTable(typeof(T));
             var cols = new TableColumnCollection();
-            cols.AddColumns(table.Columns);
+            cols.AddColumns(table.Columns.ToArray());
 
             return Create(new TableSchema(table.Name, cols) { Temporary = temporary }, manager);
         }
@@ -92,7 +93,7 @@ namespace SharpOrm.Builder
         /// <param name="schema">Schema to be used for creating the table.</param>
         /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
-        public static DbTable Create(TableSchema schema, ConnectionManager manager = null)
+        public static DbTable Create(ITableSchema schema, ConnectionManager manager = null)
         {
             bool isLocalManager = manager == null;
             if (manager is null)
@@ -262,7 +263,7 @@ namespace SharpOrm.Builder
             return manager.ExecuteScalar<int>(grammar.Exists()) > 0;
         }
 
-        private static void ValidateConnectionManager(TableSchema schema, ConnectionManager manager)
+        private static void ValidateConnectionManager(ITableSchema schema, ConnectionManager manager)
         {
             if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
                 throw new InvalidOperationException(Messages.Table.InvalidEmpTableConnection);

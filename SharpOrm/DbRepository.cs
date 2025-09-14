@@ -268,12 +268,9 @@ namespace SharpOrm
         /// <returns>A Query object for the specified table.</returns>
         protected virtual Query Query(DbName name)
         {
-            this.ThrowIfDisposed();
+            ThrowIfDisposed();
 
-            if (this.Transaction != null)
-                return new Query(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
-
-            return new Query(name, Creator) { Token = this.Token };
+            return new Query(name, GetManager()) { Token = Token };
         }
 
         /// <summary>
@@ -284,7 +281,7 @@ namespace SharpOrm
         /// <returns>A Query object for the specified type with an alias.</returns>
         protected Query<T> Query<T>(string alias = "")
         {
-            return this.Query<T>(DbName.Of<T>(alias));
+            return Query<T>(DbName.Of<T>(alias));
         }
 
         /// <summary>
@@ -295,12 +292,9 @@ namespace SharpOrm
         /// <returns>A Query object for the specified type with a DbName.</returns>
         protected virtual Query<T> Query<T>(DbName name)
         {
-            this.ThrowIfDisposed();
+            ThrowIfDisposed();
 
-            if (this.Transaction != null)
-                return new Query<T>(name, this.Transaction) { Token = this.Token, CommandTimeout = this.CommandTimeout };
-
-            return new Query<T>(name, Creator) { Token = this.Token, CommandTimeout = this.CommandTimeout };
+            return new Query<T>(name, GetManager()) { Token = Token, CommandTimeout = CommandTimeout };
         }
 
         /// <summary>
@@ -561,12 +555,12 @@ namespace SharpOrm
         /// <returns></returns>
         protected virtual ConnectionManager GetManager(bool useActiveTransaction = true)
         {
-            this.ThrowIfDisposed();
+            ThrowIfDisposed();
 
-            lock (this._lock)
+            lock (_lock)
             {
-                if (useActiveTransaction && this.Transaction != null)
-                    return this.Transaction;
+                if (useActiveTransaction && Transaction != null)
+                    return Transaction;
 
                 return GetExistingManager() ?? GetNewManager();
             }

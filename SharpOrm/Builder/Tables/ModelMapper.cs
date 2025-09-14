@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Tables;
+using SharpOrm.Builder.Tables.Loaders;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
@@ -13,15 +14,16 @@ namespace SharpOrm.Builder
     /// Represents a mapping between a type <typeparamref name="T"/> and a database table.
     /// </summary>
     /// <typeparam name="T">The type to be mapped to the table.</typeparam>
-    public class ModelMapper<T> : IModelMapper
+    public class ModelMapper<T> : IModelMapper, ITableInfo
     {
-        private readonly List<MemberTreeNode> Nodes = new List<MemberTreeNode>();
+        private readonly ColumnLoader<T> _loader = null;
         private TableInfo table;
 
-        internal SoftDeleteAttribute _softDelete { get; set; }
-        internal HasTimestampAttribute _timestamp { get; set; }
+        internal SoftDeleteAttribute _softDelete;
+        internal HasTimestampAttribute _timestamp;
 
         private string _name;
+
         /// <summary>
         /// Gets or sets the name of the table. 
         /// Throws an <see cref="InvalidOperationException"/> if the table has already been created.
@@ -43,7 +45,15 @@ namespace SharpOrm.Builder
         /// </summary>
         public TranslationRegistry Registry { get; }
 
-        public ModelMapper(QueryConfig config) : this(config.Translation, config.NestedMapMode)
+        Type ITableInfo.Type => typeof(T);
+
+        SoftDeleteAttribute ITableInfo.SoftDelete => _softDelete;
+
+        HasTimestampAttribute ITableInfo.Timestamp => _timestamp;
+
+        IColumnLoader ITableInfo.ColumnLoader => _loader;
+
+        public ModelMapper(QueryConfig config) : this(config.Translation)
         {
         }
 
@@ -52,20 +62,18 @@ namespace SharpOrm.Builder
         /// Automatically maps the properties and fields of the specified type <typeparamref name="T"/>.
         /// </summary>
         /// <param name="registry">The translation registry to be used for the mapping.</param>
-        public ModelMapper(TranslationRegistry registry, NestedMode nestedMode = NestedMode.All)
+        public ModelMapper(TranslationRegistry registry)
         {
             Name = typeof(T).Name;
             Registry = registry;
+            _loader = new ColumnLoader<T>(registry);
+        }
 
-            foreach (var property in typeof(T).GetProperties(Bindings.PublicInstance))
-                if (ColumnInfo.CanWork(property))
-                    if (MemberTreeNode.IsNative(property.PropertyType)) Nodes.Add(new MemberTreeNode(property));
-                    else if (nestedMode == NestedMode.All) Nodes.Add(new MemberTreeNode(property).MapChildren(property, true));
-
-            foreach (var field in typeof(T).GetFields(Bindings.PublicInstance))
-                if (ColumnInfo.CanWork(field))
-                    if (MemberTreeNode.IsNative(field.FieldType)) Nodes.Add(new MemberTreeNode(field));
-                    else if (nestedMode == NestedMode.All) Nodes.Add(new MemberTreeNode(field).MapChildren(field, true));
+        public ModelMapper(TranslationRegistry registry, NestedMode nestedMode)
+        {
+            Name = typeof(T).Name;
+            Registry = registry;
+            _loader = new ColumnLoader<T>(registry, nestedMode);
         }
 
         public ModelMapper<T> ApplyConfiguration(IModelMapperConfiguration<T> configuration)
@@ -115,7 +123,7 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="ColumnMapInfo"/> representing the mapped property.</returns>
         public ColumnMapInfo Property(Expression<Func<T, object>> expression)
         {
-            return GetColumnFromExpression(expression, true, out _)?.GetColumn(Registry) ?? throw new InvalidOperationException(Messages.Expressions.Invalid);
+            return _loader.GetColumnFromExpression(expression, true, out _)?.GetColumn(Registry) ?? throw new InvalidOperationException(Messages.Expressions.Invalid);
         }
 
         /// <summary>
@@ -125,64 +133,10 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public ModelMapper<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
         {
-            var column = GetColumnFromExpression(expression, false, out _);
-            column.MapChildren(column.Member, subNested);
-            column.prefix = prefix;
+            var column = _loader.GetColumnFromExpression(expression, false, out _);
+            column.MapChildren(column.Member as PropertyInfo, subNested ? NestedMode.All : NestedMode.Attribute);
+            column._prefix = prefix;
             return this;
-        }
-
-        private MemberTreeNode GetColumnFromExpression(Expression<Func<T, object>> expression, bool needNative, out MemberTreeNode root)
-        {
-            var path = PropertyPathVisitor.GetPropertyPaths(expression);
-            if (path.Count == 0) throw new ArgumentOutOfRangeException(nameof(expression), "At least one field must be selected.");
-
-            root = GetOrAddRoot(path[0]);
-            if (path.Count != 1)
-                return GetNode(root, path);
-
-            ValidateNonNative(needNative, root);
-            return root;
-        }
-
-        private static MemberTreeNode GetNode(MemberTreeNode node, List<MemberInfo> path)
-        {
-            for (int i = 1; i < path.Count; i++)
-                node = node.GetOrAdd(path[i]);
-
-            return node;
-        }
-
-        internal IEnumerable<ColumnTreeInfo> GetFields()
-        {
-            List<MemberInfo> root = new List<MemberInfo>();
-
-            foreach (var child in Nodes)
-            {
-                root.Add(child.Member);
-
-                foreach (var result in child.BuildTree(root, Registry, null))
-                    yield return result;
-
-                root.RemoveAt(root.Count - 1);
-            }
-        }
-
-        private static void ValidateNonNative(bool needNative, MemberTreeNode root)
-        {
-            Type memberType = ReflectionUtils.GetMemberType(root.Member);
-            if (needNative && !MemberTreeNode.IsNative(memberType))
-                throw new InvalidOperationException(string.Format(Messages.Table.MemberTypeNotSupported, root.Member, memberType));
-        }
-
-        private MemberTreeNode GetOrAddRoot(MemberInfo member)
-        {
-            var root = Nodes.FirstOrDefault(x => x.Member == member);
-            if (root != null)
-                return root;
-
-            root = new MemberTreeNode(member);
-            Nodes.Add(root);
-            return root;
         }
 
         /// <summary>
@@ -191,41 +145,20 @@ namespace SharpOrm.Builder
         /// <returns>A <see cref="TableInfo"/> representing the built table mapping.</returns>
         public TableInfo Build()
         {
-            if (Nodes.Count == 0) return null;
+            if (_loader.Nodes.Count == 0) return null;
             if (table != null) return table;
 
             return table = Registry.AddTableMap(this);
         }
 
-        public Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
+        internal Column GetColumn(Expression<ColumnExpression<T>> columnExpression)
         {
             if (table == null)
                 throw new Exception(Messages.Table.NotBuilded);
 
-            return Column.FromExp(columnExpression, Registry);
-        }
+            var column =  _loader.LoadColumns().Find(columnExpression);
 
-        private class PropertyPathVisitor : ExpressionVisitor
-        {
-            private readonly List<MemberInfo> members = new List<MemberInfo>();
-
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                members.Insert(0, node.Member);
-                return base.VisitMember(node);
-            }
-
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-            {
-                throw new ArgumentException(Messages.Expressions.OnlyFieldsAndproerties);
-            }
-
-            public static List<MemberInfo> GetPropertyPaths<K>(Expression<Func<K, object>> expression)
-            {
-                var visitor = new PropertyPathVisitor();
-                visitor.Visit(expression);
-                return visitor.members;
-            }
+            return column == null ? null : new Column(column.Name);
         }
     }
 }

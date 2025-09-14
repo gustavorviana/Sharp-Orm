@@ -6,6 +6,7 @@ using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 
@@ -17,13 +18,12 @@ namespace SharpOrm.Collections
     /// <typeparam name="T">The type of the objects to enumerate.</typeparam>
     public class DbCommandEnumerable<T> : IEnumerable<T>
     {
+        private readonly IRecordReaderFactory _readerFactory;
         private readonly ConnectionManagement _management;
         private readonly TranslationRegistry _translation;
         internal NestedMode mode = NestedMode.Attribute;
         private readonly CancellationToken _token;
         private readonly DbCommand _command;
-        internal IFkQueue _fkQueue;
-        private bool _hasFirstRun;
 
         /// <summary>
         /// Gets or sets a value indicating whether to dispose the command after execution.
@@ -31,6 +31,18 @@ namespace SharpOrm.Collections
         public bool DisposeCommand { get; set; } = true;
 
         internal ConnectionManager manager;
+
+        public DbCommandEnumerable(IRecordReaderFactory factory, DbCommand command, TranslationRegistry translation, ConnectionManagement management = ConnectionManagement.LeaveOpen, CancellationToken token = default)
+        {
+            _translation = translation;
+            _readerFactory = factory;
+            _management = management;
+            _command = command;
+            _token = token;
+
+            _command.SetCancellationToken(token);
+        }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbCommandEnumerable{T}"/> class.
@@ -57,28 +69,45 @@ namespace SharpOrm.Collections
         {
             CheckRun();
             var reader = _command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator<T>(reader, CreateMappedObj(reader), _token) { manager = manager });
+            return RegisterDispose(new DbObjectEnumerator<T>(manager, reader, MakeEnumerator(reader))
+            {
+                Token = _token
+            });
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             CheckRun();
             var reader = _command.ExecuteReader();
-            return RegisterDispose(new DbObjectEnumerator(reader, CreateMappedObj(reader), _token) { manager = manager });
+            return RegisterDispose(new DbObjectEnumerator(manager, reader, MakeEnumerator(reader))
+            {
+                Token = _token
+            });
         }
 
         private void CheckRun()
         {
-            if (_hasFirstRun)
-                throw new InvalidOperationException(Messages.EnumerableCanExecuteOnce);
-
-            _hasFirstRun = true;
             _command.Connection.OpenIfNeeded();
         }
 
-        private IMappedObject CreateMappedObj(DbDataReader reader)
+        [Obsolete]
+        private IEnumerator MakeEnumerator(IDataReader reader)
         {
-            return MappedObject.Create(reader, typeof(T), mode, _fkQueue, _translation);
+            if (_readerFactory != null)
+            {
+                var enumerator = _readerFactory.OfType(typeof(T), reader, _translation);
+                enumerator.Token = _token;
+
+                return enumerator;
+            }
+
+            return new ObsoleteEnumerator(reader, CreateMappedObj(reader));
+        }
+
+        [Obsolete]
+        private IMappedObject CreateMappedObj(IDataReader reader)
+        {
+            return MappedObject.Create(reader, typeof(T), mode, null, _translation);
         }
 
         private K RegisterDispose<K>(K instance) where K : DbObjectEnumerator

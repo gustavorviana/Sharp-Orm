@@ -25,7 +25,7 @@ namespace QueryTest.DataTranslation
                 EmptyStringToNull = true,
             };
 
-            Assert.Null(translation.ToSql(""));
+            Assert.Equal(DBNull.Value, translation.ToSql(""));
             Assert.NotNull(translation.ToSql("Value"));
             Assert.NotNull(translation.ToSql(Guid.NewGuid()));
         }

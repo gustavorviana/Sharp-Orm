@@ -33,12 +33,11 @@ namespace QueryTest
             using var query = new Query(TestTableUtils.TABLE);
             query.Config.DbParamsLimit = 1;
 
-            Assert.Equal(2,
-                query.BulkInsert(
-                    new Row(new Cell("Column", "Value")),
-                    new Row(new Cell("Column", "Value"))
-                )
-            );
+            var rows = Enumerable.Range(0, 1000)
+                .Select(x => new Row(new Cell("Column", "Value")))
+                .ToArray();
+
+            Assert.Equal(1000, query.BulkInsert(rows));
         }
 
         [Fact]

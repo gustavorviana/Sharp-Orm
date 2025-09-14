@@ -12,7 +12,18 @@ namespace SharpOrm.DataTranslation
     {
         protected readonly TableInfo _table;
 
-        public bool ReadDatabaseGenerated { get; set; }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _readDatabaseGenerated = false;
+
+        public bool ReadDatabaseGenerated
+        {
+            get => _readDatabaseGenerated;
+            set
+            {
+                _readDatabaseGenerated = value;
+                OnCriteriaChange();
+            }
+        }
         public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -26,7 +37,7 @@ namespace SharpOrm.DataTranslation
             set
             {
                 _primaryKeyMode = value;
-                OnCriterioChange();
+                OnCriteriaChange();
             }
         }
 
@@ -45,6 +56,7 @@ namespace SharpOrm.DataTranslation
         /// <summary>
         /// Gets or sets a value indicating whether to read foreign keys.
         /// </summary>
+        [Obsolete("This method will be removed in version 4.0")]
         public bool ReadFk
         {
             get => _readFk;
@@ -54,7 +66,7 @@ namespace SharpOrm.DataTranslation
                     return;
 
                 _readFk = value;
-                OnCriterioChange();
+                OnCriteriaChange();
             }
         }
 
@@ -68,6 +80,7 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public bool IgnoreTimestamps { get; set; }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _isCreate = false;
         /// <summary>
         /// Gets or sets a value indicating whether the object is being created.
@@ -78,7 +91,7 @@ namespace SharpOrm.DataTranslation
             set
             {
                 _isCreate = value;
-                OnCriterioChange();
+                OnCriteriaChange();
             }
         }
 
@@ -87,11 +100,13 @@ namespace SharpOrm.DataTranslation
             _table = table;
         }
 
+        [Obsolete("This method is obsolete and will be removed in version 4.0. Use IObjectReaderFactory.OfType() instead.")]
         public static ObjectReaderBase Create<T>(TranslationRegistry registry)
         {
             return Create(registry.GetTable(typeof(T)));
         }
 
+        [Obsolete("This method is obsolete and will be removed in version 4.0. Use IObjectReaderFactory.OfType() instead.")]
         public static ObjectReaderBase Create(TableInfo table)
         {
             if (ReflectionUtils.IsDynamic(table.Type))
@@ -152,15 +167,10 @@ namespace SharpOrm.DataTranslation
 
         protected IEnumerable<SqlMember> GetMembers<K>(Expression<ColumnExpression<K>> expression)
         {
-            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New, null).ParseExpression(expression);
+            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New | ExpressionConfig.SubMembers, null).ParseExpression(expression);
         }
 
-        protected IEnumerable<ColumnInfo> GetValidColumns()
-        {
-            return _table.Columns.Where(CanReadColumn);
-        }
-
-        private bool CanReadColumn(ColumnInfo column)
+        protected bool CanReadColumn(ColumnInfo column)
         {
             if (!ReadDatabaseGenerated && column.DatabaseGenerated)
                 return false;
@@ -234,14 +244,30 @@ namespace SharpOrm.DataTranslation
 
         protected object ProcessValue(ColumnInfo column, object owner)
         {
-            object obj = column.Get(owner);
+            object obj = GetValue(column, owner);
             if (!ReadFk || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
-            return GetTable(column.Type).Columns.FirstOrDefault(c => c.Key).Get(obj);
+            return GetValue(GetTable(column.Type).Columns.FirstOrDefault(c => c.Key), obj);
         }
 
-        protected virtual void OnCriterioChange()
+        internal static object GetRawValue(ColumnInfo info, object owner)
+        {
+            if (info is ColumnTreeInfo treeInfo)
+                return treeInfo.InternalGetRaw(owner);
+
+            return info.GetRaw(owner);
+        }
+
+        internal static object GetValue(ColumnInfo info, object owner)
+        {
+            if (info is ColumnTreeInfo treeInfo)
+                return treeInfo.InternalGet(owner);
+
+            return info.Get(owner);
+        }
+
+        protected virtual void OnCriteriaChange()
         {
 
         }

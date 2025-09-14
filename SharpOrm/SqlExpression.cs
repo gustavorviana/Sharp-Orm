@@ -127,6 +127,7 @@ namespace SharpOrm
             return new SqlExpression(string.Concat(sql));
         }
 
+        [Obsolete("This method will be removed in version 4.0. Parameter naming is now handled by QueryConfig.CreateParameterName method.", false)]
         protected internal virtual string GetParamName(int index)
         {
             if (Parameters[index - 1] is QueryParam param)
