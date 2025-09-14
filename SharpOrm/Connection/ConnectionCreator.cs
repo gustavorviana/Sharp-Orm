@@ -16,7 +16,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Indicates whether the ConnectionCreator object has been disposed.
         /// </summary>
-        public bool Disposed => this._disposed;
+        public bool Disposed => _disposed;
 
         /// <summary>
         /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
