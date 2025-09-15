@@ -1,5 +1,6 @@
 ﻿using BaseTest.Utils;
 using NSubstitute;
+using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -95,17 +96,17 @@ public class ConnectionManagerTests : DbMockFallbackTest
     }
 
     [Fact]
-    public void GetCommand_WithRegistry_ShouldReturnCommandBuilderWithRegistry()
+    public void CloneCommand_Should_Not_Close_Connection()
     {
         // Arrange
-        var registry = Substitute.For<TranslationRegistry>();
-        bool leaveOpen = true;
+        var cloned = Manager.Clone();
 
         // Act
-        var commandBuilder = Manager.GetCommand(registry, leaveOpen);
+        Manager.Connection.Open();
+        cloned.Dispose();
 
         // Assert
-        Assert.NotNull(commandBuilder);
+        Assert.True(Manager.Connection.IsOpen());
     }
 
     #endregion
@@ -477,7 +478,7 @@ public class ConnectionManagerTests : DbMockFallbackTest
         // Assert
         Assert.NotSame(Manager, clonedManager);
         Assert.Equal(Manager.CommandTimeout, clonedManager.CommandTimeout);
-        Assert.Equal(Manager.Management, clonedManager.Management);
+        Assert.Equal(ConnectionManagement.LeaveOpen, clonedManager.Management);
         Assert.Same(Manager.Config, clonedManager.Config);
     }
 

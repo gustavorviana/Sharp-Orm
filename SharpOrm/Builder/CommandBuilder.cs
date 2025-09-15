@@ -21,7 +21,8 @@ namespace SharpOrm.Builder
         internal readonly bool _leaveOpen = false;
 
         private readonly TranslationRegistry _registry;
-        private readonly ConnectionManager _manager;
+        private readonly ConnectionManager.Handle _handle;
+        private readonly QueryConfig _config;
         private readonly DbCommand command;
         private DbDataReader reader;
 
@@ -47,7 +48,7 @@ namespace SharpOrm.Builder
         /// <param name="manager">The connection manager.</param>
         /// <param name="registry">The translation registry.</param>
         /// <param name="leaveOpen">Indicates whether to leave the connection open.</param>
-        internal CommandBuilder(ConnectionManager manager, TranslationRegistry registry, bool leaveOpen) : this(manager, registry)
+        internal CommandBuilder(ConnectionManager manager, bool leaveOpen) : this(manager)
         {
             _leaveOpen = leaveOpen;
         }
@@ -56,19 +57,11 @@ namespace SharpOrm.Builder
         /// Initializes a new instance of the <see cref="CommandBuilder"/> class with the specified manager.
         /// </summary>
         /// <param name="manager">The connection manager.</param>
-        internal CommandBuilder(ConnectionManager manager) : this(manager, null)
+        internal CommandBuilder(ConnectionManager manager)
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CommandBuilder"/> class with the specified manager and registry.
-        /// </summary>
-        /// <param name="manager">The connection manager.</param>
-        /// <param name="registry">The translation registry.</param>
-        public CommandBuilder(ConnectionManager manager, TranslationRegistry registry)
-        {
-            _manager = manager;
-            _registry = registry ?? TranslationRegistry.Default;
+            _handle = manager.GetHandle();
+            _config = manager.Config;
+            _registry = _config.Translation;
 
             command = manager.Connection.CreateCommand();
             command.Transaction = manager.Transaction;
@@ -159,7 +152,7 @@ namespace SharpOrm.Builder
             OpenIfNeeded();
 
             for (int i = 0; i < total - 1; i++)
-                command.SetExpression(collection.Expressions[i]).ExecuteNonQuery();
+                command.SetExpression(_config, collection.Expressions[i]).ExecuteNonQuery();
 
             SetExpression(collection.Expressions[total - 1]);
             return this;
@@ -204,7 +197,7 @@ namespace SharpOrm.Builder
         private CommandBuilder InternalSetExpression(SqlExpression expression)
         {
             Log(expression);
-            command.SetExpression(expression);
+            command.SetExpression(_config, expression);
             return this;
         }
 
@@ -219,12 +212,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -243,12 +236,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -260,11 +253,11 @@ namespace SharpOrm.Builder
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public DbCommandEnumerable<T> ExecuteEnumerable<T>(bool disposeCommand = true)
         {
-            return new DbCommandEnumerable<T>(new RecordReaderFactory { ForeignInfo = ForeignInfo }, command, _registry, _manager.Management, _tokenSource.Token)
+            return new DbCommandEnumerable<T>(new RecordReaderFactory { ForeignInfo = ForeignInfo }, command, _registry, _handle.Connection.Management, _tokenSource.Token)
             {
                 DisposeCommand = disposeCommand,
-                manager = _manager,
-                mode = _manager.Config.NestedMapMode
+                manager = _handle.Connection,
+                mode = _handle.Connection.Config.NestedMapMode
             };
         }
 
@@ -280,12 +273,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -306,12 +299,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -328,12 +321,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -355,12 +348,12 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -386,7 +379,7 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
         }
@@ -400,17 +393,17 @@ namespace SharpOrm.Builder
         {
             try
             {
-                return await DbCommandExtension.ExecuteArrayScalarAsync<T>(await OpenIfNeededAsync(), _registry, _manager.Management, _tokenSource.Token);
+                return await DbCommandExtension.ExecuteArrayScalarAsync<T>(await OpenIfNeededAsync(), _registry, _handle.Connection.Management, _tokenSource.Token);
             }
             catch (Exception ex)
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -423,17 +416,17 @@ namespace SharpOrm.Builder
         {
             try
             {
-                return DbCommandExtension.ExecuteArrayScalar<T>(OpenIfNeeded(), _registry, _manager.Management, _tokenSource.Token);
+                return DbCommandExtension.ExecuteArrayScalar<T>(OpenIfNeeded(), _registry, _handle.Connection.Management, _tokenSource.Token);
             }
             catch (Exception ex)
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
-                _manager.CloseByEndOperation();
+                _handle.CloseByEndOperation();
             }
         }
 
@@ -471,13 +464,13 @@ namespace SharpOrm.Builder
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _tokenSource.Token.ThrowIfCancellationRequested();
-                _manager.SignalException(ex);
+                _handle.SignalException(ex);
                 throw;
             }
             finally
             {
                 if (!leaveOpen)
-                    _manager.CloseByEndOperation();
+                    _handle.CloseByEndOperation();
             }
         }
 
@@ -489,13 +482,13 @@ namespace SharpOrm.Builder
 
         private DbCommand OpenIfNeeded()
         {
-            _manager.Connection.OpenIfNeeded();
+            _handle?.Connection?.Connection.OpenIfNeeded();
             return command;
         }
 
         private async Task<DbCommand> OpenIfNeededAsync()
         {
-            await _manager.Connection.OpenIfNeededAsync();
+            await _handle?.Connection?.Connection.OpenIfNeededAsync();
             return command;
         }
 

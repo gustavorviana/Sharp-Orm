@@ -158,7 +158,7 @@ namespace SharpOrm
 
         private CommandBuilder CreateCommand(bool leaveOpen = false)
         {
-            var cmd = _managerBase.GetCommand(_config.Translation, leaveOpen);
+            var cmd = _managerBase.GetCommand(leaveOpen);
             cmd.AddCancellationToken(_token);
 
             if (_commandTimeout > 0)

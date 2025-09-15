@@ -15,25 +15,25 @@ namespace SharpOrm.Collections
     [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
     internal class WeakComponentsRef<T> : IReadOnlyCollection<T>, IDisposable where T : class, IDisposable
     {
-        private readonly List<WeakReference> refs = new List<WeakReference>();
+        private readonly List<WeakReference> _refs = new List<WeakReference>();
         private readonly object _lock = new object();
-        private bool disposed;
+        private bool _disposed;
 
         /// <summary>
         /// Gets the number of elements contained in the collection.
         /// </summary>
-        public int Count => refs.Count;
+        public int Count => _refs.Count;
         /// <summary>
         /// Gets the number of alive elements in the collection.
         /// </summary>
-        internal int AliveCount => refs.Count(x => x.IsAlive);
+        internal int AliveCount => _refs.Count(x => x.IsAlive);
 
         /// <summary>
         /// Gets the element at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <returns>The element at the specified index.</returns>
-        public T this[int index] => GetValue(this.refs[index]);
+        public T this[int index] => GetValue(_refs[index]);
 
         /// <summary>
         /// Adds an item to the collection.
@@ -41,13 +41,13 @@ namespace SharpOrm.Collections
         /// <param name="item">The item to add.</param>
         public void Add(T item)
         {
-            lock (this._lock)
+            lock (_lock)
             {
-                if (this.Count <= 10)
-                    this.InternalRemoveNotAlive();
+                if (Count <= 10)
+                    InternalRemoveNotAlive();
 
                 AddDisposedEvent(item);
-                refs.Add(new WeakReference(item));
+                _refs.Add(new WeakReference(item));
             }
         }
 
@@ -57,7 +57,7 @@ namespace SharpOrm.Collections
                 return;
 
             RemoveDisposedEvent(obj);
-            this.Remove(obj);
+            Remove(obj);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace SharpOrm.Collections
         /// </summary>
         public void Clear()
         {
-            this.Clear(false);
+            Clear(false);
         }
 
         /// <summary>
@@ -74,13 +74,13 @@ namespace SharpOrm.Collections
         /// <param name="disposeItems">If true, disposes the items before removing them.</param>
         public void Clear(bool disposeItems)
         {
-            lock (this._lock)
+            lock (_lock)
             {
                 if (disposeItems)
-                    for (int i = this.refs.Count - 1; i >= 0; i--)
-                        if (this.refs[i].IsAlive) SafeDispose(this[i]);
+                    for (int i = _refs.Count - 1; i >= 0; i--)
+                        if (_refs[i].IsAlive) SafeDispose(this[i]);
 
-                this.refs.Clear();
+                _refs.Clear();
             }
         }
 
@@ -89,14 +89,14 @@ namespace SharpOrm.Collections
         /// </summary>
         public void RemoveNotAlive()
         {
-            lock (this._lock) this.InternalRemoveNotAlive();
+            lock (_lock) InternalRemoveNotAlive();
         }
 
         private void InternalRemoveNotAlive()
         {
-            for (int i = this.refs.Count - 1; i >= 0; i--)
-                if (!this.refs[i].IsAlive)
-                    this.refs.RemoveAt(i);
+            for (int i = _refs.Count - 1; i >= 0; i--)
+                if (!_refs[i].IsAlive)
+                    _refs.RemoveAt(i);
         }
 
         /// <summary>
@@ -106,13 +106,13 @@ namespace SharpOrm.Collections
         /// <returns>True if the item is successfully removed; otherwise, false.</returns>
         public bool Remove(T item)
         {
-            lock (this._lock)
+            lock (_lock)
             {
-                int index = this.IndexOf(item);
+                int index = IndexOf(item);
                 if (index < 0)
                     return false;
 
-                this.refs.RemoveAt(index);
+                _refs.RemoveAt(index);
                 return true;
             }
         }
@@ -124,16 +124,16 @@ namespace SharpOrm.Collections
         /// <returns>The index of the item if found in the collection; otherwise, -1.</returns>
         public int IndexOf(T item)
         {
-            for (int i = 0; i < this.refs.Count; i++)
-                if (GetValue(this.refs[i])?.Equals(item) ?? false)
+            for (int i = 0; i < _refs.Count; i++)
+                if (GetValue(_refs[i])?.Equals(item) ?? false)
                     return i;
 
             return -1;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerator<T> GetEnumerator() => this.refs.Select(GetValue).GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _refs.Select(GetValue).GetEnumerator();
 
         private static T GetValue(WeakReference reference)
         {
@@ -142,14 +142,14 @@ namespace SharpOrm.Collections
 
         private void AddDisposedEvent(T obj)
         {
-            if (obj is Component c) c.Disposed += this.OnItemDisposed;
-            else if (obj is IDisposableWithEvent e) e.Disposed += this.OnItemDisposed;
+            if (obj is Component c) c.Disposed += OnItemDisposed;
+            else if (obj is IDisposableWithEvent e) e.Disposed += OnItemDisposed;
         }
 
         private void RemoveDisposedEvent(T obj)
         {
-            if (obj is Component c) c.Disposed -= this.OnItemDisposed;
-            else if (obj is IDisposableWithEvent e) e.Disposed -= this.OnItemDisposed;
+            if (obj is Component c) c.Disposed -= OnItemDisposed;
+            else if (obj is IDisposableWithEvent e) e.Disposed -= OnItemDisposed;
         }
 
         #region IDisposable
@@ -161,7 +161,7 @@ namespace SharpOrm.Collections
 
         public void Dispose()
         {
-            if (this.disposed) return;
+            if (_disposed) return;
 
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
@@ -169,13 +169,13 @@ namespace SharpOrm.Collections
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposed)
+            if (_disposed)
                 return;
 
-            if (disposing) this.Clear(true);
-            else this.refs.Clear();
+            if (disposing) Clear(true);
+            else _refs.Clear();
 
-            disposed = true;
+            _disposed = true;
         }
 
         private void SafeDispose(IDisposable disposable)
@@ -195,14 +195,14 @@ namespace SharpOrm.Collections
 
     internal sealed class WeakRef_DebugView<T> where T : class, IDisposable
     {
-        private readonly WeakComponentsRef<T> collection;
+        private readonly WeakComponentsRef<T> _collection;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Items => collection.ToArray();
+        public T[] Items => _collection.ToArray();
 
         public WeakRef_DebugView(WeakComponentsRef<T> collection)
         {
-            this.collection = collection;
+            _collection = collection;
         }
     }
 }

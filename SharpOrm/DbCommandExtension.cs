@@ -216,7 +216,7 @@ namespace SharpOrm
         /// <param name="command"></param>
         /// <param name="expression">Expression to be executed.</param>
         /// <returns></returns>
-        [Obsolete("This method will be removed in version 4.0. Use SetExpressionWithConfig method that properly handles parameter naming through QueryConfig.", false)]
+        [Obsolete("This method will be removed in version 4.0. Use SetExpression(DbCommand, QueryConfig, SqlExpression) method that properly handles parameter naming through QueryConfig.", false)]
         public static DbCommand SetExpression(this DbCommand command, SqlExpression expression)
         {
             command.CommandText = DecodeExpressionString(expression);

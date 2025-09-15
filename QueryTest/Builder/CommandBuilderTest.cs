@@ -37,8 +37,6 @@ namespace QueryTest.Builder
             _commandBuilder = new CommandBuilder(_manager);
         }
 
-        #region SetExpression Tests
-
         [Fact]
         public void SetExpression_WithSqlExpression_ShouldReturnSameInstance()
         {
@@ -75,10 +73,6 @@ namespace QueryTest.Builder
             _command.Received(2).ExecuteNonQuery(); // Should execute first 2 expressions
         }
 
-        #endregion
-
-        #region ExecuteNonQuery Tests
-
         [Fact]
         public void ExecuteNonQuery()
         {
@@ -114,10 +108,6 @@ namespace QueryTest.Builder
             _connection.Received(1).Open();
             Assert.Equal(1, result);
         }
-
-        #endregion
-
-        #region ExecuteScalar Tests
 
         [Fact]
         public void ExecuteScalar()
@@ -167,10 +157,6 @@ namespace QueryTest.Builder
             _connection.Received(1).Close();
         }
 
-        #endregion
-
-        #region ExecuteArrayScalar Tests
-
         [Fact]
         public void ExecuteArrayScalar()
         {
@@ -210,10 +196,6 @@ namespace QueryTest.Builder
             _connection.Received(1).Close();
         }
 
-        #endregion
-
-        #region ExecuteReader Tests
-
         [Fact]
         public void ExecuteReader()
         {
@@ -237,10 +219,6 @@ namespace QueryTest.Builder
             _command.Received(1).ExecuteReader(CommandBehavior.SingleResult);
             Assert.Same(reader, result);
         }
-
-        #endregion
-
-        #region ExecuteWithRecordsAffected Tests
 
         [Fact]
         public void ExecuteWithRecordsAffected_ShouldReturnRecordsAffected()
@@ -269,10 +247,6 @@ namespace QueryTest.Builder
 
             _connection.Received(1).Close();
         }
-
-        #endregion
-
-        #region SetExpressionWithAffectedRows Tests
 
         [Fact]
         public void SetExpressionWithAffectedRows_WithSingleExpression_ShouldReturnZero()
@@ -320,10 +294,6 @@ namespace QueryTest.Builder
             Assert.Equal(0, result);
         }
 
-        #endregion
-
-        #region ExecuteEnumerable Tests
-
         [Fact]
         public void ExecuteEnumerable_ShouldReturnDbCommandEnumerable()
         {
@@ -343,10 +313,6 @@ namespace QueryTest.Builder
             Assert.False(result.DisposeCommand);
         }
 
-        #endregion
-
-        #region LogQuery Tests
-
         [Fact]
         public void LogQuery_WhenEnabled_ShouldBeTrue()
         {
@@ -364,10 +330,6 @@ namespace QueryTest.Builder
 
             Assert.False(_commandBuilder.LogQuery);
         }
-
-        #endregion
-
-        #region CancellationToken Tests
 
         [Fact]
         public void AddCancellationToken_WithValidToken_ShouldReturnSameInstance()
@@ -396,10 +358,6 @@ namespace QueryTest.Builder
 
             Assert.Throws<OperationCanceledException>(() => _commandBuilder.AddCancellationToken(cts.Token));
         }
-
-        #endregion
-
-        #region Exception Handling Tests
 
         [Fact]
         public void ExecuteNonQuery_WhenExceptionThrown_ShouldPropagateException()
@@ -439,15 +397,9 @@ namespace QueryTest.Builder
             _connection.Received(1).Close();
         }
 
-        #endregion
-
-        #region Helper Methods
-
         private static MockDataReader GetDataReaderString(string[] items)
         {
             return new MockDataReader(i => new Row(new Cell("value", items[i])), items.Length);
         }
-
-        #endregion
     }
 }

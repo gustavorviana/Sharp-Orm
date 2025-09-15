@@ -20,7 +20,7 @@ namespace SharpOrm
     {
         #region Fields/Properties
         private readonly object _lock = new object();
-        private readonly bool forceSingleConnection;
+        private readonly bool _forceSingleConnection;
         private bool isExtTransact = false;
         private bool _disposed;
         public bool Disposed => this._disposed;
@@ -79,7 +79,7 @@ namespace SharpOrm
         /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
         public DbRepository(bool forceSingleConnection = false)
         {
-            this.forceSingleConnection = forceSingleConnection;
+            this._forceSingleConnection = forceSingleConnection;
         }
 
         #region Transactions
@@ -481,7 +481,7 @@ namespace SharpOrm
 
         private CommandBuilder GetBuilder(ConnectionManager manager)
         {
-            return new CommandBuilder(manager, Translation).AddCancellationToken(Token);
+            return new CommandBuilder(manager).AddCancellationToken(Token);
         }
 
         /// <summary>
@@ -568,11 +568,11 @@ namespace SharpOrm
 
         private ConnectionManager GetExistingManager()
         {
-            if (this.forceSingleConnection && this._connections.Count > 0)
+            if (_forceSingleConnection && _connections.Count > 0)
             {
-                this._connections.RemoveNotAlive();
+                _connections.RemoveNotAlive();
 
-                if (this._connections.FirstOrDefault() is ConnectionManager conn)
+                if (_connections.FirstOrDefault() is ConnectionManager conn)
                     return conn;
             }
 
@@ -581,13 +581,16 @@ namespace SharpOrm
 
         private ConnectionManager GetNewManager()
         {
-            var connection = new ConnectionManager(this.Creator)
+            var connection = new ConnectionManager(Creator)
             {
-                CommandTimeout = this.CommandTimeout
+                CommandTimeout = CommandTimeout
             };
 
             if (OnError != null)
                 connection.OnError += OnError;
+
+            if (Creator is SingleConnectionCreator && _connections.Count > 0)
+                connection = connection.Clone(true, true);
 
             _connections.Add(connection);
             return connection;

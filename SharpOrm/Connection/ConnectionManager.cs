@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Collections;
 using SharpOrm.Msg;
 using System;
 using System.Data;
@@ -19,11 +20,15 @@ namespace SharpOrm.Connection
         /// </summary>
         public event EventHandler<ConnectionExceptionEventArgs> OnError;
 
+        private readonly WeakComponentsRef<Handle> _handles = new WeakComponentsRef<Handle>();
+        private readonly object _handleLock = new object();
+
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;
         internal readonly bool _isMyTransaction = false;
-        private readonly ConnectionCreator creator;
-        private bool finishedTransaction = false;
+        private readonly ConnectionCreator _creator;
+        private bool _finishedTransaction = false;
         internal bool _autoCommit = false;
+        private bool _isClone = false;
         private bool _disposed;
 
         /// <summary>
@@ -78,10 +83,10 @@ namespace SharpOrm.Connection
             {
                 try
                 {
-                    if (creator?.Management == ConnectionManagement.LeaveOpen || Management == ConnectionManagement.LeaveOpen)
+                    if (_creator?.Management == ConnectionManagement.LeaveOpen || Management == ConnectionManagement.LeaveOpen)
                         return false;
 
-                    return this.Transaction is null && this.Connection.State != System.Data.ConnectionState.Closed;
+                    return Transaction is null && Connection.State != System.Data.ConnectionState.Closed;
                 }
                 catch
                 {
@@ -171,7 +176,7 @@ namespace SharpOrm.Connection
             _isMyTransaction = isMyTransaction;
             Transaction = transaction;
             Config = creator.Config;
-            this.creator = creator;
+            _creator = creator;
         }
 
         /// <summary>
@@ -211,32 +216,14 @@ namespace SharpOrm.Connection
 
         private void DisposeByConnection(object sender, EventArgs e)
         {
-            if (this._disposed) return;
-            this.Connection.Disposed -= DisposeByConnection;
+            if (_disposed) return;
+            Connection.Disposed -= DisposeByConnection;
             GC.SuppressFinalize(this);
-            this._disposed = true;
+            _disposed = true;
 
-            this.Disposed?.Invoke(this, EventArgs.Empty);
+            Disposed?.Invoke(this, EventArgs.Empty);
         }
         #endregion
-
-        /// <summary>
-        /// Attempts to close the connection using the reason "Operation completed".
-        /// </summary>
-        public void CloseByEndOperation()
-        {
-            if (this.Management == ConnectionManagement.CloseOnEndOperation && this.CanClose)
-                this.Connection.Close();
-        }
-
-        /// <summary>
-        /// Attempts to close the connection using the reason "The child is releasing its resources".
-        /// </summary>
-        public void CloseByDisposeChild()
-        {
-            if (this.Management == ConnectionManagement.CloseOnDispose && this.CanClose)
-                this.Connection.Close();
-        }
 
         /// <summary>
         /// Creates a clone of the current <see cref="ConnectionManager"/> instance with optional parameters to listen for disposal events and clone the configuration.
@@ -247,6 +234,8 @@ namespace SharpOrm.Connection
         public ConnectionManager Clone(bool listenDispose = true, bool cloneConfig = false, bool? safeOperations = null)
         {
             var clone = InternalClone();
+            clone._isClone = true;
+            clone.Management = ConnectionManagement.LeaveOpen;
 
             if (listenDispose)
                 Disposed += (sender, e) => clone.Dispose();
@@ -262,11 +251,11 @@ namespace SharpOrm.Connection
             if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
-            if (creator != null && Transaction != null)
-                return new ConnectionManager(creator, Transaction, false).CopyOptionsFrom(this, false);
+            if (_creator != null && Transaction != null)
+                return new ConnectionManager(_creator, Transaction, false).CopyOptionsFrom(this, false);
 
-            if (creator != null)
-                return new ConnectionManager(creator).CopyOptionsFrom(this);
+            if (_creator != null)
+                return new ConnectionManager(_creator).CopyOptionsFrom(this);
 
             if (Transaction != null)
                 return new ConnectionManager(Config, Transaction, _autoCommit).CopyOptionsFrom(this);
@@ -302,8 +291,8 @@ namespace SharpOrm.Connection
             if (Transaction != null)
                 throw new InvalidOperationException(Messages.Connection.TransactionAlreadyOpen);
 
-            var transaction = (creator?.GetConnection() ?? Connection).OpenIfNeeded().BeginTransaction(isolationLevel);
-            var management = creator == null ? ConnectionManagement.CloseOnManagerDispose : creator.Management;
+            var transaction = (_creator?.GetConnection() ?? Connection).OpenIfNeeded().BeginTransaction(isolationLevel);
+            var management = _creator == null ? ConnectionManagement.CloseOnManagerDispose : _creator.Management;
 
             return new ConnectionManager(Config, transaction, true, management).CopyOptionsFrom(this, false);
         }
@@ -323,11 +312,11 @@ namespace SharpOrm.Connection
         /// </summary>
         public void CheckConnection()
         {
-            if (this.Connection.State == System.Data.ConnectionState.Open)
+            if (Connection.State == System.Data.ConnectionState.Open)
                 return;
 
-            this.Connection.Open();
-            try { this.Connection.Close(); } catch { }
+            Connection.Open();
+            try { Connection.Close(); } catch { }
         }
 
         /// <summary>
@@ -337,7 +326,7 @@ namespace SharpOrm.Connection
         /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
         public async Task CheckConnectionAsync(CancellationToken token)
         {
-            if (this.Connection.State == System.Data.ConnectionState.Open)
+            if (Connection.State == System.Data.ConnectionState.Open)
                 return;
 
             try
@@ -367,8 +356,8 @@ namespace SharpOrm.Connection
             if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
 
-            if (creator != null)
-                return creator.GetServerVersion();
+            if (_creator != null)
+                return _creator.GetServerVersion();
 
             bool needClose = Connection.State != ConnectionState.Open;
             try
@@ -432,9 +421,9 @@ namespace SharpOrm.Connection
             };
         }
 
-        internal CommandBuilder GetCommand(DataTranslation.TranslationRegistry registry, bool leaveOpen)
+        internal CommandBuilder GetCommand(bool leaveOpen)
         {
-            return new CommandBuilder(this, registry, leaveOpen);
+            return new CommandBuilder(this, leaveOpen);
         }
 
         #region Transaction
@@ -444,10 +433,10 @@ namespace SharpOrm.Connection
         /// <returns></returns>
         public bool Commit()
         {
-            if (finishedTransaction || Transaction is null || !_isMyTransaction)
+            if (_finishedTransaction || Transaction is null || !_isMyTransaction)
                 return false;
 
-            finishedTransaction = true;
+            _finishedTransaction = true;
 
             try
             {
@@ -466,10 +455,10 @@ namespace SharpOrm.Connection
         /// <returns></returns>
         public bool Rollback()
         {
-            if (finishedTransaction || Transaction is null || !_isMyTransaction)
+            if (_finishedTransaction || Transaction is null || !_isMyTransaction)
                 return false;
 
-            finishedTransaction = true;
+            _finishedTransaction = true;
             try
             {
                 Transaction.Rollback();
@@ -550,41 +539,44 @@ namespace SharpOrm.Connection
 
             try
             {
-                this.DisposeTransaction();
-                this.DisposeConnection();
+                if (!_isClone)
+                {
+                    DisposeTransaction();
+                    DisposeConnection();
+                }
             }
             finally
             {
                 _disposed = true;
-                this.Disposed?.Invoke(this, EventArgs.Empty);
+                Disposed?.Invoke(this, EventArgs.Empty);
             }
         }
 
         private void DisposeTransaction()
         {
-            if (this.Transaction == null || !this._isMyTransaction)
+            if (Transaction == null || !_isMyTransaction)
                 return;
 
             if (_autoCommit)
-                try { this.Commit(); } catch { }
+                try { Commit(); } catch { }
 
-            try { this.Transaction.Dispose(); } catch { }
+            try { Transaction.Dispose(); } catch { }
         }
 
         private void DisposeConnection()
         {
-            if (this.Management == ConnectionManagement.LeaveOpen || this.Connection is null)
+            if (Management == ConnectionManagement.LeaveOpen || Connection is null)
                 return;
 
             try
             {
-                if (this.CloseByCreator())
+                if (CloseByCreator())
                     return;
 
-                this.CloseConnection();
+                CloseConnection();
 
-                if (this.Management == ConnectionManagement.DisposeOnManagerDispose)
-                    this.Connection.Dispose();
+                if (Management == ConnectionManagement.DisposeOnManagerDispose)
+                    Connection.Dispose();
             }
             catch
             { }
@@ -592,8 +584,8 @@ namespace SharpOrm.Connection
 
         private bool CloseByCreator()
         {
-            if (this.creator == null) return false;
-            this.creator.SafeDisposeConnection(this.Connection);
+            if (_creator == null) return false;
+            _creator.SafeDisposeConnection(Connection);
             return true;
         }
 
@@ -601,12 +593,99 @@ namespace SharpOrm.Connection
         {
             try
             {
-                if (this.Connection.State == System.Data.ConnectionState.Open)
-                    this.Connection.Close();
+                if (Connection.State == System.Data.ConnectionState.Open)
+                    Connection.Close();
             }
             catch
             { }
         }
+
+        internal void CloseByHandle(Handle handle, ConnectionManagement reason)
+        {
+            lock (_handleLock)
+                if (_handles.Count == 1)
+                    Close(reason);
+        }
+
+        internal Handle GetHandle()
+        {
+            lock (_handleLock)
+                return new Handle(this);
+        }
+
+        /// <summary>
+        /// Attempts to close the connection using the reason "Operation completed".
+        /// </summary>
+        public void CloseByEndOperation()
+        {
+            Close(ConnectionManagement.CloseOnEndOperation);
+        }
+
+        /// <summary>
+        /// Attempts to close the connection using the reason "The child is releasing its resources".
+        /// </summary>
+        public void CloseByDisposeChild()
+        {
+            Close(ConnectionManagement.CloseOnDispose);
+        }
+
+        private void Close(ConnectionManagement reason)
+        {
+            if (Management == reason && CanClose)
+                Connection.Close();
+        }
+
         #endregion
+
+        internal class Handle : IDisposable
+        {
+            private bool _disposed;
+            public ConnectionManager Connection { get; private set; }
+            public bool Disposed => _disposed;
+
+            public Handle(ConnectionManager connection)
+            {
+                Connection = connection;
+                Connection._handles.Add(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (_disposed)
+                    return;
+
+                Connection.CloseByHandle(this, ConnectionManagement.CloseOnDispose);
+
+                lock (Connection._handleLock)
+                    Connection._handles.Remove(this);
+
+                Connection = null;
+
+                _disposed = true;
+            }
+
+            public void SignalException(Exception ex)
+            {
+                if (!Disposed)
+                    Connection.SignalException(ex);
+            }
+
+            public void CloseByEndOperation()
+            {
+                if (!Disposed)
+                    Connection.CloseByHandle(this, ConnectionManagement.CloseOnEndOperation);
+            }
+
+            ~Handle()
+            {
+                Dispose(disposing: false);
+            }
+
+            public void Dispose()
+            {
+                Dispose(disposing: true);
+                GC.SuppressFinalize(this);
+            }
+        }
     }
 }
