@@ -55,10 +55,10 @@ namespace SharpOrm.DataTranslation
             ApplyPendingChanges();
             List<string> names = new List<string>();
             names.AddRange(_columns.Where(column => !IsTimeStamps(column.Name)).Select(x => x.Name));
-            if (IgnoreTimestamps)
+            if (Settings.IgnoreTimestamps)
                 return names.ToArray();
 
-            if (_hasCreateColumn && IsCreate)
+            if (_hasCreateColumn && Settings.IsCreate)
                 names.Add(_table.Timestamp.CreatedAtColumn);
 
             if (_hasUpdateColumn)
@@ -82,43 +82,45 @@ namespace SharpOrm.DataTranslation
 
             ApplyPendingChanges();
             var visited = new HashSet<object>();
-            return ReadObjectCells(visited, owner);
+            var builder = new RowBuilder { OverrideOnAdd = true };
+            ReadObjectCells(visited, builder, owner);
+
+            return builder.GetCells();
         }
 
-        private IEnumerable<Cell> ReadObjectCells(HashSet<object> visited, object owner)
+        private void ReadObjectCells(HashSet<object> visited, RowBuilder builder, object owner)
         {
             if (visited.Contains(owner))
-                yield break;
+                return;
 
             visited.Add(owner);
 
             var context = new ValidationContext(owner);
 
-            foreach (var cell in _columns.Nodes.SelectMany(node => ReadObjectCells(context, node)))
-                yield return cell;
+            foreach (var node in _columns.Nodes)
+                ReadObjectCells(context, builder, node);
 
-            if (!IgnoreTimestamps && _hasCreateColumn && IsCreate)
-                yield return new Cell(_table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
+            if (!Settings.IgnoreTimestamps && _hasCreateColumn && Settings.IsCreate)
+                builder.Add(_table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
 
-            if (!IgnoreTimestamps && _hasUpdateColumn)
-                yield return new Cell(_table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
+            if (!Settings.IgnoreTimestamps && _hasUpdateColumn)
+                builder.Add(_table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 
-        private IEnumerable<Cell> ReadObjectCells(ValidationContext context, IColumnNode node)
+        private void ReadObjectCells(ValidationContext context, RowBuilder builder, IColumnNode node)
         {
             if (node.Nodes.Count == 0)
             {
-                if (IsTimeStamps(node.Column.Name) || !(GetCell(context, node.Column) is Cell cell))
-                    yield break;
+                if (!IsTimeStamps(node.Column.Name) && GetCell(context, node.Column) is Cell cell)
+                    builder.Add(cell);
 
-                yield return cell;
-                yield break;
+                return;
             }
 
             context = new ValidationContext(GetRawValue(node.Column, context.ObjectInstance));
 
-            foreach (var cell in node.Nodes.SelectMany(childNode => ReadObjectCells(context, childNode)))
-                yield return cell;
+            foreach (var childNode in node.Nodes)
+                ReadObjectCells(context, builder, childNode);
         }
 
         private Cell GetCell(ValidationContext context, ColumnInfo column)
@@ -130,7 +132,7 @@ namespace SharpOrm.DataTranslation
             if (column.Key && !CanUseKeyValue(value))
                 return null;
 
-            if (Validate) column.ValidateValue(context, value);
+            if (Settings.Validate) column.ValidateValue(context, value);
             return new Cell(column.Name, value);
         }
 

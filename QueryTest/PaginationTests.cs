@@ -116,7 +116,7 @@ namespace QueryTest
 
             ConfigureCount(1, "SELECT COUNT(*) FROM [Orders] LEFT JOIN [Customers] [Customer] ON [Customer].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2");
             Connection.QueryReaders["SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status], [Customer].[Id] AS [Customer_c_Id], [Customer].[Name] AS [Customer_c_Name], [Customer].[Email] AS [Customer_c_Email], [Customer].[address_id] AS [Customer_c_address_id] FROM [Orders] LEFT JOIN [Customers] [Customer] ON [Customer].[Id] = [Orders].[customer_id] WHERE [Orders].[customer_id] = 2 ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY"] =
-                () => new MockDataReader(i => builder.ToRow(), 1);
+                () => new MockDataReader(i => builder.GetRow(), 1);
 
             using var fallback = RegisterFallback();
             using var query = new Query<Order>();

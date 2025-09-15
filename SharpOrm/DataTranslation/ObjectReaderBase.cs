@@ -11,93 +11,101 @@ namespace SharpOrm.DataTranslation
     public abstract class ObjectReaderBase
     {
         protected readonly TableInfo _table;
+        private ObjectReaderSettings _settings = new ObjectReaderSettings();
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _readDatabaseGenerated = false;
-
-        public bool ReadDatabaseGenerated
+        public ObjectReaderSettings Settings
         {
-            get => _readDatabaseGenerated;
+            get => _settings;
             set
             {
-                _readDatabaseGenerated = value;
-                OnCriteriaChange();
+                if (_settings == value)
+                    throw new ArgumentNullException(nameof(value));
+
+
+                _settings.OnChange -= OnSettingsChange;
+                _settings = value;
+                value.OnChange += OnSettingsChange;
             }
         }
-        public TranslationRegistry Translation { get; set; } = TranslationRegistry.Default;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private ReadMode _primaryKeyMode = ReadMode.None;
+        [Obsolete("Use Settings.ReadDatabaseGenerated instead.")]
+        public bool ReadDatabaseGenerated
+        {
+            get => Settings.ReadDatabaseGenerated;
+            set => Settings.ReadDatabaseGenerated = value;
+        }
+
+        [Obsolete("Use Settings.Translation instead.")]
+        public TranslationRegistry Translation
+        {
+            get => Settings.Translation;
+            set => Settings.Translation = value;
+        }
+
         /// <summary>
         /// Gets or sets the mode for reading primary keys.
         /// </summary>
+        [Obsolete("Use Settings.PrimaryKeyMode instead.")]
         public ReadMode PrimaryKeyMode
         {
-            get => _primaryKeyMode;
-            set
-            {
-                _primaryKeyMode = value;
-                OnCriteriaChange();
-            }
+            get => Settings.PrimaryKeyMode;
+            set => Settings.PrimaryKeyMode = value;
         }
 
         /// <summary>
         /// Gets or sets a value indicating whether to read primary keys.
         /// </summary>
+        [Obsolete("Use Settings.PrimaryKeyMode instead.")]
         public bool ReadPk
         {
-            get => PrimaryKeyMode != ReadMode.None;
-            set => PrimaryKeyMode = value ? ReadMode.ValidOnly : ReadMode.None;
+            get => Settings.PrimaryKeyMode != ReadMode.None;
+            set => Settings.PrimaryKeyMode = value ? ReadMode.ValidOnly : ReadMode.None;
         }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _readFk = true;
 
         /// <summary>
         /// Gets or sets a value indicating whether to read foreign keys.
         /// </summary>
-        [Obsolete("This method will be removed in version 4.0")]
+        [Obsolete("Use Settings.ReadForeignKeys instead.")]
         public bool ReadFk
         {
-            get => _readFk;
-            set
-            {
-                if (value == _readFk)
-                    return;
-
-                _readFk = value;
-                OnCriteriaChange();
-            }
+            get => Settings.ReadForeignKeys;
+            set => Settings.ReadForeignKeys = value;
         }
 
         /// <summary>
         /// Gets or sets a value indicating whether to validate the object.
         /// </summary>
-        public bool Validate { get; set; }
+        [Obsolete("Use Settings.Validate instead.")]
+        public bool Validate
+        {
+            get => Settings.Validate;
+            set => Settings.Validate = value;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether to ignore timestamp columns.
         /// </summary>
-        public bool IgnoreTimestamps { get; set; }
+        [Obsolete("Use Settings.IgnoreTimestamps instead.")]
+        public bool IgnoreTimestamps
+        {
+            get => Settings.IgnoreTimestamps;
+            set => Settings.IgnoreTimestamps = value;
+        }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _isCreate = false;
         /// <summary>
         /// Gets or sets a value indicating whether the object is being created.
         /// </summary>
+        [Obsolete("Use Settings.IsCreate instead.")]
         public bool IsCreate
         {
-            get => _isCreate;
-            set
-            {
-                _isCreate = value;
-                OnCriteriaChange();
-            }
+            get => Settings.IsCreate;
+            set => Settings.IsCreate = value;
         }
 
         internal ObjectReaderBase(TableInfo table)
         {
             _table = table;
+            _settings.OnChange += OnSettingsChange;
         }
 
         [Obsolete("This method is obsolete and will be removed in version 4.0. Use IObjectReaderFactory.OfType() instead.")]
@@ -114,6 +122,8 @@ namespace SharpOrm.DataTranslation
 
             return new ObjectReader(table);
         }
+
+        private void OnSettingsChange(object sender, EventArgs e) => OnCriteriaChange();
 
         /// <summary>
         /// Configures the <see cref="ObjectReader"/> to only read the specified columns.
@@ -167,15 +177,15 @@ namespace SharpOrm.DataTranslation
 
         protected IEnumerable<SqlMember> GetMembers<K>(Expression<ColumnExpression<K>> expression)
         {
-            return new ExpressionProcessor<K>(null, Translation, ExpressionConfig.New | ExpressionConfig.SubMembers, null).ParseExpression(expression);
+            return new ExpressionProcessor<K>(null, Settings.Translation, ExpressionConfig.New | ExpressionConfig.SubMembers, null).ParseExpression(expression);
         }
 
         protected bool CanReadColumn(ColumnInfo column)
         {
-            if (!ReadDatabaseGenerated && column.DatabaseGenerated)
+            if (!Settings.ReadDatabaseGenerated && column.DatabaseGenerated)
                 return false;
 
-            if (column.Key && !ReadPk)
+            if (column.Key && Settings.PrimaryKeyMode == ReadMode.None)
                 return false;
 
             return (column.ForeignInfo != null && CanReadFk(column)) || column.Translation != null;
@@ -183,7 +193,7 @@ namespace SharpOrm.DataTranslation
 
         private bool CanReadFk(ColumnInfo column)
         {
-            return ReadFk && !_table.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
+            return Settings.ReadForeignKeys && !_table.Columns.Any(c => c != column && c.Name.Equals(column.ForeignInfo?.ForeignKey, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>  
@@ -221,10 +231,10 @@ namespace SharpOrm.DataTranslation
 
         protected bool CanUseKeyValue(object value)
         {
-            if (PrimaryKeyMode == ReadMode.None)
+            if (Settings.PrimaryKeyMode == ReadMode.None)
                 return false;
 
-            return !TranslationUtils.IsInvalidPk(value) || PrimaryKeyMode == ReadMode.All;
+            return !TranslationUtils.IsInvalidPk(value) || Settings.PrimaryKeyMode == ReadMode.All;
         }
 
         protected TableInfo GetTable(Type type)
@@ -245,7 +255,7 @@ namespace SharpOrm.DataTranslation
         protected object ProcessValue(ColumnInfo column, object owner)
         {
             object obj = GetValue(column, owner);
-            if (!ReadFk || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
+            if (Settings.ReadForeignKeys || !column.Type.IsClass || column.ForeignInfo == null || TranslationUtils.IsNull(obj))
                 return obj;
 
             return GetValue(GetTable(column.Type).Columns.FirstOrDefault(c => c.Key), obj);

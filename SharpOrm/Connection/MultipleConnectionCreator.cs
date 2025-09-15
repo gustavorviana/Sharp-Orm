@@ -18,8 +18,8 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public MultipleConnectionCreator(QueryConfig config, string connectionString)
-            : base(typeof(T), config, connectionString)
+        public MultipleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
+            : base(typeof(T), config, connectionString, configurator)
         {
         }
 
@@ -34,7 +34,7 @@ namespace SharpOrm.Connection
 
         public override ConnectionCreator Clone()
         {
-            return new MultipleConnectionCreator<T>(Config, _connectionString)
+            return new MultipleConnectionCreator<T>(Config, _connectionString, _configurator)
             {
                 AutoOpenConnection = AutoOpenConnection
             };
@@ -47,6 +47,7 @@ namespace SharpOrm.Connection
     public class MultipleConnectionCreator : ConnectionCreator
     {
         private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
+        protected readonly IConnectionConfigurator _configurator;
         protected readonly string _connectionString;
         private readonly Type _dbConnectionType;
 
@@ -55,8 +56,8 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public MultipleConnectionCreator(QueryConfig config, string connectionString)
-            : this(typeof(SqlConnection), config, connectionString)
+        public MultipleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
+            : this(typeof(SqlConnection), config, connectionString, configurator)
         {
         }
 
@@ -66,13 +67,14 @@ namespace SharpOrm.Connection
         /// <param name="connectionType">The type of <see cref="DbConnection"/> to instantiate.</param>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public MultipleConnectionCreator(Type connectionType, QueryConfig config, string connectionString)
+        public MultipleConnectionCreator(Type connectionType, QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
         {
             ValidateConnectionType(connectionType);
 
             _dbConnectionType = connectionType;
             _connectionString = connectionString;
             Config = config;
+            _configurator = configurator;
         }
 
         /// <summary>
@@ -84,6 +86,7 @@ namespace SharpOrm.Connection
             ThrowIfDisposed();
             var connection = Activator.CreateInstance(_dbConnectionType) as DbConnection;
             connection.ConnectionString = _connectionString;
+            _configurator?.Configure(connection);
 
             connections.Add(connection);
             return AutoOpenConnection ? connection.OpenIfNeeded() : connection;
@@ -117,7 +120,7 @@ namespace SharpOrm.Connection
         /// <returns>A new instance of <see cref="MultipleConnectionCreator"/> with the same settings.</returns>
         public override ConnectionCreator Clone()
         {
-            return new MultipleConnectionCreator(_dbConnectionType, Config, _connectionString)
+            return new MultipleConnectionCreator(_dbConnectionType, Config, _connectionString, _configurator)
             {
                 AutoOpenConnection = AutoOpenConnection
             };

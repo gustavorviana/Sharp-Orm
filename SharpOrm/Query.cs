@@ -1,7 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Builder.Grammars;
-using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
@@ -572,6 +571,46 @@ namespace SharpOrm
                 for (var i = 0; i < primaryKeysValues.Length; i++)
                     query.Where(pkCols[i].Name, primaryKeysValues[i]);
             });
+        }
+
+        /// <summary>
+        /// Asynchronously returns an array containing all items.
+        /// </summary>
+        /// <returns>An array of <c>T</c> with all items.</returns>
+        public Task<T[]> ToArrayAsync(CancellationToken token)
+        {
+            return GetAsync(token);
+        }
+
+        /// <summary>
+        /// Returns an array containing all items.
+        /// </summary>
+        /// <returns>An array of <c>T</c> with all items.</returns>
+        public T[] ToArray()
+        {
+            return Get();
+        }
+
+        /// <summary>
+        /// Asynchronously returns a <see cref="List{T}"/> containing all items.
+        /// </summary>
+        /// <returns>A <see cref="List{T}"/> with all items.</returns>
+        public Task<List<T>> ToListAsync(CancellationToken token)
+        {
+            return TaskUtils.Async(() =>
+            {
+                using (var builder = GetCommand().AddCancellationToken(token))
+                    return GetEnumerable<T>(builder, token).ToList();
+            });
+        }
+
+        /// <summary>
+        /// Returns a <see cref="List{T}"/> containing all items.
+        /// </summary>
+        /// <returns>A <see cref="List{T}"/> with all items.</returns>
+        public List<T> ToList()
+        {
+            return GetEnumerable<T>().ToList();
         }
 
         /// <summary>
