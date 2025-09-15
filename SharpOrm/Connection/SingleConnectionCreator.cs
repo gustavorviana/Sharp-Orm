@@ -16,8 +16,17 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public SingleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
-            : base(typeof(T), config, connectionString, configurator)
+        public SingleConnectionCreator(QueryConfig config, string connectionString) : base(typeof(T), config, connectionString, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SingleConnectionCreator{T}"/> class with a configurator.
+        /// </summary>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <param name="configurator">The connection configurator to apply additional settings.</param>
+        public SingleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator) : base(typeof(T), config, connectionString, configurator)
         {
         }
 
@@ -30,9 +39,13 @@ namespace SharpOrm.Connection
             return (T)base.GetConnection();
         }
 
+        /// <summary>
+        /// Creates a clone of this <see cref="SingleConnectionCreator{T}"/> with the same configuration.
+        /// </summary>
+        /// <returns>A new instance of <see cref="SingleConnectionCreator{T}"/> with identical settings.</returns>
         public override ConnectionCreator Clone()
         {
-            return new SingleConnectionCreator<T>(Config, _connectionString, _configurator)
+            return new SingleConnectionCreator<T>(Config, _connectionString, Configurator)
             {
                 AutoOpenConnection = AutoOpenConnection,
                 Management = Management
@@ -45,9 +58,21 @@ namespace SharpOrm.Connection
     /// </summary>
     public class SingleConnectionCreator : ConnectionCreator
     {
-        protected readonly IConnectionConfigurator _configurator;
+        /// <summary>
+        /// The connection configurator used to apply additional settings to the connection.
+        /// </summary>
+        protected IConnectionConfigurator Configurator { get; }
+
+        /// <summary>
+        /// Synchronization object for thread-safe connection creation.
+        /// </summary>
         private readonly object _lock = new object();
+
+        /// <summary>
+        /// The database connection string.
+        /// </summary>
         protected readonly string _connectionString;
+
         private readonly Type _dbConnectionType;
         private DbConnection _connection;
 
@@ -56,9 +81,19 @@ namespace SharpOrm.Connection
         /// </summary>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public SingleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
-            : this(typeof(SqlConnection), config, connectionString, configurator)
+        public SingleConnectionCreator(QueryConfig config, string connectionString) : this(typeof(SqlConnection), config, connectionString, null)
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SingleConnectionCreator"/> class using <see cref="SqlConnection"/> as the connection type with a configurator.
+        /// </summary>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <param name="configurator">The connection configurator to apply additional settings.</param>
+        public SingleConnectionCreator(QueryConfig config, string connectionString, IConnectionConfigurator configurator) : this(typeof(SqlConnection), config, connectionString, configurator)
+        {
+
         }
 
         /// <summary>
@@ -67,13 +102,25 @@ namespace SharpOrm.Connection
         /// <param name="connectionType">The type of <see cref="DbConnection"/> to instantiate.</param>
         /// <param name="config">The query configuration to use.</param>
         /// <param name="connectionString">The database connection string.</param>
-        public SingleConnectionCreator(Type connectionType, QueryConfig config, string connectionString, IConnectionConfigurator configurator = null)
+        public SingleConnectionCreator(Type connectionType, QueryConfig config, string connectionString) : this(connectionType, config, connectionString, null)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SingleConnectionCreator"/> class with a specific connection type and configurator.
+        /// </summary>
+        /// <param name="connectionType">The type of <see cref="DbConnection"/> to instantiate.</param>
+        /// <param name="config">The query configuration to use.</param>
+        /// <param name="connectionString">The database connection string.</param>
+        /// <param name="configurator">The connection configurator to apply additional settings.</param>
+        public SingleConnectionCreator(Type connectionType, QueryConfig config, string connectionString, IConnectionConfigurator configurator)
         {
             ValidateConnectionType(connectionType);
 
             _dbConnectionType = connectionType;
             _connectionString = connectionString;
-            _configurator = configurator;
+            Configurator = configurator;
             Config = config;
         }
 
@@ -91,7 +138,7 @@ namespace SharpOrm.Connection
                     _connection = Activator.CreateInstance(_dbConnectionType) as DbConnection;
                     _connection.ConnectionString = _connectionString;
                     _connection.Disposed += OnConnectionDisposed;
-                    _configurator?.Configure(_connection);
+                    Configurator?.Configure(_connection);
                 }
 
                 return AutoOpenConnection ? _connection.OpenIfNeeded() : _connection;
@@ -113,6 +160,10 @@ namespace SharpOrm.Connection
                 CloseConnection(false);
         }
 
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="SingleConnectionCreator"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -148,7 +199,7 @@ namespace SharpOrm.Connection
         /// <returns>A new instance of <see cref="SingleConnectionCreator"/> with the same configuration.</returns>
         public override ConnectionCreator Clone()
         {
-            return new SingleConnectionCreator(_dbConnectionType, Config, _connectionString, _configurator)
+            return new SingleConnectionCreator(_dbConnectionType, Config, _connectionString, Configurator)
             {
                 AutoOpenConnection = AutoOpenConnection,
                 Management = Management
