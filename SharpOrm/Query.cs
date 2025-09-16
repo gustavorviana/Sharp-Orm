@@ -3022,7 +3022,7 @@ namespace SharpOrm
         {
             ValidateReadonly();
 
-            var cmd = Manager.GetCommand(Config.Translation, leaveOpen);
+            var cmd = Manager.GetCommand(leaveOpen);
             cmd.AddCancellationToken(Token);
 
             if (CommandTimeout > 0)

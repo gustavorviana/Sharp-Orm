@@ -27,6 +27,9 @@ namespace SharpOrm.DataTranslation.Reader
             if (ReflectionUtils.IsDynamic(type))
                 return new DynamicRecordReader(reader, registry);
 
+            if (registry.GetFor(type) is ISqlTranslation translation)
+                return new ValueRecordReader(type, translation, reader, registry);
+
             return new ObjectRecordReader(ForeignInfo, registry.GetTable(type), reader);
         }
     }

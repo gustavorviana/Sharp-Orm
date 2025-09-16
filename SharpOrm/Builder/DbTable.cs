@@ -101,7 +101,7 @@ namespace SharpOrm.Builder
 
             ValidateConnectionManager(schema, manager);
 
-            var clone = schema.Clone();;
+            var clone = schema.Clone();
 
             var grammar = manager.Config.NewTableGrammar(clone);
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
@@ -260,7 +260,7 @@ namespace SharpOrm.Builder
         /// <exception cref="ArgumentNullException"></exception>
         private static bool Exists(TableGrammar grammar, ConnectionManager manager)
         {
-            return manager.ExecuteScalar<int>(grammar.Exists()) > 0;
+            return manager.ExecuteScalar<int>(grammar.Exists(), default) > 0;
         }
 
         private static void ValidateConnectionManager(ITableSchema schema, ConnectionManager manager)

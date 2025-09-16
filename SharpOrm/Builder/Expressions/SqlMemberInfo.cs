@@ -24,7 +24,7 @@ namespace SharpOrm.Builder.Expressions
         private bool IsNative()
         {
             return Member.MemberType == MemberTypes.Method ||
-                TranslationUtils.IsNative(GetMemberType(), false); ;
+                TranslationUtils.IsNative(GetMemberType(), false);
         }
 
         public T GetCustomAttribute<T>() where T : Attribute
