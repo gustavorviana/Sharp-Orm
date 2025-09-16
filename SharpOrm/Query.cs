@@ -651,6 +651,30 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts a new row into the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data through a RowBuilder instance.</param>
+        /// <param name="token">Cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous insert operation. The task result contains the number of affected rows or the generated identity value as an integer.</returns>
+        /// <example>
+        /// <code>
+        /// int result = await InsertAsync(row => 
+        /// {
+        ///     row.Set(x => x.Name, "John Doe");
+        ///     row.Set(x => x.Email, "john@example.com");
+        /// }, cancellationToken);
+        /// </code>
+        /// </example>
+        public async Task<int> InsertAsync(Action<RowBuilder<T>> call, CancellationToken token)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            object result = await InsertAsync(builder.GetCells(), token);
+            return TranslationUtils.TryNumeric(result);
+        }
+
+        /// <summary>
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="obj"></param>
@@ -662,6 +686,29 @@ namespace SharpOrm
             var reader = GetObjectReader(ReadMode.ValidOnly, true);
             object result = Insert(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj));
             SetPrimaryKey(obj, result);
+            return TranslationUtils.TryNumeric(result);
+        }
+
+        /// <summary>
+        /// Inserts a new row into the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data through a RowBuilder instance.</param>
+        /// <returns>The number of affected rows or the generated identity value as an integer.</returns>
+        /// <example>
+        /// <code>
+        /// int result = Insert(row => 
+        /// {
+        ///     row.Set(x => x.Name, "John Doe");
+        ///     row.Set(x => x.Email, "john@example.com");
+        /// });
+        /// </code>
+        /// </example>
+        public int Insert(Action<RowBuilder<T>> call)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            object result = Insert(builder.GetCells());
             return TranslationUtils.TryNumeric(result);
         }
 
@@ -731,6 +778,29 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously updates existing rows in the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data to be updated through a RowBuilder instance.</param>
+        /// <param name="token">Cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous update operation. The task result contains the number of affected rows.</returns>
+        /// <example>
+        /// <code>
+        /// int affectedRows = await UpdateAsync(row => 
+        /// {
+        ///     row.Set(x => x.Name, "Jane Doe");
+        ///     row.Set(x => x.UpdatedAt, DateTime.Now);
+        /// }, cancellationToken);
+        /// </code>
+        /// </example>
+        public Task<int> UpdateAsync(Action<RowBuilder<T>> call, CancellationToken token)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            return base.UpdateAsync(builder.GetCells(), token);
+        }
+
+        /// <summary>
         /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
@@ -741,6 +811,28 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(obj));
 
             return base.Update(GetObjectReader(ReadMode.None, false).ReadCells(obj));
+        }
+
+        /// <summary>
+        /// Updates existing rows in the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data to be updated through a RowBuilder instance.</param>
+        /// <returns>The number of affected rows.</returns>
+        /// <example>
+        /// <code>
+        /// int affectedRows = Update(row => 
+        /// {
+        ///     row.Set(x => x.Name, "Jane Doe");
+        ///     row.Set(x => x.UpdatedAt, DateTime.Now);
+        /// });
+        /// </code>
+        /// </example>
+        public int Update(Action<RowBuilder<T>> call)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            return base.Update(builder.GetCells());
         }
 
         /// <summary>
