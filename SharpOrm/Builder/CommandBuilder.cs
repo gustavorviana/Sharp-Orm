@@ -16,14 +16,14 @@ namespace SharpOrm.Builder
     {
         private bool disposed;
 
-        private readonly List<CancellationTokenRegistration> cancellationTokens = new List<CancellationTokenRegistration>();
+        private readonly List<CancellationTokenRegistration> _cancellationTokens = new List<CancellationTokenRegistration>();
         private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
         internal readonly bool _leaveOpen = false;
 
         private readonly TranslationRegistry _registry;
         private readonly ConnectionManager.Handle _handle;
         private readonly QueryConfig _config;
-        private readonly DbCommand command;
+        private readonly DbCommand _command;
         private DbDataReader reader;
 
         internal ForeignInfo ForeignInfo { get; set; }
@@ -33,8 +33,8 @@ namespace SharpOrm.Builder
         /// </summary>
         public int Timeout
         {
-            get => command.CommandTimeout;
-            set => command.CommandTimeout = value;
+            get => _command.CommandTimeout;
+            set => _command.CommandTimeout = value;
         }
 
         /// <summary>
@@ -63,10 +63,10 @@ namespace SharpOrm.Builder
             _config = manager.Config;
             _registry = _config.Translation;
 
-            command = manager.Connection.CreateCommand();
-            command.Transaction = manager.Transaction;
+            _command = manager.Connection.CreateCommand();
+            _command.Transaction = manager.Transaction;
 
-            command.SetCancellationToken(_tokenSource.Token);
+            _command.SetCancellationToken(_tokenSource.Token);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace SharpOrm.Builder
                 if (_tokenSource.IsCancellationRequested)
                     return this;
 
-                cancellationTokens.Add(token.Register(CancelTokens));
+                _cancellationTokens.Add(token.Register(CancelTokens));
                 return this;
             }
         }
@@ -152,7 +152,7 @@ namespace SharpOrm.Builder
             OpenIfNeeded();
 
             for (int i = 0; i < total - 1; i++)
-                command.SetExpression(_config, collection.Expressions[i]).ExecuteNonQuery();
+                _command.SetExpression(_config, collection.Expressions[i]).ExecuteNonQuery();
 
             SetExpression(collection.Expressions[total - 1]);
             return this;
@@ -197,7 +197,7 @@ namespace SharpOrm.Builder
         private CommandBuilder InternalSetExpression(SqlExpression expression)
         {
             Log(expression);
-            command.SetExpression(_config, expression);
+            _command.SetExpression(_config, expression);
             return this;
         }
 
@@ -253,7 +253,7 @@ namespace SharpOrm.Builder
         /// <returns>An <see cref="IEnumerable{T}"/> representing the query results.</returns>
         public DbCommandEnumerable<T> ExecuteEnumerable<T>(bool disposeCommand = true)
         {
-            return new DbCommandEnumerable<T>(new RecordReaderFactory { ForeignInfo = ForeignInfo }, command, _registry, _handle.Connection.Management, _tokenSource.Token)
+            return new DbCommandEnumerable<T>(new RecordReaderFactory { ForeignInfo = ForeignInfo }, _command, _registry, _handle.Connection.Management, _tokenSource.Token)
             {
                 DisposeCommand = disposeCommand,
                 manager = _handle.Connection,
@@ -266,7 +266,7 @@ namespace SharpOrm.Builder
             try
             {
                 await OpenIfNeededAsync();
-                var result = _registry.FromSql<T>(command.ExecuteScalar());
+                var result = _registry.FromSql<T>(_command.ExecuteScalar());
                 _tokenSource.Token.ThrowIfCancellationRequested();
                 return result;
             }
@@ -292,7 +292,7 @@ namespace SharpOrm.Builder
             try
             {
                 OpenIfNeeded();
-                var result = _registry.FromSql<T>(command.ExecuteScalar());
+                var result = _registry.FromSql<T>(_command.ExecuteScalar());
                 _tokenSource.Token.ThrowIfCancellationRequested();
                 return result;
             }
@@ -314,7 +314,7 @@ namespace SharpOrm.Builder
 
             try
             {
-                var result = _registry.FromSql(command.ExecuteScalar());
+                var result = _registry.FromSql(_command.ExecuteScalar());
                 _tokenSource.Token.ThrowIfCancellationRequested();
                 return result;
             }
@@ -340,7 +340,7 @@ namespace SharpOrm.Builder
 
             try
             {
-                var result = _registry.FromSql(command.ExecuteScalar());
+                var result = _registry.FromSql(_command.ExecuteScalar());
 
                 _tokenSource.Token.ThrowIfCancellationRequested();
                 return result;
@@ -365,7 +365,7 @@ namespace SharpOrm.Builder
         public DbDataReader ExecuteReader(CommandBehavior behavior = CommandBehavior.Default)
         {
             if (reader != null)
-                command.SafeCancel();
+                _command.SafeCancel();
 
             _tokenSource.Token.ThrowIfCancellationRequested();
 
@@ -455,7 +455,7 @@ namespace SharpOrm.Builder
         {
             try
             {
-                using (var reader = command.ExecuteReader(behavior))
+                using (var reader = _command.ExecuteReader(behavior))
                 {
                     _tokenSource.Token.ThrowIfCancellationRequested();
                     return reader.RecordsAffected;
@@ -483,13 +483,13 @@ namespace SharpOrm.Builder
         private DbCommand OpenIfNeeded()
         {
             _handle?.Connection?.Connection.OpenIfNeeded();
-            return command;
+            return _command;
         }
 
         private async Task<DbCommand> OpenIfNeededAsync()
         {
             await _handle?.Connection?.Connection.OpenIfNeededAsync();
-            return command;
+            return _command;
         }
 
         #region IDisposabe
@@ -499,7 +499,7 @@ namespace SharpOrm.Builder
                 return;
 
             if (!_leaveOpen)
-                command.SafeCancel();
+                _command.SafeCancel();
 
             CancelTokens();
 
@@ -507,7 +507,7 @@ namespace SharpOrm.Builder
             {
                 try { reader?.Dispose(); } catch { }
                 if (!_leaveOpen)
-                    try { command.Dispose(); } catch { }
+                    try { _command.Dispose(); } catch { }
             }
 
             reader = null;
@@ -527,14 +527,14 @@ namespace SharpOrm.Builder
                 }
                 catch { }
 
-                foreach (var item in cancellationTokens)
+                foreach (var item in _cancellationTokens)
                     try
                     {
                         item.Dispose();
                     }
                     catch { }
 
-                cancellationTokens.Clear();
+                _cancellationTokens.Clear();
             }
         }
 

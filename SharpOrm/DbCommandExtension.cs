@@ -54,7 +54,7 @@ namespace SharpOrm
         {
             try
             {
-                if (command.Connection.State != ConnectionState.Closed)
+                if (command.Connection != null && command.Connection.State != ConnectionState.Closed)
                     command.Cancel();
             }
             catch { }
