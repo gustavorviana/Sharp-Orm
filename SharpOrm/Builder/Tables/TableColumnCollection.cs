@@ -111,7 +111,7 @@ namespace SharpOrm.Builder
         /// <param name="calls">The columns to exclude.</param>
         public void AddColumnsExcept<T>(TranslationRegistry registry, params Expression<ColumnExpression<T>>[] calls)
         {
-            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, true).Select(MapColumn));
+            this.AddRange(registry.GetTable(typeof(T)).GetColumns(calls, true).Where(x => !x.DatabaseGenerated).Select(MapColumn));
         }
 
         /// <summary>
@@ -208,9 +208,9 @@ namespace SharpOrm.Builder
         /// <returns>The mapped data column.</returns>
         private static DataColumn MapColumn(ColumnInfo item)
         {
-            var dataCol = new DataColumn(item.Name, item.Type)
+            var dataCol = new DataColumn(item.Name, Nullable.GetUnderlyingType(item.Type))
             {
-                AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key
+                AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key && Nullable.GetUnderlyingType(item.Type) != null
             };
 
             if (item.GetAttribute<ColumnAttribute>()?.TypeName is string typeName && typeName.Length > 0)

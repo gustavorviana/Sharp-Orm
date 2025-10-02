@@ -102,7 +102,18 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(object column, object value)
         {
-            return this.Where(column, value is null ? "IS" : "=", value);
+            return this.Where(column, GetOperation(value, false), value);
+        }
+
+        private static string GetOperation(object value, bool negative)
+        {
+            if (value is null)
+                return "IS" + (negative ? " NOT" : "");
+
+            if (value is ICollection)
+                return (negative ? "NOT " : "") + "IN";
+
+            return negative ? "!=" : "=";
         }
 
         /// <summary>
@@ -113,7 +124,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase WhereNot(object column, object value)
         {
-            return this.Where(column, value is null ? "IS NOT" : "!=", value);
+            return this.Where(column, GetOperation(value, true), value);
         }
 
         /// <summary>
@@ -295,7 +306,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(object column, object value)
         {
-            return this.OrWhere(column, value is null ? "IS" : "=", value);
+            return this.OrWhere(column, GetOperation(value, false), value);
         }
 
         /// <summary>
@@ -306,7 +317,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhereNot(object column, object value)
         {
-            return this.OrWhere(column, value is null ? "IS NOT" : "!=", value);
+            return this.OrWhere(column, GetOperation(value, true), value);
         }
 
         /// <summary>
