@@ -443,18 +443,23 @@ namespace SharpOrm.Builder
             var qBase = new QueryBase(this.Info.Config, this.Info.TableName);
             callback(qBase);
 
-            if (qBase.Info.Where.Empty)
+            return WrapWithParentheses(qBase, whereType);
+        }
+
+        internal QueryBase WrapWithParentheses(QueryBase query, string whereType)
+        {
+            if (query.Info.Where.Empty)
                 return this;
 
-            this.WriteWhereType(whereType).Add('(').Add(qBase.Info.Where).Add(')');
+            WriteWhereType(whereType).Add('(').Add(query.Info.Where).Add(')');
             return this;
         }
 
         private QueryBase WriteExists(object queryObj, bool not, string whereType)
         {
-            this.WriteWhereType(whereType);
+            WriteWhereType(whereType);
 
-            if (not) this.Info.Where.Add("NOT ");
+            if (not) Info.Where.Add("NOT ");
             Info.Where.Add("EXISTS ");
 
             if (queryObj is Query query)
@@ -466,7 +471,7 @@ namespace SharpOrm.Builder
             }
             else
             {
-                this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+                Info.Where.Add('(').AddParameter(queryObj).Add(')');
             }
 
             return this;

@@ -208,7 +208,7 @@ namespace SharpOrm.Builder
         /// <returns>The mapped data column.</returns>
         private static DataColumn MapColumn(ColumnInfo item)
         {
-            var dataCol = new DataColumn(item.Name, Nullable.GetUnderlyingType(item.Type))
+            var dataCol = new DataColumn(item.Name, Nullable.GetUnderlyingType(item.Type) ?? item.Type)
             {
                 AllowDBNull = !item.Validations.Any(x => x is RequiredAttribute) && !item.Key && Nullable.GetUnderlyingType(item.Type) != null
             };

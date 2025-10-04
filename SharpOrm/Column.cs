@@ -169,7 +169,7 @@ namespace SharpOrm
                 return this.expression;
 
             StringBuilder builder = new StringBuilder();
-            builder.Append(info.Config.ApplyNomenclature(Name));
+            builder.Append(GetName(info));
 
             if (UseCollate())
                 builder.Append(" COLLATE ").Append(Collate);
@@ -178,6 +178,11 @@ namespace SharpOrm
                 builder.Append(" AS ").Append(info.Config.ApplyNomenclature(Alias));
 
             return (SqlExpression)builder;
+        }
+
+        protected virtual string GetName(IReadonlyQueryInfo info)
+        {
+            return info.Config.ApplyNomenclature(Name);
         }
 
         private bool UseCollate()

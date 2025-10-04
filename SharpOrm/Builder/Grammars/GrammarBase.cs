@@ -24,6 +24,9 @@ namespace SharpOrm.Builder.Grammars
         /// </summary>
         public QueryInfo Info => Query.Info;
 
+        public TableInfo TableInfo => (Query as IWithTableInfo)?.TableInfo;
+
+
         public GrammarBase(Query query)
         {
             Builder = new QueryBuilder(query);

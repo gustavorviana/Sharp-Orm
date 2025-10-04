@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -609,17 +610,65 @@ namespace SharpOrm
                 return query.InsertAsync(value, token);
         }
 
-        /// <summary>  
-        /// Inserts a value of type T into the database.  
-        /// </summary>  
-        /// <typeparam name="T">The type of the value to insert.</typeparam>  
-        /// <param name="value">The value to insert.</param>  
-        /// <returns>The number of rows affected.</returns>  
+        /// <summary>
+        /// Inserts a value of type T into the database.
+        /// </summary>
+        /// <typeparam name="T">The type of the value to insert.</typeparam>
+        /// <param name="value">The value to insert.</param>
+        /// <returns>The number of rows affected.</returns>
         protected int Insert<T>(T value)
         {
             using (var query = Query<T>())
                 return query.Insert(value);
         }
+
+        #region DbTable
+
+        /// <summary>
+        /// Creates a new temporary table based on a query.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="queryBase">Query used to create the temporary table.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable(string name, Query queryBase)
+        {
+            return DbTable.Create(name, true, queryBase, GetManager());
+        }
+
+        /// <summary>
+        /// Creates a new temporary table based on an existing table.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="columns">Columns of the table to be used as the base.</param>
+        /// <param name="basedTable">Name of the table to be used in the creation.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable(string name, Column[] columns, string basedTable)
+        {
+            return DbTable.Create(name, true, columns, basedTable, GetManager());
+        }
+
+        /// <summary>
+        /// Creates a temporary table based on the provided columns.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="columns">Columns that the table should contain.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTable(TableBuilder builder)
+        {
+            return DbTable.Create(builder.GetSchema(), GetManager());
+        }
+
+        /// <summary>
+        /// Creates a temporary table based on a type.
+        /// </summary>
+        /// <typeparam name="T">The type to use as the base for the table.</typeparam>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable<T>()
+        {
+            return DbTable.Create<T>(true, Translation, GetManager());
+        }
+
+        #endregion
 
         #region IDisposable
 

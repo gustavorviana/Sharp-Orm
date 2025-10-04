@@ -291,7 +291,7 @@ namespace QueryTest.DataTranslation
         public void LoadArrayChild()
         {
             using var fallback = RegisterFallback();
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [Orders]", () => GetReader(i => MakeOrderCells(1), 3));
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id] FROM [Orders]", () => GetReader(i => MakeOrderCells(1), 3));
             Connection.QueryReaders.Add("SELECT * FROM [OrderItems] WHERE [OrderItems].[Id] = 1", () => GetReader(i => MakeOrderItemsCells(i + 1, 1, i * 3 + 1), 10));
 
             using var query = new Query<Order>(Manager);

@@ -7,4 +7,5 @@ namespace SharpOrm
     /// </summary>
     /// <param name="query">The query that will be passed to the callback method.</param>
     public delegate void QueryCallback(QueryBase query);
+    public delegate void QueryCallback<T>(WhereBuilder<T> query);
 }

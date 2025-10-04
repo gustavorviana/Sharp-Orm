@@ -19,7 +19,7 @@ namespace QueryTest.SqlServer
         {
             using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
 
-            QueryAssert.Equal($"SELECT * FROM [SoftDeleteDateAddress]{expectedWhere}", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT [Deleted], [DeletedAt], [Id], [Name], [Street], [City] FROM [SoftDeleteDateAddress]{expectedWhere}", query.Grammar().Select());
         }
 
         [Theory]
@@ -56,7 +56,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrderBy(x => x.Name);
 
-            QueryAssert.Equal($"SELECT * FROM [Address] ORDER BY [Name] ASC", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT [Id], [Name], [Street], [City] FROM [Address] ORDER BY [Name] ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -65,7 +65,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrderBy(x => new { x.Name, x.Street });
 
-            QueryAssert.Equal($"SELECT * FROM [Address] ORDER BY [Name] ASC, [Street] ASC", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT [Id], [Name], [Street], [City] FROM [Address] ORDER BY [Name] ASC, [Street] ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.GroupBy(x => x.Name);
 
-            QueryAssert.Equal($"SELECT * FROM [Address] GROUP BY [Name]", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT [Id], [Name], [Street], [City] FROM [Address] GROUP BY [Name]", query.Grammar().Select());
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.GroupBy(x => x.Name.ToLower());
 
-            QueryAssert.Equal($"SELECT * FROM [Address] GROUP BY LOWER([Name])", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT [Id], [Name], [Street], [City] FROM [Address] GROUP BY LOWER([Name])", query.Grammar().Select());
         }
 
         [Fact]

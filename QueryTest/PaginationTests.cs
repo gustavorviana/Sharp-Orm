@@ -75,7 +75,7 @@ namespace QueryTest
             using var pager = query.PaginateRows(8, 1);
             pager.GoToPage(2);
 
-            Assert.Equal("SELECT * FROM [TestTable] ORDER BY [Id] ASC OFFSET 8 ROWS FETCH NEXT 8 ROWS ONLY", fallback.ToString());
+            Assert.Equal("SELECT [Id], [Id2], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status] FROM [TestTable] ORDER BY [Id] ASC OFFSET 0 ROWS FETCH NEXT 8 ROWS ONLY\r\nSELECT [Id], [Id2], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status] FROM [TestTable] ORDER BY [Id] ASC OFFSET 8 ROWS FETCH NEXT 8 ROWS ONLY", fallback.ToString());
         }
 
         [Fact]

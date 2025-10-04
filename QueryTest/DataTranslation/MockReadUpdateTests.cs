@@ -41,13 +41,13 @@ namespace QueryTest.DataTranslation
         public void Read100Itens()
         {
             const int itens = 1000;
-            using var query = GetConfiguredOrderQuery(itens: itens, queryStr: "SELECT * FROM [Orders]");
+            using var query = GetConfiguredOrderQuery(itens: itens, queryStr: "SELECT [Id], [customer_id], [Product], [Quantity], [Status] FROM [Orders]");
             var orders = query.Get();
 
             Assert.Equal(itens, orders.Length);
         }
 
-        private Query<Order> GetConfiguredOrderQuery(bool loadForeign = false, int itens = 1, string queryStr = "SELECT TOP(1) * FROM [Orders]")
+        private Query<Order> GetConfiguredOrderQuery(bool loadForeign = false, int itens = 1, string queryStr = "SELECT TOP(1) [Id], [customer_id], [Product], [Quantity], [Status] FROM [Orders]")
         {
             var config = Config.Clone();
             config.LoadForeign = loadForeign;

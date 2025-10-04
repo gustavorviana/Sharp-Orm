@@ -16,7 +16,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereContains(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["%Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["%Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -25,7 +25,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereStartsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereEndsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["%Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["%Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereNotContains(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereNotStartsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereNotEndsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereNot(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] != @p1", ["Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] != @p1", ["Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.Where(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] = @p1", ["Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] = @p1", ["Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereColumn(x => x.Street, x => x.City);
 
-            QueryAssert.Equal("SELECT * FROM [Address] WHERE [Street] = [City]", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] = [City]", query.Grammar().Select());
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.WhereNotColumn(x => x.Street, x => x.City);
 
-            QueryAssert.Equal("SELECT * FROM [Address] WHERE [Street] != [City]", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] != [City]", query.Grammar().Select());
         }
 
         [Fact]
@@ -106,7 +106,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereContains(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["%Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["%Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereStartsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereEndsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] LIKE @p1", ["%Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] LIKE @p1", ["%Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -133,7 +133,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereNotContains(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -142,7 +142,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereNotStartsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["Main%"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["Main%"], query.Grammar().Select());
         }
 
         [Fact]
@@ -151,7 +151,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereNotEndsWith(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] NOT LIKE @p1", ["%Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereNot(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] != @p1", ["Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] != @p1", ["Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhere(x => x.Street, "Main");
 
-            QueryAssert.EqualDecoded("SELECT * FROM [Address] WHERE [Street] = @p1", ["Main"], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] = @p1", ["Main"], query.Grammar().Select());
         }
 
         [Fact]
@@ -178,7 +178,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereColumn(x => x.Street, x => x.City);
 
-            QueryAssert.Equal("SELECT * FROM [Address] WHERE [Street] = [City]", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] = [City]", query.Grammar().Select());
         }
 
         [Fact]
@@ -187,7 +187,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Address>();
             query.OrWhereNotColumn(x => x.Street, x => x.City);
 
-            QueryAssert.Equal("SELECT * FROM [Address] WHERE [Street] != [City]", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address] WHERE [Street] != [City]", query.Grammar().Select());
         }
 
         [Fact]
@@ -196,7 +196,7 @@ namespace QueryTest.SqlServer
             using var query = new Query<Order>();
             query.Join(x => x.Customer, x => x.AddressId, x => x.Id);
             query.Where(x => x.Product, "Test");
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE [Orders].[Product] = ?", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status] FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE [Orders].[Product] = ?", query.Grammar().Select());
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace QueryTest.SqlServer
             query.Join(x => x.Customer, x => x.AddressId, x => x.Id);
             query.Where(x => x.Product.ToLower(), "test");
 
-            QueryAssert.Equal("SELECT * FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE LOWER([Orders].[Product]) = ?", query.Grammar().Select());
+            QueryAssert.Equal("SELECT [Orders].[Id], [Orders].[customer_id], [Orders].[Product], [Orders].[Quantity], [Orders].[Status] FROM [Orders] INNER JOIN [Customers] [Customer] ON [Customer].[address_id] = [Orders].[Id] WHERE LOWER([Orders].[Product]) = ?", query.Grammar().Select());
         }
     }
 }

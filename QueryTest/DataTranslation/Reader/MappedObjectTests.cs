@@ -35,7 +35,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void MapNestedTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetNestedObjectReader);
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id], [Child1_Id], [child_id], [Child1_Value] FROM [RootNestedObject]", GetNestedObjectReader);
 
             using var query = new Query<RootNestedObject>(Manager);
             var obj = query.FirstOrDefault();
@@ -55,7 +55,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void MapNestedWithPrefixTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [WithAliasRootNestedObject]", GetPrefixedNestedObjectReader);
+            Connection.QueryReaders.Add("SELECT TOP(1) [WithPrefixId], [child_id], [WithPrefixValue], [Id] FROM [WithAliasRootNestedObject]", GetPrefixedNestedObjectReader);
 
             using var query = new Query<WithAliasRootNestedObject>(Manager);
             var obj = query.FirstOrDefault();
@@ -75,7 +75,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void MapAllAsNestedTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetNestedObjectReader);
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id], [Child1_Id], [child_id], [Child1_Value], [Child2_Id], [Child2_Value] FROM [RootNestedObject]", GetNestedObjectReader);
 
             using var query = new Query<RootNestedObject>(GetManager(x => x.NestedMapMode = SharpOrm.Builder.NestedMode.All));
             var obj = query.FirstOrDefault();

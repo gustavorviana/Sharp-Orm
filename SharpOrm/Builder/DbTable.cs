@@ -148,7 +148,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public Query GetQuery<T>()
+        public Query<T> GetQuery<T>()
         {
             return new Query<T>(DbName, Manager);
         }

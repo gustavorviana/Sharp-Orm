@@ -19,7 +19,7 @@ namespace QueryTest.Sqlite
         {
             using var query = new Query<SoftDeleteDateAddress> { Trashed = visibility };
 
-            QueryAssert.Equal($"SELECT * FROM \"SoftDeleteDateAddress\"{expectedWhere}", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT \"Deleted\", \"DeletedAt\", \"Id\", \"Name\", \"Street\", \"City\" FROM \"SoftDeleteDateAddress\"{expectedWhere}", query.Grammar().Select());
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<Address>();
             query.OrderBy(x => x.Name);
 
-            QueryAssert.Equal($"SELECT * FROM \"Address\" ORDER BY \"Name\" ASC", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT \"Id\", \"Name\", \"Street\", \"City\" FROM \"Address\" ORDER BY \"Name\" ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<Address>();
             query.OrderBy(x => new { x.Name, x.Street });
 
-            QueryAssert.Equal($"SELECT * FROM \"Address\" ORDER BY \"Name\" ASC, \"Street\" ASC", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT \"Id\", \"Name\", \"Street\", \"City\" FROM \"Address\" ORDER BY \"Name\" ASC, \"Street\" ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<Address>();
             query.GroupBy(x => x.Name);
 
-            QueryAssert.Equal($"SELECT * FROM \"Address\" GROUP BY \"Name\"", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT \"Id\", \"Name\", \"Street\", \"City\" FROM \"Address\" GROUP BY \"Name\"", query.Grammar().Select());
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<Address>();
             query.GroupBy(x => x.Name.ToLower());
 
-            QueryAssert.Equal($"SELECT * FROM \"Address\" GROUP BY LOWER(\"Name\")", query.Grammar().Select());
+            QueryAssert.Equal($"SELECT \"Id\", \"Name\", \"Street\", \"City\" FROM \"Address\" GROUP BY LOWER(\"Name\")", query.Grammar().Select());
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace QueryTest.Sqlite
         {
             using var query = new Query<TestTable>();
 
-            QueryAssert.Equal("SELECT * FROM \"TestTable\"", query.Grammar().Select());
+            QueryAssert.Equal("SELECT \"Id\", \"Id2\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\" FROM \"TestTable\"", query.Grammar().Select());
         }
 
         [Fact]
@@ -244,7 +244,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<TestTable>();
             query.GroupBy(x => x.Name);
 
-            QueryAssert.Equal("SELECT * FROM \"TestTable\" GROUP BY \"Name\"", query.Grammar().Select());
+            QueryAssert.Equal("SELECT \"Id\", \"Id2\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\" FROM \"TestTable\" GROUP BY \"Name\"", query.Grammar().Select());
         }
 
         [Fact]
@@ -255,7 +255,7 @@ namespace QueryTest.Sqlite
             query.Join("X", "X.Id", "TestTable.Id");
 
             QueryAssert.Equal(
-                "SELECT * FROM \"TestTable\" INNER JOIN \"X\" ON \"X\".\"Id\" = \"TestTable\".\"Id\" GROUP BY \"TestTable\".\"Name\"",
+                "SELECT \"TestTable\".\"Id\", \"TestTable\".\"Id2\", \"TestTable\".\"Name\", \"TestTable\".\"Nick\", \"TestTable\".\"record_created\", \"TestTable\".\"Number\", \"TestTable\".\"custom_id\", \"TestTable\".\"custom_status\" FROM \"TestTable\" INNER JOIN \"X\" ON \"X\".\"Id\" = \"TestTable\".\"Id\" GROUP BY \"TestTable\".\"Name\"",
                 query.Grammar().Select()
             );
         }
@@ -362,7 +362,7 @@ namespace QueryTest.Sqlite
             using var query = new Query<TestTable>();
             query.OrderBy(x => x.Name);
 
-            QueryAssert.Equal("SELECT * FROM \"TestTable\" ORDER BY \"Name\" ASC", query.Grammar().Select());
+            QueryAssert.Equal("SELECT \"Id\", \"Id2\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\" FROM \"TestTable\" ORDER BY \"Name\" ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -372,7 +372,7 @@ namespace QueryTest.Sqlite
             query.OrderBy(x => x.Name);
             query.Join("X", "X.Id", "TestTable.Id");
 
-            QueryAssert.Equal("SELECT * FROM \"TestTable\" INNER JOIN \"X\" ON \"X\".\"Id\" = \"TestTable\".\"Id\" ORDER BY \"TestTable\".\"Name\" ASC", query.Grammar().Select());
+            QueryAssert.Equal("SELECT \"TestTable\".\"Id\", \"TestTable\".\"Id2\", \"TestTable\".\"Name\", \"TestTable\".\"Nick\", \"TestTable\".\"record_created\", \"TestTable\".\"Number\", \"TestTable\".\"custom_id\", \"TestTable\".\"custom_status\" FROM \"TestTable\" INNER JOIN \"X\" ON \"X\".\"Id\" = \"TestTable\".\"Id\" ORDER BY \"TestTable\".\"Name\" ASC", query.Grammar().Select());
         }
 
         [Fact]
@@ -391,7 +391,7 @@ namespace QueryTest.Sqlite
             const string Name = "Test";
 
             query.Where(new SqlExpression("\"Name\" = ? AND \"Active\" = ?", Name, true));
-            QueryAssert.EqualDecoded("SELECT * FROM \"TestTable\" WHERE \"Name\" = @p1 AND \"Active\" = 1", [Name], query.Grammar().Select());
+            QueryAssert.EqualDecoded("SELECT \"Id\", \"Id2\", \"Name\", \"Nick\", \"record_created\", \"Number\", \"custom_id\", \"custom_status\" FROM \"TestTable\" WHERE \"Name\" = @p1 AND \"Active\" = 1", [Name], query.Grammar().Select());
         }
 
         [Fact]

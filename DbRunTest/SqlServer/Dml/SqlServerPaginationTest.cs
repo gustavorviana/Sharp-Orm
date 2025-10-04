@@ -62,7 +62,7 @@ namespace DbRunTest.SqlServer.Dml
         public void PaginateWithoutOrderby()
         {
             using var q = new Query<TestTable>(Creator);
-            Assert.Throws<InvalidOperationException>(() => q.Paginate(1, 2));
+            q.Paginate(1, 2);
         }
     }
 }

@@ -1,9 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SharpOrm;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace BaseTest.Models
 {
+    [SoftDelete]
+    [Table("TestTable")]
+    public class SoftDeleteTestTable: TestTable
+    {
+
+    }
+
     public class ExtendedTestTable : TestTable
     {
         [AllowNull]

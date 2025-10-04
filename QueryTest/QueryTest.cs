@@ -320,7 +320,7 @@ namespace QueryTest
         [Fact]
         public void JoinT()
         {
-            var expected = "SELECT * FROM [Customers] [c] INNER JOIN [Address] [addr] ON [addr].[id] = [c].[address_id]";
+            var expected = "SELECT [c].[Id], [c].[Name], [c].[Email], [c].[address_id] FROM [Customers] [c] INNER JOIN [Address] [addr] ON [addr].[id] = [c].[address_id]";
             var query = new Query<Customer>("c");
             query.Join<Address>("addr", "addr.id", "c.address_id");
 
@@ -340,7 +340,7 @@ namespace QueryTest
         [Fact]
         public void WhereInList()
         {
-            const string EXPECTED = "SELECT * FROM [Customers] WHERE [Id] IN (1, 2, 3)";
+            const string EXPECTED = "SELECT [Id], [Name], [Email], [address_id] FROM [Customers] WHERE [Id] IN (1, 2, 3)";
 
             var query = new Query<Customer>()
                 .WhereIn<int>(x => x.Id, new List<int> { 1, 2, 3 });
@@ -351,7 +351,7 @@ namespace QueryTest
         [Fact]
         public void Exists()
         {
-            const string EXPECTED = "SELECT * FROM [Customers] WHERE EXISTS (SELECT [Id] FROM [Orders] WHERE [Status] IN (1, 2, 3))";
+            const string EXPECTED = "SELECT [Id], [Name], [Email], [address_id] FROM [Customers] WHERE EXISTS (SELECT [Id] FROM [Orders] WHERE [Status] IN (1, 2, 3))";
             var statuses = new List<int> { 1, 2, 3 };
 
             var query = new Query<Customer>();
@@ -367,7 +367,7 @@ namespace QueryTest
         [Fact]
         public void WhereAndExists()
         {
-            const string EXPECTED = "SELECT * FROM [Customers] WHERE [CreatedAt] = ? AND EXISTS (SELECT 1 FROM [Orders] WHERE [CreatedAt] = ? AND [Status] IN (1, 2, 3))";
+            const string EXPECTED = "SELECT [Id], [Name], [Email], [address_id] FROM [Customers] WHERE [CreatedAt] = ? AND EXISTS (SELECT 1 FROM [Orders] WHERE [CreatedAt] = ? AND [Status] IN (1, 2, 3))";
             var statuses = new List<int> { 1, 2, 3 };
 
             var query = new Query<Customer>();

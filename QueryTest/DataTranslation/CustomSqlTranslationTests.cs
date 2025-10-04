@@ -20,7 +20,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void RecursiveCallTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [Recursive]", () => GetReader(new Cell("Id", 1)));
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id], [Child1_Id] FROM [Recursive]", () => GetReader(new Cell("Id", 1)));
 
             using var query = new Query<RecursiveClass>(Manager);
             Assert.NotNull(query.FirstOrDefault());
