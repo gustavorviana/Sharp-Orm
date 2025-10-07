@@ -16,7 +16,7 @@ namespace SharpOrm.Builder.Expressions
         {
             QueryBuilder builder = new QueryBuilder(info);
 
-            builder.Add(expression);
+            builder.Add(_expression);
 
             if (alias && !string.IsNullOrEmpty(Alias))
                 builder.Add(" AS ").Add(info.Config.ApplyNomenclature(this.Alias));

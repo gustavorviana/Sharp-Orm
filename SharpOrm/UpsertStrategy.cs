@@ -18,7 +18,6 @@ namespace SharpOrm
         private readonly ConnectionManager _managerBase;
 
         private ConnectionManager _manager;
-        private Query _query;
 
         private readonly Row[] _rows;
         private string[] _toCheckColumns;
@@ -28,6 +27,12 @@ namespace SharpOrm
 
         public UpsertStrategy(Query query, params Row[] rows)
         {
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+
+            if (rows == null || rows.Length == 0)
+                throw new ArgumentException("Rows cannot be null or empty.", nameof(rows));
+
             _rows = rows;
             _token = query.Token;
             _config = query.Config;
@@ -89,16 +94,16 @@ namespace SharpOrm
 
         private async Task NonNativeUpsertAsync(Row row, CancellationToken token)
         {
-            if (AddWheres(_query, row, _toCheckColumns) && await _query.AnyAsync(token)) await _query.UpdateAsync(row.Cells.Where(x => AnyColumn(_updateColumns, x.Name)), token);
-            else await _query.InsertAsync(row.Cells.Where(x => AnyColumn(_insertColumns, x.Name)), token);
+            using (var query = GetQuery())
+                if (AddWheres(query, row, _toCheckColumns) && await query.AnyAsync(token))
+                    await query.UpdateAsync(row.Cells.Where(x => AnyColumn(_updateColumns, x.Name)), token);
+                else
+                    await query.InsertAsync(row.Cells.Where(x => AnyColumn(_insertColumns, x.Name)), token);
         }
 
         /// <summary>
         /// Inserts or updates multiple rows in the database based on the specified columns to check and update.
         /// </summary>
-        /// <param name="rows">The rows to insert or update.</param>
-        /// <param name="toCheckColumns">The columns to check for existing records.</param>
-        /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
         /// <returns>The number of affected rows.</returns>
         /// <exception cref="ArgumentNullException">Thrown when rows or toCheckColumns are null or empty.</exception>
         public int Upsert()
@@ -124,8 +129,16 @@ namespace SharpOrm
 
         private void NonNativeUpsert(Row row)
         {
-            if (AddWheres(_query, row, _toCheckColumns) && _query.Any()) _query.Update(row.Cells.Where(x => AnyColumn(_updateColumns, x.Name)));
-            else _query.Insert(row.Cells.Where(x => AnyColumn(_insertColumns, x.Name)));
+            using (var query = GetQuery())
+                if (AddWheres(query, row, _toCheckColumns) && query.Any())
+                    query.Update(row.Cells.Where(x => AnyColumn(_updateColumns, x.Name)));
+                else
+                    query.Insert(row.Cells.Where(x => AnyColumn(_insertColumns, x.Name)));
+        }
+
+        private Query GetQuery()
+        {
+            return new Query(_name, _manager);
         }
 
         private bool AddWheres(Query query, Row row, string[] toCheckColumns)
@@ -178,9 +191,13 @@ namespace SharpOrm
             }
 
             ExtractUpsertModes(out var needNative, out needNonNative);
-            InitConnection(needNonNative.Count, needNonNative.Count);
+            InitConnection(needNative.Count, needNonNative.Count);
 
-            return needNative.Count == 0 ? null : GetGrammar().Upsert(needNative, _toCheckColumns, _updateColumns);
+            if (needNative.Count == 0)
+                return null;
+
+            using (var tempQuery = GetQuery())
+                return _config.NewGrammar(tempQuery).Upsert(needNative, _toCheckColumns, _updateColumns);
         }
 
         private void InitConnection(int nativeQtd, int nonNativeQtd)
@@ -188,28 +205,22 @@ namespace SharpOrm
             bool needTransaction = nativeQtd > 0 && nonNativeQtd > 0 || nonNativeQtd > 1;
 
             _manager = needTransaction && _managerBase.Transaction == null ? _managerBase.BeginTransaction() : _managerBase;
-            _query = new Query(_name, _manager);
-        }
-
-        protected internal Grammar GetGrammar()
-        {
-            return _config.NewGrammar(_query);
         }
 
         private void CloseTransaction()
         {
-            if (_query != null)
-            {
-                _query.Dispose();
-                _query = null;
-            }
-
             if (_managerBase == _manager || _manager == null)
                 return;
 
-            _manager.Commit();
-            _manager.Dispose();
-            _manager = null;
+            try
+            {
+                _manager.Commit();
+            }
+            finally
+            {
+                _manager.Dispose();
+                _manager = null;
+            }
         }
 
         #endregion

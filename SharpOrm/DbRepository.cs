@@ -22,9 +22,10 @@ namespace SharpOrm
         #region Fields/Properties
         private readonly object _lock = new object();
         private readonly bool _forceSingleConnection;
+        private readonly bool _autoCommitOnDispose;
         private bool isExtTransact = false;
         private bool _disposed;
-        public bool Disposed => this._disposed;
+        public bool Disposed => _disposed;
 
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
@@ -56,7 +57,7 @@ namespace SharpOrm
             set => this.commandTimeout = value;
         }
 
-        protected TranslationRegistry Translation => this.Creator.Config.Translation;
+        protected TranslationRegistry Translation => Creator?.Config?.Translation;
 
         /// <summary>
         /// Gets the default connection creator for the repository.
@@ -78,9 +79,11 @@ namespace SharpOrm
         /// Initializes a new instance of the <see cref="DbRepository"/> class.
         /// </summary>
         /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
-        public DbRepository(bool forceSingleConnection = false)
+        /// <param name="autoCommitOnDispose">A value indicating whether to automatically commit transactions when the repository is disposed. Default is true.</param>
+        public DbRepository(bool forceSingleConnection = false, bool autoCommitOnDispose = true)
         {
-            this._forceSingleConnection = forceSingleConnection;
+            _forceSingleConnection = forceSingleConnection;
+            _autoCommitOnDispose = autoCommitOnDispose;
         }
 
         #region Transactions
@@ -93,6 +96,9 @@ namespace SharpOrm
         {
             if (service == null)
                 throw new ArgumentNullException(nameof(service));
+
+            if (service.Disposed)
+                throw new ObjectDisposedException(nameof(service), "Cannot set transaction from a disposed repository.");
 
             this.SetTransaction(service.Transaction);
         }
@@ -543,7 +549,7 @@ namespace SharpOrm
             if (!(sender is DbCommand cmd))
                 return;
 
-            cmd.Disposed += this.OnCommandDisposed;
+            cmd.Disposed -= this.OnCommandDisposed;
 
             if (cmd.Transaction is null)
                 try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
@@ -683,23 +689,23 @@ namespace SharpOrm
         /// <param name="disposing">True if disposing of managed resources, false if finalizing.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (this._disposed)
+            if (_disposed)
                 return;
 
-            this._disposed = true;
+            _disposed = true;
             if (disposing)
             {
-                if (!this.HasParentTransaction && this.Transaction != null)
-                    this.CommitTransaction();
+                if (_autoCommitOnDispose && !HasParentTransaction && Transaction != null)
+                    CommitTransaction();
 
-                this._connections.Dispose();
+                _connections.Dispose();
             }
             else
             {
-                this._connections.Clear();
+                _connections.Clear();
             }
 
-            this.Transaction = null;
+            Transaction = null;
         }
 
         /// <summary>
@@ -707,14 +713,16 @@ namespace SharpOrm
         /// </summary>
         public void Dispose()
         {
-            this.ThrowIfDisposed();
-            this.Dispose(true);
+            if (_disposed)
+                return;
+
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
         protected void ThrowIfDisposed()
         {
-            if (this._disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);
         }
 

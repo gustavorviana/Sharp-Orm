@@ -15,7 +15,7 @@ namespace SharpOrm
     public class Column : ISqlExpressibleAlias, IEquatable<Column>, IEquatable<string>
     {
         #region Fields\Properties
-        internal readonly SqlExpression expression;
+        internal readonly SqlExpression _expression;
         /// <summary>
         /// Gets the name of the column.
         /// </summary>
@@ -39,10 +39,10 @@ namespace SharpOrm
         {
             get
             {
-                if (this.isCount == null)
-                    this.isCount = this.expression?.ToString() is string exp && exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) && exp.EndsWith(")");
+                if (isCount == null)
+                    isCount = _expression?.ToString() is string exp && exp.StartsWith("count(", StringComparison.OrdinalIgnoreCase) && exp.EndsWith(")");
 
-                return this.isCount.Value;
+                return isCount.Value;
             }
         }
 
@@ -66,9 +66,9 @@ namespace SharpOrm
         /// <param name="column">The column to copy.</param>
         protected Column(Column column)
         {
-            this.expression = column.expression;
-            this.Name = column.Name;
-            this.Alias = column.Alias;
+            _expression = column._expression;
+            Name = column.Name;
+            Alias = column.Alias;
         }
 
         /// <summary>
@@ -78,8 +78,8 @@ namespace SharpOrm
         /// <param name="alias">The alias of the column.</param>
         public Column(string name, string alias)
         {
-            this.Name = name;
-            this.Alias = alias;
+            Name = name;
+            Alias = alias;
         }
 
         /// <summary>
@@ -97,8 +97,8 @@ namespace SharpOrm
         /// <param name="name">The <see cref="DbName"/> representing the column.</param>
         public Column(DbName name)
         {
-            this.Name = name.Name;
-            this.Alias = name.Alias;
+            Name = name.Name;
+            Alias = name.Alias;
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace SharpOrm
         /// <param name="expression">The SQL expression representing the column.</param>
         public Column(SqlExpression expression)
         {
-            this.expression = expression;
+            _expression = expression;
         }
 
         /// <summary>
@@ -165,8 +165,8 @@ namespace SharpOrm
         /// <returns>A <see cref="SqlExpression"/> representing the column.</returns>
         public virtual SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
-            if (this.expression != null)
-                return this.expression;
+            if (_expression != null)
+                return _expression;
 
             StringBuilder builder = new StringBuilder();
             builder.Append(GetName(info));
@@ -258,29 +258,29 @@ namespace SharpOrm
 
         internal string GetCountColumn()
         {
-            if (this.IsAll())
+            if (IsAll())
                 return "*";
 
-            string exp = this.expression?.ToString();
-            return this.IsCount ? exp.Substring(6, exp.Length - 8) : this.Name;
+            string exp = _expression?.ToString();
+            return IsCount ? exp.Substring(6, exp.Length - 8) : Name;
         }
 
         internal bool IsAll()
         {
-            return (this.expression?.ToString() ?? this.Name).EndsWith("*");
+            return (_expression?.ToString() ?? Name).EndsWith("*");
         }
 
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder("Column(");
 
-            if (expression != null) builder.Append(expression.ToString());
+            if (_expression != null) builder.Append(_expression.ToString());
             else builder.Append(Name.Trim());
 
             if (UseCollate())
                 builder.Append(" COLLATE ").Append(Collate);
 
-            if (expression == null && !string.IsNullOrEmpty(Alias))
+            if (_expression == null && !string.IsNullOrEmpty(Alias))
                 builder.AppendFormat(" AS {0}", Alias.Trim());
 
             return builder.Append(")").ToString();
@@ -298,7 +298,7 @@ namespace SharpOrm
             return other != null &&
                    Name == other.Name &&
                    Alias == other.Alias &&
-                   Expression.Equals(expression, other.expression);
+                   Expression.Equals(_expression, other._expression);
         }
 
         public override int GetHashCode()

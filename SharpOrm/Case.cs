@@ -212,8 +212,8 @@ namespace SharpOrm
         {
             query.Add("CASE");
 
-            if (this.expression != null)
-                return query.Add().Add(this.expression, false).Add();
+            if (_expression != null)
+                return query.Add().Add(_expression, false).Add();
 
             if (!string.IsNullOrEmpty(this.Name))
                 return query.Add(" ").Add(info.Config.ApplyNomenclature(this.Name)).Add(" ");

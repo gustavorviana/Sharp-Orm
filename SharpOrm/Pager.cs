@@ -13,11 +13,11 @@ namespace SharpOrm
     public class Pager<T> : IReadOnlyList<T>, IDisposable
     {
         #region Properties/Fields
-        private readonly Column countColunm;
-        protected readonly Query query;
-        private T[] items = DotnetUtils.EmptyArray<T>();
+        private readonly Column _countColunm;
+        protected readonly Query _query;
+        private T[] _items = DotnetUtils.EmptyArray<T>();
 
-        private int peerPage;
+        private int _peerPage;
         private bool disposed;
 
         /// <summary>
@@ -38,14 +38,14 @@ namespace SharpOrm
         /// <summary>
         /// Gets the number of items on the current page of the pager.
         /// </summary>
-        public int Count => items.Length;
+        public int Count => _items.Length;
 
         /// <summary>
         /// Gets the item at the specified index.
         /// </summary>
         /// <param name="index">The index of the item to get.</param>
         /// <returns>The item at the specified index.</returns>
-        public T this[int index] => items[index];
+        public T this[int index] => _items[index];
         #endregion
 
         /// <summary>
@@ -57,10 +57,10 @@ namespace SharpOrm
         /// <param name="countColunm">The column used to count the number of items.</param>
         protected Pager(Query query, int peerPage, int page, Column countColunm)
         {
-            this.query = query;
-            this.CurrentPage = page;
-            this.peerPage = peerPage;
-            this.countColunm = countColunm;
+            _query = query;
+            CurrentPage = page;
+            _peerPage = peerPage;
+            _countColunm = countColunm;
         }
 
         /// <summary>
@@ -123,9 +123,9 @@ namespace SharpOrm
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>An enumerator for the collection.</returns>
-        public IEnumerator<T> GetEnumerator() => this.items.AsEnumerable().GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _items.AsEnumerable().GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => this.items.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 
         /// <summary>
         /// Navigates to the specified page asynchronously.
@@ -185,7 +185,7 @@ namespace SharpOrm
             if (value < 1)
                 throw new ArgumentOutOfRangeException(nameof(value));
 
-            peerPage = value;
+            _peerPage = value;
             RefreshPageCount();
 
             if (CurrentPage > Pages)
@@ -221,8 +221,8 @@ namespace SharpOrm
         /// </summary>
         private void RefreshPageCount()
         {
-            Total = countColunm == null ? query.Count() : query.Count(countColunm);
-            Pages = PageCalculator.CalcPages(Total, peerPage);
+            Total = _countColunm == null ? _query.Count() : _query.Count(_countColunm);
+            Pages = PageCalculator.CalcPages(Total, _peerPage);
         }
 
         /// <summary>
@@ -230,10 +230,10 @@ namespace SharpOrm
         /// </summary>
         private void RefreshItems()
         {
-            query.Offset = peerPage * (CurrentPage - 1);
-            query.Limit = peerPage;
+            _query.Offset = _peerPage * (CurrentPage - 1);
+            _query.Limit = _peerPage;
 
-            items = GetItems();
+            _items = GetItems();
         }
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace SharpOrm
         /// <returns>An array of items for the current page.</returns>
         protected virtual T[] GetItems()
         {
-            return query.GetEnumerable<T>().ToArray();
+            return _query.GetEnumerable<T>().ToArray();
         }
 
         #region IDisposable
@@ -257,9 +257,9 @@ namespace SharpOrm
                 return;
 
             if (disposing)
-                this.query.Dispose();
+                _query.Dispose();
 
-            this.items = DotnetUtils.EmptyArray<T>();
+            _items = DotnetUtils.EmptyArray<T>();
             disposed = true;
         }
 
@@ -276,8 +276,8 @@ namespace SharpOrm
         /// </summary>
         public void Dispose()
         {
-            if (this.disposed)
-                throw new ObjectDisposedException(GetType().FullName);
+            if (disposed)
+                return;
 
             Dispose(disposing: true);
             GC.SuppressFinalize(this);

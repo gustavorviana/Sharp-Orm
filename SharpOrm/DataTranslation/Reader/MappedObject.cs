@@ -11,7 +11,7 @@ namespace SharpOrm.DataTranslation.Reader
     /// **Obsolete:** This class is deprecated and will be replaced by <see cref="Reader.ObjectRecordReader"/> in version 4.0.
     /// Represents an object that can be mapped from a database record.
     /// </summary>
-    [Obsolete("MappedObject is deprecated and will be replaced by ObjectRecordMapper in version 4.0.")]
+    [Obsolete("MappedObject is deprecated and will be replaced by BaseRecordReader in version 4.0.")]
     public class MappedObject : IMappedObject
     {
         private readonly List<MappedObject> _childrens = new List<MappedObject>();
@@ -220,7 +220,7 @@ namespace SharpOrm.DataTranslation.Reader
 
         private object NewObject(IDataRecord record)
         {
-            instance = _objectActivator.CreateInstance(record);
+            instance = _objectActivator.CreateInstance();
             if (instance == null)
                 return null;
 

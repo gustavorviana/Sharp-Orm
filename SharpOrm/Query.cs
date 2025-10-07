@@ -2429,6 +2429,9 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
+            if (rows.Length == 0)
+                return 0;
+
             return await new UpsertStrategy(this, rows)
                 .SetCheckColumns(toCheckColumns)
                 .SetUpdateColumns(updateColumns)
@@ -2446,6 +2449,9 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
         {
+            if (rows.Length == 0)
+                return 0;
+
             return await new UpsertStrategy(this, rows)
                 .SetCheckColumns(toCheckColumns)
                 .SetUpdateColumns(updateColumns)
