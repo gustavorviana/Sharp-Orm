@@ -16,6 +16,7 @@ namespace SharpOrm
     {
         #region Fields\Properties
         internal readonly SqlExpression _expression;
+        private readonly ISqlExpressible _expressible;
         /// <summary>
         /// Gets the name of the column.
         /// </summary>
@@ -111,6 +112,15 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Inicializa uma nova instância da classe <see cref="Column"/> com o objeto <see cref="ISqlExpressible"/> especificado.
+        /// </summary>
+        /// <param name="expression">Expressão SQL que representa a coluna.</param>
+        public Column(ISqlExpressible expression)
+        {
+            _expressible = expression;
+        }
+
+        /// <summary>
         /// Tries to parse the specified name into a Column object.
         /// </summary>
         /// <param name="name">The name to parse.</param>
@@ -167,6 +177,9 @@ namespace SharpOrm
         {
             if (_expression != null)
                 return _expression;
+
+            if (_expressible != null)
+                return _expressible.ToSafeExpression(info, alias);
 
             StringBuilder builder = new StringBuilder();
             builder.Append(GetName(info));
@@ -274,6 +287,9 @@ namespace SharpOrm
         {
             StringBuilder builder = new StringBuilder("Column(");
 
+            if (_expression != null)
+                return builder.Append(_expressible.ToString()).Append(')').ToString();
+
             if (_expression != null) builder.Append(_expression.ToString());
             else builder.Append(Name.Trim());
 
@@ -283,7 +299,7 @@ namespace SharpOrm
             if (_expression == null && !string.IsNullOrEmpty(Alias))
                 builder.AppendFormat(" AS {0}", Alias.Trim());
 
-            return builder.Append(")").ToString();
+            return builder.Append(')').ToString();
         }
 
         #region IEquatable
