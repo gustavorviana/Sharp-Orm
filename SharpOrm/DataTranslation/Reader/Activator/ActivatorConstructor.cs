@@ -8,7 +8,7 @@ namespace SharpOrm.DataTranslation.Reader.Activator
 {
     internal class ActivatorConstructor
     {
-        private readonly List<IParamInfo> _parameters;
+        private readonly IReadOnlyList<IParamInfo> _parameters;
         private readonly ConstructorInfo _constructor;
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace SharpOrm.DataTranslation.Reader.Activator
         /// </summary>
         public int OptionalParameters { get; }
 
-        private ActivatorConstructor(ConstructorInfo constructor, List<IParamInfo> parameters, int matches, int optional)
+        private ActivatorConstructor(ConstructorInfo constructor, IReadOnlyList<IParamInfo> parameters, int matches, int optional)
         {
             _constructor = constructor;
             _parameters = parameters;
@@ -43,77 +43,14 @@ namespace SharpOrm.DataTranslation.Reader.Activator
         /// Tries to create an ActivatorConstructor from the given constructor.
         /// Returns false if any required parameter name does not match (case-insensitive) any available property.
         /// </summary>
-        public static bool TryParse(ConstructorInfo constructor, TranslationRegistry registry, IDataRecord record, string prefix, out ActivatorConstructor activatorConstructor)
+        public static bool TryParse(ParameterBinder binder, ConstructorInfo constructor, out ActivatorConstructor activatorConstructor)
         {
             activatorConstructor = null;
+            if (!binder.FindAll(constructor))
+                return false;
 
-            var availableProperties = GetAvailableProperties(constructor.DeclaringType);
-            var ctorParams = constructor.GetParameters();
-            var parameters = new List<IParamInfo>();
-            var matches = 0;
-            var optionalCount = 0;
-
-            for (int i = 0; i < ctorParams.Length; i++)
-            {
-                var parameter = ctorParams[i];
-                var paramType = parameter.ParameterType;
-                var isOptional = parameter.IsOptional;
-
-                if (isOptional)
-                    optionalCount++;
-
-                if (!availableProperties.Contains(parameter.Name))
-                    return false;
-
-                var paramInfo = GetInfo(parameter, registry, record, prefix, out var dbMatch, out var optional);
-                if (paramInfo == null)
-                    return false;
-
-                parameters.Add(paramInfo);
-
-                if (dbMatch)
-                    matches++;
-
-                if (optional)
-                    optionalCount++;
-            }
-
-            activatorConstructor = new ActivatorConstructor(constructor, parameters, matches, optionalCount);
+            activatorConstructor = new ActivatorConstructor(constructor, binder.GetParameters(), binder.Matches, binder.OptionalCount);
             return true;
-        }
-
-        private static IParamInfo GetInfo(ParameterInfo parameter, TranslationRegistry registry, IDataRecord record, string prefix, out bool dbMatch, out bool optional)
-        {
-            dbMatch = false;
-            optional = false;
-            var fullName = GetName(parameter, prefix);
-            if (parameter.ParameterType.GetCustomAttribute<OwnedAttribute>() != null)
-            {
-                dbMatch = true;
-                return new OwnedParamInfo(record, registry, parameter.ParameterType, fullName);
-            }
-
-            var columnIndex = record.GetIndexOf(fullName);
-            if (columnIndex == -1 || !(registry.GetFor(parameter.ParameterType) is ISqlTranslation translation))
-                return null;
-
-            dbMatch = true;
-            return new ParamInfo(parameter, record, columnIndex, translation);
-        }
-
-        private static HashSet<string> GetAvailableProperties(Type type)
-        {
-            return new HashSet<string>(type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Select(x => x.Name), StringComparer.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Gets the name of a parameter, using the <see cref="CtorColumnAttribute"/> if present.
-        /// </summary>
-        /// <param name="info">The parameter info.</param>
-        /// <returns>The name of the parameter (without prefix).</returns>
-        private static string GetName(ParameterInfo info, string prefix)
-        {
-            return string.IsNullOrEmpty(prefix) ? info.Name : $"{prefix}_{info.Name}";
         }
 
         public object Invoke()
@@ -123,6 +60,15 @@ namespace SharpOrm.DataTranslation.Reader.Activator
                 values[i] = _parameters[i].GetValue();
 
             return _constructor.Invoke(values);
+        }
+
+        public string[] GetParameterNames()
+        {
+            var names = new string[_parameters.Count];
+            for (int i = 0; i < names.Length; i++)
+                names[i] = _parameters[i].Name;
+
+            return names;
         }
 
         public bool IsSame(ActivatorConstructor constructor)

@@ -17,6 +17,7 @@ namespace SharpOrm.DataTranslation.Reader
     internal class ObjectActivator
     {
         private static readonly ConcurrentDictionary<Type, ConstructorInfo[]> _constructorCache = new ConcurrentDictionary<Type, ConstructorInfo[]>();
+        private readonly HashSet<string> _parameters;
         private readonly ActivatorConstructor _ctor;
         public readonly Type _type;
 
@@ -35,6 +36,9 @@ namespace SharpOrm.DataTranslation.Reader
 
             _type = type;
             _ctor = GetConstructor(record, registry, prefix);
+
+            if (_ctor == null) _parameters = new HashSet<string>();
+            else _parameters = new HashSet<string>(_ctor.GetParameterNames(), StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -50,9 +54,10 @@ namespace SharpOrm.DataTranslation.Reader
         private ActivatorConstructor GetConstructor(IDataRecord record, TranslationRegistry registry, string prefix)
         {
             var constructors = new List<ActivatorConstructor>();
+            var binder = new ParameterBinder(_type, registry, record, prefix);
 
             foreach (var ctor in GetCachedConstructors(_type))
-                if (ActivatorConstructor.TryParse(ctor, registry, record, prefix, out var activatorCtor))
+                if (ActivatorConstructor.TryParse(binder, ctor, out var activatorCtor))
                     constructors.Add(activatorCtor);
 
             if (constructors.Count == 0)
@@ -112,5 +117,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// </summary>
         /// <returns>The created object instance.</returns>
         public object CreateInstance() => _ctor?.Invoke();
+
+        public bool ContainsParameter(string name) => _parameters.Contains(name);
     }
 }

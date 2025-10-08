@@ -10,6 +10,8 @@ namespace SharpOrm.DataTranslation.Reader.Activator
         private readonly IDataRecord _record;
         private readonly int _index;
 
+        public string Name => _parameter.Name;
+
         public ParamInfo(ParameterInfo parameter, IDataRecord record, int index, ISqlTranslation translation)
         {
             _index = index;

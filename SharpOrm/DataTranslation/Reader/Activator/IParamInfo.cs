@@ -2,6 +2,7 @@
 {
     internal interface IParamInfo
     {
+        string Name { get; }
         object GetValue();
     }
 }

@@ -160,7 +160,9 @@ namespace QueryTest.DataTranslation.Reader
             var instance = CreateInstance<PersonWithAddress>(reader);
 
             // Should return null if owned entity constructor can't be satisfied
-            Assert.Null(instance);
+            Assert.NotNull(instance);
+            Assert.NotNull(instance.Name);
+            Assert.Null(instance.Address);
         }
 
         [Fact]

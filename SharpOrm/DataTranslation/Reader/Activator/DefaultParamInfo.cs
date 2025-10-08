@@ -7,6 +7,7 @@ namespace SharpOrm.DataTranslation.Reader.Activator
     internal class DefaultParamInfo : IParamInfo
     {
         private readonly ParameterInfo _parameter;
+        public string Name => _parameter.Name;
 
         public DefaultParamInfo(ParameterInfo info)
         {

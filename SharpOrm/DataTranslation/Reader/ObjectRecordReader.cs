@@ -63,7 +63,8 @@ namespace SharpOrm.DataTranslation.Reader
                 _activator = new ObjectActivator(type, Record, _recordReader.Registry, _name.Prefix);
 
                 foreach (var node in nodes.Nodes)
-                    MapNode(node);
+                    if (!_activator.ContainsParameter(node.Column.Name))
+                        MapNode(node);
             }
 
             private void MapNode(IColumnNode node)
