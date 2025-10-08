@@ -3,6 +3,7 @@ using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm
 {
@@ -11,8 +12,8 @@ namespace SharpOrm
     /// </summary>
     public class Case : Column
     {
-        private readonly List<CaseNode> nodes = new List<CaseNode>();
-        private object elseValue;
+        private readonly List<CaseNode> _nodes = new List<CaseNode>();
+        private object _elseValue;
 
         #region Constructor
         /// <summary>
@@ -69,12 +70,7 @@ namespace SharpOrm
         /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case WhenNull(string column, object then)
         {
-            this.nodes.Add(new CaseNode
-            {
-                Column = new Column(column),
-                Expression = new SqlExpression("IS NULL"),
-                Then = then,
-            });
+            _nodes.Add(new ExpressionCaseNode(new Column(column), new SqlExpression("IS NULL"), then));
             return this;
         }
 
@@ -86,12 +82,7 @@ namespace SharpOrm
         /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case WhenNotNull(string column, object then)
         {
-            this.nodes.Add(new CaseNode
-            {
-                Column = new Column(column),
-                Expression = new SqlExpression("IS NOT NULL"),
-                Then = then,
-            });
+            _nodes.Add(new ExpressionCaseNode(new Column(column), new SqlExpression("IS NOT NULL"), then));
             return this;
         }
 
@@ -104,7 +95,7 @@ namespace SharpOrm
         /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case When(string column, object value, object then)
         {
-            return this.When(column, "=", value, then);
+            return When(column, "=", value, then);
         }
 
         /// <summary>
@@ -119,7 +110,7 @@ namespace SharpOrm
             if (then is ICollection)
                 throw new NotSupportedException();
 
-            this.nodes.Add(new CaseNode { Expression = expression, Then = then });
+            _nodes.Add(new ExpressionCaseNode(expression, then));
             return this;
         }
 
@@ -138,12 +129,7 @@ namespace SharpOrm
             if (then is ICollection)
                 throw new NotSupportedException();
 
-            this.nodes.Add(new CaseNode
-            {
-                Column = new Column(column),
-                Expression = new SqlExpression(string.Concat(operation, " ?"), value),
-                Then = then,
-            });
+            _nodes.Add(new ExpressionCaseNode(new Column(column), new SqlExpression(string.Concat(operation, " ?"), value), then));
             return this;
         }
 
@@ -155,13 +141,16 @@ namespace SharpOrm
         /// <returns>The updated <see cref="Case"/> instance.</returns>
         public Case When(object expected, object then)
         {
-            this.nodes.Add(new CaseNode
-            {
-                Expression = expected is SqlExpression exp ? exp : new SqlExpression("?", expected),
-                Then = then
-            });
+            _nodes.Add(new ExpressionCaseNode(expected is SqlExpression exp ? exp : new SqlExpression("?", expected), then));
             return this;
         }
+
+        public Case When(QueryCallback callback, object then)
+        {
+            _nodes.Add(new QueryCaseNode(callback, then));
+            return this;
+        }
+
         #endregion
 
         /// <summary>
@@ -175,7 +164,7 @@ namespace SharpOrm
             if (value is ICollection)
                 throw new NotSupportedException();
 
-            this.elseValue = value == null ? DBNull.Value : value;
+            _elseValue = value == null ? DBNull.Value : value;
             return this;
         }
 
@@ -188,17 +177,17 @@ namespace SharpOrm
         /// <exception cref="InvalidOperationException">Thrown if the CASE statement has no conditions.</exception>
         public override SqlExpression ToExpression(IReadonlyQueryInfo info, bool alias)
         {
-            if (this.nodes.Count == 0)
+            if (_nodes.Count == 0)
                 throw new InvalidOperationException(Messages.CannotUseEmptyCase);
 
             var query = new QueryBuilder(info);
             this.WriteCase(query, info);
 
-            foreach (var node in this.nodes)
-                node.WriteTo(query, info);
+            foreach (var node in _nodes)
+                node.ApplyTo(query, info);
 
-            if (this.elseValue != null)
-                query.Add("ELSE ").AddParameter(this.elseValue).Add();
+            if (_elseValue != null)
+                query.Add("ELSE ").AddParameter(_elseValue).Add();
 
             query.Add("END");
 
@@ -221,26 +210,69 @@ namespace SharpOrm
             return query.Add();
         }
 
-        private class CaseNode
+        private abstract class CaseNode
         {
-            public SqlExpression Expression;
-            public Column Column;
+            private readonly Column _column;
+            private readonly object _then;
 
-            public object Then;
+            public CaseNode(Column column, object then)
+            {
+                _column = column;
+                _then = then;
+            }
 
-            public QueryBuilder WriteTo(QueryBuilder query, IReadonlyQueryInfo info)
+            public QueryBuilder ApplyTo(QueryBuilder query, IReadonlyQueryInfo info)
             {
                 query.Add("WHEN ");
 
-                if (this.Column != null)
-                    query.AddParameter(this.Column).Add();
+                if (_column != null)
+                    query.AddParameter(_column).Add();
 
-                query.Add(this.Expression, false).Add(" THEN ");
+                WriteTo(query, info);
 
-                if (this.Then is SqlExpression exp)
+                query.Add(" THEN ");
+
+                if (_then is SqlExpression exp)
                     return query.Add().AddParameter(exp).Add();
 
-                return query.AddParameter(this.Then).Add();
+                return query.AddParameter(_then).Add();
+            }
+
+            protected abstract void WriteTo(QueryBuilder query, IReadonlyQueryInfo info);
+        }
+
+        private class ExpressionCaseNode : CaseNode
+        {
+            private readonly SqlExpression _expression;
+
+            public ExpressionCaseNode(Column column, SqlExpression expression, object then) : base(column, then)
+            {
+                _expression = expression;
+            }
+
+            public ExpressionCaseNode(SqlExpression expression, object then) : base(null, then)
+            {
+                _expression = expression;
+            }
+
+            protected override void WriteTo(QueryBuilder query, IReadonlyQueryInfo info)
+                => query.Add(_expression, false);
+        }
+
+        private class QueryCaseNode : CaseNode
+        {
+            private readonly QueryCallback _callback;
+
+            public QueryCaseNode(QueryCallback callback, object then) : base(null, then)
+            {
+                _callback = callback;
+            }
+
+            protected override void WriteTo(QueryBuilder query, IReadonlyQueryInfo info)
+            {
+                var qBase = new QueryBase(info.Config, info.TableName);
+                _callback(qBase);
+                qBase.Info.Where.ApplyTo(query);
             }
         }
     }

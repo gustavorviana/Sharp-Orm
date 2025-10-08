@@ -586,7 +586,7 @@ namespace SharpOrm.Builder
         internal QueryBuilder ApplyTo(QueryBuilder query)
         {
             query.Add(this);
-            this.ApplyTrashedVisibility(query);
+            ApplyTrashedVisibility(query);
 
             return query;
         }

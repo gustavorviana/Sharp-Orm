@@ -541,7 +541,7 @@ namespace SharpOrm.Builder
         {
             if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
             if (!AvailableOperations.ContainsIgnoreCase(operation))
-                throw new DatabaseException(string.Format(Messages.Query.InvalidOperation, operation));
+                throw new InvalidOperationException(string.Format(Messages.Query.InvalidOperation, operation));
         }
 
         internal QueryBuilder WriteWhereType(string type)
