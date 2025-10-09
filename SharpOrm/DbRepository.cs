@@ -22,7 +22,6 @@ namespace SharpOrm
         #region Fields/Properties
         private readonly object _lock = new object();
         private readonly bool _forceSingleConnection;
-        private readonly bool _autoCommitOnDispose;
         private bool isExtTransact = false;
         private bool _disposed;
         public bool Disposed => _disposed;
@@ -73,6 +72,11 @@ namespace SharpOrm
         /// Gets or sets the cancellation token for the repository.
         /// </summary>
         public CancellationToken Token { get; set; }
+
+        /// <summary>
+        /// Indicates whether transactions should be automatically committed when the repository is disposed.
+        /// </summary>
+        protected bool AutoCommitOnDispose { get; set; }
         #endregion
 
         /// <summary>
@@ -80,10 +84,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
         /// <param name="autoCommitOnDispose">A value indicating whether to automatically commit transactions when the repository is disposed. Default is true.</param>
-        public DbRepository(bool forceSingleConnection = false, bool autoCommitOnDispose = true)
+        public DbRepository(bool forceSingleConnection = false)
         {
             _forceSingleConnection = forceSingleConnection;
-            _autoCommitOnDispose = autoCommitOnDispose;
         }
 
         #region Transactions
@@ -695,7 +698,7 @@ namespace SharpOrm
             _disposed = true;
             if (disposing)
             {
-                if (_autoCommitOnDispose && !HasParentTransaction && Transaction != null)
+                if (AutoCommitOnDispose && !HasParentTransaction && Transaction != null)
                     CommitTransaction();
 
                 _connections.Dispose();
