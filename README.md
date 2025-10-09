@@ -1,166 +1,364 @@
-Sharp Orm is a library that simplifies the creation of database query. Tested with Mysql, Microsoft Sql Server and SQLite.
+# Sharp-ORM
 
-There are two ways to work with the library, defining a global configuration or passing the configuration in each query.
+A lightweight and intuitive ORM library for .NET that simplifies database operations.
 
-In both cases, it is necessary to define a class that implements the interface "SharpOrm.Builder.QueryConfig" in order to work with the database, this step is necessary for the library to know how to transform objects into a query.
+[![.NET](https://img.shields.io/badge/.NET-5C2D91?style=flat&logo=.net&logoColor=white)](https://dotnet.microsoft.com/)
+[![C#](https://img.shields.io/badge/C%23-239120?style=flat&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+[![Downloads](https://img.shields.io/nuget/dt/SharpOrm.svg)](https://www.nuget.org/packages/SharpOrm/)
 
-## Using global configuration
+## Features
 
-To use a global configuration you need to create a new instance of ConnectionCreator, you can create your own class to implement custom rules but in most cases you can use **SingleConnection** class or **MultipleConnectionCreator**.
+- ✅ Multi-Database Support (SQL Server, MySQL, SQLite)
+- ✅ Type-Safe Queries with Lambda Expressions
+- ✅ Fluent API and LINQ-like Syntax
+- ✅ Built-in Pagination Support
+- ✅ Foreign Key Relationships
+- ✅ Soft Deletes
+- ✅ Bulk Operations
+- ✅ Full Async/Await Support
+- ✅ CASE Expressions
 
-* **SingleConnection**: Uses only one connection to execute all the operations in the database.
-* **MultipleConnectionCreator**: Uses one connection to perform each operation on the database.
+## Installation
 
-### Configuring the global configuration
-```CSharp
-using SharpOrm.Builder;
-using SharpOrm.Connection;
-
-//For Sqlite
-ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(new SqliteQueryConfig(false), connectionString);
-//For Mysql
-ConnectionCreator.Default = new SingleConnectionCreator<MySql.Data.MySqlClient.MySqlConnection>(new MysqlQueryConfig(false), connectionString);
-//For Microsoft Sql Server
-ConnectionCreator.Default = new SingleConnectionCreator(new SqlServerQueryConfig(false), connectionString);
+```bash
+dotnet add package SharpOrm
 ```
 
-### Using global configuration
-```CSharp
-using SharpOrm;
+## Quick Start
 
-//Class responsible for performing the request in the database.
-using(Query query = new Query("Users"))
-{
-    //Filter that must be used to retrieve the rows from the database.
-    query.Where("active", "=", 1);
-    Row[] users = query.ReadRows();
-}
-```
+### 1. Define Your Model
 
-## Using query configuration
-
-```CSharp
-using SharpOrm;
-using SharpOrm.Builder;
-
-var connection = //You connection instance here.
-//For mysql
-QueryConfig config = new MysqlQueryConfig();
-//For Microsoft Sql Server
-QueryConfig config = new SqlServerQueryConfig();
-
-using(Query query = new Query("Users", new ConnectionManager(config, connection)))
-{
-    query.Where("active", "=", 1);
-    Row[] users = query.ReadRows();
-}
-```
-
-## It is possible to create a Query for a specific model
-### User class
-```CSharp
+```csharp
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-[Table("Users")]//It is recommended to use this attribute, but it is not required.
+[Table("Users")]
 public class User
 {
     [Key]
     public int Id { get; set; }
     public string Name { get; set; }
-    [Column("record_created")]
-    public DateTime CreatedAt { get; set; }
-}
-```
-### Sample code
-
-```CSharp
-using SharpOrm;
-using SharpOrm.Builder;
-
-using(Query<User> query = new Query<User>())
-{
-    User user = query.Find(1);//Retrieving a user by id (to use this function, it is necessary that some property has the Key attribute)
-    //OR
-    query.Where("Id", 1);//Signals to the query that only users with id 1 should be selected (WHERE `Id` = 1).
-    query.FirstOrDefault();//Returns the first value that meets the specifications, or returns null if it does not.
+    public string Email { get; set; }
+    public bool Active { get; set; }
 }
 ```
 
-### Sample code with Query T
+### 2. Configure Connection
 
-```CSharp
-using SharpOrm;
+```csharp
 using SharpOrm.Builder;
+using SharpOrm.Connection;
 
-using(Query<User> query = new Query<User>())
+// SQL Server
+ConnectionCreator.Default = new SingleConnectionCreator(
+    new SqlServerQueryConfig(),
+    connectionString
+);
+
+// MySQL
+ConnectionCreator.Default = new SingleConnectionCreator<MySql.Data.MySqlClient.MySqlConnection>(
+    new MysqlQueryConfig(),
+    connectionString
+);
+
+// SQLite
+ConnectionCreator.Default = new SingleConnectionCreator<System.Data.SQLite.SQLiteConnection>(
+    new SqliteQueryConfig(),
+    connectionString
+);
+```
+
+**💡 Recommended:** Use `ConnectionManager.GetQuery<T>()` for better resource management:
+
+```csharp
+using (var manager = new ConnectionManager(new SqlServerQueryConfig(), connection))
 {
-    query.Select(x => new { x.Id, x.Name, FirstName = x.Name });
-    //Or
-    query.Select(x => x.Name);
-
-    query.Where(x => x.Id, 1);
-    query.FirstOrDefault();
+    using (var query = manager.GetQuery<User>())
+    {
+        var users = query.Get();
+    }
 }
 ```
 
-## Inserting values
+### 3. Query Data
 
-It is possible to use a C# object with the same structure as the database or use Cell to insert the values.
-
-### Using C# objects
-
-```CSharp
+```csharp
 using SharpOrm;
-using SharpOrm.Builder;
 
-using(Query<User> query = new Query<User>())
+// Get all active users
+using (var query = new Query<User>())
 {
-    //Single insert
+    var users = query
+        .Where(u => u.Active, true)
+        .OrderBy(u => u.Name)
+        .Get();
+}
+
+// Find by ID
+using (var query = new Query<User>())
+{
+    var user = query.Find(1);
+}
+
+// Complex query
+using (var query = new Query<User>())
+{
+    var result = query
+        .Select(u => new { u.Id, u.Name, u.Email })
+        .Where(u => u.Active, true)
+        .WhereNotNull(u => u.Email)
+        .OrderBy(u => u.Name)
+        .Skip(10)
+        .Take(20)
+        .Get();
+}
+```
+
+### 4. Insert Data
+
+```csharp
+using (var query = new Query<User>())
+{
+    // Single insert
     query.Insert(new User
     {
-        Id = 1,
-        Name = "My name",
-        Nick = "My nick",
-        CreatedAt = System.DateTime.Now
+        Name = "John Doe",
+        Email = "john@example.com",
+        Active = true
     });
 
-    //Multiple insert
+    // Bulk insert
     query.BulkInsert(
-        new User{ ... },
-        new User{ ... },
-        new User{ ... }
+        new User { Name = "User 1", Email = "user1@example.com" },
+        new User { Name = "User 2", Email = "user2@example.com" }
     );
 }
 ```
 
-### Using Cell and Row (for multiple insert)
+### 5. Update Data
 
-```CSharp
-using(Query query = new Query("Users"))
+```csharp
+using (var query = new Query<User>())
 {
-    //Single insert
-    query.Insert(new Cell("Id", 1), new Cell("Name", "My name"), new Cell("Nick", "My nick"), new Cell("CreatedAt", System.DateTime.Now));
-
-    //Multiple insert
-    query.BulkInsert(
-        new Row(new Cell("Id", 1), new Cell("Name", "My name"), new Cell("Nick", "My nick"), new Cell("CreatedAt", System.DateTime.Now)),
-        new Row(...),
-        new Row(...)
-    );
+    query
+        .Where(u => u.Id, 1)
+        .Update(new { Active = false });
 }
 ```
 
-### Using temp tables
-```CSharp
-var columns = new TableColumnCollection();
-columns.AddPk("Id").AutoIncrement = true;
-columns.Add<string>("Name");
-//Other columns...
+### 6. Delete Data
 
-using (var table = DbTable.Create("MyTestTable", true, columns))
+```csharp
+using (var query = new Query<User>())
+{
+    query.Where(u => u.Active, false).Delete();
+}
+```
+
+## Core Features
+
+### Pagination
+
+```csharp
+// Simple pagination with Skip/Take
+using (var query = new Query<User>())
+{
+    var users = query
+        .OrderBy(u => u.Id)
+        .Skip(20)
+        .Take(20)
+        .Get();
+}
+
+// Advanced pagination with metadata
+using (var query = new Query<User>())
+{
+    using (var pager = query.Paginate(peerPage: 10, currentPage: 1))
+    {
+        Console.WriteLine($"Total: {pager.Total}, Pages: {pager.Pages}");
+
+        foreach (var user in pager)
+        {
+            Console.WriteLine(user.Name);
+        }
+
+        // Navigate to next page
+        pager.GoToPage(2);
+    }
+}
+```
+
+📖 See [PAGINATION.md](PAGINATION.md) for complete documentation.
+
+### Foreign Keys
+
+```csharp
+[Table("Orders")]
+public class Order
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Column("customer_id")]
+    public int CustomerId { get; set; }
+
+    public Customer Customer { get; set; }
+}
+
+[Table("Customers")]
+public class Customer
+{
+    [Key]
+    public int Id { get; set; }
+
+    public string Name { get; set; }
+
+    [Column("address_id")]
+    public int? AddressId { get; set; }
+
+    public Address Address { get; set; }
+}
+
+// Load single relationship
+using (var query = new Query<Order>())
+{
+    var orders = query
+        .Include(o => o.Customer)
+        .Get();
+
+    Console.WriteLine(orders[0].Customer.Name);
+}
+
+// Load nested relationships
+using (var query = new Query<Order>())
+{
+    var orders = query
+        .Include(o => o.Customer)
+        .ThenInclude(c => c.Address)
+        .Get();
+
+    Console.WriteLine(orders[0].Customer.Address.Street);
+}
+
+// Load collections
+using (var query = new Query<Customer>())
+{
+    var customers = query
+        .Include(c => c.Orders)
+        .ThenInclude(o => o.Product)
+        .Get();
+
+    foreach (var order in customers[0].Orders)
+    {
+        Console.WriteLine(order.Product.Name);
+    }
+}
+```
+
+### Soft Deletes
+
+```csharp
+using (var query = new Query<User>())
+{
+    // Exclude soft deleted (default)
+    var activeUsers = query.Get();
+
+    // Include soft deleted
+    var allUsers = query.WithTrashed().Get();
+
+    // Only soft deleted
+    var deletedUsers = query.OnlyTrashed().Get();
+
+    // Soft delete
+    query.Where(u => u.Id, 1).SoftDelete();
+
+    // Restore
+    query.Where(u => u.Id, 1).Restore();
+}
+```
+
+### Async Operations
+
+```csharp
+using (var query = new Query<User>())
+{
+    var users = await query
+        .Where(u => u.Active, true)
+        .GetAsync();
+
+    await query.InsertAsync(new User { Name = "Async User" });
+
+    await query.Where(u => u.Id, 1).UpdateAsync(new { Active = false });
+
+    var count = await query.CountAsync();
+}
+```
+
+### Raw SQL Queries
+
+```csharp
+using (var query = new Query("Users"))
+{
+    query.Where("active", "=", 1);
+    Row[] rows = query.ReadRows();
+
+    foreach (var row in rows)
+    {
+        Console.WriteLine($"{row["id"]}: {row["name"]}");
+    }
+}
+```
+
+## Advanced Features
+
+### Joins
+
+```csharp
+query.Join("Orders", "Users.Id", "Orders.UserId");
+query.LeftJoin("Addresses", "Users.AddressId", "Addresses.Id");
+```
+
+### Temporary Tables
+
+```csharp
+using SharpOrm.Builder.Tables;
+
+var builder = new TemporaryTableBuilder();
+builder.SetName("TempUsers");
+builder.AddColumn<int>("Id").IsPrimaryKey().IsAutoIncrement();
+builder.AddColumn<string>("Name").HasSize(100);
+builder.AddColumn<bool>("Active").HasDefault(true);
+
+var schema = builder.Build();
+
+using (var table = DbTable.Create(schema))
 using (var query = table.GetQuery())
 {
-    //Code
+    query.Insert(new Cell("Name", "Test User"));
+    var rows = query.ReadRows();
 }
+```
+
+## Database Support
+
+| Database | Supported | Configuration |
+|----------|-----------|---------------|
+| SQL Server | ✅ | `SqlServerQueryConfig` |
+| MySQL | ✅ | `MysqlQueryConfig` |
+| SQLite | ✅ | `SqliteQueryConfig` |
+
+## Best Practices
+
+```csharp
+// ✅ Always dispose queries
+using (var query = new Query<User>()) { }
+
+// ✅ Use async for I/O operations
+await query.GetAsync();
+
+// ✅ Order before pagination
+query.OrderBy(u => u.Id).Paginate(10, 1);
+
+// ✅ Use bulk operations
+query.BulkInsert(users);
 ```
