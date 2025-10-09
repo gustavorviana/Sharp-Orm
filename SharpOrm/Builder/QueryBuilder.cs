@@ -348,6 +348,32 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Adds a table name to the query with proper nomenclature.
+        /// </summary>
+        /// <param name="tableName">The name of the table to add.</param>
+        /// <param name="withAlias">Whether to include the alias in the table name.</param>
+        /// <returns>The current instance of QueryBuilder with the table name added.</returns>
+        public QueryBuilder AddTable(string tableName, bool withAlias = true)
+        {
+            if (string.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException(nameof(tableName));
+
+            var dbName = new DbName(tableName);
+            return AddTable(dbName, withAlias);
+        }
+
+        /// <summary>
+        /// Adds a table name to the query with proper nomenclature.
+        /// </summary>
+        /// <param name="tableName">The DbName representing the table.</param>
+        /// <param name="withAlias">Whether to include the alias in the table name.</param>
+        /// <returns>The current instance of QueryBuilder with the table name added.</returns>
+        public QueryBuilder AddTable(DbName tableName, bool withAlias = true)
+        {
+            return this.Add(tableName.GetName(withAlias, _info.Config));
+        }
+
+        /// <summary>
         /// Turns the column object into a sql value.
         /// </summary>
         /// <param name="column"></param>
