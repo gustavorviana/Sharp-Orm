@@ -5,7 +5,7 @@ namespace SharpOrm.Builder.Tables.Loaders
     /// <summary>
     /// Interface for objects that can load column information.
     /// </summary>
-    public interface IColumnLoader
+    internal interface IColumnLoader
     {
         /// <summary>
         /// Loads column information based on the implementation strategy.
