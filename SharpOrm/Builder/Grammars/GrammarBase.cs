@@ -31,6 +31,8 @@ namespace SharpOrm.Builder.Grammars
         /// </summary>
         protected TranslationRegistry Translation => Query.Info.Config.Translation;
 
+        public TableInfo TableInfo => (Query as IWithTableInfo)?.TableInfo;
+
         public GrammarBase(Query query)
         {
             Builder = new QueryBuilder(query);

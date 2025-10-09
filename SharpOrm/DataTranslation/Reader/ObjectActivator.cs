@@ -1,5 +1,9 @@
-﻿using SharpOrm.Msg;
+﻿using SharpOrm.DataTranslation.Reader.Activator;
+using SharpOrm.DataTranslation.Reader.NameLoader;
+using SharpOrm.Msg;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
@@ -12,8 +16,9 @@ namespace SharpOrm.DataTranslation.Reader
     /// </summary>
     internal class ObjectActivator
     {
-        private readonly ConstructorInfo _ctor;
-        private readonly ParamInfo[] _objParams;
+        private static readonly ConcurrentDictionary<Type, ConstructorInfo[]> _constructorCache = new ConcurrentDictionary<Type, ConstructorInfo[]>();
+        private readonly HashSet<string> _parameters;
+        private readonly ActivatorConstructor _ctor;
         public readonly Type _type;
 
         /// <summary>
@@ -22,7 +27,7 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="type">The _type of the object to be activated.</param>
         /// <param name="record">The data record used to retrieve the object's data.</param>
         /// <exception cref="NotSupportedException">Thrown if the _type is abstract or no suitable constructor is found.</exception>
-        public ObjectActivator(Type type, IDataRecord record, TranslationRegistry registry)
+        public ObjectActivator(Type type, IDataRecord record, TranslationRegistry registry, string prefix = null)
         {
             if (type.IsAbstract) throw new NotSupportedException(Messages.ObjectActivator.AbstractType);
             if (type.IsInterface) throw new NotSupportedException(Messages.ObjectActivator.InterfaceType);
@@ -30,100 +35,89 @@ namespace SharpOrm.DataTranslation.Reader
             if (type.IsArray) throw new NotSupportedException(Messages.ObjectActivator.ArrayType);
 
             _type = type;
-            _objParams = GetParams(record, registry, out _ctor);
+            _ctor = GetConstructor(record, registry, prefix);
+
+            if (_ctor == null) _parameters = new HashSet<string>();
+            else _parameters = new HashSet<string>(_ctor.GetParameterNames(), StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
         /// Gets the appropriate constructor for the _type based on the data record.
+        /// Selection criteria (in order of priority):
+        /// 1. Number of filled parameters (higher is better)
+        /// 2. Number of required parameters filled (higher is better)
+        /// 3. Number of total parameters (higher is better - "richer" constructor)
         /// </summary>
         /// <param name="record">The data record used to match constructor parameters.</param>
-        /// <returns>The matched constructor, or null if none found.</returns>
-        private ParamInfo[] GetParams(IDataRecord record, TranslationRegistry registry, out ConstructorInfo constructor)
+        /// <returns>The matched constructor.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no suitable constructor is found or when there is ambiguity.</exception>
+        private ActivatorConstructor GetConstructor(IDataRecord record, TranslationRegistry registry, string prefix)
         {
-            var constructors = _type.GetConstructors().Where(x => x.GetCustomAttribute<QueryIgnoreAttribute>() == null);
+            var constructors = new List<ActivatorConstructor>();
+            var binder = new ParameterBinder(_type, registry, record, prefix);
 
-            foreach (var construct in constructors)
+            foreach (var ctor in GetCachedConstructors(_type))
+                if (ActivatorConstructor.TryParse(binder, ctor, out var activatorCtor))
+                    constructors.Add(activatorCtor);
+
+            if (constructors.Count == 0)
+                return null;
+            //throw new InvalidOperationException($"Unable to create an instance of '{_type.FullName}'.");
+
+            // Sort by:
+            // 1. Total matches (parameters filled) - descending
+            // 2. Required parameters filled - descending
+            // 3. Total parameters (richer constructor) - ascending
+            var orderedMatches = constructors
+                .OrderByDescending(m => m.Matches)
+                .ThenByDescending(m => m.TotalParameters - m.OptionalParameters)
+                .ThenBy(m => m.TotalParameters)
+                .ToList();
+
+            var bestMatch = orderedMatches[0];
+
+            if (orderedMatches.Count > 1)
             {
-                var ctorParams = construct.GetParameters();
-                var indexes = ctorParams.Select(x => FindParamOnDb(x, record, registry)).Where(x => x != null).ToArray();
-                if (indexes.Length == ctorParams.Length)
-                {
-                    constructor = construct;
-                    return indexes;
-                }
+                var secondBest = orderedMatches[1];
+                if (bestMatch.IsSame(secondBest) && bestMatch.Matches > 0)
+                    throw new InvalidOperationException(
+                        $"Ambiguous constructor selection for type '{_type.FullName}'. " +
+                        $"Multiple constructors have the same number of matching parameters ({bestMatch.Matches}).");
             }
 
-            constructor = null;
-            return null;
+            return bestMatch;
         }
 
         /// <summary>
-        /// Gets the index of a parameter in the data record.
+        /// Gets cached constructors for a type, including public and protected constructors, filtering out those with QueryIgnoreAttribute.
         /// </summary>
-        /// <param name="parameter">The parameter info to locate.</param>
-        /// <param name="record">The data record used to find the parameter index.</param>
-        /// <returns>The index of the parameter in the data record, or -1 if not found.</returns>
-        private static ParamInfo FindParamOnDb(ParameterInfo parameter, IDataRecord record, TranslationRegistry registry)
+        /// <param name="type">The type to get constructors for.</param>
+        /// <returns>Array of valid constructors.</returns>
+        private static ConstructorInfo[] GetCachedConstructors(Type constructorType)
         {
-            try
+            return _constructorCache.GetOrAdd(constructorType, type =>
             {
-                var columnIndex = record.GetIndexOf(GetName(parameter));
-                if (columnIndex == -1 || !(registry.GetFor(parameter.ParameterType) is ISqlTranslation translation))
-                    return null;
+                var constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var validCtors = new List<ConstructorInfo>(constructors.Length);
 
-                return new ParamInfo(columnIndex, parameter.ParameterType, translation);
-            }
-            catch
-            {
-#if DEBUG
-                System.Diagnostics.Debugger.Break();
-#endif
-                return null;
-            }
+                for (int i = 0; i < constructors.Length; i++)
+                {
+                    var ctor = constructors[i];
+                    // Only include public and protected constructors without QueryIgnoreAttribute
+                    if ((ctor.IsPublic || ctor.IsFamily) && ctor.GetCustomAttribute<QueryIgnoreAttribute>() == null)
+                        validCtors.Add(ctor);
+                }
+
+                return validCtors.ToArray();
+            });
         }
 
         /// <summary>
         /// Creates an instance of the object using the data from the data record.
         /// </summary>
-        /// <param name="record">The data record containing the object's data.</param>
         /// <returns>The created object instance.</returns>
-        public object CreateInstance(IDataRecord record)
-        {
-            if (_objParams == null)
-                return null;
+        public object CreateInstance() => _ctor?.Invoke();
 
-            var values = _objParams.Select(x => x.GetValue(record)).ToArray();
-            return _ctor.Invoke(values);
-        }
-
-        /// <summary>
-        /// Gets the name of a parameter, using the <see cref="CtorColumnAttribute"/> if present.
-        /// </summary>
-        /// <param name="info">The parameter info.</param>
-        /// <returns>The name of the parameter.</returns>
-        private static string GetName(ParameterInfo info)
-        {
-            string name = info.GetCustomAttribute<CtorColumnAttribute>()?.Name;
-            return string.IsNullOrEmpty(name) ? info.Name : name;
-        }
-
-        private class ParamInfo
-        {
-            public readonly ISqlTranslation translation;
-            private readonly Type expectedType;
-            private readonly int index;
-
-            public ParamInfo(int index, Type expected, ISqlTranslation translation)
-            {
-                this.index = index;
-                expectedType = expected;
-                this.translation = translation;
-            }
-
-            public object GetValue(IDataRecord record)
-            {
-                return translation.FromSqlValue(record[index], expectedType);
-            }
-        }
+        public bool ContainsParameter(string name) => _parameters.Contains(name);
     }
 }

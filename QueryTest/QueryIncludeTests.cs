@@ -90,7 +90,7 @@ namespace QueryTest
             var address = Tables.Address.Faker().Generate();
 
             Connection.QueryReaders.Add(
-                "SELECT * FROM [Customers]",
+                "SELECT [Id], [Name], [Email], [address_id] FROM [Customers]",
                 () => GetReader(Row.Parse(customer).Cells)
             );
 

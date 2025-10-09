@@ -28,7 +28,7 @@ namespace QueryTest.SqlServer
             const string Name = "Test";
 
             query.Where(new SqlExpression("Name COLLATE Latin1_General_CI_AI LIKE ?", $"%{Name}%"));
-            QueryAssert.EqualDecoded($"SELECT * FROM [TestTable] WHERE Name COLLATE Latin1_General_CI_AI LIKE '%{Name}%'", [], query.Grammar().Select());
+            QueryAssert.EqualDecoded($"SELECT [Id], [Id2], [Name], [Nick], [record_created], [Number], [custom_id], [custom_status] FROM [TestTable] WHERE Name COLLATE Latin1_General_CI_AI LIKE '%{Name}%'", [], query.Grammar().Select());
         }
     }
 }

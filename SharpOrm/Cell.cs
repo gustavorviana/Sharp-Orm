@@ -28,18 +28,18 @@ namespace SharpOrm
         /// <param name="value">The value of the cell.</param>
         public Cell(string name, object value)
         {
-            this.Name = name;
-            this.Value = value;
+            Name = name;
+            Value = value;
         }
 
         public object Clone()
         {
-            return new Cell(this.Name, this.Value);
+            return new Cell(Name, Value);
         }
 
         public override string ToString()
         {
-            return string.Format("Cell ({0}: {1})", this.Name, ValueToString(this.Value));
+            return string.Format("Cell ({0}: {1})", Name, ValueToString(Value));
         }
 
         private static string ValueToString(object value)

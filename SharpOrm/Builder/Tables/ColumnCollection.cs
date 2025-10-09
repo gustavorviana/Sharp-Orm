@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 namespace SharpOrm.Builder.Tables
 {
     [DebuggerDisplay("Count = {Count}")]
-    [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
+    [DebuggerTypeProxy(typeof(ColumnCollection_DebugView))]
     public class ColumnCollection : IReadOnlyCollection<ColumnInfo>, IWithColumnNode
     {
         private readonly Dictionary<string, ColumnInfo[]> _columnLookup;

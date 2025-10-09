@@ -102,7 +102,18 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(object column, object value)
         {
-            return this.Where(column, value is null ? "IS" : "=", value);
+            return this.Where(column, GetOperation(value, false), value);
+        }
+
+        private static string GetOperation(object value, bool negative)
+        {
+            if (value is null)
+                return "IS" + (negative ? " NOT" : "");
+
+            if (value is ICollection)
+                return (negative ? "NOT " : "") + "IN";
+
+            return negative ? "!=" : "=";
         }
 
         /// <summary>
@@ -113,7 +124,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase WhereNot(object column, object value)
         {
-            return this.Where(column, value is null ? "IS NOT" : "!=", value);
+            return this.Where(column, GetOperation(value, true), value);
         }
 
         /// <summary>
@@ -295,7 +306,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhere(object column, object value)
         {
-            return this.OrWhere(column, value is null ? "IS" : "=", value);
+            return this.OrWhere(column, GetOperation(value, false), value);
         }
 
         /// <summary>
@@ -306,7 +317,7 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase OrWhereNot(object column, object value)
         {
-            return this.OrWhere(column, value is null ? "IS NOT" : "!=", value);
+            return this.OrWhere(column, GetOperation(value, true), value);
         }
 
         /// <summary>
@@ -432,18 +443,23 @@ namespace SharpOrm.Builder
             var qBase = new QueryBase(this.Info.Config, this.Info.TableName);
             callback(qBase);
 
-            if (qBase.Info.Where.Empty)
+            return WrapWithParentheses(qBase, whereType);
+        }
+
+        internal QueryBase WrapWithParentheses(QueryBase query, string whereType)
+        {
+            if (query.Info.Where.Empty)
                 return this;
 
-            this.WriteWhereType(whereType).Add('(').Add(qBase.Info.Where).Add(')');
+            WriteWhereType(whereType).Add('(').Add(query.Info.Where).Add(')');
             return this;
         }
 
         private QueryBase WriteExists(object queryObj, bool not, string whereType)
         {
-            this.WriteWhereType(whereType);
+            WriteWhereType(whereType);
 
-            if (not) this.Info.Where.Add("NOT ");
+            if (not) Info.Where.Add("NOT ");
             Info.Where.Add("EXISTS ");
 
             if (queryObj is Query query)
@@ -455,7 +471,7 @@ namespace SharpOrm.Builder
             }
             else
             {
-                this.Info.Where.Add('(').AddParameter(queryObj).Add(')');
+                Info.Where.Add('(').AddParameter(queryObj).Add(')');
             }
 
             return this;
@@ -525,7 +541,7 @@ namespace SharpOrm.Builder
         {
             if (string.IsNullOrEmpty(operation)) throw new ArgumentNullException(nameof(operation));
             if (!AvailableOperations.ContainsIgnoreCase(operation))
-                throw new DatabaseException(string.Format(Messages.Query.InvalidOperation, operation));
+                throw new InvalidOperationException(string.Format(Messages.Query.InvalidOperation, operation));
         }
 
         internal QueryBuilder WriteWhereType(string type)

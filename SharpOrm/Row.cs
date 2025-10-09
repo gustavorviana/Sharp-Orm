@@ -63,7 +63,8 @@ namespace SharpOrm
         /// </summary>
         public Row()
         {
-
+            _cells = DotnetUtils.EmptyArray<Cell>();
+            _names = DotnetUtils.EmptyArray<string>();
         }
 
         /// <summary>

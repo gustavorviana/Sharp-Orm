@@ -25,11 +25,5 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             SqlServerGrammarOptions.WriteTo(Builder, query);
         }
-
-        protected void ValidateOffsetOrderBy()
-        {
-            if (Info.Orders.Length == 0)
-                throw new InvalidOperationException(Messages.SqlServer.OffsetWithSortNotSuported);
-        }
     }
 }

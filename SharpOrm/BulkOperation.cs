@@ -20,10 +20,10 @@ namespace SharpOrm
 
         private bool disposed;
         internal readonly DbTable table;
-        private readonly string targetTable;
-        private QueryConfig Config => this.table.Manager.Config;
-        private readonly string[] tempColumns;
-        private readonly CancellationToken token;
+        private readonly string _targetTable;
+        private QueryConfig Config => table.Manager.Config;
+        private readonly string[] _tempColumns;
+        private readonly CancellationToken _token;
         #endregion
 
         public BulkOperation(Query target, Row[] tempValues, int? lotInsert)
@@ -31,43 +31,58 @@ namespace SharpOrm
             if (!target.Info.Config.CanUpdateJoin)
                 throw new NotSupportedException(string.Format(Messages.QueryConfigNotSupportOperation, target.Info.Config.GetType()));
 
-            this.token = target.Token;
-            this.tempColumns = tempValues[0].ColumnNames;
-            this.targetTable = target.Info.TableName.Name;
-            var manager = GetValidManager(target.Manager, lotInsert == null || lotInsert == 0);
-            table = DbTable.Create(this.GetSchema(manager), manager);
-            this.InsertTempValues(tempValues, lotInsert);
+            if (tempValues == null || tempValues.Length == 0)
+                throw new ArgumentException("tempValues cannot be null or empty.", nameof(tempValues));
+
+            _token = target.Token;
+            _tempColumns = tempValues[0].ColumnNames;
+            _targetTable = target.Info.TableName.Name;
+            var manager = GetValidManager(target.Manager, lotInsert == null || lotInsert == 0, out var isClone);
+
+            try
+            {
+                table = DbTable.Create(GetSchema(manager), manager);
+                InsertTempValues(tempValues, lotInsert);
+            }
+            catch
+            {
+                if (isClone)
+                    manager?.Dispose();
+                table?.Dispose();
+                throw;
+            }
         }
 
-        private static ConnectionManager GetValidManager(ConnectionManager manager, bool escapeString)
+        private static ConnectionManager GetValidManager(ConnectionManager manager, bool escapeString, out bool isClone)
         {
             if (manager.Management == ConnectionManagement.CloseOnManagerDispose && escapeString == manager.Config.EscapeStrings)
+            {
+                isClone = false;
                 return manager;
+            }
 
             manager = manager.Clone(cloneConfig: true, safeOperations: false);
             manager.Config.EscapeStrings = escapeString;
 
             manager.Management = ConnectionManagement.CloseOnManagerDispose;
-
+            isClone = true;
             return manager;
         }
 
         private TableSchema GetSchema(ConnectionManager manager)
         {
-            var query = Query.ReadOnly(targetTable, manager.Config);
-            if (tempColumns.Length > 0)
-                query.Select(tempColumns);
-
+            var query = Query.ReadOnly(_targetTable, manager.Config);
+            query.Select(_tempColumns);
             query.Limit = 0;
 
-            return new TableSchema(string.Concat("temp_", targetTable), query) { Temporary = true };
+            return new TableSchema(string.Concat("temp_", _targetTable), query) { Temporary = true };
         }
 
         private void InsertTempValues(Row[] tempValues, int? lotInsert)
         {
-            using (var q = this.table.GetQuery())
+            using (var q = table.GetQuery())
             {
-                q.Token = token;
+                q.Token = _token;
                 if (lotInsert is int lot) q.InsertLot(tempValues, lot);
                 else q.BulkInsert(tempValues);
             }
@@ -75,7 +90,7 @@ namespace SharpOrm
 
         public int Delete()
         {
-            using (var q = this.GetQuery(this.tempColumns))
+            using (var q = GetQuery(_tempColumns))
                 return q.Delete();
         }
 
@@ -84,6 +99,13 @@ namespace SharpOrm
             using (var targetQuery = GetQueryBase())
             {
                 var targetColumns = GetColumns(targetQuery, toCheckColumnsExp);
+                if (targetColumns.Length == 0)
+                    throw new ArgumentException("No columns found in expression.", nameof(toCheckColumnsExp));
+
+                var toUpdateCells = GetToUpdateCells(targetColumns).ToArray();
+                if (toUpdateCells.Length == 0)
+                    throw new InvalidOperationException("No columns to update. All columns are used for comparison.");
+
                 targetQuery.Join($"{table.DbName} tempTable", q =>
                 {
                     var tempTableColumns = GetColumns((Query)q, toCheckColumnsExp);
@@ -92,7 +114,7 @@ namespace SharpOrm
                         q.Where(tempTableColumns[i], targetColumns[i]);
                 }, "INNER");
 
-                return targetQuery.Update(GetToUpdateCells(targetColumns).Select(col => GetUpdateCell("tempTable", col)));
+                return targetQuery.Update(toUpdateCells.Select(col => GetUpdateCell("tempTable", col)));
             }
         }
 
@@ -104,8 +126,15 @@ namespace SharpOrm
 
         public int Update(string[] comparationColumns)
         {
-            using (var q = this.GetQuery(comparationColumns))
-                return q.Update(GetToUpdateCells(comparationColumns).Select(col => GetUpdateCell("tempTable", col)));
+            if (comparationColumns == null || comparationColumns.Length == 0)
+                throw new ArgumentException("comparationColumns cannot be null or empty.", nameof(comparationColumns));
+
+            var toUpdateCells = GetToUpdateCells(comparationColumns);
+            if (toUpdateCells.Length == 0)
+                throw new InvalidOperationException("No columns to update. All columns are used for comparison.");
+
+            using (var q = GetQuery(comparationColumns))
+                return q.Update(toUpdateCells.Select(col => GetUpdateCell("tempTable", col)));
         }
 
         private Query GetQuery(string[] columnNames)
@@ -119,24 +148,24 @@ namespace SharpOrm
 
         private Query GetQueryBase()
         {
-            return new Query($"{this.targetTable} {TargetAlias}", this.table.Manager) { Token = token };
+            return new Query($"{_targetTable} {TargetAlias}", table.Manager) { Token = _token };
         }
 
         private string[] GetToUpdateCells(string[] comparationColumns)
         {
-            return this.tempColumns.Where(x => !comparationColumns.ContainsIgnoreCase(x)).ToArray();
+            return _tempColumns.Where(x => !comparationColumns.ContainsIgnoreCase(x)).ToArray();
         }
 
         private IEnumerable<string> GetToUpdateCells(ExpressionColumn[] comparationColumns)
         {
-            return this.tempColumns.Where(tc => !comparationColumns.Any(c => tc.EqualsIgnoreCase(c.Name)));
+            return _tempColumns.Where(tc => !comparationColumns.Any(c => tc.EqualsIgnoreCase(c.Name)));
         }
 
         private Cell GetUpdateCell(string tempName, string col)
         {
             return new Cell(
-                this.Config.ApplyNomenclature(ToColumnString("target", col)),
-                (SqlExpression)this.Config.ApplyNomenclature(ToColumnString(tempName, col))
+                Config.ApplyNomenclature(ToColumnString("target", col)),
+                (SqlExpression)Config.ApplyNomenclature(ToColumnString(tempName, col))
             );
         }
 
@@ -153,8 +182,8 @@ namespace SharpOrm
 
             if (disposing)
             {
-                this.table.Manager.Dispose();
-                table.Dispose();
+                table?.Dispose();
+                table?.Manager?.Dispose();
             }
 
             disposed = true;
@@ -167,7 +196,7 @@ namespace SharpOrm
 
         public void Dispose()
         {
-            if (this.disposed)
+            if (disposed)
                 return;
 
             Dispose(disposing: true);

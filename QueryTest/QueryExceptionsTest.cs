@@ -35,7 +35,7 @@ namespace QueryTest
 
             Assert.Throws<ArgumentNullException>(() => q.Where("column", "", "value"));
             Assert.Throws<ArgumentNullException>(() => q.Where("column", null, "value"));
-            Assert.Throws<DatabaseException>(() => q.Where("column", "None", "value"));
+            Assert.Throws<InvalidOperationException>(() => q.Where("column", "None", "value"));
         }
     }
 }

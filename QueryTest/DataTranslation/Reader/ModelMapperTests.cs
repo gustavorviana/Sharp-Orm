@@ -101,7 +101,7 @@ namespace QueryTest.DataTranslation.Reader
             var custom_id = Guid.NewGuid().ToString();
             var custom_status = Status.Success;
 
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [DynamicMappedTable]",
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id], [Id2], [record_created], [Number], [name], [nick], [Custom_Id], [Custom_Status] FROM [DynamicMappedTable]",
                 () => new MockDataReader(
                     new Cell("Id", id),
                     new Cell("id2", id2),
@@ -193,7 +193,7 @@ namespace QueryTest.DataTranslation.Reader
         [Fact]
         public void MapNestedWithPrefixTest()
         {
-            Connection.QueryReaders.Add("SELECT TOP(1) * FROM [RootNestedObject]", GetPrefixedNestedObjectReader);
+            Connection.QueryReaders.Add("SELECT TOP(1) [Id], [WithPrefixId], [child_id], [WithPrefixValue], [WithPrefixSubNested_Id], [Child2_Id], [Child2_Value], [Child2_SubNested_Id] FROM [RootNestedObject]", GetPrefixedNestedObjectReader);
 
             var tm = new ModelMapper<RootNestedObject>(Translation);
             tm.Property(x => x.Id, "Id");

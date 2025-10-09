@@ -40,7 +40,7 @@ namespace SharpOrm.Operators
         public Coalesce(params Column[] columns)
         {
             if (columns.Length == 0)
-                throw new ArgumentNullException(nameof(expression));
+                throw new ArgumentNullException(nameof(_expression));
 
             this.columns = columns;
         }

@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.Grammars.Interfaces;
 using SharpOrm.Msg;
 using System;
+using System.Linq;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
@@ -98,7 +99,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             if (!HasOffset)
                 return;
 
-            ValidateOffsetOrderBy();
             Builder.Add(" OFFSET ").Add(Query.Offset).Add(" ROWS");
 
             if (Query.Limit >= 0)
@@ -150,8 +150,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
         private void WriteRowNumber()
         {
-            ValidateOffsetOrderBy();
-
             Builder.Add("SELECT ROW_NUMBER() OVER(ORDER BY ");
             ApplyOrderBy(Info.Orders, true);
             Builder.Add(") AS [grammar_rownum], ");
@@ -180,6 +178,30 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             {
                 Builder.Clear();
             }
+        }
+
+        protected override void ApplyOrderBy()
+        {
+            if (Info.Orders.Length == 0 && Query.Offset > 0 && TableInfo != null)
+            {
+                var key = TableInfo.GetPrimaryKeys().FirstOrDefault();
+                if (key != null)
+                {
+                    base.ApplyOrderBy(new ColumnOrder[] { new ColumnOrder(new Column(GetColumnName(key)), OrderBy.Asc) }, false);
+                    return;
+                }
+            }
+
+            base.ApplyOrderBy();
+        }
+
+
+        private string GetColumnName(ColumnInfo column)
+        {
+            if (string.IsNullOrEmpty(Query.Info.TableName.Alias) && Query.Info.Orders.Length == 0)
+                return column.Name;
+
+            return string.Format("{0}.{1}", Query.Info.TableName.TryGetAlias(Config), column.Name);
         }
     }
 }

@@ -21,7 +21,7 @@ namespace SharpOrm
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
     /// <typeparam name="T">Type that should be used to interact with the table.</typeparam>
-    public class Query<T> : Query, IFkNodeRoot, INodeCreationListener
+    public class Query<T> : Query, IFkNodeRoot, INodeCreationListener, IQueryColumnConfigurator, ITypedWhereClause<T, Query<T>>, ITypedQuery<T>, IWithTableInfo
     {
         private ObjectReader _objReader;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -50,6 +50,8 @@ namespace SharpOrm
         }
 
         ForeignKeyRegister IFkNodeRoot.ForeignKeyRegister => _foreignKeyRegister;
+
+        TableInfo IWithTableInfo.TableInfo => TableInfo;
 
         #region Query
 
@@ -251,6 +253,25 @@ namespace SharpOrm
         public new Query<T> Select(params Column[] columns)
         {
             return (Query<T>)base.Select(columns);
+        }
+
+        #endregion
+
+        #region ITypedQuery<T> Implementation
+
+        Column ITypedQuery<T>.GetColumn<TValue>(Expression<ColumnExpression<T, TValue>> columnExpression)
+        {
+            return GetColumn(columnExpression);
+        }
+
+        ExpressionColumn[] ITypedQuery<T>.GetColumns(Expression<ColumnExpression<T>> expression)
+        {
+            return GetColumns(expression);
+        }
+
+        ExpressionColumn[] ITypedQuery<T>.GetColumns(Expression<ColumnExpression<T>> expression, ExpressionConfig config)
+        {
+            return GetColumns(expression, config);
         }
 
         #endregion
@@ -651,6 +672,30 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously inserts a new row into the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data through a RowBuilder instance.</param>
+        /// <param name="token">Cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous insert operation. The task result contains the number of affected rows or the generated identity value as an integer.</returns>
+        /// <example>
+        /// <code>
+        /// int result = await InsertAsync(row => 
+        /// {
+        ///     row.Set(x => x.Name, "John Doe");
+        ///     row.Set(x => x.Email, "john@example.com");
+        /// }, cancellationToken);
+        /// </code>
+        /// </example>
+        public async Task<int> InsertAsync(Action<RowBuilder<T>> call, CancellationToken token)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            object result = await InsertAsync(builder.GetCells(), token);
+            return TranslationUtils.TryNumeric(result);
+        }
+
+        /// <summary>
         /// Inserts one row into the table.
         /// </summary>
         /// <param name="obj"></param>
@@ -662,6 +707,29 @@ namespace SharpOrm
             var reader = GetObjectReader(ReadMode.ValidOnly, true);
             object result = Insert(reader.ReadCells(obj), ReturnsInsetionId && !reader.HasValidKey(obj));
             SetPrimaryKey(obj, result);
+            return TranslationUtils.TryNumeric(result);
+        }
+
+        /// <summary>
+        /// Inserts a new row into the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data through a RowBuilder instance.</param>
+        /// <returns>The number of affected rows or the generated identity value as an integer.</returns>
+        /// <example>
+        /// <code>
+        /// int result = Insert(row => 
+        /// {
+        ///     row.Set(x => x.Name, "John Doe");
+        ///     row.Set(x => x.Email, "john@example.com");
+        /// });
+        /// </code>
+        /// </example>
+        public int Insert(Action<RowBuilder<T>> call)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            object result = Insert(builder.GetCells());
             return TranslationUtils.TryNumeric(result);
         }
 
@@ -731,6 +799,29 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Asynchronously updates existing rows in the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data to be updated through a RowBuilder instance.</param>
+        /// <param name="token">Cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous update operation. The task result contains the number of affected rows.</returns>
+        /// <example>
+        /// <code>
+        /// int affectedRows = await UpdateAsync(row => 
+        /// {
+        ///     row.Set(x => x.Name, "Jane Doe");
+        ///     row.Set(x => x.UpdatedAt, DateTime.Now);
+        /// }, cancellationToken);
+        /// </code>
+        /// </example>
+        public Task<int> UpdateAsync(Action<RowBuilder<T>> call, CancellationToken token)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            return base.UpdateAsync(builder.GetCells(), token);
+        }
+
+        /// <summary>
         /// Update table keys using object values.
         /// </summary>
         /// <param name="obj"></param>
@@ -741,6 +832,28 @@ namespace SharpOrm
                 throw new ArgumentNullException(nameof(obj));
 
             return base.Update(GetObjectReader(ReadMode.None, false).ReadCells(obj));
+        }
+
+        /// <summary>
+        /// Updates existing rows in the database using a fluent builder pattern.
+        /// </summary>
+        /// <param name="call">Action that configures the row data to be updated through a RowBuilder instance.</param>
+        /// <returns>The number of affected rows.</returns>
+        /// <example>
+        /// <code>
+        /// int affectedRows = Update(row => 
+        /// {
+        ///     row.Set(x => x.Name, "Jane Doe");
+        ///     row.Set(x => x.UpdatedAt, DateTime.Now);
+        /// });
+        /// </code>
+        /// </example>
+        public int Update(Action<RowBuilder<T>> call)
+        {
+            var builder = new RowBuilder<T>(Info.Config);
+            call(builder);
+
+            return base.Update(builder.GetCells());
         }
 
         /// <summary>
@@ -1486,6 +1599,11 @@ namespace SharpOrm
             return (Query<T>)Where(GetColumn(columnExp), "IS NOT", null);
         }
 
+        public Query<T> Where(QueryCallback<T> callback)
+        {
+            return WriteCallback(callback, AND);
+        }
+
         #region OR
 
         /// <summary>
@@ -1702,18 +1820,33 @@ namespace SharpOrm
             return (Query<T>)OrWhere(GetColumn(columnExp), "IS NOT", null);
         }
 
-        #endregion
+
+        public Query<T> OrWhere(QueryCallback<T> callback)
+        {
+            return WriteCallback(callback, OR);
+        }
+
+        private Query<T> WriteCallback(QueryCallback<T> callback, string whereType)
+        {
+            var qBase = new WhereBuilder<T>(Info.Config, Info.TableName);
+            callback(qBase);
+
+            WrapWithParentheses(qBase, whereType);
+            return this;
+        }
 
         #endregion
 
-        private ExpressionColumn GetColumn<K>(Expression<ColumnExpression<K>> column, IForeignKeyNode parent = null)
+        #endregion
+
+        internal ExpressionColumn GetColumn<K>(Expression<ColumnExpression<K>> column, IForeignKeyNode parent = null)
         {
             var processor = new ExpressionProcessor<K>(Info, Config.Translation, ExpressionConfig.SubMembers | ExpressionConfig.Method, parent ?? _foreignKeyRegister);
 
             return processor.ParseColumns(column).First();
         }
 
-        private Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
+        internal Column GetColumn<K>(Expression<ColumnExpression<T, K>> column)
         {
             var processor = new ExpressionProcessor<T>(this, ExpressionConfig.All);
             return processor.ParseColumn(column);
@@ -1774,11 +1907,18 @@ namespace SharpOrm
 
         private void ConfigurePendingColumns()
         {
+            ApplyDefaultSelect();
             if (!_pendingSelect)
                 return;
 
             _pendingSelect = false;
             _foreignKeyRegister.ApplySelectToQuery(this);
+        }
+
+        private void ApplyDefaultSelect()
+        {
+            if (Info.Select.Length == 1 && Info.Select[0].IsAll())
+                Info.Select = TableInfo.Columns.Where(x => x.Translation != null).Select(c => new QueryColumn(c.Name)).ToArray();
         }
 
         /// <summary>
@@ -1817,6 +1957,21 @@ namespace SharpOrm
                 return base.Where(new SafeWhere(col, operation, value, isList).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             return base.WriteWhere(column, operation, value, type);
+        }
+
+        public Query<T> Where<TValue>(Expression<ColumnExpression<T, TValue>> columnExpression, string operation, TValue value)
+        => Where(GetColumn(columnExpression), operation, value);
+
+        public Query<T> OrWhere<TValue>(Expression<ColumnExpression<T, TValue>> columnExpression, string operation, TValue value)
+        => OrWhere(GetColumn(columnExpression), operation, value);
+
+        Query<T> IWhereClause<Query<T>>.Where(SqlExpression expression) => (Query<T>)base.Where(expression);
+
+        Query<T> IWhereClause<Query<T>>.OrWhere(SqlExpression expression) => (Query<T>)base.OrWhere(expression);
+
+        void IQueryColumnConfigurator.ApplyDefaultSelect()
+        {
+            ApplyDefaultSelect();
         }
     }
 
@@ -2274,6 +2429,9 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
+            if (rows.Length == 0)
+                return 0;
+
             return await new UpsertStrategy(this, rows)
                 .SetCheckColumns(toCheckColumns)
                 .SetUpdateColumns(updateColumns)
@@ -2291,6 +2449,9 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
         {
+            if (rows.Length == 0)
+                return 0;
+
             return await new UpsertStrategy(this, rows)
                 .SetCheckColumns(toCheckColumns)
                 .SetUpdateColumns(updateColumns)

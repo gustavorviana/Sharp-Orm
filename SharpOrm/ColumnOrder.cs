@@ -1,4 +1,6 @@
-﻿namespace SharpOrm
+﻿using SharpOrm.Builder;
+
+namespace SharpOrm
 {
     /// <summary>
     /// Represents the order of a column in a query.
@@ -31,9 +33,30 @@
         /// <param name="order">The order in which to sort the column.</param>
         public ColumnOrder(Column column, OrderBy order)
         {
-            this.Column = column;
-            this.Order = order;
+            Column = column;
+            Order = order;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ColumnOrder"/> class with the specified column and order.
+        /// </summary>
+        /// <param name="column">The column to be ordered.</param>
+        /// <param name="order">The order in which to sort the column.</param>
+        public ColumnOrder(SqlExpression expression, OrderBy order)
+        {
+            Column = new Column(expression);
+            Order = order;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ColumnOrder"/> class with the specified column and order.
+        /// </summary>
+        /// <param name="column">The column to be ordered.</param>
+        /// <param name="order">The order in which to sort the column.</param>
+        public ColumnOrder(ISqlExpressible expression, OrderBy order)
+        {
+            Column = new Column(expression);
+            Order = order;
         }
     }
-
 }

@@ -61,9 +61,9 @@ namespace QueryTest.Async
         }
 
         [Theory]
-        [InlineData(Trashed.With, "SELECT * FROM [SoftDeleteAddress]")]
-        [InlineData(Trashed.Only, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 1")]
-        [InlineData(Trashed.Except, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 0")]
+        [InlineData(Trashed.With, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress]")]
+        [InlineData(Trashed.Only, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress] WHERE [deleted] = 1")]
+        [InlineData(Trashed.Except, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress] WHERE [deleted] = 0")]
         public async Task SelectAsync(Trashed trashed, string expected)
         {
             using var fallback = RegisterFallback(new Cell("Id", 1));
@@ -74,9 +74,9 @@ namespace QueryTest.Async
         }
 
         [Theory]
-        [InlineData(Trashed.With, "SELECT * FROM [SoftDeleteAddress] WHERE [Street] != @p1")]
-        [InlineData(Trashed.Only, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 1 AND ([Street] != @p1)")]
-        [InlineData(Trashed.Except, "SELECT * FROM [SoftDeleteAddress] WHERE [deleted] = 0 AND ([Street] != @p1)")]
+        [InlineData(Trashed.With, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress] WHERE [Street] != @p1")]
+        [InlineData(Trashed.Only, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress] WHERE [deleted] = 1 AND ([Street] != @p1)")]
+        [InlineData(Trashed.Except, "SELECT [Deleted], [Id], [Name], [Street], [City] FROM [SoftDeleteAddress] WHERE [deleted] = 0 AND ([Street] != @p1)")]
         public async Task SelectWhereAsync(Trashed trashed, string expected)
         {
             using var fallback = RegisterFallback(new Cell("Id", 1));

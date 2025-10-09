@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -21,9 +22,10 @@ namespace SharpOrm
         #region Fields/Properties
         private readonly object _lock = new object();
         private readonly bool _forceSingleConnection;
+        private readonly bool _autoCommitOnDispose;
         private bool isExtTransact = false;
         private bool _disposed;
-        public bool Disposed => this._disposed;
+        public bool Disposed => _disposed;
 
         internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
 
@@ -55,7 +57,7 @@ namespace SharpOrm
             set => this.commandTimeout = value;
         }
 
-        protected TranslationRegistry Translation => this.Creator.Config.Translation;
+        protected TranslationRegistry Translation => Creator?.Config?.Translation;
 
         /// <summary>
         /// Gets the default connection creator for the repository.
@@ -77,9 +79,11 @@ namespace SharpOrm
         /// Initializes a new instance of the <see cref="DbRepository"/> class.
         /// </summary>
         /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
-        public DbRepository(bool forceSingleConnection = false)
+        /// <param name="autoCommitOnDispose">A value indicating whether to automatically commit transactions when the repository is disposed. Default is true.</param>
+        public DbRepository(bool forceSingleConnection = false, bool autoCommitOnDispose = true)
         {
-            this._forceSingleConnection = forceSingleConnection;
+            _forceSingleConnection = forceSingleConnection;
+            _autoCommitOnDispose = autoCommitOnDispose;
         }
 
         #region Transactions
@@ -92,6 +96,9 @@ namespace SharpOrm
         {
             if (service == null)
                 throw new ArgumentNullException(nameof(service));
+
+            if (service.Disposed)
+                throw new ObjectDisposedException(nameof(service), "Cannot set transaction from a disposed repository.");
 
             this.SetTransaction(service.Transaction);
         }
@@ -542,7 +549,7 @@ namespace SharpOrm
             if (!(sender is DbCommand cmd))
                 return;
 
-            cmd.Disposed += this.OnCommandDisposed;
+            cmd.Disposed -= this.OnCommandDisposed;
 
             if (cmd.Transaction is null)
                 try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
@@ -609,17 +616,65 @@ namespace SharpOrm
                 return query.InsertAsync(value, token);
         }
 
-        /// <summary>  
-        /// Inserts a value of type T into the database.  
-        /// </summary>  
-        /// <typeparam name="T">The type of the value to insert.</typeparam>  
-        /// <param name="value">The value to insert.</param>  
-        /// <returns>The number of rows affected.</returns>  
+        /// <summary>
+        /// Inserts a value of type T into the database.
+        /// </summary>
+        /// <typeparam name="T">The type of the value to insert.</typeparam>
+        /// <param name="value">The value to insert.</param>
+        /// <returns>The number of rows affected.</returns>
         protected int Insert<T>(T value)
         {
             using (var query = Query<T>())
                 return query.Insert(value);
         }
+
+        #region DbTable
+
+        /// <summary>
+        /// Creates a new temporary table based on a query.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="queryBase">Query used to create the temporary table.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable(string name, Query queryBase)
+        {
+            return DbTable.Create(name, true, queryBase, GetManager());
+        }
+
+        /// <summary>
+        /// Creates a new temporary table based on an existing table.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="columns">Columns of the table to be used as the base.</param>
+        /// <param name="basedTable">Name of the table to be used in the creation.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable(string name, Column[] columns, string basedTable)
+        {
+            return DbTable.Create(name, true, columns, basedTable, GetManager());
+        }
+
+        /// <summary>
+        /// Creates a temporary table based on the provided columns.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="columns">Columns that the table should contain.</param>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTable(TableBuilder builder)
+        {
+            return DbTable.Create(builder.GetSchema(), GetManager());
+        }
+
+        /// <summary>
+        /// Creates a temporary table based on a type.
+        /// </summary>
+        /// <typeparam name="T">The type to use as the base for the table.</typeparam>
+        /// <returns>A DbTable instance for the created temporary table.</returns>
+        protected DbTable CreateTempTable<T>()
+        {
+            return DbTable.Create<T>(true, Translation, GetManager());
+        }
+
+        #endregion
 
         #region IDisposable
 
@@ -634,23 +689,23 @@ namespace SharpOrm
         /// <param name="disposing">True if disposing of managed resources, false if finalizing.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (this._disposed)
+            if (_disposed)
                 return;
 
-            this._disposed = true;
+            _disposed = true;
             if (disposing)
             {
-                if (!this.HasParentTransaction && this.Transaction != null)
-                    this.CommitTransaction();
+                if (_autoCommitOnDispose && !HasParentTransaction && Transaction != null)
+                    CommitTransaction();
 
-                this._connections.Dispose();
+                _connections.Dispose();
             }
             else
             {
-                this._connections.Clear();
+                _connections.Clear();
             }
 
-            this.Transaction = null;
+            Transaction = null;
         }
 
         /// <summary>
@@ -658,14 +713,16 @@ namespace SharpOrm
         /// </summary>
         public void Dispose()
         {
-            this.ThrowIfDisposed();
-            this.Dispose(true);
+            if (_disposed)
+                return;
+
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
         protected void ThrowIfDisposed()
         {
-            if (this._disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);
         }
 

@@ -75,6 +75,9 @@ namespace SharpOrm.Builder.Grammars
         /// <returns>A DbCommand object representing the generated SELECT statement.</returns>
         public SqlExpression Select(bool configureWhereParams = true)
         {
+            if (Query is IQueryColumnConfigurator w)
+                w.ApplyDefaultSelect();
+
             return BuildExpression(GetSelectGrammar(), x => x.BuildSelect(configureWhereParams));
         }
 
