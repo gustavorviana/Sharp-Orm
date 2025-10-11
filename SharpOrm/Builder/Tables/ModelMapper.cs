@@ -14,7 +14,7 @@ namespace SharpOrm.Builder
     /// Represents a mapping between a type <typeparamref name="T"/> and a database table.
     /// </summary>
     /// <typeparam name="T">The type to be mapped to the table.</typeparam>
-    public class ModelMapper<T> : IModelMapper, ITableInfo
+    public class ModelMapper<T> : ITableInfo, IModelMapper<T>, IModelMapper
     {
         private readonly ColumnLoader<T> _loader = null;
         private TableInfo table;
@@ -76,19 +76,19 @@ namespace SharpOrm.Builder
             _loader = new ColumnLoader<T>(registry, nestedMode);
         }
 
-        public ModelMapper<T> ApplyConfiguration(IModelMapperConfiguration<T> configuration)
+        public IModelMapper<T> ApplyConfiguration(IModelMapperConfiguration<T> configuration)
         {
             configuration.Configure(this);
             return this;
         }
 
-        public ModelMapper<T> SoftDelete(string column, string dateColumn = null)
+        public IModelMapper<T> SoftDelete(string column, string dateColumn = null)
         {
             _softDelete = new SoftDeleteAttribute(column) { DateColumnName = dateColumn };
             return this;
         }
 
-        public ModelMapper<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
+        public IModelMapper<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn)
         {
             _timestamp = new HasTimestampAttribute { CreatedAtColumn = createdAtColumn, UpdatedAtColumn = updatedAtColumn };
             return this;
@@ -99,7 +99,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="expression">An expression selecting the property to be used as the key.</param>
         /// <returns>The current <see cref="ModelMapper{T}"/> instance.</returns>
-        public ModelMapper<T> HasKey(Expression<Func<T, object>> expression)
+        public IModelMapper<T> HasKey(Expression<Func<T, object>> expression)
         {
             Property(expression).SetKey(true);
             return this;
@@ -131,7 +131,7 @@ namespace SharpOrm.Builder
         /// </summary>
         /// <param name="prefix">The prefix to use for the nested property.</param>
         /// <returns></returns>
-        public ModelMapper<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
+        public IModelMapper<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false)
         {
             var column = _loader.GetColumnFromExpression(expression, false, out _);
             column.MapChildren(column.Member as PropertyInfo, subNested ? NestedMode.All : NestedMode.Attribute);
@@ -156,7 +156,7 @@ namespace SharpOrm.Builder
             if (table == null)
                 throw new Exception(Messages.Table.NotBuilded);
 
-            var column =  _loader.LoadColumns().Find(columnExpression);
+            var column = _loader.LoadColumns().Find(columnExpression);
 
             return column == null ? null : new Column(column.Name);
         }

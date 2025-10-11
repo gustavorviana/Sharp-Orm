@@ -9,6 +9,7 @@ using System.Reflection;
 
 namespace SharpOrm.Builder
 {
+    [Obsolete("This class will be removed in version 4.x")]
     internal static class ExpressionUtils<T>
     {
         public static Column GetColumn(Expression<ColumnExpression<T>> columnExpression)

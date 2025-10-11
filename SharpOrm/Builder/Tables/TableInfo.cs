@@ -66,6 +66,7 @@ namespace SharpOrm.Builder
             return Columns.Where(c => c.Key).OrderBy(c => c.Order).ToArray();
         }
 
+        [Obsolete("This method will be removed in version 4.x")]
         public IEnumerable<ColumnInfo> GetColumns<T>(Expression<ColumnExpression<T>>[] calls, bool except)
         {
             var props = calls.Select(ExpressionUtils<T>.GetPropName).ToArray();
@@ -128,6 +129,7 @@ namespace SharpOrm.Builder
         /// <param name="name">Name of the column from which to retrieve the value.</param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
+        [Obsolete("This method will be removed in version 4.x")]
         public object GetValue(object owner, string name)
         {
             if (!(this.Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is ColumnInfo col))

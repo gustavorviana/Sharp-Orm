@@ -219,6 +219,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="columnExpression"></param>
         /// <returns></returns>
+        [Obsolete("This method will be removed in version 4.x")]
         public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression)
         {
             return ExpressionUtils<T>.GetColumn(columnExpression);
@@ -231,6 +232,7 @@ namespace SharpOrm
         /// <param name="columnExpression"></param>
         /// <param name="registry"></param>
         /// <returns></returns>
+        [Obsolete("This method will be removed in version 4.x")]
         public static Column FromExp<T>(Expression<ColumnExpression<T>> columnExpression, TranslationRegistry registry)
         {
             var member = ExpressionUtils<T>.GetColumnMember(columnExpression, out var rootType);
@@ -251,6 +253,7 @@ namespace SharpOrm
         /// <param name="expression">The column expression to parse.</param>
         /// <param name="info">The read-only query information.</param>
         /// <returns>A Column object representing the parsed column expression.</returns>
+        [Obsolete("This method will be removed in version 4.x")]
         public static Column Parse<T>(Expression<ColumnExpression<T>> expression, IReadonlyQueryInfo info)
         {
             return new ExpressionProcessor<T>(info, info?.Config?.Translation, ExpressionConfig.All, null).ParseColumns(expression).First();
@@ -264,6 +267,7 @@ namespace SharpOrm
         /// <param name="expression">The column expression to parse.</param>
         /// <param name="info">The read-only query information.</param>
         /// <returns>A Column object representing the parsed column expression.</returns>
+        [Obsolete("This method will be removed in version 4.x")]
         public static Column Parse<T, R>(Expression<ColumnExpression<T, R>> expression, IReadonlyQueryInfo info)
         {
             return new ExpressionProcessor<T>(info, info?.Config?.Translation, ExpressionConfig.All, null).ParseColumn(expression);

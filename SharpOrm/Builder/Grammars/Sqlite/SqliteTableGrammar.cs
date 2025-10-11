@@ -26,14 +26,15 @@ namespace SharpOrm.Builder.Grammars.Sqlite
         public SqliteTableGrammar(QueryConfig config, ITableSchema schema) : base(config, schema)
         {
             ColumnTypes.Add(new ColumnType(typeof(long), "NUMERIC"));
-            ColumnTypes.Add(new ColumnType(typeof(char), "TEXT(1)"));
-            ColumnTypes.Add(new ColumnType(typeof(DateTime), "TEXT(19)"));
-            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TEXT(8)"));
+            ColumnTypes.Add(new ColumnType(typeof(char), "TEXT"));
             ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
             ColumnTypes.Add(new GuidColumnType(config.Translation, "TEXT"));
             ColumnTypes.Add(new SqliteNumberWithoutDecimalColumnTypeMap());
             ColumnTypes.Add(new SqliteNumberWithDecimalColumnTypeMap());
             ColumnTypes.Add(new SqliteStringColumnTypeMap());
+            ColumnTypes.Add(new DateColumnType("TEXT", "TEXT", "TEXT"));
+            ColumnTypes.Add(new TimeColumnType("TEXT"));
+            ColumnTypes.Add(new EnumColumnType(config.Translation.EnumSerialization == EnumSerialization.Value ? "INT" : "TEXT"));
 
             ConstraintBuilders.Add(new SqlitePrimaryKeyConstraintBuilder());
             ConstraintBuilders.Add(new SqliteForeignKeyConstraintBuilder());

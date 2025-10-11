@@ -6,7 +6,7 @@ namespace SharpOrm.DataTranslation
     /// <summary>
     /// A SQL translator that converts zero values to null and vice versa.
     /// </summary>
-    public class ZeroToNullSqlTranslator : NumericTranslation
+    public class ZeroToNullSqlTranslator : NumericTranslation, INullableSqlTranslation
     {
         public override object FromSqlValue(object value, Type expectedType)
         {

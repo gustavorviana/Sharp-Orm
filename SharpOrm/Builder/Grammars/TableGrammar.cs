@@ -137,7 +137,11 @@ namespace SharpOrm.Builder.Grammars
         /// <returns>The custom column type map.</returns>
         protected IColumnTypeMap GetCustomColumnTypeMap(DataColumn column)
         {
-            return queryInfo.Config.CustomColumnTypes.Get(column);
+            var translator = queryInfo.Config.CustomColumnTypes.Get(column);
+            if (translator != null)
+                return translator;
+
+            return Config.Translation.GetFor(column.DataType) as IColumnTypeMap;
         }
 
 

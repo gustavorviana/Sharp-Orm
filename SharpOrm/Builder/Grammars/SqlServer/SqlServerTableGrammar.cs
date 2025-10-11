@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.Grammars.SqlServer.Builder;
 using SharpOrm.Builder.Grammars.SqlServer.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Data;
@@ -32,11 +33,12 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
             ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
             ColumnTypes.Add(new ColumnType(typeof(char), "NCHAR(1)"));
-            ColumnTypes.Add(new ColumnType(typeof(DateTime), "DATETIME"));
-            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TIME"));
+            ColumnTypes.Add(new DateColumnType("DATETIMEOFFSET", "DATETIME", "DATE"));
+            ColumnTypes.Add(new TimeColumnType("TIME"));
             ColumnTypes.Add(new ColumnType(typeof(byte[]), "VARBINARY(MAX)"));
             ColumnTypes.Add(new ColumnType(typeof(MemoryStream), "VARBINARY(MAX)"));
             ColumnTypes.Add(new ColumnType(typeof(Guid), "UNIQUEIDENTIFIER"));
+            ColumnTypes.Add(new EnumColumnType(config.Translation.EnumSerialization == EnumSerialization.Value ? "INT" : "VARCHAR(MAX)"));
             ColumnTypes.Add(new SqlServerStringColumnTypeMap(false));
 
             ConstraintBuilders.Add(new SqlServerPrimaryKeyConstraintBuilder());

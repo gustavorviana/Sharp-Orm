@@ -1,6 +1,7 @@
 ﻿using SharpOrm.Builder.Grammars.Mysql.Builder;
 using SharpOrm.Builder.Grammars.Mysql.ColumnTypes;
 using SharpOrm.Builder.Grammars.Table;
+using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
 using System;
 using System.Data;
@@ -33,11 +34,12 @@ namespace SharpOrm.Builder.Grammars.Mysql
             ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
             ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
             ColumnTypes.Add(new ColumnType(typeof(char), "CHAR(1)"));
-            ColumnTypes.Add(new ColumnType(typeof(DateTime), "DATETIME"));
-            ColumnTypes.Add(new ColumnType(typeof(TimeSpan), "TIME"));
+            ColumnTypes.Add(new DateColumnType("VARCHAR(35)", "DATETIME", "DATE"));
+            ColumnTypes.Add(new TimeColumnType("TIME"));
             ColumnTypes.Add(new ColumnType(typeof(byte[]), "BLOB"));
             ColumnTypes.Add(new MysqlStringColumnType());
             ColumnTypes.Add(new GuidColumnType(config.Translation, "CHAR"));
+            ColumnTypes.Add(new EnumColumnType(config.Translation.EnumSerialization == EnumSerialization.Value ? "INT" : "VARCHAR(MAX)"));
 
             ConstraintBuilders.Add(new MySqlPrimaryKeyConstraintBuilder());
             ConstraintBuilders.Add(new MySqlForeignKeyConstraintBuilder());

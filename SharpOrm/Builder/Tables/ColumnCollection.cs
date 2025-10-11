@@ -1,4 +1,4 @@
-﻿using SharpOrm.Collections;
+﻿using SharpOrm.Builder.Expressions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,8 +19,8 @@ namespace SharpOrm.Builder.Tables
 
         internal ColumnCollection(ColumnNode[] nodes, Dictionary<string, ColumnInfo[]> columnLookup)
         {
-            Nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
             _columnLookup = columnLookup ?? throw new ArgumentNullException(nameof(columnLookup));
+            Nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
         }
 
         public IEnumerator<ColumnInfo> GetEnumerator() => _columnLookup.Values.Select(x => x.FirstOrDefault()).GetEnumerator();
@@ -38,13 +38,30 @@ namespace SharpOrm.Builder.Tables
             if (expression == null)
                 throw new ArgumentNullException(nameof(expression));
 
-            var path = ExpressionUtils<T>
-                .GetMemberPath(expression, true)
-                .Select(x => x.Name)
-                .Reverse()
-                .ToArray();
+            using (var enumerable = new ExpressionEnumerable(expression, true))
+            {
+                if (!enumerable.MoveNextPath())
+                    throw new InvalidOperationException("The expression must contain at least one column reference.");
 
-            return FindInTree(path)?.Column;
+                if (enumerable.HasNextPath())
+                    throw new InvalidOperationException("The expression must reference only a single column.");
+
+                return FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column;
+            }
+        }
+
+        public ColumnInfo[] FindAll<T>(Expression<ColumnExpression<T>> expression)
+        {
+            if (expression == null)
+                throw new ArgumentNullException(nameof(expression));
+
+            var columns = new List<ColumnInfo>();
+
+            using (var enumerable = new ExpressionEnumerable(expression, true))
+                while (enumerable.MoveNextPath())
+                    columns.Add(FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column);
+
+            return columns.ToArray();
         }
 
         private IColumnNode FindInTree(string[] path)

@@ -1,8 +1,19 @@
 ﻿using SharpOrm.Builder.Grammars.Table.Constraints;
 using System;
+using System.Linq.Expressions;
 
 namespace SharpOrm.Builder.Tables
 {
+    public interface ITableBuilder<T> : ITableBuilder
+    {
+        IColumnBuilder AddColumn(Expression<ColumnExpression<T>> expression);
+        IIndexBuilder HasIndex(Expression<ColumnExpression<T>> expression);
+        ITableBuilder<T> HasKey(Expression<ColumnExpression<T>> expression);
+        ITableBuilder<T> HasUnique(Expression<ColumnExpression<T>> expression, string constraintName = null);
+        ITableBuilder<T> Ignore(Expression<ColumnExpression<T>> expression);
+        ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression);
+    }
+
     public interface ITableBuilder
     {
         IMetadata Metadata { get; }

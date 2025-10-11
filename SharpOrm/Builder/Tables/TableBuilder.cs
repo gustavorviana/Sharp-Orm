@@ -1,15 +1,64 @@
 ﻿using SharpOrm.Builder.Grammars.Table.Constraints;
+using SharpOrm.DataTranslation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SharpOrm.Builder.Tables
 {
-    public class TableBuilder<T> : TableBuilder
+    public class TableBuilder<T> : TableBuilder, ITableBuilder<T>
     {
-        public TableBuilder()
+        private readonly TableInfo _tableInfo;
+
+        public TableBuilder(TranslationRegistry registry)
         {
-            Metadata.Add(Metadatas.BasedQuery, null);
+            _tableInfo = registry.GetTable(typeof(T));
+        }
+
+        public ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression)
+        {
+            var query = Query<T>.ReadOnly(table);
+            if (columnExpression != null)
+                query.Select(columnExpression);
+
+            base.SetBasedQuery(query);
+            return this;
+        }
+
+        public IColumnBuilder AddColumn(Expression<ColumnExpression<T>> expression)
+        {
+            return base.AddColumn(_tableInfo.Columns.Find(expression));
+        }
+
+        public ITableBuilder<T> HasKey(Expression<ColumnExpression<T>> expression)
+        {
+            base.HasKey(GetColumnNames(expression));
+            return this;
+        }
+
+        public ITableBuilder<T> HasUnique(Expression<ColumnExpression<T>> expression, string constraintName = null)
+        {
+            base.HasUnique(GetColumnNames(expression), constraintName);
+            return this;
+        }
+
+        public ITableBuilder<T> Ignore(Expression<ColumnExpression<T>> expression)
+        {
+            foreach (var name in GetColumnNames(expression))
+                base.Ignore(name);
+
+            return this;
+        }
+
+        public IIndexBuilder HasIndex(Expression<ColumnExpression<T>> expression)
+        {
+            return base.HasIndex(GetColumnNames(expression));
+        }
+
+        private string[] GetColumnNames(Expression<ColumnExpression<T>> expression)
+        {
+            return _tableInfo.Columns.FindAll(expression).Select(x => x.Name).ToArray();
         }
     }
 
@@ -30,6 +79,21 @@ namespace SharpOrm.Builder.Tables
         public ITableBuilder SetName(string tableName)
         {
             _name = tableName;
+            return this;
+        }
+
+        public ITableBuilder SetBasedTable(string table, params string[] columns)
+        {
+            var query = Query.ReadOnly(table);
+            if (columns.Length > 0)
+                query.Select(columns);
+
+            return SetBasedQuery(query);
+        }
+
+        public ITableBuilder SetBasedQuery(QueryBase query)
+        {
+            Metadata.Add(Metadatas.BasedQuery, query);
             return this;
         }
 
@@ -84,6 +148,19 @@ namespace SharpOrm.Builder.Tables
 
             _constraints.Add(constraint);
             return this;
+        }
+
+        public IColumnBuilder AddColumn(ColumnInfo columnInfo)
+        {
+            var column = AddColumn(columnInfo.Name, columnInfo.Type);
+
+            if (!string.IsNullOrEmpty(columnInfo.TypeName))
+                column.HasColumnType(columnInfo.TypeName);
+
+            if (columnInfo.Translation is INullableSqlTranslation)
+                column.IsOptional();
+
+            return column;
         }
 
         public IColumnBuilder AddColumn(string columnName, Type type)

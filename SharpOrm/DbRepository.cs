@@ -21,8 +21,8 @@ namespace SharpOrm
     {
         #region Fields/Properties
         private readonly object _lock = new object();
-        private readonly bool _forceSingleConnection;
-        private bool isExtTransact = false;
+        private readonly RepositoryOptions _options;
+        private bool _isExtTransact = false;
         private bool _disposed;
         public bool Disposed => _disposed;
 
@@ -36,57 +36,62 @@ namespace SharpOrm
         /// <summary>
         /// Indicates whether changes should be automatically committed when <see cref="ConnectionManager"/> is disposed.
         /// </summary>
-        protected bool AutoCommit => Creator?.AutoCommit ?? false;
+        [Obsolete("This property will be removed in version 4.x. Use Options.AutoCommit instead.")]
+        protected bool AutoCommit => _options.AutoCommit;
 
         /// <summary>
         /// Gets the connection manager for the current transaction.
         /// </summary>
         protected ConnectionManager Transaction { get; private set; }
 
-        private int? commandTimeout = null;
         /// <summary>
         /// Gets or sets the command timeout value for database commands.
         /// </summary>
         /// <value>
         /// The command timeout value in seconds. If not explicitly set, defaults to the command timeout in the configuration or 30 seconds.
         /// </value>
+        [Obsolete("This property will be removed in version 4.x. Use Options.CommandTimeout instead.")]
         protected int CommandTimeout
         {
-            get => this.commandTimeout ?? this.Creator?.Config?.CommandTimeout ?? 30;
-            set => this.commandTimeout = value;
+            get => _options.CommandTimeout;
+            set => _options.CommandTimeout = value;
         }
 
-        protected TranslationRegistry Translation => Creator?.Config?.Translation;
+        [Obsolete("This property will be removed in version 4.x. Use Options.Translation instead.")]
+        protected TranslationRegistry Translation => _options.Translation;
 
         /// <summary>
         /// Gets the default connection creator for the repository.
         /// </summary>
-        protected virtual ConnectionCreator Creator => ConnectionCreator.Default;
+        [Obsolete("This property will be removed in version 4.x. Use Options.ConnectionCreator instead.")]
+        protected virtual ConnectionCreator Creator => _options.ConnectionCreator;
 
         /// <summary>
         /// Indicates whether the repository has a parent transaction.
         /// </summary>
-        protected bool HasParentTransaction => this.isExtTransact;
+        protected bool HasParentTransaction => _isExtTransact;
 
         /// <summary>
         /// Gets or sets the cancellation token for the repository.
         /// </summary>
         public CancellationToken Token { get; set; }
 
-        /// <summary>
-        /// Indicates whether transactions should be automatically committed when the repository is disposed.
-        /// </summary>
-        protected bool AutoCommitOnDispose { get; set; }
+        protected IRepositoryOptions Options => _options;
         #endregion
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DbRepository"/> class.
-        /// </summary>
-        /// <param name="forceSingleConnection">A value indicating whether to force a single connection for the repository. Default is false.</param>
-        /// <param name="autoCommitOnDispose">A value indicating whether to automatically commit transactions when the repository is disposed. Default is true.</param>
-        public DbRepository(bool forceSingleConnection = false)
+        public DbRepository(bool forceSingleConnection = false):this(ConnectionCreator.Default, forceSingleConnection)
         {
-            _forceSingleConnection = forceSingleConnection;
+        }
+
+        public DbRepository(ConnectionCreator creator, bool forceSingleConnection = false)
+        {
+            var builder = new RepositoryOptionsBuilder(creator, forceSingleConnection);
+            OnConfiguring(builder);
+            _options = builder.Build();
+        }
+
+        protected virtual void OnConfiguring(IRepositoryOptionsBuilder optionsBuilder)
+        {
         }
 
         #region Transactions
@@ -103,7 +108,7 @@ namespace SharpOrm
             if (service.Disposed)
                 throw new ObjectDisposedException(nameof(service), "Cannot set transaction from a disposed repository.");
 
-            this.SetTransaction(service.Transaction);
+            SetTransaction(service.Transaction);
         }
 
         /// <summary>
@@ -112,7 +117,7 @@ namespace SharpOrm
         /// <param name="transaction">The DbTransaction to set.</param>
         public void SetTransaction(DbTransaction transaction)
         {
-            this.SetTransaction(transaction is null ? null : new ConnectionManager(this.Creator.Config, transaction));
+            SetTransaction(transaction is null ? null : new ConnectionManager(_options.ConnectionCreator.Config, transaction));
         }
 
         /// <summary>
@@ -121,10 +126,10 @@ namespace SharpOrm
         /// <param name="manager"></param>
         public void SetTransaction(ConnectionManager manager)
         {
-            this.ThrowIfDisposed();
+            ThrowIfDisposed();
 
-            this.Transaction = manager;
-            this.isExtTransact = manager != null;
+            Transaction = manager;
+            _isExtTransact = manager != null;
         }
 
         /// <summary>
@@ -141,15 +146,15 @@ namespace SharpOrm
         /// </summary>
         public virtual void BeginTransaction()
         {
-            this.ThrowIfDisposed();
+            ThrowIfDisposed();
 
-            if (this.HasParentTransaction)
+            if (HasParentTransaction)
                 return;
 
-            if (this.Transaction != null)
+            if (Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            Transaction = new ConnectionManager(Creator, true) { CommandTimeout = CommandTimeout, _autoCommit = AutoCommit };
+            Transaction = new ConnectionManager(_options.ConnectionCreator, true) { CommandTimeout = _options.CommandTimeout, _autoCommit = _options.AutoCommit };
         }
 
         /// <summary>
@@ -166,14 +171,14 @@ namespace SharpOrm
         /// </summary>
         public virtual void CommitTransaction()
         {
-            if (this.HasParentTransaction)
+            if (HasParentTransaction)
                 return;
 
-            if (this.Transaction is null)
+            if (Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this.Transaction.Commit();
-            this.ClearTransaction();
+            Transaction.Commit();
+            ClearTransaction();
         }
 
         /// <summary>
@@ -190,14 +195,14 @@ namespace SharpOrm
         /// </summary>
         public virtual void RollbackTransaction()
         {
-            if (this.HasParentTransaction)
+            if (HasParentTransaction)
                 return;
 
-            if (this.Transaction is null)
+            if (Transaction is null)
                 throw new DatabaseException(Messages.TransactionNotOpen);
 
-            this.Transaction.Rollback();
-            this.ClearTransaction();
+            Transaction.Rollback();
+            ClearTransaction();
         }
 
         /// <summary>
@@ -205,18 +210,18 @@ namespace SharpOrm
         /// </summary>
         protected virtual void ClearTransaction()
         {
-            if (this.Transaction is null)
+            if (Transaction is null)
                 return;
 
-            if (!this.HasParentTransaction)
+            if (!HasParentTransaction)
             {
-                var conn = this.Transaction.Connection;
-                this.Transaction.Dispose();
+                var conn = Transaction.Connection;
+                Transaction.Dispose();
 
-                this.Creator.SafeDisposeConnection(conn);
+                _options.ConnectionCreator.SafeDisposeConnection(conn);
             }
 
-            this.Transaction = null;
+            Transaction = null;
         }
 
         /// <summary>
@@ -225,7 +230,7 @@ namespace SharpOrm
         /// <param name="callback">The callback action to execute within the transaction.</param>
         public void RunTransaction(Action callback)
         {
-            if (this.Transaction != null)
+            if (Transaction != null)
             {
                 callback();
                 return;
@@ -233,13 +238,13 @@ namespace SharpOrm
 
             try
             {
-                this.BeginTransaction();
+                BeginTransaction();
                 callback();
-                this.CommitTransaction();
+                CommitTransaction();
             }
             catch
             {
-                this.RollbackTransaction();
+                RollbackTransaction();
                 throw;
             }
         }
@@ -304,7 +309,7 @@ namespace SharpOrm
         {
             ThrowIfDisposed();
 
-            return new Query<T>(name, GetManager()) { Token = Token, CommandTimeout = CommandTimeout };
+            return new Query<T>(name, GetManager()) { Token = Token, CommandTimeout = _options.CommandTimeout };
         }
 
         /// <summary>
@@ -315,7 +320,7 @@ namespace SharpOrm
         /// <returns>A QueryBuilder for building custom queries.</returns>
         protected virtual QueryBuilder Constructor(string table = "", string alias = "")
         {
-            return new QueryBuilder(this.Creator.Config, new DbName(table, alias, false));
+            return new QueryBuilder(_options.ConnectionCreator.Config, new DbName(table, alias, false));
         }
 
         /// <summary>
@@ -502,7 +507,7 @@ namespace SharpOrm
         [Obsolete("This method will be removed in version 4.0.")]
         protected DbCommand CreateCommand(QueryBuilder query)
         {
-            return this.CreateCommand().SetExpression(query.ToExpression(true, true));
+            return CreateCommand().SetExpression(query.ToExpression(true, true));
         }
 
         /// <summary>
@@ -513,7 +518,7 @@ namespace SharpOrm
         /// <returns>A DbCommand created from the query string.</returns>
         protected internal DbCommand CreateCommand(string query, params object[] args)
         {
-            return this.CreateCommand().SetQuery(query, args);
+            return CreateCommand().SetQuery(query, args);
         }
 
         /// <summary>
@@ -523,7 +528,7 @@ namespace SharpOrm
         /// <returns>A DbCommand created from the query string.</returns>
         protected internal DbCommand CreateCommand(string query)
         {
-            var cmd = this.CreateCommand();
+            var cmd = CreateCommand();
             cmd.CommandText = query;
             return cmd;
         }
@@ -537,9 +542,9 @@ namespace SharpOrm
         {
             var cmd = this.GetManager().CreateCommand();
             if (open) cmd.Connection?.OpenIfNeeded();
-            cmd.SetCancellationToken(this.Token);
+            cmd.SetCancellationToken(Token);
 
-            cmd.CommandTimeout = this.CommandTimeout;
+            cmd.CommandTimeout = _options.CommandTimeout;
             cmd.Disposed += OnCommandDisposed;
 
             return cmd;
@@ -555,7 +560,7 @@ namespace SharpOrm
             cmd.Disposed -= this.OnCommandDisposed;
 
             if (cmd.Transaction is null)
-                try { this.Creator.SafeDisposeConnection(cmd.Connection); } catch { }
+                try { _options.ConnectionCreator.SafeDisposeConnection(cmd.Connection); } catch { }
         }
 
         /// <summary>
@@ -578,7 +583,7 @@ namespace SharpOrm
 
         private ConnectionManager GetExistingManager()
         {
-            if (_forceSingleConnection && _connections.Count > 0)
+            if (_options.ForceSingleConnection && _connections.Count > 0)
             {
                 _connections.RemoveNotAlive();
 
@@ -591,15 +596,15 @@ namespace SharpOrm
 
         private ConnectionManager GetNewManager()
         {
-            var connection = new ConnectionManager(Creator)
+            var connection = new ConnectionManager(_options.ConnectionCreator)
             {
-                CommandTimeout = CommandTimeout
+                CommandTimeout = _options.CommandTimeout
             };
 
             if (OnError != null)
                 connection.OnError += OnError;
 
-            if (Creator is SingleConnectionCreator && _connections.Count > 0)
+            if (_options.ConnectionCreator is SingleConnectionCreator && _connections.Count > 0)
                 connection = connection.Clone(true, true);
 
             _connections.Add(connection);
@@ -674,7 +679,7 @@ namespace SharpOrm
         /// <returns>A DbTable instance for the created temporary table.</returns>
         protected DbTable CreateTempTable<T>()
         {
-            return DbTable.Create<T>(true, Translation, GetManager());
+            return DbTable.Create<T>(true, _options.Translation, GetManager());
         }
 
         #endregion
@@ -698,7 +703,7 @@ namespace SharpOrm
             _disposed = true;
             if (disposing)
             {
-                if (AutoCommitOnDispose && !HasParentTransaction && Transaction != null)
+                if (_options.AutoCommit && !HasParentTransaction && Transaction != null)
                     CommitTransaction();
 
                 _connections.Dispose();

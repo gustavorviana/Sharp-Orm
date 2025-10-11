@@ -1,7 +1,19 @@
 ﻿using SharpOrm.DataTranslation;
+using System;
+using System.Linq.Expressions;
 
 namespace SharpOrm.Builder
 {
+    public interface IModelMapper<T>
+    {
+        IModelMapper<T> HasKey(Expression<Func<T, object>> expression);
+        IModelMapper<T> HasTimeStamps(string createdAtColumn, string updatedAtColumn);
+        IModelMapper<T> MapNested(Expression<Func<T, object>> expression, string prefix = null, bool subNested = false);
+        ColumnMapInfo Property(Expression<Func<T, object>> expression);
+        ColumnMapInfo Property(Expression<Func<T, object>> expression, string columnName);
+        IModelMapper<T> SoftDelete(string column, string dateColumn = null);
+    }
+
     /// <summary>
     /// Interface that defines the mapping between a .NET type and a database table.
     /// </summary>
