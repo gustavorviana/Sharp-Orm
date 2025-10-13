@@ -12,7 +12,7 @@ namespace SharpOrm.Connection
     /// <summary>
     /// Manages the database manager.
     /// </summary>
-    public class ConnectionManager : IDisposableWithEvent
+    public class ConnectionManager : IDisposableWithEvent, ITransaction
     {
         #region Fields/Properties
         /// <summary>

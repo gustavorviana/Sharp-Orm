@@ -17,7 +17,7 @@ namespace SharpOrm
     /// <summary>
     /// Represents an abstract base class for database repositories.
     /// </summary>
-    public abstract class DbRepository : IDisposable
+    public abstract class DbRepository : ITransaction, IDisposable
     {
         #region Fields/Properties
         private readonly object _lock = new object();
@@ -79,7 +79,7 @@ namespace SharpOrm
         protected IRepositoryOptions Options => _options;
         #endregion
 
-        public DbRepository(bool forceSingleConnection = false):this(ConnectionCreator.Default, forceSingleConnection)
+        public DbRepository(bool forceSingleConnection = false) : this(ConnectionCreator.Default, forceSingleConnection)
         {
         }
 
@@ -161,6 +161,7 @@ namespace SharpOrm
         /// Asynchronously commits the current database transaction.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
+        [Obsolete("This method will be removed in version 4.x. Use CommitAsync instead.")]
         public virtual Task CommitTransactionAsync()
         {
             return TaskUtils.Async(CommitTransaction);
@@ -169,22 +170,17 @@ namespace SharpOrm
         /// <summary>
         /// Commits the current database transaction.
         /// </summary>
+        [Obsolete("This method will be removed in version 4.x. Use Commit instead.")]
         public virtual void CommitTransaction()
         {
-            if (HasParentTransaction)
-                return;
-
-            if (Transaction is null)
-                throw new DatabaseException(Messages.TransactionNotOpen);
-
-            Transaction.Commit();
-            ClearTransaction();
+            Commit();
         }
 
         /// <summary>
         /// Asynchronously rolls back the current database transaction.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
+        [Obsolete("This method will be removed in version 4.x. Use RollbackAsync instead.")]
         public virtual Task RollbackTransactionAsync()
         {
             return TaskUtils.Async(RollbackTransaction);
@@ -193,16 +189,10 @@ namespace SharpOrm
         /// <summary>
         /// Rolls back the current database transaction.
         /// </summary>
+        [Obsolete("This method will be removed in version 4.x. Use Rollback instead.")]
         public virtual void RollbackTransaction()
         {
-            if (HasParentTransaction)
-                return;
-
-            if (Transaction is null)
-                throw new DatabaseException(Messages.TransactionNotOpen);
-
-            Transaction.Rollback();
-            ClearTransaction();
+            Rollback();
         }
 
         /// <summary>
@@ -732,6 +722,43 @@ namespace SharpOrm
         {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);
+        }
+
+        public bool Commit()
+        {
+            if (HasParentTransaction)
+                return true;
+
+            if (Transaction is null)
+                throw new DatabaseException(Messages.TransactionNotOpen);
+
+            try
+            {
+                return Transaction.Commit();
+            }
+            finally
+            {
+
+                ClearTransaction();
+            }
+        }
+
+        public bool Rollback()
+        {
+            if (HasParentTransaction)
+                return true;
+
+            if (Transaction is null)
+                throw new DatabaseException(Messages.TransactionNotOpen);
+
+            try
+            {
+                return Transaction.Rollback();
+            }
+            finally
+            {
+                ClearTransaction();
+            }
         }
 
         #endregion

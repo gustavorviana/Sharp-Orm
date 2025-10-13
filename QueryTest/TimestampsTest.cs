@@ -44,7 +44,8 @@ namespace QueryTest
             var translation = new TranslationRegistry();
             var mapper = new ModelMapper<Address>(translation);
             mapper.HasTimeStamps(null, "UpdatedAt");
-            mapper.HasKey(x => x.Id).Build();
+            mapper.HasKey(x => x.Id);
+            mapper.Build();
 
             using var fallback = RegisterFallback();
             using var query = new Query<Address>(GetManager(translation));
@@ -62,7 +63,8 @@ namespace QueryTest
             var translation = new TranslationRegistry();
             var mapper = new ModelMapper<Address>(translation);
             mapper.HasTimeStamps("CreatedAt", null);
-            mapper.HasKey(x => x.Id).Build();
+            mapper.HasKey(x => x.Id);
+            mapper.Build();
 
             using var fallback = RegisterFallback();
             using var query = new Query<Address>(GetManager(translation));
