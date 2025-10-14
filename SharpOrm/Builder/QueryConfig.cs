@@ -64,11 +64,18 @@ namespace SharpOrm.Builder
         public bool LoadForeign { get; set; }
 
         /// <summary>
-        /// Indicates whether the generated key from the SQL insert operation 
+        /// Indicates whether the generated key from the SQL insert operation
         /// should be applied to the object that was inserted into the table.
         /// (only for objects with a primary key).
         /// </summary>
         public bool ApplyGeneratedKey { get; set; } = true;
+
+        /// <summary>
+        /// Indicates whether the SELECT * should be expanded to individual column names
+        /// when working with Query&lt;T&gt;. When enabled, * is converted to the actual column names
+        /// of the table being queried, which helps avoid selecting unnecessary columns.
+        /// </summary>
+        public bool ExpandSelectAsterisk { get; set; } = true;
 
         /// <summary>
         /// If true, parameters will be used; if false, strings will be manually escaped.

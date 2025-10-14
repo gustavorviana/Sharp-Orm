@@ -1918,7 +1918,7 @@ namespace SharpOrm
 
         private void ApplyDefaultSelect()
         {
-            if (Info.Select.Length == 1 && Info.Select[0].IsAll())
+            if (Info.Config.ExpandSelectAsterisk && Info.Select.Length == 1 && Info.Select[0].IsAll())
                 Info.Select = TableInfo.Columns.Where(x => x.Translation != null).Select(c => new QueryColumn(c.Name)).ToArray();
         }
 

@@ -196,5 +196,43 @@ namespace QueryTest.SqlServer
 
             QueryAssert.Equal("SELECT * FROM [TestTable] GROUP BY [Col1], [Col2] HAVING [Col1] = 1", query.Grammar().Select());
         }
+
+        [Fact]
+        public void SelectWithExpandSelectAsteriskTrue()
+        {
+            Config.ExpandSelectAsterisk = true;
+            using var query = new Query<Address>();
+
+            QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address]", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithExpandSelectAsteriskFalse()
+        {
+            Config.ExpandSelectAsterisk = false;
+            using var query = new Query<Address>();
+
+            QueryAssert.Equal("SELECT * FROM [Address]", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithExpandSelectAsteriskFalseAndWhere()
+        {
+            Config.ExpandSelectAsterisk = false;
+            using var query = new Query<Address>();
+            query.Where("Id", 1);
+
+            QueryAssert.Equal("SELECT * FROM [Address] WHERE [Id] = 1", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithExpandSelectAsteriskFalseAndOrderBy()
+        {
+            Config.ExpandSelectAsterisk = false;
+            using var query = new Query<Address>();
+            query.OrderBy("Name");
+
+            QueryAssert.Equal("SELECT * FROM [Address] ORDER BY [Name] ASC", query.Grammar().Select());
+        }
     }
 }
