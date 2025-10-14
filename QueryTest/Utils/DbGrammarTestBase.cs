@@ -18,7 +18,7 @@ namespace QueryTest.Utils
 
         }
 
-        protected TableGrammar GetTableGrammar(TableSchema schema)
+        protected TableGrammar GetTableGrammar(ITableSchema schema)
         {
             return Config.NewTableGrammar(schema);
         }

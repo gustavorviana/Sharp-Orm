@@ -1,8 +1,11 @@
 ﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
+using SharpOrm.DataTranslation;
 using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
@@ -97,6 +100,40 @@ namespace QueryTest.Sqlite
             var expected = new SqlExpression("CREATE TABLE \"MyTable\"(\"Id\" INTEGER NOT NULL,\"Id2\" INTEGER NOT NULL,PRIMARY KEY (\"Id\",\"Id2\"))");
 
             Assert.Equal(expected, grammar.Create());
+        }
+
+        [Fact]
+        public void CreateTable_WithEnumColumn_EnumSerializationValue_ShouldUseInt()
+        {
+            // Arrange
+            Config.Translation.EnumSerialization = EnumSerialization.Value;
+            var builder = new TableBuilder<TestClass>(Config.Translation);
+            builder.SetName("TestTable");
+            var schema = builder.GetSchema();
+
+            // Act
+            var grammar = GetTableGrammar(schema);
+            var sql = grammar.Create();
+
+            // Assert
+            Assert.Contains("\"MyEnum\" INT", sql.ToString());
+        }
+
+        [Fact]
+        public void CreateTable_WithEnumColumn_EnumSerializationName_ShouldUseText()
+        {
+            // Arrange
+            Config.Translation.EnumSerialization = EnumSerialization.Name;
+            var builder = new TableBuilder<TestClass>(Config.Translation);
+            builder.SetName("TestTable");
+            var schema = builder.GetSchema();
+
+            // Act
+            var grammar = GetTableGrammar(schema);
+            var sql = grammar.Create();
+
+            // Assert
+            Assert.Contains("\"MyEnum\" TEXT", sql.ToString());
         }
     }
 }
