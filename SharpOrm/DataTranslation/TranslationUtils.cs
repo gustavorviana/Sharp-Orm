@@ -37,6 +37,25 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Gets a valid type for the expected type, handling nullable types.
+        /// </summary>
+        /// <param name="expectedType">The expected type.</param>
+        /// <returns>The valid type.</returns>
+        public static Type GetValidTypeFor(Type expectedType, out bool isNullable)
+        {
+            isNullable = false;
+            if (expectedType == null)
+                return null;
+
+            var underlyingType = Nullable.GetUnderlyingType(expectedType);
+            if (underlyingType == null)
+                return expectedType;
+
+            isNullable = true;
+            return underlyingType;
+        }
+
+        /// <summary>
         /// Checks if two types are considered similar for specific cases.
         /// </summary>
         /// <param name="type1">The first Type to compare.</param>

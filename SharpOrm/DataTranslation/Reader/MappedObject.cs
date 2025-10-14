@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
+using SharpOrm.DataTranslation.Reader.NameResolvers;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -118,7 +119,7 @@ namespace SharpOrm.DataTranslation.Reader
         private void InitActivator(IDataRecord record)
         {
             if (!IsCollection && _objectActivator == null)
-                _objectActivator = new ObjectActivator(Type, record, _registry);
+                _objectActivator = new ObjectActivator(Type, record, _registry, new DefaultNameResolver());
         }
 
         private void MapNodeChildrens(IDataRecord record, IColumnNode node)

@@ -1,5 +1,4 @@
-﻿using SharpOrm.Errors;
-using SharpOrm.Msg;
+﻿using SharpOrm.Msg;
 using SharpOrm.SqlMethods;
 using System;
 using System.Collections;

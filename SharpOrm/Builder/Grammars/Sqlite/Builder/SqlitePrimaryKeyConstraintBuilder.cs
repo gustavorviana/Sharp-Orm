@@ -1,6 +1,5 @@
 ﻿using SharpOrm.Builder.Grammars.Table.Constraints;
 using System;
-using System.Linq;
 using System.Text;
 
 namespace SharpOrm.Builder.Grammars.Sqlite.Builder

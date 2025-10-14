@@ -1,5 +1,5 @@
 ﻿using SharpOrm.DataTranslation.Reader.Activator;
-using SharpOrm.DataTranslation.Reader.NameLoader;
+using SharpOrm.DataTranslation.Reader.NameResolvers;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Concurrent;
@@ -27,15 +27,19 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="type">The _type of the object to be activated.</param>
         /// <param name="record">The data record used to retrieve the object's data.</param>
         /// <exception cref="NotSupportedException">Thrown if the _type is abstract or no suitable constructor is found.</exception>
-        public ObjectActivator(Type type, IDataRecord record, TranslationRegistry registry, string prefix = null)
+        public ObjectActivator(Type type, IDataRecord record, TranslationRegistry registry, INameResolver resolver)
         {
             if (type.IsAbstract) throw new NotSupportedException(Messages.ObjectActivator.AbstractType);
             if (type.IsInterface) throw new NotSupportedException(Messages.ObjectActivator.InterfaceType);
             if (type.IsEnum) throw new NotSupportedException(Messages.ObjectActivator.EnumType);
             if (type.IsArray) throw new NotSupportedException(Messages.ObjectActivator.ArrayType);
 
+            var names = new string[record.FieldCount];
+            for (int i = 0; i < names.Length; i++)
+                names[i] = record.GetName(i);
+
             _type = type;
-            _ctor = GetConstructor(record, registry, prefix);
+            _ctor = GetConstructor(record, registry, resolver);
 
             if (_ctor == null) _parameters = new HashSet<string>();
             else _parameters = new HashSet<string>(_ctor.GetParameterNames(), StringComparer.OrdinalIgnoreCase);
@@ -51,10 +55,10 @@ namespace SharpOrm.DataTranslation.Reader
         /// <param name="record">The data record used to match constructor parameters.</param>
         /// <returns>The matched constructor.</returns>
         /// <exception cref="InvalidOperationException">Thrown when no suitable constructor is found or when there is ambiguity.</exception>
-        private ActivatorConstructor GetConstructor(IDataRecord record, TranslationRegistry registry, string prefix)
+        private ActivatorConstructor GetConstructor(IDataRecord record, TranslationRegistry registry, INameResolver resolver)
         {
             var constructors = new List<ActivatorConstructor>();
-            var binder = new ParameterBinder(_type, registry, record, prefix);
+            var binder = new ParameterBinder(_type, registry, record, resolver);
 
             foreach (var ctor in GetCachedConstructors(_type))
                 if (ActivatorConstructor.TryParse(binder, ctor, out var activatorCtor))

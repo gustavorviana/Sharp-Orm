@@ -1,6 +1,4 @@
-﻿using SharpOrm.Builder;
-
-namespace SharpOrm.Connection
+﻿namespace SharpOrm.Connection
 {
     public interface IConnectionCreatorFactory
     {

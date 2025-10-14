@@ -1,6 +1,4 @@
-﻿using static SharpOrm.Builder.Tables.ColumnCollection;
-
-namespace SharpOrm.Builder.Tables
+﻿namespace SharpOrm.Builder.Tables
 {
     internal interface ITreeAdd<T>
     {

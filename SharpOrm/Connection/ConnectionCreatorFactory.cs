@@ -1,7 +1,5 @@
 ﻿using SharpOrm.Builder;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharpOrm.Connection
 {

@@ -1,5 +1,4 @@
 ﻿using SharpOrm.DataTranslation;
-using SharpOrm.ForeignKey;
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
@@ -7,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
-using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm.Builder
 {
@@ -47,7 +45,7 @@ namespace SharpOrm.Builder
 
         public bool DatabaseGenerated => _isDatabaseGenerated;
 
-        public string TypeName => throw new NotImplementedException();
+        public string TypeName => _typeName;
 
         internal ColumnMapInfo(MemberInfo member, TranslationRegistry registry)
         {

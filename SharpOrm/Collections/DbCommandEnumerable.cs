@@ -2,7 +2,6 @@
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
-using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;

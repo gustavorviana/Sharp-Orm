@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder.Tables
+﻿namespace SharpOrm.Builder.Tables
 {
     /// <summary>
     /// Defines a contract for building database indexes.

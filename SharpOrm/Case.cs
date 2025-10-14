@@ -3,7 +3,6 @@ using SharpOrm.Msg;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using static SharpOrm.Msg.Messages;
 
 namespace SharpOrm
 {

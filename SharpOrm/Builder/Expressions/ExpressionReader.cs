@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,19 +10,13 @@ namespace SharpOrm.Builder.Expressions
     /// Provides enumeration capabilities for traversing member expressions in a lambda expression tree.
     /// Supports both single member access and anonymous type projections with multiple members.
     /// </summary>
-    internal class ExpressionEnumerable : IEnumerable<MemberInfo>, IEnumerator<MemberInfo>
+    internal class ExpressionReader : IEnumerable<MemberInfo>
     {
-        private Queue<MemberExpression> _memberExpressions;
+        private Queue<MemberExpression> _memberExpressions = new Queue<MemberExpression>();
         private Stack<MemberInfo> _currentPath;
         private readonly bool _allowNativeType;
         private LambdaExpression _expression;
         private bool _initialized;
-        private bool _disposed;
-
-        /// <summary>
-        /// Gets the current element in the collection (non-generic implementation).
-        /// </summary>
-        object System.Collections.IEnumerator.Current => Current;
 
         /// <summary>
         /// Gets the current <see cref="MemberInfo"/> in the enumeration.
@@ -29,12 +24,12 @@ namespace SharpOrm.Builder.Expressions
         public MemberInfo Current { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExpressionEnumerable"/> class.
+        /// Initializes a new instance of the <see cref="ExpressionReader"/> class.
         /// </summary>
         /// <param name="expression">The lambda expression to enumerate.</param>
         /// <param name="allowNativeType">Indicates whether native types are allowed in member access.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="expression"/> is null.</exception>
-        public ExpressionEnumerable(LambdaExpression expression, bool allowNativeType)
+        public ExpressionReader(LambdaExpression expression, bool allowNativeType)
         {
             _expression = expression ?? throw new ArgumentNullException(nameof(expression));
             _allowNativeType = allowNativeType;
@@ -60,9 +55,6 @@ namespace SharpOrm.Builder.Expressions
         /// <exception cref="ObjectDisposedException">Thrown when the object has been disposed.</exception>
         public bool HasNext()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
             if (!_initialized)
                 Initialize();
 
@@ -90,9 +82,6 @@ namespace SharpOrm.Builder.Expressions
         /// <exception cref="ObjectDisposedException">Thrown when the object has been disposed.</exception>
         public bool HasNextPath()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
             if (!_initialized)
                 Initialize();
 
@@ -176,46 +165,7 @@ namespace SharpOrm.Builder.Expressions
             return expression;
         }
 
-        /// <summary>
-        /// Resets the enumerator to its initial state, clearing all internal collections.
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">Thrown when the object has been disposed.</exception>
-        public void Reset()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
-            _currentPath?.Clear();
-            _memberExpressions?.Clear();
-
-            Current = null;
-            _initialized = false;
-        }
-
-        /// <summary>
-        /// Releases all resources used by the <see cref="ExpressionEnumerable"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_disposed)
-                return;
-
-            _disposed = true;
-            _expression = null;
-            _currentPath?.Clear();
-            _memberExpressions?.Clear();
-        }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>An enumerator for the collection.</returns>
-        public IEnumerator<MemberInfo> GetEnumerator() => this;
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection (non-generic implementation).
-        /// </summary>
-        /// <returns>An enumerator for the collection.</returns>
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => this;
+        public IEnumerator<MemberInfo> GetEnumerator() => _currentPath.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _currentPath.GetEnumerator();
     }
 }

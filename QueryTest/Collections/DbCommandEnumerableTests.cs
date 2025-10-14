@@ -5,7 +5,6 @@ using NSubstitute;
 using SharpOrm;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
-using SharpOrm.Msg;
 using System.Data.Common;
 
 namespace QueryTest.Collections

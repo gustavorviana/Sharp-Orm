@@ -1,6 +1,4 @@
 ﻿using SharpOrm.Builder.Grammars.Table.Constraints;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace SharpOrm.Builder.Grammars.Mysql.Builder

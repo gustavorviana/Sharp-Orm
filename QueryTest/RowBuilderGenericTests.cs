@@ -1,8 +1,6 @@
-﻿using NSubstitute;
-using SharpOrm;
+﻿using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.DataTranslation;
-using SharpOrm.ForeignKey;
 
 namespace QueryTest
 {

@@ -295,6 +295,7 @@ namespace SharpOrm
         /// </summary>
         /// <param name="call">An expression representing the column to be added as a foreign key.</param>
         /// <returns>The query with the added foreign key.</returns>
+        [Obsolete("Use Include method instead. This method will be removed in version 4.x")]
         public Query<T> AddForeign(Expression<ColumnExpression<T>> call)
         {
             var members = ExpressionUtils<T>.GetMemberPath(call, false).Reverse();

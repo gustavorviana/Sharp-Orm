@@ -1,7 +1,4 @@
-﻿using SharpOrm.Msg;
-using System;
-
-namespace SharpOrm.Builder.Grammars.SqlServer
+﻿namespace SharpOrm.Builder.Grammars.SqlServer
 {
     internal class SqlServerGrammarBase : GrammarBase
     {

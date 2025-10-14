@@ -1,9 +1,7 @@
 ﻿using BaseTest.Utils;
-using NSubstitute;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
-using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using System.Data;
 using System.Data.Common;

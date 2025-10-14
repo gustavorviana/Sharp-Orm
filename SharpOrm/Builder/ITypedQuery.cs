@@ -1,5 +1,4 @@
 using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
 using System.Linq.Expressions;
 
 namespace SharpOrm.Builder

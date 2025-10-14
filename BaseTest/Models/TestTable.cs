@@ -7,7 +7,7 @@ namespace BaseTest.Models
 {
     [SoftDelete]
     [Table("TestTable")]
-    public class SoftDeleteTestTable: TestTable
+    public class SoftDeleteTestTable : TestTable
     {
 
     }

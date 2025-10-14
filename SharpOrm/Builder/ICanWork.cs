@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SharpOrm.Builder
+﻿namespace SharpOrm.Builder
 {
     /// <summary>
     /// Interface that defines the ability to determine if an implementation can work with a specific type.

@@ -38,16 +38,14 @@ namespace SharpOrm.Builder.Tables
             if (expression == null)
                 throw new ArgumentNullException(nameof(expression));
 
-            using (var enumerable = new ExpressionEnumerable(expression, true))
-            {
-                if (!enumerable.MoveNextPath())
-                    throw new InvalidOperationException("The expression must contain at least one column reference.");
+            var enumerable = new ExpressionReader(expression, true);
+            if (!enumerable.MoveNextPath())
+                throw new InvalidOperationException("The expression must contain at least one column reference.");
 
-                if (enumerable.HasNextPath())
-                    throw new InvalidOperationException("The expression must reference only a single column.");
+            if (enumerable.HasNextPath())
+                throw new InvalidOperationException("The expression must reference only a single column.");
 
-                return FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column;
-            }
+            return FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column;
         }
 
         public ColumnInfo[] FindAll<T>(Expression<ColumnExpression<T>> expression)
@@ -57,9 +55,9 @@ namespace SharpOrm.Builder.Tables
 
             var columns = new List<ColumnInfo>();
 
-            using (var enumerable = new ExpressionEnumerable(expression, true))
-                while (enumerable.MoveNextPath())
-                    columns.Add(FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column);
+            var enumerable = new ExpressionReader(expression, true);
+            while (enumerable.MoveNextPath())
+                columns.Add(FindInTree(enumerable.Select(x => x.Name).ToArray())?.Column);
 
             return columns.ToArray();
         }

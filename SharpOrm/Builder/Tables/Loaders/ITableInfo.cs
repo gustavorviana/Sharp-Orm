@@ -1,7 +1,5 @@
 ﻿using SharpOrm.DataTranslation;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharpOrm.Builder.Tables.Loaders
 {
@@ -11,7 +9,7 @@ namespace SharpOrm.Builder.Tables.Loaders
         TranslationRegistry Registry { get; }
         string Name { get; }
         SoftDeleteAttribute SoftDelete { get; }
-        HasTimestampAttribute Timestamp { get; } 
+        HasTimestampAttribute Timestamp { get; }
         IColumnLoader ColumnLoader { get; }
     }
 }

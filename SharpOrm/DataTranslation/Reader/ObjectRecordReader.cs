@@ -1,11 +1,9 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
-using SharpOrm.DataTranslation.Reader.NameLoader;
-using SharpOrm.ForeignKey;
+using SharpOrm.DataTranslation.Reader.NameResolvers;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Xml.Linq;
 
 namespace SharpOrm.DataTranslation.Reader
 {
@@ -39,13 +37,13 @@ namespace SharpOrm.DataTranslation.Reader
 
         internal class ReaderObject
         {
-            private readonly IReaderInfo _recordReader;
-            private readonly IColumnNameLoader _name;
-            private readonly List<ReaderObject> _nodes = new List<ReaderObject>();
             private readonly List<ReaderColumn> _columns = new List<ReaderColumn>();
-            private readonly ObjectActivator _activator;
-            private readonly ColumnInfo _parentColumn;
+            private readonly List<ReaderObject> _nodes = new List<ReaderObject>();
             private readonly ForeignKeyNodeBase _fkNode;
+            private readonly ObjectActivator _activator;
+            private readonly IReaderInfo _recordReader;
+            private readonly ColumnInfo _parentColumn;
+            private readonly INameResolver _resolver;
 
             private IDataRecord Record => _recordReader.Record;
 
@@ -55,12 +53,12 @@ namespace SharpOrm.DataTranslation.Reader
                 _parentColumn = node.Column;
             }
 
-            public ReaderObject(IReaderInfo recordReader, ForeignKeyNodeBase fkNode, Type type, IWithColumnNode nodes, IColumnNameLoader name = null)
+            public ReaderObject(IReaderInfo recordReader, ForeignKeyNodeBase fkNode, Type type, IWithColumnNode nodes, INameResolver resolver = null)
             {
-                _name = name ?? new WithoutColumnNameLoader();
+                _resolver = resolver ?? new DefaultNameResolver();
                 _fkNode = fkNode;
                 _recordReader = recordReader;
-                _activator = new ObjectActivator(type, Record, _recordReader.Registry, _name.Prefix);
+                _activator = new ObjectActivator(type, Record, _recordReader.Registry, _resolver);
 
                 foreach (var node in nodes.Nodes)
                     if (!_activator.ContainsParameter(node.Column.Name))
@@ -116,14 +114,13 @@ namespace SharpOrm.DataTranslation.Reader
                     return;
                 }
 
-                var prefix = _name?.Prefix ?? string.Empty;
                 var table = _recordReader.Registry.GetTable(node.Column.Type);
-                _columns.Add(new FkReaderColumn(_recordReader, colFkNode, node, table, prefix, index));
+                _columns.Add(new FkReaderColumn(_recordReader, colFkNode, node, table, _resolver.Get(), index));
             }
 
             private int IndexOf(string name)
             {
-                return Record.GetIndexOf(_name.Get(name));
+                return Record.GetIndexOf(_resolver.Get(name));
             }
 
             public object Read()
@@ -188,8 +185,8 @@ namespace SharpOrm.DataTranslation.Reader
 
             public FkReaderColumn(IReaderInfo recordReader, ForeignKeyNodeBase fkNode, IColumnNode node, TableInfo table, string prefix, int index) : base(node.Column, index)
             {
-                prefix += $"{node.Column.PropName}_";
-                _readerObject = new ReaderObject(recordReader, fkNode, node.Column.Type, table.Columns, new TableParentColumnNameLoader(prefix));
+                prefix += node.Column.PropName;
+                _readerObject = new ReaderObject(recordReader, fkNode, node.Column.Type, table.Columns, new ParentColumnNameResolver(prefix));
             }
 
             public override void Set(object owner, IDataRecord reader)

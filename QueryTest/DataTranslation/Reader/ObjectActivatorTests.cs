@@ -4,6 +4,7 @@ using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.DataTranslation;
 using SharpOrm.DataTranslation.Reader;
+using SharpOrm.DataTranslation.Reader.NameResolvers;
 using System.Data.Common;
 using System.Drawing;
 using Xunit.Abstractions;
@@ -191,17 +192,17 @@ namespace QueryTest.DataTranslation.Reader
 
             // First call - cache miss
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var activator1 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default);
+            var activator1 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default, new DefaultNameResolver());
             var time1 = sw.ElapsedTicks;
 
             // Second call - cache hit (should be faster)
             sw.Restart();
-            var activator2 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default);
+            var activator2 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default, new DefaultNameResolver());
             var time2 = sw.ElapsedTicks;
 
             // Third call - cache hit (should also be fast)
             sw.Restart();
-            var activator3 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default);
+            var activator3 = new ObjectActivator(typeof(Person), reader, TranslationRegistry.Default, new DefaultNameResolver());
             var time3 = sw.ElapsedTicks;
 
             // Verify all instances work correctly
@@ -222,7 +223,7 @@ namespace QueryTest.DataTranslation.Reader
 
         private static T CreateInstance<T>(DbDataReader reader)
         {
-            var activator = new ObjectActivator(typeof(T), reader, TranslationRegistry.Default);
+            var activator = new ObjectActivator(typeof(T), reader, TranslationRegistry.Default, new DefaultNameResolver());
             return (T)activator.CreateInstance();
         }
 

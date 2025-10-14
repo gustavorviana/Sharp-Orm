@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SharpOrm.Builder.Tables.Loaders
+﻿namespace SharpOrm.Builder.Tables.Loaders
 {
     /// <summary>
     /// Interface for objects that can load column information.

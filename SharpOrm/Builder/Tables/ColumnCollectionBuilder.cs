@@ -1,6 +1,4 @@
 ﻿using SharpOrm.Builder.Expressions;
-using SharpOrm.DataTranslation;
-using SharpOrm.ForeignKey;
 using System;
 using System.Collections.Generic;
 using System.Linq;

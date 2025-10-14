@@ -82,7 +82,7 @@ namespace SharpOrm.DataTranslation
             var table = Config.Translation.GetTable(ReflectionUtils.GetGenericArg(info.Type));
 
             var recordReader = new ObjectRecordReader(new Reader.ForeignInfo(this, ForeignKeyNode.Get(info.Node.ColumnInfo._column)),
-                table, 
+                table,
                 reader
             );
             recordReader.Token = _token;

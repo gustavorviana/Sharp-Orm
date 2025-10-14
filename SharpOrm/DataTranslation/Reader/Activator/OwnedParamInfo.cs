@@ -1,4 +1,4 @@
-﻿using SharpOrm.DataTranslation.Reader.NameLoader;
+﻿using SharpOrm.DataTranslation.Reader.NameResolvers;
 using System;
 using System.Data;
 using System.Reflection;
@@ -22,7 +22,7 @@ namespace SharpOrm.DataTranslation.Reader.Activator
             Name = parameter.Name;
 
             var table = registry.GetTable(type);
-            _reader = new ObjectRecordReader.ReaderObject(this, null, type, table.Columns, new WithPrefixColumnNameLoader(prefix));
+            _reader = new ObjectRecordReader.ReaderObject(this, null, type, table.Columns, new PrefixedColumnNameResolver(prefix));
         }
 
         public object GetValue()

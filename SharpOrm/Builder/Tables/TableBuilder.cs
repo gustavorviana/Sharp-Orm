@@ -14,6 +14,9 @@ namespace SharpOrm.Builder.Tables
         public TableBuilder(TranslationRegistry registry)
         {
             _tableInfo = registry.GetTable(typeof(T));
+
+            foreach (var column in _tableInfo.Columns)
+                AddColumn(column);
         }
 
         public ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression)
@@ -179,7 +182,12 @@ namespace SharpOrm.Builder.Tables
             if (_columns.TryGetValue(columnName, out ColumnBuilder builder))
                 return builder.HasType(type);
 
+            type = TranslationUtils.GetValidTypeFor(type, out bool isNullable);
             var column = new ColumnBuilder(this, new System.Data.DataColumn(columnName, type));
+
+            if (isNullable)
+                column.IsOptional();
+
             _columns.Add(columnName, column);
             return column;
         }

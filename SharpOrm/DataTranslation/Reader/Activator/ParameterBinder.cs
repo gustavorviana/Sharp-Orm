@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpOrm.DataTranslation.Reader.NameResolvers;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -16,14 +17,14 @@ namespace SharpOrm.DataTranslation.Reader.Activator
 
         public int Matches { get; private set; }
         public int OptionalCount { get; private set; }
-        private readonly string _prefix;
+        private readonly INameResolver _resolver;
 
-        public ParameterBinder(Type objType, TranslationRegistry registry, IDataRecord record, string prefix)
+        public ParameterBinder(Type objType, TranslationRegistry registry, IDataRecord record, INameResolver resolver)
         {
             _propertiesName = new HashSet<string>(objType.GetProperties(Flags).Select(x => x.Name), StringComparer.OrdinalIgnoreCase);
             _registry = registry;
+            _resolver = resolver;
             _record = record;
-            _prefix = prefix;
         }
 
         public bool FindAll(ConstructorInfo constructor)
@@ -64,7 +65,7 @@ namespace SharpOrm.DataTranslation.Reader.Activator
 
         private IParamInfo GetInfo(ParameterInfo parameter)
         {
-            var fullName = GetName(parameter);
+            var fullName = _resolver.Get(parameter.Name);
             if (parameter.ParameterType.GetCustomAttribute<OwnedAttribute>() != null)
             {
                 Matches++;
@@ -77,11 +78,6 @@ namespace SharpOrm.DataTranslation.Reader.Activator
 
             Matches++;
             return new ParamInfo(parameter, _record, columnIndex, translation);
-        }
-
-        private string GetName(ParameterInfo info)
-        {
-            return string.IsNullOrEmpty(_prefix) ? info.Name : $"{_prefix}_{info.Name}";
         }
     }
 }

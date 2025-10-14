@@ -1,7 +1,6 @@
 ﻿using BaseTest.Utils;
 using SharpOrm;
 using SharpOrm.Connection;
-using SharpOrm.Errors;
 using Xunit.Abstractions;
 
 namespace QueryTest

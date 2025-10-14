@@ -1,10 +1,8 @@
 using SharpOrm.Builder.Expressions;
-using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace SharpOrm.Builder
 {
