@@ -5,6 +5,7 @@ using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.SqlServer;
+using SharpOrm.Connection;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
@@ -200,8 +201,11 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SelectWithExpandSelectAsteriskTrue()
         {
-            Config.ExpandSelectAsterisk = true;
-            using var query = new Query<Address>();
+            var config = Config.Clone();
+            config.ExpandSelectAsterisk = true;
+            using var connection = NewConnectionManager(config);
+
+            using var query = new Query<Address>(connection);
 
             QueryAssert.Equal("SELECT [Id], [Name], [Street], [City] FROM [Address]", query.Grammar().Select());
         }
@@ -209,8 +213,11 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SelectWithExpandSelectAsteriskFalse()
         {
-            Config.ExpandSelectAsterisk = false;
-            using var query = new Query<Address>();
+            var config = Config.Clone();
+            config.ExpandSelectAsterisk = false;
+            using var connection = NewConnectionManager(config);
+
+            using var query = new Query<Address>(connection);
 
             QueryAssert.Equal("SELECT * FROM [Address]", query.Grammar().Select());
         }
@@ -218,8 +225,11 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SelectWithExpandSelectAsteriskFalseAndWhere()
         {
-            Config.ExpandSelectAsterisk = false;
-            using var query = new Query<Address>();
+            var config = Config.Clone();
+            config.ExpandSelectAsterisk = false;
+            using var connection = NewConnectionManager(config);
+
+            using var query = new Query<Address>(connection);
             query.Where("Id", 1);
 
             QueryAssert.Equal("SELECT * FROM [Address] WHERE [Id] = 1", query.Grammar().Select());
@@ -228,8 +238,11 @@ namespace QueryTest.SqlServer
         [Fact]
         public void SelectWithExpandSelectAsteriskFalseAndOrderBy()
         {
-            Config.ExpandSelectAsterisk = false;
-            using var query = new Query<Address>();
+            var config = Config.Clone();
+            config.ExpandSelectAsterisk = false;
+            using var connection = NewConnectionManager(config);
+
+            using var query = new Query<Address>(connection);
             query.OrderBy("Name");
 
             QueryAssert.Equal("SELECT * FROM [Address] ORDER BY [Name] ASC", query.Grammar().Select());
