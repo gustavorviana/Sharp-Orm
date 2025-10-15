@@ -15,7 +15,7 @@ namespace SharpOrm
     public class Column : ISqlExpressibleAlias, IEquatable<Column>, IEquatable<string>
     {
         #region Fields\Properties
-        internal readonly SqlExpression _expression;
+        protected readonly SqlExpression _expression;
         private readonly ISqlExpressible _expressible;
         /// <summary>
         /// Gets the name of the column.
