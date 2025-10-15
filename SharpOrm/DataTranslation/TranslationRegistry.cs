@@ -19,6 +19,10 @@ namespace SharpOrm.DataTranslation
         private readonly ConcurrentDictionary<Type, TableInfo> _mappedTables = new ConcurrentDictionary<Type, TableInfo>();
         private readonly ConcurrentDictionary<Type, ISqlTranslation> _cachedTranslations = new ConcurrentDictionary<Type, ISqlTranslation>();
 
+        /// <summary>
+        /// Gets or sets the default translation registry instance used throughout the application.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when attempting to set a null value.</exception>
         public static TranslationRegistry Default
         {
             get => _default;
@@ -147,6 +151,11 @@ namespace SharpOrm.DataTranslation
         }
 
 
+        /// <summary>
+        /// Determines whether the specified type represents a date or time type.
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns><c>true</c> if the type is a date or time type; otherwise, <c>false</c>.</returns>
         public bool IsDateOrTime(Type type)
         {
             return _native.dateTranslation.CanWork(type);
@@ -266,6 +275,17 @@ namespace SharpOrm.DataTranslation
         }
 
         /// <summary>
+        /// Retrieves the name of the table associated with the specified generic type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <returns>The table name, or <c>null</c> if no table is found.</returns>
+        public string GetTableName<T>()
+        {
+            return GetTable(typeof(T))?.Name;
+        }
+
+
+        /// <summary>
         /// Retrieves the name of the table.
         /// </summary>
         /// <param name="type">The type that should be used to retrieve the name.</param>
@@ -273,6 +293,16 @@ namespace SharpOrm.DataTranslation
         public string GetTableName(Type type)
         {
             return GetTable(type)?.Name;
+        }
+
+        /// <summary>
+        /// Retrieves the table information for the specified generic type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <returns>The <see cref="TableInfo"/> instance representing the table.</returns>
+        public TableInfo GetTable<T>()
+        {
+            return GetTable(typeof(T));
         }
 
         /// <summary>
@@ -293,11 +323,21 @@ namespace SharpOrm.DataTranslation
 
         #region IEquatable
 
+        /// <summary>
+        /// Determines whether the specified object is equal to the current <see cref="TranslationRegistry"/>.
+        /// </summary>
+        /// <param name="obj">The object to compare with the current instance.</param>
+        /// <returns><c>true</c> if the specified object is equal to the current instance; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
             return Equals(obj as TranslationRegistry);
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="TranslationRegistry"/> is equal to the current instance.
+        /// </summary>
+        /// <param name="other">The <see cref="TranslationRegistry"/> to compare with the current instance.</param>
+        /// <returns><c>true</c> if the specified instance is equal to the current instance; otherwise, <c>false</c>.</returns>
         public bool Equals(TranslationRegistry other)
         {
             if (other is null)
@@ -317,6 +357,10 @@ namespace SharpOrm.DataTranslation
                    EmptyStringToNull == other.EmptyStringToNull;
         }
 
+        /// <summary>
+        /// Serves as the default hash function.
+        /// </summary>
+        /// <returns>A hash code for the current object.</returns>
         public override int GetHashCode()
         {
             int hashCode = 836003443;
@@ -345,11 +389,23 @@ namespace SharpOrm.DataTranslation
             }
         }
 
+        /// <summary>
+        /// Determines whether two <see cref="TranslationRegistry"/> instances are equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns><c>true</c> if the instances are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(TranslationRegistry left, TranslationRegistry right)
         {
             return EqualityComparer<TranslationRegistry>.Default.Equals(left, right);
         }
 
+        /// <summary>
+        /// Determines whether two <see cref="TranslationRegistry"/> instances are not equal.
+        /// </summary>
+        /// <param name="left">The first instance to compare.</param>
+        /// <param name="right">The second instance to compare.</param>
+        /// <returns><c>true</c> if the instances are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(TranslationRegistry left, TranslationRegistry right)
         {
             return !(left == right);
@@ -357,8 +413,16 @@ namespace SharpOrm.DataTranslation
 
         #endregion
 
+        /// <summary>
+        /// Creates a new object that is a copy of the current instance.
+        /// </summary>
+        /// <returns>A new object that is a copy of this instance.</returns>
         object ICloneable.Clone() => Clone();
 
+        /// <summary>
+        /// Creates a deep copy of the current <see cref="TranslationRegistry"/> instance.
+        /// </summary>
+        /// <returns>A new <see cref="TranslationRegistry"/> instance with the same configuration.</returns>
         public TranslationRegistry Clone()
         {
             var clone = new TranslationRegistry();

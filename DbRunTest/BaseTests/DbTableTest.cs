@@ -3,6 +3,7 @@ using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
 using System.Data;
 using System.Data.Common;
@@ -130,6 +131,29 @@ namespace DbRunTest.BaseTests
 
             var schema = new TableSchema("MyTestTable", cols) { Temporary = true };
             using var table = DbTable.Create(schema, Manager);
+        }
+
+        [Fact]
+        public void GetQueryReturnsQueryWithSelectedColumns()
+        {
+            // Arrange
+            var builder = new TableBuilder(true);
+            builder.SetName("TestTable");
+            builder.AddColumn("Id", typeof(int));
+            builder.AddColumn("Name", typeof(string));
+            builder.HasKey("Id");
+
+            using var table = DbTable.Create(builder.GetSchema(), Manager);
+
+            // Act
+            var query = table.GetQuery();
+
+            // Assert
+            var selectedColumns = query.Info.Select;
+            Assert.NotNull(selectedColumns);
+            Assert.Equal(2, selectedColumns.Length);
+            Assert.Contains("Id", selectedColumns.Select(x => x.Name));
+            Assert.Contains("Name", selectedColumns.Select(x => x.Name));
         }
 
         protected static TableSchema GetSchema()

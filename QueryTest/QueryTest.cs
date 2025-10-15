@@ -4,6 +4,7 @@ using BaseTest.Utils;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
 using System.Linq.Expressions;
 using Xunit.Abstractions;
@@ -426,6 +427,27 @@ namespace QueryTest
             using var fallback = RegisterFallback();
             using var query = new Query<BasicTable>();
             query.Upsert(model, x => x.Id, x => x.Name, x => x.Name);
+
+            Assert.Equal(EXPECTED, fallback.ToString());
+        }
+
+        [Fact]
+        public void Insert_DbTable_ShouldInsertRowsFromTable()
+        {
+            const string EXPECTED = "INSERT INTO [DestinationTable] ([Id], [Name]) SELECT [Id], [Name] FROM [SourceTable]";
+
+            // Create source table using TableBuilder
+            var builder = new TableBuilder(false);
+            builder.SetName("SourceTable");
+            builder.AddColumn("Id", typeof(int));
+            builder.AddColumn("Name", typeof(string));
+
+            using var sourceTable = DbTable.Create(builder.GetSchema(), GetManager());
+            using var fallback = RegisterFallback(x => new MockDataReader().SetRecordsAffected(2));
+
+            // Create destination query and insert from source table
+            using var destQuery = new Query("DestinationTable");
+            destQuery.Insert(sourceTable);
 
             Assert.Equal(EXPECTED, fallback.ToString());
         }

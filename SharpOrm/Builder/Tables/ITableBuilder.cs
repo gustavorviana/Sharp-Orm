@@ -51,8 +51,9 @@ namespace SharpOrm.Builder.Tables
         /// </summary>
         /// <param name="table">The name of the source table.</param>
         /// <param name="columnExpression">Optional expression to select specific columns from the entity.</param>
+        /// <param name="exceptColumns">When true, selects all columns except those in the expression; when false, selects only the columns in the expression.</param>
         /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
-        ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression);
+        ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression, bool exceptColumns = false);
 
         /// <summary>
         /// Includes only the specified columns in the table schema, excluding all others.
@@ -121,9 +122,24 @@ namespace SharpOrm.Builder.Tables
         /// Adds a new column to the table schema.
         /// </summary>
         /// <param name="columnName">The name of the column to add.</param>
+        /// <param name="type">The .NET type of the column.</param>
         /// <returns>An <see cref="IColumnBuilder"/> instance for further column configuration.</returns>
         IColumnBuilder AddColumn(string columnName, Type type);
 
+        /// <summary>
+        /// Adds a new column to the table schema using a generic type parameter.
+        /// </summary>
+        /// <typeparam name="T">The .NET type of the column.</typeparam>
+        /// <param name="columnName">The name of the column to add.</param>
+        /// <returns>An <see cref="IColumnBuilder"/> instance for further column configuration.</returns>
+        IColumnBuilder AddColumn<T>(string columnName);
+
+        /// <summary>
+        /// Builds and returns the table schema.
+        /// Once built, the schema becomes immutable and the builder cannot be modified further.
+        /// </summary>
+        /// <returns>An <see cref="ITableSchema"/> instance representing the complete table definition.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the table name is null or empty.</exception>
         ITableSchema GetSchema();
     }
 }

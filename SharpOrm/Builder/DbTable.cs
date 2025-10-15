@@ -4,6 +4,7 @@ using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
 using SharpOrm.Msg;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace SharpOrm.Builder
     public class DbTable : IDisposable
     {
         #region Fields/Properties
+        internal readonly string[] _columnNames;
         private readonly TableGrammar _grammar;
         private bool _disposed;
 
@@ -42,6 +44,7 @@ namespace SharpOrm.Builder
         /// <param name="queryBase">Query used to create the temporary table.</param>
         /// <param name="manager">Connection manager.</param>
         /// <returns></returns>
+        [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
         public static DbTable Create(string name, bool temporary, Query queryBase, ConnectionManager manager = null)
         {
             return Create(new TableSchema(name, queryBase) { Temporary = temporary }, manager ?? queryBase.Manager);
@@ -56,6 +59,7 @@ namespace SharpOrm.Builder
         /// <param name="basedTable">Name of the table to be used in the creation.</param>
         /// <param name="manager">Connection manager.</param>
         /// <returns></returns>
+        [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
         public static DbTable Create(string name, bool temporary, Column[] columns, string basedTable, ConnectionManager manager = null)
         {
             var query = Query.ReadOnly(basedTable, manager?.Config).Select(columns);
@@ -70,11 +74,13 @@ namespace SharpOrm.Builder
         /// <param name="columns">Columns that the table should contain.</param>
         /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
+        [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
         public static DbTable Create(string name, bool temporary, TableColumnCollection columns, ConnectionManager manager = null)
         {
             return Create(new TableSchema(name, columns) { Temporary = temporary }, manager);
         }
 
+        [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
         public static DbTable Create<T>(bool temporary, TranslationRegistry registry = null, ConnectionManager manager = null)
         {
             if (registry == null) registry = TranslationRegistry.Default;
@@ -133,6 +139,10 @@ namespace SharpOrm.Builder
             Manager = manager;
             _grammar = grammar;
             _isLocalManager = isLocalManager;
+
+            var schema = _grammar.Schema;
+            _columnNames = schema.Metadata.GetOrDefault<string[]>(Metadatas.BasedColumns) ??
+                schema.Columns?.Select(x => x.ColumnName)?.ToArray();
         }
 
         #endregion
@@ -143,7 +153,9 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query GetQuery()
         {
-            return new Query(DbName, Manager);
+            var query = new Query(DbName, Manager);
+            ConfigureColumns(query);
+            return query;
         }
 
         /// <summary>
@@ -153,7 +165,37 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public Query<T> GetQuery<T>()
         {
-            return new Query<T>(DbName, Manager);
+            var query = new Query<T>(DbName, Manager);
+            ConfigureColumns(query);
+            return query;
+        }
+
+        private void ConfigureColumns(Query query)
+        {
+            if (_columnNames?.Length > 0)
+                query.Select(_columnNames);
+        }
+
+        /// <summary>
+        /// Inserts multiple values into the table in bulk.
+        /// </summary>
+        /// <typeparam name="T">The type of the values to insert.</typeparam>
+        /// <param name="values">The array of values to insert.</param>
+        public void BulkInsert<T>(ICollection<T> values)
+        {
+            using (var query = GetQuery<T>())
+                query.BulkInsert(values, _columnNames);
+        }
+
+        /// <summary>
+        /// Inserts a single value into the table.
+        /// </summary>
+        /// <typeparam name="T">The type of the value to insert.</typeparam>
+        /// <param name="value">The value to insert.</param>
+        public void Insert<T>(T value)
+        {
+            using (var query = GetQuery<T>())
+                query.Insert(x => x.Add(value, _columnNames));
         }
 
         /// <summary>

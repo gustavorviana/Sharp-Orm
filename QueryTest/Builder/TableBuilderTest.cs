@@ -552,5 +552,85 @@ namespace QueryTest.Builder
             Assert.False(schema.Temporary);
             Assert.Equal(tableName, schema.Name);
         }
+
+        [Fact]
+        public void TableBuilderGeneric_ShouldGetTableNameFromRegistry()
+        {
+            // Arrange
+            var registry = Config.Translation;
+            var builder = new TableBuilder<Customer>(registry, false);
+
+            // Act
+            var schema = builder.GetSchema();
+
+            // Assert
+            Assert.Equal("Customers", schema.Name);
+        }
+
+        [Fact]
+        public void GetSchema_WithNullOrEmptyName_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var builder = new TableBuilder(false);
+            builder.AddColumn("Id", typeof(int));
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => builder.GetSchema());
+            Assert.Contains("table name cannot be null or empty", exception.Message);
+        }
+
+        [Fact]
+        public void GetSchema_WithEmptyName_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var builder = new TableBuilder(false);
+            builder.SetName(string.Empty);
+            builder.AddColumn("Id", typeof(int));
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => builder.GetSchema());
+            Assert.Contains("table name cannot be null or empty", exception.Message);
+        }
+
+        [Fact]
+        public void AddColumnGeneric_ShouldAddColumnWithCorrectType()
+        {
+            // Arrange
+            var builder = new TableBuilder(false);
+            builder.SetName("TestTable");
+
+            // Act
+            builder.AddColumn<string>("Name");
+            builder.AddColumn<int>("Age");
+            builder.AddColumn<decimal>("Salary");
+            var schema = builder.GetSchema();
+
+            // Assert
+            Assert.Equal(3, schema.Columns.Count);
+            Assert.Equal("Name", schema.Columns[0].ColumnName);
+            Assert.Equal(typeof(string), schema.Columns[0].DataType);
+            Assert.Equal("Age", schema.Columns[1].ColumnName);
+            Assert.Equal(typeof(int), schema.Columns[1].DataType);
+            Assert.Equal("Salary", schema.Columns[2].ColumnName);
+            Assert.Equal(typeof(decimal), schema.Columns[2].DataType);
+        }
+
+        [Fact]
+        public void AddColumnGeneric_WithNullableType_ShouldCreateOptionalColumn()
+        {
+            // Arrange
+            var builder = new TableBuilder(false);
+            builder.SetName("TestTable");
+
+            // Act
+            builder.AddColumn<int?>("NullableAge");
+            var schema = builder.GetSchema();
+
+            // Assert
+            Assert.Single(schema.Columns);
+            Assert.Equal("NullableAge", schema.Columns[0].ColumnName);
+            Assert.Equal(typeof(int), schema.Columns[0].DataType);
+            Assert.True(schema.Columns[0].AllowDBNull);
+        }
     }
 }

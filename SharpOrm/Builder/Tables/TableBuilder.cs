@@ -22,7 +22,8 @@ namespace SharpOrm.Builder.Tables
         /// <param name="temporary">Indicates whether the table is temporary. If true, a GUID prefix will be added to the table name.</param>
         public TableBuilder(TranslationRegistry registry, bool temporary) : base(temporary)
         {
-            _tableInfo = registry.GetTable(typeof(T));
+            _tableInfo = registry.GetTable<T>();
+            SetName(_tableInfo.Name);
 
             foreach (var column in _tableInfo.Columns)
                 AddColumn(column);
@@ -33,12 +34,18 @@ namespace SharpOrm.Builder.Tables
         /// </summary>
         /// <param name="table">The name of the source table.</param>
         /// <param name="columnExpression">Optional expression to select specific columns from the entity.</param>
+        /// <param name="exceptColumns">When true, selects all columns except those in the expression; when false, selects only the columns in the expression.</param>
         /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
-        public ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression)
+        public ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression, bool exceptColumns = false)
         {
             var query = Query<T>.ReadOnly(table);
             if (columnExpression != null)
-                query.Select(columnExpression);
+            {
+                var columns = GetColumnNames(columnExpression, exceptColumns);
+                Metadata.Add(Metadatas.BasedColumns, columns);
+                query.Where(new SqlExpression("1!=1"));
+                query.Select(columns);
+            }
 
             base.SetBasedQuery(query);
             return this;
@@ -119,10 +126,15 @@ namespace SharpOrm.Builder.Tables
         /// Extracts column names from a strongly-typed expression.
         /// </summary>
         /// <param name="expression">The expression containing property selections.</param>
+        /// <param name="except">When true, returns all columns except those in the expression; when false, returns only the columns in the expression.</param>
         /// <returns>An array of column names.</returns>
-        private string[] GetColumnNames(Expression<ColumnExpression<T>> expression)
+        private string[] GetColumnNames(Expression<ColumnExpression<T>> expression, bool except = false)
         {
-            return _tableInfo.Columns.FindAll(expression).Select(x => x.Name).ToArray();
+            var columns = _tableInfo.Columns.FindAll(expression).Select(x => x.Name).ToArray();
+            if (!except)
+                return columns;
+
+            return _tableInfo.Columns.Where(x => !columns.Contains(x.Name)).Select(x => x.Name).ToArray();
         }
     }
 
@@ -189,8 +201,12 @@ namespace SharpOrm.Builder.Tables
         public ITableBuilder SetBasedTable(string table, params string[] columns)
         {
             var query = Query.ReadOnly(table);
-            if (columns.Length > 0)
+            if (columns?.Length > 0)
+            {
+                query.Where(new SqlExpression("1!=1"));
+                Metadata.Add(Metadatas.BasedColumns, columns);
                 query.Select(columns);
+            }
 
             return SetBasedQuery(query);
         }
@@ -203,6 +219,7 @@ namespace SharpOrm.Builder.Tables
         public ITableBuilder SetBasedQuery(QueryBase query)
         {
             Metadata.Add(Metadatas.BasedQuery, query);
+            _columns.Clear();
             return this;
         }
 
@@ -353,6 +370,18 @@ namespace SharpOrm.Builder.Tables
         }
 
         /// <summary>
+        /// Adds a new column to the table using a generic type parameter.
+        /// </summary>
+        /// <typeparam name="T">The .NET type of the column.</typeparam>
+        /// <param name="columnName">The name of the column.</param>
+        /// <returns>An <see cref="IColumnBuilder"/> for further column configuration.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the schema has already been built, a base query has been defined, or the column has been ignored.</exception>
+        public IColumnBuilder AddColumn<T>(string columnName)
+        {
+            return AddColumn(columnName, typeof(T));
+        }
+
+        /// <summary>
         /// Excludes a column from the table schema.
         /// </summary>
         /// <param name="columnName">The name of the column to ignore.</param>
@@ -409,12 +438,16 @@ namespace SharpOrm.Builder.Tables
         /// Once built, the schema becomes immutable and the builder cannot be modified further.
         /// </summary>
         /// <returns>An <see cref="ITableSchema"/> instance representing the complete table definition.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the table name is null or empty.</exception>
         public virtual ITableSchema GetSchema()
         {
             if (_schema != null)
                 return _schema;
 
-            var tableName = GetTableName();
+            if (string.IsNullOrEmpty(_name))
+                throw new InvalidOperationException("The table name cannot be null or empty. Use SetName to define a table name.");
+
+            var tableName = Temporary ? Guid.NewGuid().ToString("N") + "_" + _name : _name;
 
             return _schema = new TableSchema(tableName,
                 Temporary,
@@ -423,16 +456,6 @@ namespace SharpOrm.Builder.Tables
                 _columns.Select(x => x.Value._column).ToArray(),
                 _metadata.MakeReadonly()
             );
-        }
-
-        /// <summary>
-        /// Generates the final table name.
-        /// For temporary tables, prepends a GUID prefix to ensure uniqueness.
-        /// </summary>
-        /// <returns>The final table name with GUID prefix if temporary, otherwise the original name.</returns>
-        private string GetTableName()
-        {
-            return Temporary ? Guid.NewGuid().ToString("N") + "_" + _name : _name;
         }
 
         /// <summary>

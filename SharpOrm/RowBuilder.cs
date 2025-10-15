@@ -66,6 +66,17 @@ namespace SharpOrm
         /// Adds values from an object instance for only the specified columns
         /// </summary>
         /// <param name="value">The object instance to read values from</param>
+        /// <param name="columns">Columns to include</param>
+        /// <returns>The current RowBuilder instance for method chaining</returns>
+        public RowBuilder<TObject> Add(TObject value, params string[] columns)
+        {
+            return (RowBuilder<TObject>)base.Add(_objectReader.Only(columns).ReadCells(value).ToArray());
+        }
+
+        /// <summary>
+        /// Adds values from an object instance for only the specified columns
+        /// </summary>
+        /// <param name="value">The object instance to read values from</param>
         /// <param name="columns">Lambda expression specifying which columns to include</param>
         /// <returns>The current RowBuilder instance for method chaining</returns>
         public RowBuilder<TObject> Add(TObject value, Expression<ColumnExpression<TObject>> columns)

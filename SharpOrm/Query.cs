@@ -284,6 +284,12 @@ namespace SharpOrm
 
         #region AddForeign
 
+        /// <summary>
+        /// Includes related entities in the query based on the specified navigation property.
+        /// </summary>
+        /// <typeparam name="TProperty">The type of the property to include.</typeparam>
+        /// <param name="expression">An expression representing the navigation property to include.</param>
+        /// <returns>An includable object that allows further configuration of the included entities.</returns>
         public IIncludable<T, TProperty> Include<TProperty>(Expression<Func<T, TProperty>> expression)
         {
             var members = ExpressionUtils<T>.GetMemberPath(expression, false).Reverse();
@@ -751,9 +757,9 @@ namespace SharpOrm
         /// </summary>
         /// <param name="objs">The objects to insert.</param>
         /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
-        public Task<int> BulkInsertAsync(CancellationToken token, params T[] objs)
+        public Task<int> BulkInsertAsync(CancellationToken token, string[] columns, params T[] objs)
         {
-            return BulkInsertAsync((IEnumerable<T>)objs, token);
+            return BulkInsertAsync((IEnumerable<T>)objs, columns, token);
         }
 
         /// <summary>
@@ -772,7 +778,21 @@ namespace SharpOrm
         /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
         public Task<int> BulkInsertAsync(IEnumerable<T> objs, CancellationToken token)
         {
+            return BulkInsertAsync(objs, DotnetUtils.EmptyArray<string>(), token);
+        }
+
+
+        /// <summary>
+        /// Asynchronously inserts one or more rows into the table.
+        /// </summary>
+        /// <param name="objs">The objects to insert.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of inserted rows.</returns>
+        public Task<int> BulkInsertAsync(IEnumerable<T> objs, string[] columns, CancellationToken token)
+        {
             var reader = GetObjectReader(ReadMode.ValidOnly, true);
+            if (columns?.Length > 0)
+                reader.Only(columns);
+
             return base.BulkInsertAsync(objs.Select(x => reader.ReadRow(x)), token);
         }
 
@@ -780,9 +800,12 @@ namespace SharpOrm
         /// Inserts one or more rows into the table.
         /// </summary>
         ///<param name="objs"></param>
-        public int BulkInsert(IEnumerable<T> objs)
+        public int BulkInsert(IEnumerable<T> objs, params string[] columns)
         {
             var reader = GetObjectReader(ReadMode.ValidOnly, true);
+            if (columns?.Length > 0)
+                reader.Only(columns);
+
             return base.BulkInsert(objs.Select(x => reader.ReadRow(x)));
         }
 
@@ -1184,6 +1207,7 @@ namespace SharpOrm
         /// <param name="column2">The second column expression to compare.</param>
         /// <param name="alias">The alias for the table.</param>
         /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
+        /// <param name="grammarOptions">Optional grammar-specific options for the join operation.</param>
         /// <returns>The current query instance.</returns>
         public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
         {
@@ -1209,6 +1233,14 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Performs an INNER JOIN between this query and another table using column names.
+        /// </summary>
+        /// <typeparam name="R">The type of the related table.</typeparam>
+        /// <param name="alias">The alias for the table.</param>
+        /// <param name="column1">The name of the first column to compare.</param>
+        /// <param name="column2">The name of the second column to compare.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Join<R>(string alias, string column1, string column2)
         {
             var dbName = DbName.Of<R>(alias, Config.Translation);
@@ -1377,9 +1409,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds a WHERE clause that checks if the column contains the value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to filter.</param>
-        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="columnExp">An expression representing the column on which the "contains" condition is applied.</param>
         /// <param name="value">The value to search for within the specified column.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereContains(GetColumn(columnExp), value);
@@ -1389,9 +1421,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds a WHERE clause that checks if the column starts with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereStartsWith(GetColumn(columnExp), value);
@@ -1401,9 +1433,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds a WHERE clause that checks if the column ends with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereEndsWith(GetColumn(columnExp), value);
@@ -1411,11 +1443,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause that checks if the column not contains the value.
+        /// Adds a WHERE clause that checks if the column does not contain the value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to filter.</param>
-        /// <param name="column">The column on which the "contains" condition is applied.</param>
+        /// <param name="columnExp">An expression representing the column on which the "not contains" condition is applied.</param>
         /// <param name="value">The value to search for within the specified column.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereNotContains(GetColumn(columnExp), value);
@@ -1423,11 +1455,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause that checks if the column not starts with the specified value.
+        /// Adds a WHERE clause that checks if the column does not start with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "starts with" comparison on.</param>
-        /// <param name="value">The value that the column should start with.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "not starts with" comparison on.</param>
+        /// <param name="value">The value that the column should not start with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereNotStartsWith(GetColumn(columnExp), value);
@@ -1435,11 +1467,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds a WHERE clause that checks if the column not ends with the specified value.
+        /// Adds a WHERE clause that checks if the column does not end with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "ends with" comparison on.</param>
-        /// <param name="value">The value that the column should end with.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "not ends with" comparison on.</param>
+        /// <param name="value">The value that the column should not end with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.WhereNotEndsWith(GetColumn(columnExp), value);
@@ -1569,9 +1601,10 @@ namespace SharpOrm
         /// <summary>
         /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
         /// </summary>
-        /// <typeparam name="T">The type of items to compare.</typeparam>
-        /// <param name="columnExp">The column expression to compare.</param>
+        /// <typeparam name="K">The type of items to compare.</typeparam>
+        /// <param name="columnExp">An expression representing the column to compare.</param>
         /// <param name="items">The array of items to check against the column value.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> WhereNotIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
         {
             return (Query<T>)base.Where(GetColumn(columnExp), "NOT IN", items);
@@ -1600,6 +1633,11 @@ namespace SharpOrm
             return (Query<T>)Where(GetColumn(columnExp), "IS NOT", null);
         }
 
+        /// <summary>
+        /// Adds a nested WHERE clause using a callback function to build complex conditions.
+        /// </summary>
+        /// <param name="callback">A callback function that receives a query instance to build nested conditions.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Where(QueryCallback<T> callback)
         {
             return WriteCallback(callback, AND);
@@ -1610,9 +1648,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds an OR WHERE clause that checks if the column contains the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "contains" comparison on.</param>
         /// <param name="value">The value to search for within the specified column.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereContains(GetColumn(columnExp), value);
@@ -1622,9 +1660,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds an OR WHERE clause that checks if the column starts with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "starts with" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "starts with" comparison on.</param>
         /// <param name="value">The value that the column should start with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereStartsWith(GetColumn(columnExp), value);
@@ -1634,9 +1672,9 @@ namespace SharpOrm
         /// <summary>
         /// Adds an OR WHERE clause that checks if the column ends with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "ends with" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "ends with" comparison on.</param>
         /// <param name="value">The value that the column should end with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereEndsWith(GetColumn(columnExp), value);
@@ -1644,11 +1682,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause that checks if the column not contains the specified value.
+        /// Adds an OR WHERE clause that checks if the column does not contain the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "contains" comparison on.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "not contains" comparison on.</param>
         /// <param name="value">The value to search for within the specified column.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotContains(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereNotContains(GetColumn(columnExp), value);
@@ -1656,11 +1694,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause that checks if the column not starts with the specified value.
+        /// Adds an OR WHERE clause that checks if the column does not start with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "starts with" comparison on.</param>
-        /// <param name="value">The value that the column should start with.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "not starts with" comparison on.</param>
+        /// <param name="value">The value that the column should not start with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotStartsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereNotStartsWith(GetColumn(columnExp), value);
@@ -1668,11 +1706,11 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an OR WHERE clause that checks if the column not ends with the specified value.
+        /// Adds an OR WHERE clause that checks if the column does not end with the specified value.
         /// </summary>
-        /// <param name="qBase">The QueryBase object to apply the filter on.</param>
-        /// <param name="column">The column to perform the "ends with" comparison on.</param>
-        /// <param name="value">The value that the column should end with.</param>
+        /// <param name="columnExp">An expression representing the column to perform the "not ends with" comparison on.</param>
+        /// <param name="value">The value that the column should not end with.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhereNotEndsWith(Expression<ColumnExpression<T>> columnExp, string value)
         {
             this.OrWhereNotEndsWith(GetColumn(columnExp), value);
@@ -1822,6 +1860,11 @@ namespace SharpOrm
         }
 
 
+        /// <summary>
+        /// Adds a nested OR WHERE clause using a callback function to build complex conditions.
+        /// </summary>
+        /// <param name="callback">A callback function that receives a query instance to build nested conditions.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrWhere(QueryCallback<T> callback)
         {
             return WriteCallback(callback, OR);
@@ -2343,6 +2386,7 @@ namespace SharpOrm
         /// <param name="toCheckColumns">The columns to check for existing records.</param>
         /// <param name="updateColumns">The columns to update if a record exists.</param>
         /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(DbName sourceName, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, CancellationToken token)
         {
@@ -2389,6 +2433,7 @@ namespace SharpOrm
         /// <param name="row">The row to insert or update.</param>
         /// <param name="toCheckColumns">The columns to check for existing records.</param>
         /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task UpsertAsync(Row row, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
@@ -2427,6 +2472,7 @@ namespace SharpOrm
         /// <param name="rows">The rows to insert or update.</param>
         /// <param name="toCheckColumns">The columns to check for existing records.</param>
         /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns = null, CancellationToken token = default)
         {
@@ -2447,6 +2493,7 @@ namespace SharpOrm
         /// <param name="updateColumns">The columns to update if a record exists. If null, all columns will be updated.</param>
         /// <param name="insertColumns">The columns to insert if a record does not exist.</param>
         /// <param name="excludeInserColumns">If true, the columns specified in <paramref name="insertColumns"/> will be excluded from the insert operation; otherwise, only those columns will be included.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpsertAsync(Row[] rows, string[] toCheckColumns, string[] updateColumns, string[] insertColumns, bool excludeInserColumns = false, CancellationToken token = default)
         {
@@ -2561,8 +2608,8 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns></returns>
+        /// <param name="cells">The cells containing the column values to update.</param>
+        /// <returns>The number of affected rows.</returns>
         public int Update(params Cell[] cells)
         {
             ValidateReadonly();
@@ -2575,8 +2622,9 @@ namespace SharpOrm
         /// <summary>
         /// Asynchronously updates rows on table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns></returns>
+        /// <param name="cells">The cells containing the column values to update.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> UpdateAsync(IEnumerable<Cell> cells, CancellationToken token)
         {
             ValidateReadonly();
@@ -2590,8 +2638,8 @@ namespace SharpOrm
         /// <summary>
         /// Update rows on table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns></returns>
+        /// <param name="cells">The cells containing the column values to update.</param>
+        /// <returns>The number of affected rows.</returns>
         public int Update(IEnumerable<Cell> cells)
         {
             CheckIsSafeOperation();
@@ -2603,8 +2651,9 @@ namespace SharpOrm
         /// <summary>
         /// Asynchronously inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row.</returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <param name="cells">The cells containing the column values to insert.</param>
+        /// <returns>A task representing the asynchronous operation, with the ID of the inserted row.</returns>
         public async Task<int> InsertAsync(CancellationToken token, params Cell[] cells)
         {
             ValidateReadonly();
@@ -2618,8 +2667,8 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row.</returns>
+        /// <param name="cells">The cells containing the column values to insert.</param>
+        /// <returns>The ID of the inserted row.</returns>
         public int Insert(params Cell[] cells)
         {
             if (cells.Length == 0)
@@ -2631,8 +2680,9 @@ namespace SharpOrm
         /// <summary>
         /// Asynchronously inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row.</returns>
+        /// <param name="cells">The cells containing the column values to insert.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the ID of the inserted row.</returns>
         public async Task<int> InsertAsync(IEnumerable<Cell> cells, CancellationToken token)
         {
             ValidateReadonly();
@@ -2643,8 +2693,8 @@ namespace SharpOrm
         /// <summary>
         /// Inserts one row into the table.
         /// </summary>
-        /// <param name="cells"></param>
-        /// <returns>Id of row.</returns>
+        /// <param name="cells">The cells containing the column values to insert.</param>
+        /// <returns>The ID of the inserted row.</returns>
         public int Insert(IEnumerable<Cell> cells)
         {
             return TranslationUtils.TryNumeric(Insert(cells, true));
@@ -2654,6 +2704,7 @@ namespace SharpOrm
         /// Asynchronously inserts a new record into the database table using the specified query and column names.
         /// </summary>
         /// <param name="queryBase">The base query to use for the insert operation.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <param name="columnNames">The names of the columns to insert values into.</param>
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
         public async Task<int> InsertAsync(QueryBase queryBase, CancellationToken token, params string[] columnNames)
@@ -2663,9 +2714,34 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Inserts rows into the table using the result of another table (select command).
+        /// </summary>
+        /// <param name="table">The DbTable instance containing the query and column names to insert.</param>
+        /// <returns>The number of affected rows.</returns>
+        public int Insert(DbTable table)
+        {
+            using (var query = table.GetQuery())
+                return Insert(query, table._columnNames);
+        }
+
+        /// <summary>
+        /// Asynchronously inserts rows into the table using the result of another table (select command).
+        /// </summary>
+        /// <param name="table">The DbTable instance containing the query and column names to insert.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
+        public async Task<int> InsertAsync(DbTable table, CancellationToken token)
+        {
+            using (var query = table.GetQuery())
+                return await InsertAsync(query, token, table._columnNames);
+        }
+
+        /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="columnNames"></param>
+        /// <param name="queryBase">The base query to use for the insert operation.</param>
+        /// <param name="columnNames">The names of the columns to insert values into.</param>
+        /// <returns>The number of affected rows.</returns>
         public int Insert(QueryBase queryBase, params string[] columnNames)
         {
             using (var cmd = GetCommand().SetExpression(GetGrammar().InsertQuery(queryBase, columnNames)))
@@ -2675,7 +2751,9 @@ namespace SharpOrm
         /// <summary>
         /// Insert a lot of values ​​using the result of a table (select command);
         /// </summary>
-        /// <param name="columnNames"></param>
+        /// <param name="expression">The SQL expression to use for the insert operation.</param>
+        /// <param name="columnNames">The names of the columns to insert values into.</param>
+        /// <returns>The number of affected rows.</returns>
         public int Insert(SqlExpression expression, params string[] columnNames)
         {
             if (columnNames == null || columnNames.Length == 0)
@@ -2842,30 +2920,32 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Asynchronously counts the amount of results available. 
+        /// Asynchronously counts the amount of results available.
         /// </summary>
-        /// <param name="column">Column to count.</param>
-        /// <returns></returns>
+        /// <param name="columnName">The name of the column to count.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the count of rows.</returns>
         public async Task<long> CountAsync(string columnName, CancellationToken token)
         {
             return await CountAsync(new Column(columnName), token);
         }
 
         /// <summary>
-        /// Counts the amount of results available. 
+        /// Counts the amount of results available.
         /// </summary>
-        /// <param name="column">Column to count.</param>
-        /// <returns></returns>
+        /// <param name="columnName">The name of the column to count.</param>
+        /// <returns>The count of rows.</returns>
         public long Count(string columnName)
         {
             return Count(new Column(columnName));
         }
 
         /// <summary>
-        /// Asynchronously counts the amount of results available. 
+        /// Asynchronously counts the amount of results available.
         /// </summary>
-        /// <param name="column">Column to count.</param>
-        /// <returns></returns>
+        /// <param name="column">The column to count.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the count of rows.</returns>
         public async Task<long> CountAsync(Column column, CancellationToken token)
         {
             using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Count(column)))
@@ -2873,10 +2953,10 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Counts the amount of results available. 
+        /// Counts the amount of results available.
         /// </summary>
-        /// <param name="column">Column to count.</param>
-        /// <returns></returns>
+        /// <param name="column">The column to count.</param>
+        /// <returns>The count of rows.</returns>
         public long Count(Column column)
         {
             using (var cmd = GetCommand().SetExpression(GetGrammar().Count(column)))
@@ -2884,9 +2964,10 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Asynchronously returns all rows of the table
+        /// Asynchronously returns all rows of the table.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of rows.</returns>
         public Task<Row[]> ReadRowsAsync(CancellationToken token)
         {
             return TaskUtils.Async(() =>
@@ -2908,7 +2989,8 @@ namespace SharpOrm
         /// <summary>
         /// Asynchronously returns the first row of the table (if the table returns no value, null will be returned).
         /// </summary>
-        /// <returns></returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the first row or null.</returns>
         public Task<Row> FirstRowAsync(CancellationToken token)
         {
             return TaskUtils.Async(() =>
@@ -2952,7 +3034,8 @@ namespace SharpOrm
         /// Asynchronously retrieves an collection of the specified type.
         /// </summary>
         /// <typeparam name="T">The type of the elements in the collection.</typeparam>
-        /// <returns>An collection of the specified type.</returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of the specified type.</returns>
         public Task<T[]> GetAsync<T>(CancellationToken token)
         {
             return TaskUtils.Async(() =>
@@ -3001,6 +3084,8 @@ namespace SharpOrm
         /// Asynchronously executes the query and returns the first column of all rows in the result. All other keys are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with an array of values from the first column.</returns>
         public async Task<T[]> ExecuteArrayScalarAsync<T>(CancellationToken token)
         {
             Token.ThrowIfCancellationRequested();
@@ -3026,7 +3111,8 @@ namespace SharpOrm
         /// Asynchronously executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
         /// <typeparam name="T">Type to which the returned value should be converted.</typeparam>
-        /// <returns>The first column of the first row in the result set.</returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the first column of the first row in the result set.</returns>
         public async Task<T> ExecuteScalarAsync<T>(CancellationToken token)
         {
             using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Select()))
@@ -3047,7 +3133,8 @@ namespace SharpOrm
         /// <summary>
         /// Asynchronously executes the query and returns the first column of the first row in the result set returned by the query. All other keys and rows are ignored.
         /// </summary>
-        /// <returns>The first column of the first row in the result set.</returns>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the first column of the first row in the result set.</returns>
         public async Task<object> ExecuteScalarAsync(CancellationToken token)
         {
             using (var cmd = GetCommand().AddCancellationToken(token).SetExpression(GetGrammar().Select()))
@@ -3152,10 +3239,10 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
+        /// Adds an OR EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
         /// </summary>
-        /// <param name="query">The table name to be checked for the existence of a record.</param>
-        ///<param name="callback">Callback to build condition</param>
+        /// <param name="table">The table name to be checked for the existence of a record.</param>
+        /// <param name="callback">A callback function to build the condition for the EXISTS clause.</param>
         /// <returns>A Query instance for method chaining.</returns>
         public Query OrExists(string table, QueryCallback callback)
         {

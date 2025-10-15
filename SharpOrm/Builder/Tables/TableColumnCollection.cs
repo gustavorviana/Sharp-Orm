@@ -13,7 +13,6 @@ namespace SharpOrm.Builder
     /// <summary>
     /// Represents a collection of data columns for a table schema.
     /// </summary>
-
     [Obsolete("Use TableBuilder instead. This feature will be removed in version 4.0.")]
     public class TableColumnCollection : ICollection<DataColumn>
     {
