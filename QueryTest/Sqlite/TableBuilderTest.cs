@@ -107,7 +107,7 @@ namespace QueryTest.Sqlite
         {
             // Arrange
             Config.Translation.EnumSerialization = EnumSerialization.Value;
-            var builder = new TableBuilder<TestClass>(Config.Translation);
+            var builder = new TableBuilder<TestClass>(Config.Translation, false);
             builder.SetName("TestTable");
             var schema = builder.GetSchema();
 
@@ -124,7 +124,7 @@ namespace QueryTest.Sqlite
         {
             // Arrange
             Config.Translation.EnumSerialization = EnumSerialization.Name;
-            var builder = new TableBuilder<TestClass>(Config.Translation);
+            var builder = new TableBuilder<TestClass>(Config.Translation, false);
             builder.SetName("TestTable");
             var schema = builder.GetSchema();
 

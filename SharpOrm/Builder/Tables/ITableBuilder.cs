@@ -4,14 +4,62 @@ using System.Linq.Expressions;
 
 namespace SharpOrm.Builder.Tables
 {
+    /// <summary>
+    /// Provides a strongly-typed fluent API for building database table schemas with compile-time type safety.
+    /// </summary>
+    /// <typeparam name="T">The entity type that represents the table structure.</typeparam>
     public interface ITableBuilder<T> : ITableBuilder
     {
-        IColumnBuilder AddColumn(Expression<ColumnExpression<T>> expression);
+        /// <summary>
+        /// Adds a column to the table using a strongly-typed expression.
+        /// </summary>
+        /// <param name="expression">An expression that selects one or more properties from the entity type.</param>
+        /// <returns>An <see cref="IColumnBuilder"/> for further column configuration.</returns>
+        IColumnBuilder Column(Expression<ColumnExpression<T>> expression);
+
+        /// <summary>
+        /// Adds an index on one or more columns using a strongly-typed expression.
+        /// </summary>
+        /// <param name="expression">An expression that selects one or more properties to index.</param>
+        /// <returns>An <see cref="IIndexBuilder"/> for further index configuration.</returns>
         IIndexBuilder HasIndex(Expression<ColumnExpression<T>> expression);
+
+        /// <summary>
+        /// Adds a primary key constraint using a strongly-typed expression.
+        /// </summary>
+        /// <param name="expression">An expression that selects one or more properties to form the primary key.</param>
+        /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
         ITableBuilder<T> HasKey(Expression<ColumnExpression<T>> expression);
+
+        /// <summary>
+        /// Adds a unique constraint using a strongly-typed expression.
+        /// </summary>
+        /// <param name="expression">An expression that selects one or more properties to form the unique constraint.</param>
+        /// <param name="constraintName">Optional custom name for the constraint.</param>
+        /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
         ITableBuilder<T> HasUnique(Expression<ColumnExpression<T>> expression, string constraintName = null);
+
+        /// <summary>
+        /// Excludes specific columns from the table schema using a strongly-typed expression.
+        /// </summary>
+        /// <param name="expression">An expression that selects one or more properties to ignore.</param>
+        /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
         ITableBuilder<T> Ignore(Expression<ColumnExpression<T>> expression);
+
+        /// <summary>
+        /// Creates a table based on an existing table with optional column selection using expressions.
+        /// </summary>
+        /// <param name="table">The name of the source table.</param>
+        /// <param name="columnExpression">Optional expression to select specific columns from the entity.</param>
+        /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
         ITableBuilder<T> SetBasedTable(string table, Expression<ColumnExpression<T>> columnExpression);
+
+        /// <summary>
+        /// Includes only the specified columns in the table schema, excluding all others.
+        /// </summary>
+        /// <param name="expression">An expression that selects the properties to include.</param>
+        /// <returns>The current <see cref="ITableBuilder{T}"/> instance for method chaining.</returns>
+        ITableBuilder<T> Only(Expression<ColumnExpression<T>> expression);
     }
 
     public interface ITableBuilder
