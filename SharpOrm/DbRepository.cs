@@ -117,7 +117,7 @@ namespace SharpOrm
         /// <param name="transaction">The DbTransaction to set.</param>
         public void SetTransaction(DbTransaction transaction)
         {
-            SetTransaction(transaction is null ? null : new ConnectionManager(_options.ConnectionCreator.Config, transaction));
+            SetTransaction(transaction is null ? null : new ConnectionManager(Creator.Config, transaction));
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace SharpOrm
             if (Transaction != null)
                 throw new DatabaseException(Messages.TransactionOpen);
 
-            Transaction = new ConnectionManager(_options.ConnectionCreator, true) { CommandTimeout = _options.CommandTimeout, _autoCommit = _options.AutoCommit };
+            Transaction = new ConnectionManager(Creator, true) { CommandTimeout = _options.CommandTimeout, _autoCommit = _options.AutoCommit };
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace SharpOrm
                 var conn = Transaction.Connection;
                 Transaction.Dispose();
 
-                _options.ConnectionCreator.SafeDisposeConnection(conn);
+                Creator.SafeDisposeConnection(conn);
             }
 
             Transaction = null;
@@ -310,7 +310,7 @@ namespace SharpOrm
         /// <returns>A QueryBuilder for building custom queries.</returns>
         protected virtual QueryBuilder Constructor(string table = "", string alias = "")
         {
-            return new QueryBuilder(_options.ConnectionCreator.Config, new DbName(table, alias, false));
+            return new QueryBuilder(Creator.Config, new DbName(table, alias, false));
         }
 
         /// <summary>
@@ -550,7 +550,7 @@ namespace SharpOrm
             cmd.Disposed -= this.OnCommandDisposed;
 
             if (cmd.Transaction is null)
-                try { _options.ConnectionCreator.SafeDisposeConnection(cmd.Connection); } catch { }
+                try { Creator.SafeDisposeConnection(cmd.Connection); } catch { }
         }
 
         /// <summary>
@@ -586,7 +586,7 @@ namespace SharpOrm
 
         private ConnectionManager GetNewManager()
         {
-            var connection = new ConnectionManager(_options.ConnectionCreator)
+            var connection = new ConnectionManager(Creator)
             {
                 CommandTimeout = _options.CommandTimeout
             };
@@ -594,7 +594,7 @@ namespace SharpOrm
             if (OnError != null)
                 connection.OnError += OnError;
 
-            if (_options.ConnectionCreator is SingleConnectionCreator && _connections.Count > 0)
+            if (Creator is SingleConnectionCreator && _connections.Count > 0)
                 connection = connection.Clone(true, true);
 
             _connections.Add(connection);
