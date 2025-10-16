@@ -128,5 +128,10 @@ namespace SharpOrm.Builder.Grammars.Sqlite
             string table = Schema.Temporary ? "sqlite_temp_master" : "sqlite_master";
             return new SqlExpression($"SELECT COUNT(*) FROM {table} WHERE type='table' AND name = \"{Name.Name}\";");
         }
+
+        public override IColumnInspector CreateColumnInspector()
+        {
+            return new SqliteColumnInspector(this);
+        }
     }
 }

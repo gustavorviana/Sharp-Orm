@@ -30,7 +30,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             ColumnTypes.Add(new ColumnType(typeof(byte), "TINYINT"));
             ColumnTypes.Add(new ColumnType(typeof(float), "REAL"));
             ColumnTypes.Add(new ColumnType(typeof(double), "FLOAT"));
-            ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
+            ColumnTypes.Add(new DecimalColumnType());
             ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
             ColumnTypes.Add(new ColumnType(typeof(char), "NCHAR(1)"));
             ColumnTypes.Add(new DateColumnType("DATETIMEOFFSET", "DATETIME", "DATE"));
@@ -130,6 +130,11 @@ namespace SharpOrm.Builder.Grammars.SqlServer
                 return new string[] { null, Schema.Name };
 
             return Schema.Name.Split('.');
+        }
+
+        public override IColumnInspector CreateColumnInspector()
+        {
+            return new SqlServerColumnInspector(this);
         }
     }
 }

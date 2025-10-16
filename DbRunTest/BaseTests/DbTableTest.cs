@@ -137,8 +137,7 @@ namespace DbRunTest.BaseTests
         public void GetQueryReturnsQueryWithSelectedColumns()
         {
             // Arrange
-            var builder = new TableBuilder(true);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", true);
             builder.AddColumn("Id", typeof(int));
             builder.AddColumn("Name", typeof(string));
             builder.HasKey("Id");

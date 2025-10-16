@@ -183,5 +183,14 @@ namespace SharpOrm.Builder.Grammars
         {
             return queryInfo.Config.ApplyNomenclature(name);
         }
+
+        /// <summary>
+        /// Creates a column inspector for retrieving column metadata from the database.
+        /// </summary>
+        /// <returns>An instance of <see cref="IColumnInspector"/> for this database type, or null if not supported.</returns>
+        public virtual IColumnInspector CreateColumnInspector()
+        {
+            return null;
+        }
     }
 }

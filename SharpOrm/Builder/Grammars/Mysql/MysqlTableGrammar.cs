@@ -31,7 +31,7 @@ namespace SharpOrm.Builder.Grammars.Mysql
             ColumnTypes.Add(new ColumnType(typeof(byte), "TINYINT"));
             ColumnTypes.Add(new ColumnType(typeof(float), "FLOAT"));
             ColumnTypes.Add(new ColumnType(typeof(double), "DOUBLE"));
-            ColumnTypes.Add(new ColumnType(typeof(decimal), "DECIMAL"));
+            ColumnTypes.Add(new DecimalColumnType());
             ColumnTypes.Add(new ColumnType(typeof(bool), "BIT"));
             ColumnTypes.Add(new ColumnType(typeof(char), "CHAR(1)"));
             ColumnTypes.Add(new DateColumnType("VARCHAR(35)", "DATETIME", "DATE"));
@@ -120,6 +120,11 @@ namespace SharpOrm.Builder.Grammars.Mysql
             string nullable = column.AllowDBNull ? "DEFAULT NULL" : "NOT NULL";
 
             return string.Concat(columnName, " ", dataType, " ", nullable, autoIncrement);
+        }
+
+        public override IColumnInspector CreateColumnInspector()
+        {
+            return new MysqlColumnInspector(this);
         }
     }
 }

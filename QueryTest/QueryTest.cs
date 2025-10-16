@@ -437,8 +437,7 @@ namespace QueryTest
             const string EXPECTED = "INSERT INTO [DestinationTable] ([Id], [Name]) SELECT [Id], [Name] FROM [SourceTable]";
 
             // Create source table using TableBuilder
-            var builder = new TableBuilder(false);
-            builder.SetName("SourceTable");
+            var builder = new TableBuilder("SourceTable", false);
             builder.AddColumn("Id", typeof(int));
             builder.AddColumn("Name", typeof(string));
 

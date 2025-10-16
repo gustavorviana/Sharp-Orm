@@ -1,4 +1,5 @@
 ﻿using SharpOrm.Builder.Grammars;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Errors;
@@ -17,7 +18,7 @@ namespace SharpOrm.Builder
     public class DbTable : IDisposable
     {
         #region Fields/Properties
-        internal readonly string[] _columnNames;
+        private readonly string[] _columnNames;
         private readonly TableGrammar _grammar;
         private bool _disposed;
 
@@ -96,16 +97,14 @@ namespace SharpOrm.Builder
         /// Creates a table based on a schema.
         /// </summary>
         /// <param name="schema">Schema to be used for creating the table.</param>
-        /// <param name="manager">Managed connection used to create the table.</param>
         /// <returns></returns>
-        public static DbTable Create(ITableSchema schema, ConnectionManager manager = null)
+        [Obsolete("Use Create(ITableSchema, ConnectionManager) instead. This feature will be removed in version 4.0.")]
+        public static DbTable Create(ITableSchema schema)
         {
             if (schema.Columns.Count == 0 && !schema.Metadata.HasKey(Metadatas.BasedQuery))
                 throw new InvalidOperationException("The schema does not contain any columns. At least one column is required.");
 
-            bool isLocalManager = manager == null;
-            if (manager is null)
-                manager = new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
+            var manager = new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
 
             ValidateConnectionManager(schema, manager);
 
@@ -115,7 +114,32 @@ namespace SharpOrm.Builder
             using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
                 cmd.ExecuteNonQuery();
 
-            return new DbTable(grammar, manager, isLocalManager);
+            return new DbTable(grammar, manager, true);
+        }
+
+        /// <summary>
+        /// Creates a table based on a schema.
+        /// </summary>
+        /// <param name="schema">Schema to be used for creating the table.</param>
+        /// <param name="manager">Managed connection used to create the table.</param>
+        /// <returns></returns>
+        public static DbTable Create(ITableSchema schema, ConnectionManager manager)
+        {
+            if (manager is null)
+                throw new ArgumentNullException(nameof(manager));
+
+            if (schema.Columns.Count == 0 && !schema.Metadata.HasKey(Metadatas.BasedQuery))
+                throw new InvalidOperationException("The schema does not contain any columns. At least one column is required.");
+
+            ValidateConnectionManager(schema, manager);
+
+            var clone = schema.Clone();
+
+            var grammar = manager.Config.NewTableGrammar(clone);
+            using (var cmd = manager.CreateCommand().SetExpression(grammar.Create()))
+                cmd.ExecuteNonQuery();
+
+            return new DbTable(grammar, manager, false);
         }
 
         /// <summary>
@@ -124,6 +148,7 @@ namespace SharpOrm.Builder
         /// <param name="name"></param>
         /// <param name="manager"></param>
         /// <exception cref="DatabaseException"></exception>
+        [Obsolete("Use OpenIfExists instead. This feature will be removed in version 4.0.")]
         public DbTable(string name, ConnectionManager manager = null)
         {
             _isLocalManager = manager == null;
@@ -132,6 +157,26 @@ namespace SharpOrm.Builder
 
             if (!Exists())
                 throw new DatabaseException(string.Format(Messages.Table.TableNotFound, _grammar.Name));
+        }
+
+        /// <summary>
+        /// Opens an existing non temporary table if it exists.
+        /// </summary>
+        /// <param name="name">Table name.</param>
+        /// <param name="manager">Connection manager.</param>
+        /// <returns>DbTable instance if the table exists, null otherwise.</returns>
+        public static DbTable OpenIfExists(string name, ConnectionManager manager)
+        {
+            if (manager == null)
+                throw new ArgumentNullException(nameof(manager));
+
+            var schema = new TableBuilder(name, temporary: false).GetSchema();
+            var grammar = manager.Config.NewTableGrammar(schema);
+
+            if (!Exists(grammar, manager))
+                return null;
+
+            return new DbTable(grammar, manager, false);
         }
 
         private DbTable(TableGrammar grammar, ConnectionManager manager, bool isLocalManager = false)
@@ -253,12 +298,51 @@ namespace SharpOrm.Builder
             Manager.ExecuteNonQuery(_grammar.Truncate());
         }
 
+        internal string[] GetColumnNames()
+        {
+            if (_columnNames?.Length > 0)
+                return _columnNames;
+
+            return GetColumns().Select(x => x.ColumnName).ToArray();
+        }
+
+        /// <summary>
+        /// Retrieves metadata information about all columns in this table.
+        /// </summary>
+        /// <returns>An array of column metadata.</returns>
+        /// <exception cref="NotSupportedException">Thrown when the database does not support column inspection.</exception>
+        public DbColumnInfo[] GetColumns()
+        {
+            var inspector = _grammar.CreateColumnInspector();
+            if (inspector == null)
+                throw new NotSupportedException($"Column inspection is not supported for {_grammar.Config.GetType().Name}.");
+
+            using (var reader = Manager.ExecuteReader(inspector.GetColumnsQuery(), Manager.Config.Translation))
+                return inspector.MapToColumnInfo(reader);
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves metadata information about all columns in this table.
+        /// </summary>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation with column metadata.</returns>
+        /// <exception cref="NotSupportedException">Thrown when the database does not support column inspection.</exception>
+        public async Task<DbColumnInfo[]> GetColumnsAsync(CancellationToken token = default)
+        {
+            var inspector = _grammar.CreateColumnInspector();
+            if (inspector == null)
+                throw new NotSupportedException($"Column inspection is not supported for {_grammar.Config.GetType().Name}.");
+
+            using (var reader = await Manager.ExecuteReaderAsync(inspector.GetColumnsQuery(), Manager.Config.Translation, token))
+                return inspector.MapToColumnInfo(reader);
+        }
+
         public override string ToString()
         {
             if (_grammar.Schema.Temporary)
-                return $"Temporary Table {this.DbName}";
+                return $"Temporary Table {DbName}";
 
-            return $"Table {this.DbName}";
+            return $"Table {DbName}";
         }
 
         #region static's
@@ -269,6 +353,7 @@ namespace SharpOrm.Builder
         /// <param name="manager"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("This feature will be removed in version 4.0.")]
         public static bool Exists(string name, bool isTemp = false, ConnectionManager manager = null)
         {
             if (manager is null)
@@ -289,6 +374,7 @@ namespace SharpOrm.Builder
         /// <param name="token"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
+        [Obsolete("This feature will be removed in version 4.0.")]
         public static async Task<bool> ExistsAsync(string name, bool isTemp = false, ConnectionManager manager = null, CancellationToken token = default)
         {
             if (manager is null)
@@ -312,8 +398,10 @@ namespace SharpOrm.Builder
 
         private static void ValidateConnectionManager(ITableSchema schema, ConnectionManager manager)
         {
-            if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen && manager.Management != ConnectionManagement.CloseOnManagerDispose)
-                throw new InvalidOperationException(Messages.Table.InvalidEmpTableConnection);
+            if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen &&
+                manager.Management != ConnectionManagement.CloseOnManagerDispose &&
+                manager.Management != ConnectionManagement.DisposeOnManagerDispose)
+                throw new InvalidOperationException(Messages.Table.InvalidTempTableConnection);
         }
         #endregion
 

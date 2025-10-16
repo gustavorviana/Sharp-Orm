@@ -175,8 +175,19 @@ namespace SharpOrm.Builder.Tables
         /// <summary>
         /// Initializes a new instance of the <see cref="TableBuilder"/> class.
         /// </summary>
+        /// <param name="table">The name of the table.</param>
         /// <param name="temporary">Indicates whether the table is temporary. If true, a GUID prefix will be added to the table name.</param>
-        public TableBuilder(bool temporary)
+        public TableBuilder(string table, bool temporary)
+        {
+            Temporary = temporary;
+            _name = table;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TableBuilder"/> class.
+        /// </summary>
+        /// <param name="temporary">Indicates whether the table is temporary. If true, a GUID prefix will be added to the table name.</param>
+        protected TableBuilder(bool temporary)
         {
             Temporary = temporary;
         }

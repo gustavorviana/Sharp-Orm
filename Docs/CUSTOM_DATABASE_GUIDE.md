@@ -67,11 +67,11 @@ The system consists of **four main layers**:
                         ↓
 ┌────────────────────────────────────────────────────────────┐
 │              Specific Grammars                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │SelectGrammar │  │InsertGrammar │  │UpdateGrammar │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
-│  • Implement construction logic                           │
-│  • Use QueryBuilder to assemble SQL                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │SelectGrammar │  │InsertGrammar │  │UpdateGrammar │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  • Implement construction logic                            │
+│  • Use QueryBuilder to assemble SQL                        │
 └───────────────────────┬────────────────────────────────────┘
                         │ Builder.Add()
                         ↓

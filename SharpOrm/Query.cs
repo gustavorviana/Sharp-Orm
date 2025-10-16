@@ -2721,7 +2721,7 @@ namespace SharpOrm
         public int Insert(DbTable table)
         {
             using (var query = table.GetQuery())
-                return Insert(query, table._columnNames);
+                return Insert(query, table.GetColumnNames());
         }
 
         /// <summary>
@@ -2733,7 +2733,7 @@ namespace SharpOrm
         public async Task<int> InsertAsync(DbTable table, CancellationToken token)
         {
             using (var query = table.GetQuery())
-                return await InsertAsync(query, token, table._columnNames);
+                return await InsertAsync(query, token, table.GetColumnNames());
         }
 
         /// <summary>

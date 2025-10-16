@@ -119,6 +119,32 @@ namespace SharpOrm.Connection
         }
 
         /// <summary>
+        /// Executes a SQL query against the database connection and returns the result as a <see cref="RowDataReader"/>.
+        /// </summary>
+        /// <param name="manager">The <see cref="ConnectionManager"/> that manages the database connection.</param>
+        /// <param name="expression">The <see cref="SqlExpression"/> representing the SQL query to be executed.</param>
+        /// <param name="registry">The <see cref="TranslationRegistry"/> used for mapping query results.</param>
+        /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A <see cref="RowDataReader"/> containing the query results.</returns>
+        public static RowDataReader ExecuteReader(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry, CancellationToken token = default)
+        {
+            return new RowDataReader(manager.CreateCommand(expression).SetCancellationToken(token).ExecuteReader());
+        }
+
+        /// <summary>
+        /// Executes a SQL query against the database connection asynchronously and returns the result as a <see cref="RowDataReader"/>.
+        /// </summary>
+        /// <param name="manager">The <see cref="ConnectionManager"/> that manages the database connection.</param>
+        /// <param name="expression">The <see cref="SqlExpression"/> representing the SQL query to be executed.</param>
+        /// <param name="registry">The <see cref="TranslationRegistry"/> used for mapping query results.</param>
+        /// <param name="token">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation, with a <see cref="RowDataReader"/> containing the query results.</returns>
+        public static async Task<RowDataReader> ExecuteReaderAsync(this ConnectionManager manager, SqlExpression expression, TranslationRegistry registry, CancellationToken token = default)
+        {
+            return new RowDataReader(await manager.CreateCommand(expression).SetCancellationToken(token).ExecuteReaderAsync());
+        }
+
+        /// <summary>
         /// Executes a SQL statement against a connection object asynchronously and returns the result as an array of type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type of the elements in the returned array.</typeparam>

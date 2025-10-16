@@ -15,7 +15,7 @@ namespace SharpOrm.Msg
 
             public const string TableNotFound = "The table '{0}' was not found.";
 
-            public static readonly string InvalidEmpTableConnection = $"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\".";
+            public static readonly string InvalidTempTableConnection = $"To use a temporary table, it is necessary to configure the connection to \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.LeaveOpen)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.CloseOnManagerDispose)}\" or \"{nameof(ConnectionManagement)}.{nameof(ConnectionManagement.DisposeOnManagerDispose)}\".";
 
             public const string GetUnmappedColumn = "It is not possible to retrieve the column \"{0}\", it was defined as unmapped.";
 

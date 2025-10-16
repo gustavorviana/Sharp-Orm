@@ -13,8 +13,8 @@ namespace QueryTest.Builder
         public void SetName_ShouldSetTableName()
         {
             // Arrange
-            var builder = new TableBuilder(false);
             const string expectedName = "MyTable";
+            var builder = new TableBuilder("Name", false);
 
             // Act
             builder.SetName(expectedName);
@@ -28,8 +28,7 @@ namespace QueryTest.Builder
         public void AddColumn_ShouldAddColumnToSchema()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act
             builder.AddColumn("TestColumn", typeof(string));
@@ -45,7 +44,7 @@ namespace QueryTest.Builder
         public void AddColumn_WithNullType_ShouldThrowArgumentNullException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
+            var builder = new TableBuilder("TestTable", false);
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => builder.AddColumn("TestColumn", null));
@@ -55,8 +54,7 @@ namespace QueryTest.Builder
         public void AddColumn_AfterBuild_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.GetSchema(); // Build the schema
 
             // Act & Assert
@@ -67,8 +65,9 @@ namespace QueryTest.Builder
         public void AddColumn_WithBasedQuery_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetBasedTable("SourceTable");
+            var builder = new TableBuilder("SourceTable", false);
+            var query = Query.ReadOnly("BaseTable").Select("Column1");
+            builder.SetBasedQuery(query);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => builder.AddColumn("TestColumn", typeof(string)));
@@ -78,8 +77,7 @@ namespace QueryTest.Builder
         public void HasKey_ShouldAddPrimaryKeyConstraint()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Id", typeof(int));
 
             // Act
@@ -97,8 +95,7 @@ namespace QueryTest.Builder
         public void HasKey_WithNonExistentColumn_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => builder.HasKey("NonExistentColumn"));
@@ -108,8 +105,7 @@ namespace QueryTest.Builder
         public void HasKey_ShouldMakeColumnRequired()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Id", typeof(int));
 
             // Act
@@ -124,8 +120,7 @@ namespace QueryTest.Builder
         public void HasUnique_ShouldAddUniqueConstraint()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Email", typeof(string));
 
             // Act
@@ -141,8 +136,7 @@ namespace QueryTest.Builder
         public void HasUnique_WithConstraintName_ShouldSetConstraintName()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Email", typeof(string));
             const string constraintName = "UQ_Email";
 
@@ -159,8 +153,7 @@ namespace QueryTest.Builder
         public void HasUnique_WithMultipleColumns_ShouldAddCompositeUnique()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("FirstName", typeof(string));
             builder.AddColumn("LastName", typeof(string));
 
@@ -178,8 +171,7 @@ namespace QueryTest.Builder
         public void HasForeignKey_ShouldAddForeignKeyConstraint()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("Orders");
+            var builder = new TableBuilder("Orders", false);
             builder.AddColumn("CustomerId", typeof(int));
 
             // Act
@@ -199,8 +191,7 @@ namespace QueryTest.Builder
         public void HasCheck_ShouldAddCheckConstraint()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("Products");
+            var builder = new TableBuilder("Products", false);
             builder.AddColumn("Price", typeof(decimal));
             const string checkExpression = "Price > 0";
             const string constraintName = "CHK_Price_Positive";
@@ -221,8 +212,7 @@ namespace QueryTest.Builder
         public void HasIndex_ShouldAddIndexDefinition()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("Users");
+            var builder = new TableBuilder("Users", false);
             builder.AddColumn("Email", typeof(string));
 
             // Act
@@ -238,8 +228,7 @@ namespace QueryTest.Builder
         public void HasIndex_WithMultipleColumns_ShouldAddCompositeIndex()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("Orders");
+            var builder = new TableBuilder("Orders", false);
             builder.AddColumn("CustomerId", typeof(int));
             builder.AddColumn("OrderDate", typeof(DateTime));
 
@@ -258,8 +247,7 @@ namespace QueryTest.Builder
         public void Ignore_ShouldRemoveColumnFromSchema()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Column1", typeof(string));
             builder.AddColumn("Column2", typeof(string));
 
@@ -276,8 +264,7 @@ namespace QueryTest.Builder
         public void Ignore_IgnoredColumn_CannotBeAdded()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.Ignore("IgnoredColumn");
 
             // Act & Assert
@@ -288,8 +275,7 @@ namespace QueryTest.Builder
         public void SetBasedTable_ShouldSetBasedQueryMetadata()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("ViewTable");
+            var builder = new TableBuilder("ViewTable", false);
 
             // Act
             builder.SetBasedTable("SourceTable", "Column1", "Column2");
@@ -303,8 +289,7 @@ namespace QueryTest.Builder
         public void SetBasedQuery_ShouldSetBasedQueryMetadata()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("ViewTable");
+            var builder = new TableBuilder("ViewTable", false);
             var query = Query.ReadOnly("SourceTable").Select("Column1");
 
             // Act
@@ -321,8 +306,7 @@ namespace QueryTest.Builder
         public void GetSchema_MultipleCalls_ShouldReturnSameInstance()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Id", typeof(int));
 
             // Act
@@ -337,8 +321,7 @@ namespace QueryTest.Builder
         public void AddConstraint_ShouldAddCustomConstraint()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             var constraint = new CheckConstraint("TestTable", "1=1", "CHK_Test");
 
             // Act
@@ -457,8 +440,7 @@ namespace QueryTest.Builder
             var registry = Config.Translation;
             var tableInfo = registry.GetTable(typeof(Customer));
             var columnInfo = tableInfo.Columns.Find("Name");
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act
             builder.AddColumn(columnInfo);
@@ -472,8 +454,7 @@ namespace QueryTest.Builder
         public void Metadata_ShouldBeAccessible()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act
             var metadata = builder.Metadata;
@@ -486,8 +467,7 @@ namespace QueryTest.Builder
         public void Schema_Clone_ShouldCreateNewInstance()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
             builder.AddColumn("Id", typeof(int));
             var schema = builder.GetSchema();
 
@@ -504,9 +484,8 @@ namespace QueryTest.Builder
         public void CreateTemporaryTable_ShouldSetTemporaryFlagAndGenerateGuidName()
         {
             // Arrange
-            var builder = new TableBuilder(true);
             const string tableName = "MyTempTable";
-            builder.SetName(tableName);
+            var builder = new TableBuilder(tableName, true);
             builder.AddColumn("Id", typeof(int));
 
             // Act
@@ -540,9 +519,8 @@ namespace QueryTest.Builder
         public void CreatePermanentTable_ShouldNotSetTemporaryFlagAndUseExactName()
         {
             // Arrange
-            var builder = new TableBuilder(false);
             const string tableName = "MyPermanentTable";
-            builder.SetName(tableName);
+            var builder = new TableBuilder(tableName, false);
             builder.AddColumn("Id", typeof(int));
 
             // Act
@@ -571,7 +549,7 @@ namespace QueryTest.Builder
         public void GetSchema_WithNullOrEmptyName_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
+            var builder = new TableBuilder(null, false);
             builder.AddColumn("Id", typeof(int));
 
             // Act & Assert
@@ -583,8 +561,7 @@ namespace QueryTest.Builder
         public void GetSchema_WithEmptyName_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName(string.Empty);
+            var builder = new TableBuilder(string.Empty, false);
             builder.AddColumn("Id", typeof(int));
 
             // Act & Assert
@@ -596,8 +573,7 @@ namespace QueryTest.Builder
         public void AddColumnGeneric_ShouldAddColumnWithCorrectType()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act
             builder.AddColumn<string>("Name");
@@ -619,8 +595,7 @@ namespace QueryTest.Builder
         public void AddColumnGeneric_WithNullableType_ShouldCreateOptionalColumn()
         {
             // Arrange
-            var builder = new TableBuilder(false);
-            builder.SetName("TestTable");
+            var builder = new TableBuilder("TestTable", false);
 
             // Act
             builder.AddColumn<int?>("NullableAge");
