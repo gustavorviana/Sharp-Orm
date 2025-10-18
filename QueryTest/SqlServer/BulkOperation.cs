@@ -12,7 +12,7 @@ namespace QueryTest.SqlServer
             using var fallback = RegisterFallback();
             Guid id = Guid.NewGuid();
             ExecuteUpdate(id, out var name);
-            StringBuilder expected = new($"SELECT TOP(0) [id],[name],[number],[custom_id],[custom_status] INTO [{name}] FROM [TestTable]" + Environment.NewLine);
+            StringBuilder expected = new($"SELECT [id],[name],[number],[custom_id],[custom_status] INTO [{name}] FROM [TestTable] WHERE 1!=1" + Environment.NewLine);
             for (int i = 1; i <= 3; i++)
                 expected.AppendLine($"INSERT INTO [{name}] ([id], [name], [number], [custom_id], [custom_status]) VALUES ({i}, 'User {i}', {i}, '{id}', 1)");
 
@@ -27,7 +27,7 @@ namespace QueryTest.SqlServer
         {
             using var fallback = RegisterFallback();
             ExecuteDelete(out var name);
-            StringBuilder expected = new($"SELECT TOP(0) [name],[number] INTO [{name}] FROM [TestTable]" + Environment.NewLine);
+            StringBuilder expected = new($"SELECT [name],[number] INTO [{name}] FROM [TestTable] WHERE 1!=1" + Environment.NewLine);
             for (int i = 1; i <= 3; i++)
                 expected.AppendLine($"INSERT INTO [{name}] ([name], [number]) VALUES ('User {i}', {i})");
 

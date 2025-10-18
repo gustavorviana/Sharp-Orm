@@ -18,8 +18,8 @@ namespace SharpOrm.Builder
     public class DbTable : IDisposable
     {
         #region Fields/Properties
-        private readonly string[] _columnNames;
         private readonly TableGrammar _grammar;
+        private string[] _columnNames;
         private bool _disposed;
 
         /// <summary>
@@ -217,8 +217,8 @@ namespace SharpOrm.Builder
 
         private void ConfigureColumns(Query query)
         {
-            if (_columnNames?.Length > 0)
-                query.Select(_columnNames);
+            if (GetColumnNames()?.Length > 0)
+                query.Select(GetColumnNames());
         }
 
         /// <summary>
@@ -229,7 +229,7 @@ namespace SharpOrm.Builder
         public void BulkInsert<T>(ICollection<T> values)
         {
             using (var query = GetQuery<T>())
-                query.BulkInsert(values, _columnNames);
+                query.BulkInsert(values, GetColumnNames());
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace SharpOrm.Builder
         public void Insert<T>(T value)
         {
             using (var query = GetQuery<T>())
-                query.Insert(x => x.Add(value, _columnNames));
+                query.Insert(x => x.Add(value, GetColumnNames()));
         }
 
         /// <summary>
@@ -259,7 +259,7 @@ namespace SharpOrm.Builder
         /// <exception cref="ArgumentNullException"></exception>
         public bool Exists()
         {
-            return Exists(_grammar, this.Manager);
+            return Exists(_grammar, Manager);
         }
 
         /// <summary>
@@ -303,7 +303,7 @@ namespace SharpOrm.Builder
             if (_columnNames?.Length > 0)
                 return _columnNames;
 
-            return GetColumns().Select(x => x.ColumnName).ToArray();
+            return _columnNames = GetColumns().Select(x => x.ColumnName).ToArray();
         }
 
         /// <summary>

@@ -607,5 +607,42 @@ namespace QueryTest.Builder
             Assert.Equal(typeof(int), schema.Columns[0].DataType);
             Assert.True(schema.Columns[0].AllowDBNull);
         }
+
+        [Fact]
+        public void TemporaryTable_WithConstraints_ShouldUseGeneratedTableNameInConstraints()
+        {
+            // Arrange
+            const string baseName = "TempTable";
+            var builder = new TableBuilder(baseName, true);
+            builder.AddColumn("Id", typeof(int));
+            builder.AddColumn("Email", typeof(string));
+            builder.AddColumn("Age", typeof(int));
+
+            // Act
+            builder.HasKey("Id");
+            builder.HasUnique("Email", "UQ_Email");
+            builder.HasCheck("Age >= 18", "CHK_Age");
+            var schema = builder.GetSchema();
+
+            // Assert
+            Assert.True(schema.Temporary);
+            Assert.EndsWith("_" + baseName, schema.Name);
+            Assert.Matches(@"^[a-f0-9]{32}_TempTable$", schema.Name);
+
+            // Verify all constraints use the generated table name (with GUID prefix)
+            var pkConstraint = schema.Constraints.OfType<PrimaryKeyConstraint>().FirstOrDefault();
+            Assert.NotNull(pkConstraint);
+            Assert.Equal(schema.Name, pkConstraint.Table);
+
+            var uniqueConstraint = schema.Constraints.OfType<UniqueConstraint>().FirstOrDefault();
+            Assert.NotNull(uniqueConstraint);
+            Assert.Equal(schema.Name, uniqueConstraint.Table);
+            Assert.Equal("UQ_Email", uniqueConstraint.Name);
+
+            var checkConstraint = schema.Constraints.OfType<CheckConstraint>().FirstOrDefault();
+            Assert.NotNull(checkConstraint);
+            Assert.Equal(schema.Name, checkConstraint.Table);
+            Assert.Equal("CHK_Age", checkConstraint.Name);
+        }
     }
 }

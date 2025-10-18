@@ -460,6 +460,10 @@ namespace SharpOrm.Builder.Tables
 
             var tableName = Temporary ? Guid.NewGuid().ToString("N") + "_" + _name : _name;
 
+            if (Temporary)
+                foreach (var constraint in _constraints)
+                    constraint.Table = tableName;
+
             return _schema = new TableSchema(tableName,
                 Temporary,
                 _constraints.AsReadOnly(),

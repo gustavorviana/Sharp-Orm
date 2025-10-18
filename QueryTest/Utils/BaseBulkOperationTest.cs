@@ -27,7 +27,7 @@ namespace QueryTest.Utils
 
             using var q = NewQuery<TestTable>();
             using var bulk = new BulkOperation(q, rows, 0);
-            bulk.Update([TestTableUtils.ID, (TestTableUtils.NAME)]);
+            bulk.Update([TestTableUtils.ID, TestTableUtils.NAME]);
 
             tableName = bulk.table.DbName;
         }

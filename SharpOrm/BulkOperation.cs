@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
+using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using SharpOrm.Msg;
@@ -69,13 +70,11 @@ namespace SharpOrm
             return manager;
         }
 
-        private TableSchema GetSchema(ConnectionManager manager)
+        private ITableSchema GetSchema(ConnectionManager manager)
         {
-            var query = Query.ReadOnly(_targetTable, manager.Config);
-            query.Select(_tempColumns);
-            query.Limit = 0;
-
-            return new TableSchema(string.Concat("temp_", _targetTable), query) { Temporary = true };
+            return new TableBuilder(_targetTable, true)
+                .SetBasedTable(_targetTable, _tempColumns)
+                .GetSchema();
         }
 
         private void InsertTempValues(Row[] tempValues, int? lotInsert)
