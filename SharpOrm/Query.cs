@@ -1993,12 +1993,11 @@ namespace SharpOrm
 
         protected internal override QueryBase WriteWhere(object column, string operation, object value, string type)
         {
-            var isList = IsCollection(operation);
             if (column is string strCol)
-                return base.Where(new SafeWhere(strCol, operation, value, isList).ToSafeExpression(Info.ToReadOnly(), false), type);
+                return base.Where(new SafeWhere(strCol, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             if (column is Column col)
-                return base.Where(new SafeWhere(col, operation, value, isList).ToSafeExpression(Info.ToReadOnly(), false), type);
+                return base.Where(new SafeWhere(col, operation, value).ToSafeExpression(Info.ToReadOnly(), false), type);
 
             return base.WriteWhere(column, operation, value, type);
         }

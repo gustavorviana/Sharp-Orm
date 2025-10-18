@@ -350,6 +350,17 @@ namespace QueryTest
         }
 
         [Fact]
+        public void WhereInEmptyList()
+        {
+            const string EXPECTED = "SELECT [Id], [Name], [Email], [address_id] FROM [Customers] WHERE 1!=1";
+
+            var query = new Query<Customer>()
+                .WhereIn<int>(x => x.Id, new List<int>());
+
+            Assert.Equal(EXPECTED, query.ToString());
+        }
+
+        [Fact]
         public void Exists()
         {
             const string EXPECTED = "SELECT [Id], [Name], [Email], [address_id] FROM [Customers] WHERE EXISTS (SELECT [Id] FROM [Orders] WHERE [Status] IN (1, 2, 3))";

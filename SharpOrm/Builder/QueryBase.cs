@@ -527,7 +527,7 @@ namespace SharpOrm.Builder
             return this;
         }
 
-        protected static bool IsCollection(string operation)
+        protected internal static bool IsCollection(string operation)
         {
             return operation.EqualsIgnoreCase("in") || operation.EqualsIgnoreCase("not in");
         }
