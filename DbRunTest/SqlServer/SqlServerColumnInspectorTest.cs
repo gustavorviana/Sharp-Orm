@@ -14,7 +14,7 @@ namespace DbRunTest.SqlServer
         public SqlServerColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<SqlConnection> connection)
             : base(output, connection)
         {
-            connection.Manager.Management = SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose;
+            SetConnectionManagement(SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose);
         }
 
         [Fact]

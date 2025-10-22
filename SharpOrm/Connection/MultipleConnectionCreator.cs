@@ -60,7 +60,7 @@ namespace SharpOrm.Connection
     /// </summary>
     public class MultipleConnectionCreator : ConnectionCreator
     {
-        private readonly WeakComponentsRef<DbConnection> connections = new WeakComponentsRef<DbConnection>();
+        private readonly WeakRefCollection<DbConnection> connections = new WeakRefCollection<DbConnection>();
 
         /// <summary>
         /// The connection configurator used to apply additional settings to the connections.

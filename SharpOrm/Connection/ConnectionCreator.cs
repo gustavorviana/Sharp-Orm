@@ -142,14 +142,16 @@ namespace SharpOrm.Connection
         /// </summary>
         public void Dispose()
         {
-            this.ThrowIfDisposed();
-            this.Dispose(disposing: true);
+            if (_disposed)
+                return;
+
+            Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
 
         protected void ThrowIfDisposed()
         {
-            if (this._disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
         }
 

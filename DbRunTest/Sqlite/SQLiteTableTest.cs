@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite
 {
-    public class SqliteTableTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection) : DbTableTest<SqliteConnection>(output, connection)
+    [Collection("SQLite Unsafe")]
+    public class SqliteTableTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection) : DbTableTest(output, connection)
     {
     }
 }

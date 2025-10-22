@@ -15,4 +15,4 @@ using System.Runtime.InteropServices;
 // O GUID a seguir será destinado à ID de typelib se este projeto for exposto ao COM.
 
 [assembly: Guid("297eb700-6134-41e8-9668-88b74d55df39")]
-[assembly: CollectionBehavior(CollectionBehavior.CollectionPerClass, DisableTestParallelization = true)]
+[assembly: CollectionBehavior(DisableTestParallelization = true, MaxParallelThreads = 1)]

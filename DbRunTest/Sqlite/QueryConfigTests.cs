@@ -6,8 +6,9 @@ using SharpOrm.Connection;
 
 namespace DbRunTest.Sqlite
 {
+    [Collection("SQLite")]
     public class QueryConfigTests(DbFixture<SqliteConnection> connection) :
-        DbTestBase(connection), IClassFixture<DbFixture<SqliteConnection>>, IQueryTests
+        DbTestBase(connection), IQueryTests
     {
         [Fact]
         public void GetVersionVersionString()

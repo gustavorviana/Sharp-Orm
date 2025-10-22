@@ -1,4 +1,5 @@
-﻿using BaseTest.Utils;
+﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using DbRunTest.Interfaces;
 using SharpOrm.Connection;
@@ -6,8 +7,9 @@ using System.Data.SqlClient;
 
 namespace DbRunTest.SqlServer
 {
+    [Collection("SQL Server")]
     public class QueryConfigTests(DbFixture<SqlConnection> connection) :
-        DbTestBase(connection), IClassFixture<DbFixture<SqlConnection>>, IQueryTests
+        DbTestBase(connection), IQueryTests
     {
         [Fact]
         public void GetVersionVersionString()

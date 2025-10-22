@@ -1,4 +1,5 @@
-﻿using BaseTest.Utils;
+﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using DbRunTest.Utils;
 using SharpOrm;
@@ -9,7 +10,8 @@ using System.Data.SqlClient;
 
 namespace DbRunTest
 {
-    public class TransactionTest() : DbTestBase(new DbFixture<SqlConnection>())
+    [Collection("SQL Server")]
+    public class TransactionTest(DbFixture<SqlConnection> fixture) : DbTestBase(fixture)
     {
         [Fact]
         public void Select()

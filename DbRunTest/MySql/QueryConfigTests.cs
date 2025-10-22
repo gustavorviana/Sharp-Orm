@@ -1,4 +1,5 @@
-﻿using BaseTest.Utils;
+﻿using BaseTest.Fixtures;
+using BaseTest.Utils;
 using DbRunTest.Fixtures;
 using DbRunTest.Interfaces;
 using MySql.Data.MySqlClient;
@@ -6,8 +7,9 @@ using SharpOrm.Connection;
 
 namespace DbRunTest.MySql
 {
+    [Collection("MySQL")]
     public class QueryConfigTests(DbFixture<MySqlConnection> connection) :
-        DbTestBase(connection), IClassFixture<DbFixture<MySqlConnection>>, IQueryTests
+        DbTestBase(connection), IQueryTests
     {
         [Fact]
         public void GetVersionVersionString()

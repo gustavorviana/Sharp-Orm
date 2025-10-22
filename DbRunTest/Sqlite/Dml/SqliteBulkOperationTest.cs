@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite.Dml
 {
-    public class SqliteBulkOperationTest(ITestOutputHelper output, DbFixture<SqliteConnection> connection) : BulkOperationTest<SqliteConnection>(output, connection)
+    [Collection("SQLite Unsafe")]
+    public class SqliteBulkOperationTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection) : BulkOperationTest(output, connection)
     {
         [Fact]
         public override void DeleteTest()

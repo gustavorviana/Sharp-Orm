@@ -1,12 +1,11 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class InsertTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DmlTest<T>(output, connection), IClassFixture<UnsafeDbFixture<T>> where T : DbConnection, new()
+    public abstract class InsertTest(ITestOutputHelper output, DbFixtureBase connection) : DmlTest(output, connection)
     {
         [Fact]
         public virtual void Insert()

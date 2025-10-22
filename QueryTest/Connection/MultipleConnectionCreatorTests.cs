@@ -116,7 +116,7 @@ namespace QueryTest.Connection
 
             // Assert
             Assert.True(creator.Disposed);
-            // Note: As conexões são gerenciadas via WeakComponentsRef, então elas podem ser coletadas pelo GC
+            // Note: As conexões são gerenciadas via WeakRefCollection, então elas podem ser coletadas pelo GC
             // Este teste verifica principalmente se o Dispose não lança exceções
         }
 

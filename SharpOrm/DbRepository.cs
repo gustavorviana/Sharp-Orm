@@ -26,7 +26,7 @@ namespace SharpOrm
         private bool _disposed;
         public bool Disposed => _disposed;
 
-        internal readonly WeakComponentsRef<ConnectionManager> _connections = new WeakComponentsRef<ConnectionManager>();
+        internal readonly WeakRefCollection<ConnectionManager> _connections = new WeakRefCollection<ConnectionManager>();
 
         /// <summary>
         /// Event that occurs when an error happens in the ConnectionManager.

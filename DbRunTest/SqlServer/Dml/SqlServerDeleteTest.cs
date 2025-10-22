@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer.Dml
 {
-    public class SqlServerDeleteTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : DeleteTest<SqlConnection>(output, connection)
+    [Collection("SQL Server")]
+    public class SqlServerDeleteTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : DeleteTest(output, connection)
     {
     }
 }

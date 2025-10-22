@@ -1,32 +1,31 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Connection;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class DmlTest<T> : DbTestBase, IClassFixture<DbFixture<T>> where T : DbConnection, new()
+    public abstract class DmlTest : DbTestBase
     {
-        private UnsafeDbFixture<T>? unsafeFixture;
+        private DbFixtureBase? unsafeFixture;
 
         private readonly HashSet<string> tablesToReset = [];
 
 
-        public DmlTest(ITestOutputHelper output, DbFixture<T> connection) : base(output, connection)
+        public DmlTest(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
         {
         }
 
         public void ConfigureInitialCustomerAndOrder()
         {
-            var fixture = new UnsafeDbFixture<T>();
+            using var manager = GetUnsafeManager();
 
-            using var qOrder = new Query<Order>(fixture.Manager);
-            using var qAddress = new Query<Address>(fixture.Manager);
-            using var qCustomer = new Query<Customer>(fixture.Manager);
+            using var qOrder = new Query<Order>(manager);
+            using var qAddress = new Query<Address>(manager);
+            using var qCustomer = new Query<Customer>(manager);
             qOrder.Delete();
             qCustomer.Delete();
             qAddress.Delete();
@@ -91,7 +90,8 @@ namespace DbRunTest.BaseTests.Dml
 
         protected void InsertRows(int count)
         {
-            using var q = NewQuery(GetUnsafeManager(), TestTableUtils.TABLE);
+            using var manager = GetUnsafeManager();
+            using var q = NewQuery(manager, TestTableUtils.TABLE);
             q.Delete();
             Row[] rows = new Row[count];
 
@@ -107,7 +107,8 @@ namespace DbRunTest.BaseTests.Dml
             {
                 try
                 {
-                    using var query = new Query(table, GetUnsafeManager());
+                    using var manager = GetUnsafeManager();
+                    using var query = new Query(table, manager);
                     query.Delete();
                 }
                 catch
@@ -116,21 +117,19 @@ namespace DbRunTest.BaseTests.Dml
             }
         }
 
-        protected override void OnUseTable(string name)
-        {
-            tablesToReset.Add(name);
-        }
-
         protected ConnectionManager GetUnsafeManager()
         {
-            unsafeFixture ??= new UnsafeDbFixture<T>();
-            return unsafeFixture.Manager;
+            return new ConnectionManager(GetUnsafeConfig(), Creator.GetConnection());
         }
 
         protected QueryConfig GetUnsafeConfig()
         {
-            unsafeFixture ??= new UnsafeDbFixture<T>();
-            return unsafeFixture.Manager.Config;
+            return Creator.Config.Clone(false);
+        }
+
+        protected override void OnUseTable(string name)
+        {
+            tablesToReset.Add(name);
         }
 
         protected override void Dispose(bool disposing)

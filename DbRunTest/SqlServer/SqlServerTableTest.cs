@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer
 {
-    public class SqlServerTableTest(ITestOutputHelper output, UnsafeDbFixture<SqlConnection> connection) : DbTableTest<SqlConnection>(output, connection)
+    [Collection("SQL Server Unsafe")]
+    public class SqlServerTableTest(ITestOutputHelper output, UnsafeDbFixture<SqlConnection> connection) : DbTableTest(output, connection)
     {
     }
 }

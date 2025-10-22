@@ -13,7 +13,7 @@ namespace DbRunTest.MySql
         public MySqlColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<MySqlConnection> connection)
             : base(output, connection)
         {
-            connection.Manager.Management = SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose;
+            SetConnectionManagement(SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose);
         }
 
         [Fact]

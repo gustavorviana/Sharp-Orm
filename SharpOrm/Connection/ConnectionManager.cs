@@ -20,7 +20,7 @@ namespace SharpOrm.Connection
         /// </summary>
         public event EventHandler<ConnectionExceptionEventArgs> OnError;
 
-        private readonly WeakComponentsRef<Handle> _handles = new WeakComponentsRef<Handle>();
+        private readonly WeakRefCollection<Handle> _handles = new WeakRefCollection<Handle>();
         private readonly object _handleLock = new object();
 
         private ConnectionManagement _management = ConnectionManagement.CloseOnDispose;

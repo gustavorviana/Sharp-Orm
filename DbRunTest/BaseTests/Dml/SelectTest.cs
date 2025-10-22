@@ -1,14 +1,13 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
 using SharpOrm.DataTranslation;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class SelectTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DmlTest<T>(output, connection), IClassFixture<UnsafeDbFixture<T>> where T : DbConnection, new()
+    public abstract class SelectTest(ITestOutputHelper output, DbFixtureBase connection) : DmlTest(output, connection)
     {
         [Fact]
         public void SelectDateTime()

@@ -7,7 +7,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer.Dml
 {
-    public class SqlServerUpdateTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : UpdateTest<SqlConnection>(output, connection)
+    [Collection("SQL Server")]
+    public class SqlServerUpdateTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : UpdateTest(output, connection)
     {
         [Fact]
         public override void UpdateJoin()

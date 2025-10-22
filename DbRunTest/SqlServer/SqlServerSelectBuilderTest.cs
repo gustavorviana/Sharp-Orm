@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer
 {
-    public class SqlServerSelectBuilderTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : DbTestBase(output, connection), IClassFixture<DbFixture<SqlConnection>>
+    [Collection("SQL Server")]
+    public class SqlServerSelectBuilderTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : DbTestBase(output, connection)
     {
         [Fact]
         public void Test()

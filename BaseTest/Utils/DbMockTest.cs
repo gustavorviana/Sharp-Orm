@@ -11,7 +11,7 @@ namespace BaseTest.Utils
 {
     public class DbMockTest : QueryTestBase
     {
-        protected MockConnection Connection => (MockConnection)fixture.Creator.GetConnection();
+        protected MockConnection Connection => (MockConnection)Creator.GetConnection();
 
         public DbMockTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
         {

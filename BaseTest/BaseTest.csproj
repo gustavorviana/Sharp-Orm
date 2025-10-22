@@ -20,9 +20,7 @@
     <Compile Update="Mock\MockCommand.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="Mock\MockConnection.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Update="Mock\MockConnection.cs" />
   </ItemGroup>
 
 </Project>

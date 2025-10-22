@@ -1,4 +1,4 @@
-﻿using SharpOrm.Connection;
+using SharpOrm.Connection;
 
 namespace DbRunTest.DbInitializer
 {
@@ -6,7 +6,17 @@ namespace DbRunTest.DbInitializer
     {
         public override void InitDb(ConnectionManager manager)
         {
-            ExecuteScriptFile(manager, "Sqlite.sql");
+            var script = File.ReadAllText("./Scripts/Sqlite.sql");
+            var commands = script.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var command in commands)
+            {
+                var trimmedCommand = command.Trim();
+                if (!string.IsNullOrWhiteSpace(trimmedCommand))
+                {
+                    manager.ExecuteNonQuery(trimmedCommand);
+                }
+            }
         }
 
         public override void ResetDb(ConnectionManager manager)

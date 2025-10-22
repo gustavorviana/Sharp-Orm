@@ -3,6 +3,7 @@ using DbRunTest.Fixtures;
 using Microsoft.Data.Sqlite;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
+using SharpOrm.Connection;
 using SharpOrm.SqlMethods;
 using Xunit.Abstractions;
 
@@ -13,7 +14,7 @@ namespace DbRunTest.Sqlite
         public SqliteColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection)
             : base(output, connection)
         {
-            connection.Manager.Management = SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose;
+            SetConnectionManagement(ConnectionManagement.CloseOnManagerDispose);
         }
 
         [Fact]

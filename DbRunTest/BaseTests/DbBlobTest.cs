@@ -1,13 +1,12 @@
-﻿using BaseTest.Models.Blob;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models.Blob;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests
 {
-    public abstract class DbBlobTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DbTestBase(output, connection), IClassFixture<DbFixture<T>> where T : DbConnection, new()
+    public abstract class DbBlobTest(ITestOutputHelper output, DbFixtureBase connection) : DbTestBase(output, connection)
     {
         [Fact]
         public void InsertBytesTest()

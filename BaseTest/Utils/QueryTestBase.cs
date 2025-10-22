@@ -9,23 +9,26 @@ namespace BaseTest.Utils
 {
     public abstract class QueryTestBase : TestBase
     {
-        protected readonly DbFixtureBase fixture;
-        protected virtual QueryConfig Config => fixture.Creator.Config;
-        protected virtual TranslationRegistry Translation { get; } = new TranslationRegistry();
-        protected ConnectionManager Manager => fixture.Manager;
-        public ConnectionCreator Creator => fixture.Creator;
+        public ConnectionCreator Creator { get; private set; }
+        protected virtual QueryConfig Config => Creator.Config;
+        protected virtual TranslationRegistry Translation => Creator.Config.Translation;
+        protected ConnectionManager Manager { get; }
 
-
-        public QueryTestBase(DbFixtureBase connection) : base(null)
+        public QueryTestBase(DbFixtureBase fixture) : this(null, fixture)
         {
-            ConnectionCreator.Default = connection.Creator;
-            fixture = connection;
         }
 
-        public QueryTestBase(ITestOutputHelper? output, DbFixtureBase connection) : base(output)
+        public QueryTestBase(ITestOutputHelper? output, DbFixtureBase fixture) : base(output)
         {
-            ConnectionCreator.Default = connection.Creator;
-            fixture = connection;
+            Creator = fixture.MakeConnectionCreator();
+            Manager = fixture.MakeManager(Creator);
+            ConnectionCreator.Default = Creator;
+        }
+
+        protected void SetConnectionManagement(ConnectionManagement management)
+        {
+            Creator.Management = management;
+            Manager.Management = management;
         }
 
         protected override void Dispose(bool disposing)

@@ -1,11 +1,13 @@
-﻿using DbRunTest.BaseTests.Dml;
+﻿using BaseTest.Fixtures;
+using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
 using MySql.Data.MySqlClient;
 using Xunit.Abstractions;
 
 namespace DbRunTest.MySql.Dml
 {
-    public class MysqlSelectTest(ITestOutputHelper output, DbFixture<MySqlConnection> connection) : SelectTest<MySqlConnection>(output, connection)
+    [Collection("MySQL")]
+    public class MysqlSelectTest(ITestOutputHelper output, DbFixture<MySqlConnection> connection) : SelectTest(output, connection)
     {
     }
 }

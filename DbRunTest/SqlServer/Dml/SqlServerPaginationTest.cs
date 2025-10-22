@@ -8,7 +8,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer.Dml
 {
-    public class SqlServerPaginationTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : PaginationTest<SqlConnection>(output, connection)
+    [Collection("SQL Server")]
+    public class SqlServerPaginationTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : PaginationTest(output, connection)
     {
         [Fact]
         public override void GotoPage()

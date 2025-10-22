@@ -13,7 +13,7 @@ namespace SharpOrm.Collections
     /// <typeparam name="T">The type of the items in the collection, which must be a class and implement <see cref="IDisposable"/>.</typeparam>
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof(WeakRef_DebugView<>))]
-    internal class WeakComponentsRef<T> : IReadOnlyCollection<T>, IDisposable where T : class, IDisposable
+    internal class WeakRefCollection<T> : IReadOnlyCollection<T>, IDisposable where T : class, IDisposable
     {
         private readonly List<WeakReference> _refs = new List<WeakReference>();
         private readonly object _lock = new object();
@@ -154,7 +154,7 @@ namespace SharpOrm.Collections
 
         #region IDisposable
 
-        ~WeakComponentsRef()
+        ~WeakRefCollection()
         {
             Dispose(disposing: false);
         }
@@ -195,12 +195,12 @@ namespace SharpOrm.Collections
 
     internal sealed class WeakRef_DebugView<T> where T : class, IDisposable
     {
-        private readonly WeakComponentsRef<T> _collection;
+        private readonly WeakRefCollection<T> _collection;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public T[] Items => _collection.ToArray();
 
-        public WeakRef_DebugView(WeakComponentsRef<T> collection)
+        public WeakRef_DebugView(WeakRefCollection<T> collection)
         {
             _collection = collection;
         }

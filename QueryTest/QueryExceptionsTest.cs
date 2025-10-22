@@ -17,13 +17,13 @@ namespace QueryTest
         [Fact]
         public void OnQueryNullTable()
         {
-            Assert.Throws<ArgumentNullException>(() => new Query(null, fixture.Creator));
+            Assert.Throws<ArgumentNullException>(() => new Query(null, Creator));
         }
 
         [Fact]
         public void OnQueryNullConfig()
         {
-            using var con = fixture.Creator.GetConnection();
+            using var con = Creator.GetConnection();
             Assert.Throws<ArgumentNullException>(() => new Query("SomeTable", new ConnectionManager(null, con)));
         }
 

@@ -1,4 +1,5 @@
-﻿using SharpOrm.Connection;
+﻿using SharpOrm.Builder;
+using SharpOrm.Connection;
 
 namespace BaseTest.Fixtures
 {
@@ -6,32 +7,18 @@ namespace BaseTest.Fixtures
     {
         private bool disposed;
 
-        public ConnectionCreator Creator { get; }
-        public ConnectionManager Manager { get; }
-
-        public DbFixtureBase()
+        public virtual ConnectionManager MakeManager(ConnectionCreator creator)
         {
-            Creator = MakeConnectionCreator();
-            Creator.Config.Translation = new SharpOrm.DataTranslation.TranslationRegistry();
-            Manager = MakeManager();
+            return new ConnectionManager(creator);
         }
 
-        protected virtual ConnectionManager MakeManager()
-        {
-            return new ConnectionManager(Creator);
-        }
+        public abstract ConnectionCreator MakeConnectionCreator();
 
-        protected abstract ConnectionCreator MakeConnectionCreator();
+        public abstract QueryConfig GetConfig(bool safeConnection);
 
         protected virtual void Dispose(bool disposing)
         {
             if (disposed) return;
-
-            if (disposing)
-            {
-                Manager.Dispose();
-                Creator.Dispose();
-            }
 
             disposed = true;
         }

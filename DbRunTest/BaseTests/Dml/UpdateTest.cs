@@ -1,13 +1,12 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class UpdateTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DmlTest<T>(output, connection), IClassFixture<UnsafeDbFixture<T>> where T : DbConnection, new()
+    public abstract class UpdateTest(ITestOutputHelper output, DbFixtureBase connection) : DmlTest(output, connection)
     {
         [Fact]
         public void Update()

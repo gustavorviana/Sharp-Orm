@@ -8,7 +8,7 @@ namespace QueryTest.Collections
         [Fact]
         public void AddAndRemoveItemTest()
         {
-            var collection = new WeakComponentsRef<Component>();
+            var collection = new WeakRefCollection<Component>();
             var component = new Component();
 
             collection.Add(component);
@@ -23,7 +23,7 @@ namespace QueryTest.Collections
         [Fact]
         public void ClearTest()
         {
-            var collection = new WeakComponentsRef<Component> { new(), new() };
+            var collection = new WeakRefCollection<Component> { new(), new() };
             Assert.Equal(2, collection.Count);
 
             collection.Clear();
@@ -34,7 +34,7 @@ namespace QueryTest.Collections
         public void DisposedEventHandlerTest()
         {
             var component = new Component();
-            var collection = new WeakComponentsRef<Component> { component };
+            var collection = new WeakRefCollection<Component> { component };
             Assert.Single(collection);
 
             component.Dispose();
@@ -44,7 +44,7 @@ namespace QueryTest.Collections
         [Fact]
         public void RemoveNotAliveTest()
         {
-            var collection = new WeakComponentsRef<Component>();
+            var collection = new WeakRefCollection<Component>();
 
             for (int i = 0; i < 100; i++)
                 collection.Add(new());
@@ -59,7 +59,7 @@ namespace QueryTest.Collections
         [Fact]
         public void RemoveNotAliveOnAddTest()
         {
-            var collection = new WeakComponentsRef<Component>();
+            var collection = new WeakRefCollection<Component>();
 
             for (int i = 0; i < 10; i++)
                 collection.Add(new());

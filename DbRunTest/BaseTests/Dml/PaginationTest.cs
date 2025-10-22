@@ -1,15 +1,14 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
 using SharpOrm.Builder.Grammars;
-using System.Data.Common;
 using System.Diagnostics;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class PaginationTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DmlTest<T>(output, connection), IClassFixture<UnsafeDbFixture<T>> where T : DbConnection, new()
+    public abstract class PaginationTest(ITestOutputHelper output, DbFixtureBase connection) : DmlTest(output, connection)
     {
         [Fact]
         public virtual void Paginate()

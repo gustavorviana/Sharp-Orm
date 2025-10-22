@@ -1,4 +1,5 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
 using Microsoft.Data.Sqlite;
@@ -7,7 +8,8 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite.Dml
 {
-    public class SqliteDeleteTest(ITestOutputHelper output, DbFixture<SqliteConnection> connection) : DeleteTest<SqliteConnection>(output, connection)
+    [Collection("SQLite")]
+    public class SqliteDeleteTest(ITestOutputHelper output, DbFixture<SqliteConnection> connection) : DeleteTest(output, connection)
     {
         public override void DeleteWhereJoin()
         {

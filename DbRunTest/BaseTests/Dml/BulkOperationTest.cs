@@ -1,13 +1,12 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
-using System.Data.Common;
 using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class BulkOperationTest<T>(ITestOutputHelper output, DbFixture<T> connection) : DmlTest<T>(output, connection), IClassFixture<DbFixture<T>> where T : DbConnection, new()
+    public abstract class BulkOperationTest(ITestOutputHelper output, DbFixtureBase connection) : DmlTest(output, connection)
     {
         [Fact]
         public virtual void UpdateTest()

@@ -1,6 +1,6 @@
-﻿using BaseTest.Models;
+﻿using BaseTest.Fixtures;
+using BaseTest.Models;
 using BaseTest.Utils;
-using DbRunTest.Fixtures;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
@@ -11,12 +11,11 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests
 {
-    public abstract class DbTableTest<T> : DbTestBase, IClassFixture<UnsafeDbFixture<T>> where T : DbConnection, new()
+    public abstract class DbTableTest : DbTestBase
     {
-        public DbTableTest(ITestOutputHelper output, UnsafeDbFixture<T> connection) : base(output, connection)
+        public DbTableTest(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
         {
-            connection.Creator.Management = ConnectionManagement.CloseOnManagerDispose;
-            connection.Manager.Management = ConnectionManagement.CloseOnManagerDispose;
+            SetConnectionManagement(ConnectionManagement.CloseOnManagerDispose);
         }
 
         [Fact]
