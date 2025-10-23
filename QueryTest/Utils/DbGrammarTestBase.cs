@@ -13,7 +13,7 @@ namespace QueryTest.Utils
 
         }
 
-        public DbGrammarTestBase(ITestOutputHelper output, QueryConfig config) : base(output, new MockFixture(config))
+        public DbGrammarTestBase(ITestOutputHelper output, QueryConfig config) : base(output, MockFixture.FromConfig(config))
         {
 
         }

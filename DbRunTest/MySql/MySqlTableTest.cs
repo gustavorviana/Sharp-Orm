@@ -1,12 +1,15 @@
 ﻿using DbRunTest.BaseTests;
 using DbRunTest.Fixtures;
-using MySql.Data.MySqlClient;
 using Xunit.Abstractions;
 
 namespace DbRunTest.MySql
 {
-    [Collection("MySQL Unsafe")]
-    public class MySqlTableTest(ITestOutputHelper output, UnsafeDbFixture<MySqlConnection> connection) : DbTableTest(output, connection)
+    [Collection("MySQL")]
+    public class MySqlTableTest : DbTableTest
     {
+        public MySqlTableTest(ITestOutputHelper output, MysqlFixture connection) : base(output, connection)
+        {
+            MakeUnsafe();
+        }
     }
 }

@@ -3,13 +3,12 @@ using BaseTest.Utils;
 using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
 using SharpOrm;
-using System.Data.SqlClient;
 using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer.Dml
 {
     [Collection("SQL Server")]
-    public class SqlServerPaginationTest(ITestOutputHelper output, DbFixture<SqlConnection> connection) : PaginationTest(output, connection)
+    public class SqlServerPaginationTest(ITestOutputHelper output, SqlServerFixture connection) : PaginationTest(output, connection)
     {
         [Fact]
         public override void GotoPage()

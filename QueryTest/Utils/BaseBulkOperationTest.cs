@@ -12,7 +12,7 @@ namespace QueryTest.Utils
 
         }
 
-        public BaseBulkOperationTest(QueryConfig config) : base(null, new MockFixture(config))
+        public BaseBulkOperationTest(QueryConfig config) : base(null, MockFixture.FromConfig(config))
         {
 
         }

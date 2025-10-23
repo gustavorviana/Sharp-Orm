@@ -1,9 +1,10 @@
 ﻿using SharpOrm.Builder;
 using SharpOrm.Connection;
+using Xunit;
 
 namespace BaseTest.Fixtures
 {
-    public abstract class DbFixtureBase : IDisposable
+    public abstract class DbFixtureBase : IAsyncLifetime
     {
         private bool disposed;
 
@@ -12,28 +13,26 @@ namespace BaseTest.Fixtures
             return new ConnectionManager(creator);
         }
 
-        public abstract ConnectionCreator MakeConnectionCreator();
+        public abstract ConnectionCreator MakeConnectionCreator(bool safe);
 
-        public abstract QueryConfig GetConfig(bool safeConnection);
+        public abstract QueryConfig GetConfig(bool safe);
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual async Task DisposeAsync(bool disposing)
         {
+            await Task.CompletedTask;
             if (disposed) return;
 
             disposed = true;
         }
 
-        ~DbFixtureBase()
+        public virtual Task InitializeAsync()
         {
-            Dispose(disposing: false);
+            return Task.CompletedTask;
         }
 
-        public void Dispose()
+        public async Task DisposeAsync()
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
-
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            await DisposeAsync(disposing: true);
         }
     }
 }

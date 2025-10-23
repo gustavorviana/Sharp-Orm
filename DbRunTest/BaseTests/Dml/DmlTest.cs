@@ -8,16 +8,10 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.BaseTests.Dml
 {
-    public abstract class DmlTest : DbTestBase
+    public abstract class DmlTest(ITestOutputHelper output, DbFixtureBase connection) : DbTestBase(output, connection)
     {
-        private DbFixtureBase? unsafeFixture;
 
         private readonly HashSet<string> tablesToReset = [];
-
-
-        public DmlTest(ITestOutputHelper output, DbFixtureBase connection) : base(output, connection)
-        {
-        }
 
         public void ConfigureInitialCustomerAndOrder()
         {
@@ -132,15 +126,12 @@ namespace DbRunTest.BaseTests.Dml
             tablesToReset.Add(name);
         }
 
-        protected override void Dispose(bool disposing)
+        public override async Task DisposeAsync()
         {
             ClearTables([.. tablesToReset]);
             tablesToReset.Clear();
 
-            unsafeFixture?.Dispose();
-            unsafeFixture = null!;
-
-            base.Dispose(disposing);
+            await base.DisposeAsync();
         }
     }
 }

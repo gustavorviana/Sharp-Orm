@@ -1,15 +1,13 @@
-﻿using BaseTest.Fixtures;
-using BaseTest.Models;
+﻿using BaseTest.Models;
 using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
-using Microsoft.Data.Sqlite;
 using SharpOrm;
 using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite.Dml
 {
     [Collection("SQLite")]
-    public class SqliteUpdateTest(ITestOutputHelper output, DbFixture<SqliteConnection> connection) : UpdateTest(output, connection)
+    public class SqliteUpdateTest(ITestOutputHelper output, SqliteFixture connection) : UpdateTest(output, connection)
     {
         public override void UpdateJoin()
         {

@@ -10,8 +10,13 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class InsertBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, IInsertBuilderTest
+    public class InsertBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqliteQueryConfig>>, IInsertBuilderTest
     {
+        public InsertBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : base(output, connection)
+        {
+
+        }
+
         [Fact]
         public void BulkInsert()
         {

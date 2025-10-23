@@ -2,6 +2,6 @@
 {
     public interface IQueryTests
     {
-        void GetVersionVersionString();
+        void GetVersionString();
     }
 }

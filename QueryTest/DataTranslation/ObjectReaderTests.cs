@@ -9,6 +9,11 @@ namespace QueryTest.DataTranslation
 {
     public class ObjectReaderTests : DbMockFallbackTest
     {
+        public ObjectReaderTests()
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public void Except_WhenCalledWithOptionalValidation_ShouldExecuteSuccessfully()
         {
@@ -52,6 +57,7 @@ namespace QueryTest.DataTranslation
         [Fact]
         public void ReadCells_Test2()
         {
+            ResetConfig();
             var mapper = new ModelMapper<Item>(Translation);
             mapper.MapNested(x => x.SubItem);
             mapper.Build();

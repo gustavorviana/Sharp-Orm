@@ -14,6 +14,7 @@ namespace QueryTest.DataTranslation.Reader
         public ModelMapperTests(ITestOutputHelper? output) : base(output)
         {
             Translation.NestedMapMode = NestedMode.All;
+            MakeUnsafe();
         }
 
         [Fact]

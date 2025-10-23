@@ -4,7 +4,6 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.Sqlite;
 using SharpOrm.Builder.Tables;
-using SharpOrm.Collections;
 using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
@@ -14,6 +13,7 @@ namespace QueryTest.Sqlite
         public ColumnInspectorTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection)
             : base(output, connection)
         {
+            MakeUnsafe();
         }
 
         [Fact]

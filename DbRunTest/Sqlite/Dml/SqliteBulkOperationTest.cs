@@ -1,13 +1,17 @@
 ﻿using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
-using Microsoft.Data.Sqlite;
 using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite.Dml
 {
-    [Collection("SQLite Unsafe")]
-    public class SqliteBulkOperationTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection) : BulkOperationTest(output, connection)
+    [Collection("SQLite")]
+    public class SqliteBulkOperationTest : BulkOperationTest
     {
+        public SqliteBulkOperationTest(ITestOutputHelper output, SqliteFixture fixture) : base(output, fixture)
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public override void DeleteTest()
         {

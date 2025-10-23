@@ -4,7 +4,6 @@ using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.Mysql;
 using SharpOrm.Builder.Tables;
-using SharpOrm.Collections;
 using Xunit.Abstractions;
 
 namespace QueryTest.Mysql

@@ -1,25 +1,22 @@
+using Xunit;
 using Xunit.Abstractions;
 
 namespace BaseTest.Utils
 {
-    public class TestBase(ITestOutputHelper? output) : IDisposable
+    public class TestBase(ITestOutputHelper? output) : IAsyncLifetime
     {
         protected ITestOutputHelper Output => output ?? throw new NotImplementedException();
-        private bool disposedValue;
 
-        #region IDisposable
+        #region IAsyncLifetime
 
-        public void Dispose()
+        public virtual Task InitializeAsync()
         {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            return Task.CompletedTask;
         }
 
-        protected virtual void Dispose(bool disposing)
+        public virtual Task DisposeAsync()
         {
-            if (disposedValue) return;
-
-            disposedValue = true;
+            return Task.CompletedTask;
         }
 
         #endregion

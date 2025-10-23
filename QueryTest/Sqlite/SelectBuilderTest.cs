@@ -9,8 +9,13 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class SelectBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, ISelectBuilderTests
+    public class SelectBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqliteQueryConfig>>, ISelectBuilderTests
     {
+        public SelectBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : base(output, connection)
+        {
+
+        }
+
         [Theory]
         [InlineData(Trashed.With, "")]
         [InlineData(Trashed.Except, " WHERE \"deleted\" = 0")]

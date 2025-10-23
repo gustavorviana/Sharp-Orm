@@ -4,29 +4,54 @@ using SharpOrm.Connection;
 
 namespace BaseTest.Fixtures
 {
-    public class MockFixture(QueryConfig config) : DbFixtureBase
+    public class MockFixture : DbFixtureBase
     {
-        public override QueryConfig GetConfig(bool safeConnection)
+        private readonly QueryConfig _config;
+
+        public MockFixture() : this(new SqlServerQueryConfig())
         {
-            return config.Clone(safeConnection);
+
         }
 
-        public override ConnectionCreator MakeConnectionCreator()
+        private MockFixture(QueryConfig config)
         {
-            return new SingleConnectionCreator<MockConnection>(config.Clone(), null);
+            _config = config;
+        }
+
+        public static MockFixture FromConfig(QueryConfig config)
+        {
+            return new MockFixture(config);
+        }
+
+        public override ConnectionCreator MakeConnectionCreator(bool safe)
+        {
+            return new SingleConnectionCreator<MockConnection>(GetConfig(safe), null);
+        }
+
+        public override QueryConfig GetConfig(bool safe)
+        {
+            if (safe == _config.OnlySafeModifications)
+                return _config;
+
+            return _config.Clone(safe);
         }
     }
 
     public class MockFixture<Cnf> : DbFixtureBase where Cnf : QueryConfig, new()
     {
+        public MockFixture()
+        {
+
+        }
+
         public override QueryConfig GetConfig(bool safeConnection)
         {
             return new Cnf().Clone(safeConnection);
         }
 
-        public override ConnectionCreator MakeConnectionCreator()
+        public override ConnectionCreator MakeConnectionCreator(bool safe)
         {
-            return new SingleConnectionCreator<MockConnection>(new Cnf(), null);
+            return new SingleConnectionCreator<MockConnection>(new Cnf().Clone(safe), null);
         }
     }
 }

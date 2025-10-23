@@ -9,8 +9,13 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class CountBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, ICountBuilderTest
+    public class CountBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqliteQueryConfig>>, ICountBuilderTest
     {
+        public CountBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : base(output, connection)
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public void Count()
         {

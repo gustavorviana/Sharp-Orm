@@ -4,14 +4,14 @@ namespace DbRunTest.DbInitializer
 {
     internal class SqlServerInicializer : DbInicializer
     {
-        public override void InitDb(ConnectionManager manager)
+        public override Task InitAsync(ConnectionManager manager)
         {
-            ExecuteScriptFile(manager, "SQlServer.sql");
+            return ExecuteScriptFileAsync(manager, "SQlServer.sql");
         }
 
-        public override void ResetDb(ConnectionManager manager)
+        public override Task ResetAsync(ConnectionManager manager)
         {
-
+            return Task.CompletedTask;
         }
     }
 }

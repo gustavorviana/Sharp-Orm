@@ -9,8 +9,13 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class DeleteBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : DbGrammarTestBase(output, connection), IClassFixture<MockFixture<SqliteQueryConfig>>, IDeleteBuilderTest
+    public class DeleteBuilderTest : DbGrammarTestBase, IClassFixture<MockFixture<SqliteQueryConfig>>, IDeleteBuilderTest
     {
+        public DeleteBuilderTest(ITestOutputHelper output, MockFixture<SqliteQueryConfig> connection) : base(output, connection)
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public void SoftDeleteWithDate()
         {

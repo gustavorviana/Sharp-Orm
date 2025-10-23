@@ -1,6 +1,5 @@
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using Microsoft.Data.Sqlite;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
@@ -9,11 +8,12 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite
 {
-    public class SqliteColumnInspectorTest : DbTestBase, IClassFixture<UnsafeDbFixture<SqliteConnection>>
+    public class SqliteColumnInspectorTest : DbTestBase, IClassFixture<SqliteFixture>
     {
-        public SqliteColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<SqliteConnection> connection)
+        public SqliteColumnInspectorTest(ITestOutputHelper output, SqliteFixture connection)
             : base(output, connection)
         {
+            MakeUnsafe();
             SetConnectionManagement(ConnectionManagement.CloseOnManagerDispose);
         }
 

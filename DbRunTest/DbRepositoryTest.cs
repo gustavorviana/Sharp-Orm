@@ -1,14 +1,13 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Models;
 using BaseTest.Utils;
-using SharpOrm.Builder;
 using SharpOrm.Errors;
 using System.Data.Common;
 
 namespace DbRunTest
 {
     [Collection("Mock")]
-    public class DbRepositoryTest(MockFixture<SqliteQueryConfig> fixture) : DbTestBase(fixture)
+    public class DbRepositoryTest(MockFixture fixture) : DbTestBase(fixture)
     {
         [Fact]
         public void MultipleCommit()

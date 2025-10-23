@@ -41,7 +41,7 @@ namespace SharpOrm.Connection
         /// <summary>
         /// Gets the query configuration for the query build.
         /// </summary>
-        public virtual QueryConfig Config { get; protected set; }
+        public virtual QueryConfig Config { get; internal protected set; }
 
         /// <summary>
         /// Gets a database connection.

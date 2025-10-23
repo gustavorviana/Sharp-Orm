@@ -1,7 +1,6 @@
 ﻿using BaseTest.Fixtures;
 using BaseTest.Mock;
 using SharpOrm;
-using SharpOrm.Builder;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using Xunit;
@@ -17,12 +16,12 @@ namespace BaseTest.Utils
         {
         }
 
-        public DbMockTest(ITestOutputHelper? output) : base(output, new MockFixture(new SqlServerQueryConfig(false)))
+        public DbMockTest(ITestOutputHelper? output) : base(output, new MockFixture())
         {
 
         }
 
-        public DbMockTest() : base(null, new MockFixture(new SqlServerQueryConfig(false)))
+        public DbMockTest() : base(null, new MockFixture())
         {
 
         }

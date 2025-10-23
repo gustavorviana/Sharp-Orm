@@ -1,15 +1,13 @@
-﻿using BaseTest.Fixtures;
-using BaseTest.Models;
+﻿using BaseTest.Models;
 using DbRunTest.BaseTests.Dml;
 using DbRunTest.Fixtures;
-using Microsoft.Data.Sqlite;
 using SharpOrm;
 using Xunit.Abstractions;
 
 namespace DbRunTest.Sqlite.Dml
 {
     [Collection("SQLite")]
-    public class SqliteDeleteTest(ITestOutputHelper output, DbFixture<SqliteConnection> connection) : DeleteTest(output, connection)
+    public class SqliteDeleteTest(ITestOutputHelper output, SqliteFixture connection) : DeleteTest(output, connection)
     {
         public override void DeleteWhereJoin()
         {

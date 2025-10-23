@@ -4,16 +4,16 @@ using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
 using SharpOrm.Errors;
 using SharpOrm.SqlMethods;
-using System.Data.SqlClient;
 using Xunit.Abstractions;
 
 namespace DbRunTest.SqlServer
 {
-    public class SqlServerColumnInspectorTest : DbTestBase, IClassFixture<UnsafeDbFixture<SqlConnection>>
+    public class SqlServerColumnInspectorTest : DbTestBase, IClassFixture<SqlServerFixture>
     {
-        public SqlServerColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<SqlConnection> connection)
+        public SqlServerColumnInspectorTest(ITestOutputHelper output, SqlServerFixture connection)
             : base(output, connection)
         {
+            MakeUnsafe();
             SetConnectionManagement(SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose);
         }
 

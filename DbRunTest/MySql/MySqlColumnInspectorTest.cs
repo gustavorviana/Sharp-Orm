@@ -1,6 +1,5 @@
 using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using MySql.Data.MySqlClient;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
 using SharpOrm.SqlMethods;
@@ -8,11 +7,12 @@ using Xunit.Abstractions;
 
 namespace DbRunTest.MySql
 {
-    public class MySqlColumnInspectorTest : DbTestBase, IClassFixture<UnsafeDbFixture<MySqlConnection>>
+    public class MySqlColumnInspectorTest : DbTestBase, IClassFixture<MysqlFixture>
     {
-        public MySqlColumnInspectorTest(ITestOutputHelper output, UnsafeDbFixture<MySqlConnection> connection)
+        public MySqlColumnInspectorTest(ITestOutputHelper output, MysqlFixture connection)
             : base(output, connection)
         {
+            MakeUnsafe();
             SetConnectionManagement(SharpOrm.Connection.ConnectionManagement.CloseOnManagerDispose);
         }
 

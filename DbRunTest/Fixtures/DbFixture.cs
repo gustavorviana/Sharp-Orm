@@ -1,5 +1,5 @@
 ﻿using BaseTest.Fixtures;
-using DbRunTest.Utils;
+using DbRunTest.Providers;
 using SharpOrm.Builder;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
@@ -7,68 +7,53 @@ using System.Data.Common;
 
 namespace DbRunTest.Fixtures
 {
+#pragma warning disable CS8618
     public class DbFixture<TConnection> : DbFixtureBase where TConnection : DbConnection, new()
     {
         private readonly WeakRefCollection<ConnectionManager> _managers = [];
         private readonly WeakRefCollection<ConnectionCreator> _creators = [];
-        private readonly bool _safe;
-        private bool _hasInit;
+        protected DbProvider DbProvider { get; set; }
 
-        public DbFixture() : this(true)
+        public DbFixture()
         {
         }
 
-        protected DbFixture(bool safe)
+        public override async Task InitializeAsync()
         {
-            _safe = safe;
+            DbProvider = DbProvider.Get(typeof(TConnection));
+            await DbProvider.BuildAsync();
+            await base.InitializeAsync();
         }
 
-        public override ConnectionCreator MakeConnectionCreator()
+        public override ConnectionCreator MakeConnectionCreator(bool safe)
         {
-            var info = GetMap();
-            var creator = new MultipleConnectionCreator<TConnection>(info.GetConfig(_safe), info.ConnString);
+            var creator = DbProvider.GetConnectionCreator(true, safe);
             _creators.Add(creator);
             return creator;
         }
 
         public override ConnectionManager MakeManager(ConnectionCreator creator)
         {
-            var info = GetMap();
             var manager = new ConnectionManager(creator);
             manager.CheckConnection();
-            if (!_hasInit)
-            {
-                _hasInit = true;
-                info.Inicializer?.InitDb(manager);
-            }
             _managers.Add(manager);
             return manager;
         }
 
-        public override QueryConfig GetConfig(bool safeConnection)
+        public override QueryConfig GetConfig(bool safe)
         {
-            return GetMap().GetConfig(safeConnection);
+            return DbProvider.GetConfig(safe);
         }
 
-        protected override void Dispose(bool disposing)
+        protected override async Task DisposeAsync(bool disposing)
         {
             if (disposing)
             {
-                var info = GetMap();
-                using var creator = MakeConnectionCreator();
-                using var manager = MakeManager(creator);
-                info.Inicializer?.ResetDb(manager);
-
                 DisposeCollection(_managers);
                 DisposeCollection(_creators);
             }
 
-            base.Dispose(disposing);
-        }
-
-        private static ConnectionMap.ConnMapInfo GetMap()
-        {
-            return ConnectionMap.Get(typeof(TConnection));
+            await base.DisposeAsync(disposing);
         }
 
         private static void DisposeCollection<T>(WeakRefCollection<T> collection) where T : class, IDisposable
@@ -84,11 +69,5 @@ namespace DbRunTest.Fixtures
                 }
         }
     }
-
-    public class UnsafeDbFixture<TConnection> : DbFixture<TConnection> where TConnection : DbConnection, new()
-    {
-        public UnsafeDbFixture() : base(false)
-        {
-        }
-    }
+#pragma warning restore CS8618 
 }

@@ -7,6 +7,11 @@ namespace QueryTest
 {
     public class SoftDeleteTest : DbMockFallbackTest
     {
+        public SoftDeleteTest()
+        {
+            MakeUnsafe();
+        }
+
         [Theory]
         [InlineData(Trashed.With, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]
         [InlineData(Trashed.Only, "UPDATE [SoftDeleteDateAddress] SET [deleted] = 1, [deleted_at] = @p1 WHERE [deleted] = 0")]

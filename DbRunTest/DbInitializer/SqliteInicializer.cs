@@ -4,7 +4,7 @@ namespace DbRunTest.DbInitializer
 {
     internal class SqliteInicializer : DbInicializer
     {
-        public override void InitDb(ConnectionManager manager)
+        public override async Task InitAsync(ConnectionManager manager)
         {
             var script = File.ReadAllText("./Scripts/Sqlite.sql");
             var commands = script.Split(';', StringSplitOptions.RemoveEmptyEntries);
@@ -14,14 +14,14 @@ namespace DbRunTest.DbInitializer
                 var trimmedCommand = command.Trim();
                 if (!string.IsNullOrWhiteSpace(trimmedCommand))
                 {
-                    manager.ExecuteNonQuery(trimmedCommand);
+                    await manager.ExecuteNonQueryAsync(trimmedCommand);
                 }
             }
         }
 
-        public override void ResetDb(ConnectionManager manager)
+        public override Task ResetAsync(ConnectionManager manager)
         {
-
+            return Task.CompletedTask;
         }
     }
 }

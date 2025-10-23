@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace QueryTest.Sqlite
 {
-    public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqliteQueryConfig { EscapeStrings = true }), IClassFixture<MockFixture<SqliteQueryConfig>>
+    public class EscapeStringTest(ITestOutputHelper output) : DbGrammarTestBase(output, new SqliteQueryConfig { EscapeStrings = true }), IClassFixture<MockFixture>
     {
         [Fact]
         public void SelectWithEscapeStrings()

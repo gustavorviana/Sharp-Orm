@@ -9,6 +9,7 @@ namespace BaseTest.Utils
 {
     public abstract class QueryTestBase : TestBase
     {
+        private readonly DbFixtureBase _fixture;
         public ConnectionCreator Creator { get; private set; }
         protected virtual QueryConfig Config => Creator.Config;
         protected virtual TranslationRegistry Translation => Creator.Config.Translation;
@@ -20,9 +21,21 @@ namespace BaseTest.Utils
 
         public QueryTestBase(ITestOutputHelper? output, DbFixtureBase fixture) : base(output)
         {
-            Creator = fixture.MakeConnectionCreator();
+            _fixture = fixture;
+            Creator = fixture.MakeConnectionCreator(true);
             Manager = fixture.MakeManager(Creator);
             ConnectionCreator.Default = Creator;
+        }
+
+        protected void ResetConfig()
+        {
+            TranslationRegistry.Default = new TranslationRegistry();
+            Creator.Config = _fixture.GetConfig(Creator.Config.OnlySafeModifications);
+        }
+
+        protected void MakeUnsafe()
+        {
+            Creator.Config = Creator.Config.Clone(false);
         }
 
         protected void SetConnectionManagement(ConnectionManagement management)
@@ -31,9 +44,11 @@ namespace BaseTest.Utils
             Manager.Management = management;
         }
 
-        protected override void Dispose(bool disposing)
+        public override Task DisposeAsync()
         {
             ConnectionCreator.Default = null;
+            ResetConfig();
+            return base.DisposeAsync();
         }
 
         protected ConnectionManager GetManager(Action<QueryConfig> configure)

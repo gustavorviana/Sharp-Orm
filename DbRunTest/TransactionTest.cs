@@ -1,7 +1,6 @@
-﻿using BaseTest.Fixtures;
-using BaseTest.Utils;
+﻿using BaseTest.Utils;
 using DbRunTest.Fixtures;
-using DbRunTest.Utils;
+using DbRunTest.Providers;
 using SharpOrm;
 using SharpOrm.Connection;
 using SharpOrm.Errors;
@@ -11,7 +10,7 @@ using System.Data.SqlClient;
 namespace DbRunTest
 {
     [Collection("SQL Server")]
-    public class TransactionTest(DbFixture<SqlConnection> fixture) : DbTestBase(fixture)
+    public class TransactionTest(SqlServerFixture fixture) : DbTestBase(fixture)
     {
         [Fact]
         public void Select()
@@ -140,13 +139,15 @@ namespace DbRunTest
         [Fact]
         public void AutoOpenConnectionTest()
         {
-            var init = ConnectionMap.Get(typeof(SqlConnection));
+            var init = DbProvider.Get<SqlConnection>();
 
-            using var localCreator = new SingleConnectionCreator(init.GetConfig(), init.ConnString) { AutoOpenConnection = true };
+            using var localCreator = init.GetConnectionCreator(false, true);
+            localCreator.AutoOpenConnection = true;
+
             using var conn = localCreator.GetConnection();
             Assert.True(conn.IsOpen());
 
-            using var localCreator2 = new SingleConnectionCreator(init.GetConfig(), init.ConnString);
+            using var localCreator2 = init.GetConnectionCreator(false, true);
             using var conn2 = localCreator2.GetConnection();
             Assert.False(conn2.IsOpen());
         }
@@ -154,9 +155,10 @@ namespace DbRunTest
         [Fact]
         public void ManagementTest()
         {
-            var init = ConnectionMap.Get(typeof(SqlConnection));
+            var init = DbProvider.Get<SqlConnection>();
 
-            using var localCreator = new SingleConnectionCreator(init.GetConfig(), init.ConnString) { Management = ConnectionManagement.LeaveOpen };
+            using var localCreator = init.GetConnectionCreator(false, true);
+            localCreator.Management = ConnectionManagement.LeaveOpen;
             using var manager = new ConnectionManager(localCreator);
             Assert.Equal(ConnectionManagement.LeaveOpen, manager.Management);
         }

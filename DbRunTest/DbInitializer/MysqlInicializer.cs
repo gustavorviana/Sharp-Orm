@@ -4,14 +4,14 @@ namespace DbRunTest.DbInitializer
 {
     internal class MysqlInicializer : DbInicializer
     {
-        public override void InitDb(ConnectionManager manager)
+        public override Task InitAsync(ConnectionManager manager)
         {
-            ExecuteScriptFile(manager, "Mysql.sql");
+            return ExecuteScriptFileAsync(manager, "Mysql.sql");
         }
 
-        public override void ResetDb(ConnectionManager manager)
+        public override Task ResetAsync(ConnectionManager manager)
         {
-
+            return Task.CompletedTask;
         }
     }
 }

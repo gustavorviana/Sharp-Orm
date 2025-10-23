@@ -5,7 +5,6 @@ using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
 using SharpOrm.Builder.Grammars.SqlServer;
-using SharpOrm.Connection;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer

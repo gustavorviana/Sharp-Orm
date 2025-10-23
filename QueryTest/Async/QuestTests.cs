@@ -5,6 +5,11 @@ namespace QueryTest.Async
 {
     public class QuestTests : DbMockFallbackTest
     {
+        public QuestTests()
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public async Task SelectAsync()
         {

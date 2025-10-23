@@ -9,6 +9,11 @@ namespace QueryTest.DataTranslation.Reader
 {
     public class MappedObjectTests : DbMockTest
     {
+        public MappedObjectTests()
+        {
+            MakeUnsafe();
+        }
+
         [Fact]
         public void ManualPropMapTest()
         {

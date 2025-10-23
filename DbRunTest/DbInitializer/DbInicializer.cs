@@ -4,12 +4,13 @@ namespace DbRunTest.DbInitializer
 {
     public abstract class DbInicializer
     {
-        public abstract void InitDb(ConnectionManager manager);
-        public abstract void ResetDb(ConnectionManager manager);
+        public abstract Task InitAsync(ConnectionManager manager);
+        public abstract Task ResetAsync(ConnectionManager manager);
 
-        protected void ExecuteScriptFile(ConnectionManager manager, string name)
+        protected static async Task ExecuteScriptFileAsync(ConnectionManager manager, string name)
         {
-            manager.ExecuteNonQuery(File.ReadAllText("./Scripts/" + name));
+            var content = await File.ReadAllTextAsync("./Scripts/" + name);
+            await manager.ExecuteNonQueryAsync(content);
         }
     }
 }
