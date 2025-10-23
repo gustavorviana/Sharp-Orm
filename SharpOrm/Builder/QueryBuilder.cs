@@ -249,9 +249,9 @@ namespace SharpOrm.Builder
         public QueryBuilder Add(object rawQuery)
         {
             if (ToQueryValue(rawQuery) is string strQuery)
-                return this.Add(strQuery);
+                return Add(strQuery);
 
-            return this.Add(rawQuery?.ToString());
+            return Add(rawQuery?.ToString());
         }
 
         /// <summary>
@@ -620,6 +620,14 @@ namespace SharpOrm.Builder
         {
             query.softDelete = this.softDelete;
             query.Trashed = this.Trashed;
+        }
+
+        internal QueryBuilder WriteWhereType(string type)
+        {
+            if (!Empty)
+                Add(' ').Add(type).Add(' ');
+
+            return this;
         }
 
         #region IDisposable

@@ -1339,11 +1339,26 @@ namespace SharpOrm
         /// <summary>
         /// Add a HAVING clause to the query based on a callback.
         /// </summary>
+        /// <param name="expression">The SqlExpression with HAVING clause.</param>
+        /// <returns></returns>
+        public new Query<T> Having(SqlExpression expression)
+        {
+            return (Query<T>)base.Having(expression);
+        }
+
+        /// <summary>
+        /// Add a HAVING clause to the query based on a callback.
+        /// </summary>
         /// <param name="callback">The callback that defines the conditions of the HAVING clause.</param>
         /// <returns></returns>
-        public new Query<T> Having(QueryCallback callback)
+        public Query<T> Having(QueryCallback<T> callback)
         {
-            return (Query<T>)base.Having(callback);
+            var qBase = new WhereBuilder<T>(Info.Config, Info.TableName);
+            callback(qBase);
+
+            Info.Having.WriteWhereType("AND").Add(qBase.Info.Where);
+
+            return this;
         }
 
         #endregion
@@ -2305,13 +2320,24 @@ namespace SharpOrm
         /// <summary>
         /// Add a HAVING clause to the query based on a callback.
         /// </summary>
+        /// <param name="expression">The SqlExpression with HAVING clause.</param>
+        /// <returns></returns>
+        public Query Having(SqlExpression expression)
+        {
+            Info.Having.WriteWhereType("AND").Add(expression);
+            return this;
+        }
+
+        /// <summary>
+        /// Add a HAVING clause to the query based on a callback.
+        /// </summary>
         /// <param name="callback">The callback that defines the conditions of the HAVING clause.</param>
         /// <returns></returns>
         public Query Having(QueryCallback callback)
         {
             var qBase = new QueryBase(Config, Info.TableName);
             callback(qBase);
-            Info.Having.Add(qBase.Info.Where);
+            Info.Having.WriteWhereType("AND").Add(qBase.Info.Where);
 
             return this;
         }
@@ -3209,7 +3235,7 @@ namespace SharpOrm
         /// </summary>
         protected void CheckIsSafeOperation()
         {
-            if (Info.Config.OnlySafeModifications && Info.Where.Empty)
+            if (Info.Config.OnlySafeModifications && Info.Where.Empty && Info.Having.Empty)
                 throw new UnsafeDbOperation();
         }
 

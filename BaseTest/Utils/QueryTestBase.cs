@@ -68,6 +68,11 @@ namespace BaseTest.Utils
             return new ConnectionManager(config ?? Config, Creator.GetConnection()) { Management = ConnectionManagement.CloseOnManagerDispose };
         }
 
+        protected ConnectionCreator CloneCreator(bool safeConnection)
+        {
+            return _fixture.MakeConnectionCreator(safeConnection);
+        }
+
         protected void SetMockConnectionVersion(Version? version = null)
         {
             if (Manager.Connection is not MockConnection connection)

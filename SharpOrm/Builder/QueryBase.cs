@@ -543,13 +543,7 @@ namespace SharpOrm.Builder
                 throw new InvalidOperationException(string.Format(Messages.Query.InvalidOperation, operation));
         }
 
-        internal QueryBuilder WriteWhereType(string type)
-        {
-            if (!this.Info.Where.Empty)
-                this.Info.Where.Add(' ').Add(type).Add(' ');
-
-            return this.Info.Where;
-        }
+        internal QueryBuilder WriteWhereType(string type) => Info.Where.WriteWhereType(type);
 
         #endregion
     }
