@@ -60,6 +60,12 @@ namespace SharpOrm.Collections
         [Obsolete("IMappedObject is deprecated and will be removed in version 4.0. Use BaseRecordReader instead.")]
         public DataReaderEnumerable(DbDataReader reader, IMappedObject map)
         {
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+
+            if (map == null)
+                throw new ArgumentNullException(nameof(map));
+
             _enumerator = new ObsoleteEnumerator(reader, map);
         }
 
@@ -68,7 +74,16 @@ namespace SharpOrm.Collections
         /// Wraps the internal enumerator to provide type-safe iteration.
         /// </summary>
         /// <returns>An enumerator that can iterate through the collection of type T objects.</returns>
-        public IEnumerator<T> GetEnumerator() => new TEnumerator(GetEnumerator());
+        public IEnumerator<T> GetEnumerator()
+        {
+            if (_enumerator is ObsoleteEnumerator obsolete)
+                obsolete.Token = Token;
+
+            if (_enumerator is BaseRecordReader reader)
+                reader.Token = Token;
+
+            return new TEnumerator(_enumerator);
+        }
 
         /// <summary>
         /// Returns the internal enumerator and configures it with the current cancellation token.
