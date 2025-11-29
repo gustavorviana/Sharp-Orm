@@ -80,8 +80,8 @@ namespace SharpOrm.DataTranslation
         /// </remarks>
         public string DateFormat
         {
-            get => _native.dateTranslation.Format;
-            set => _native.dateTranslation.Format = value;
+            get => _native._dateTranslation.Format;
+            set => _native._dateTranslation.Format = value;
         }
 
         /// <summary>
@@ -89,8 +89,8 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public CultureInfo Culture
         {
-            get => _native.numericTranslation.Culture;
-            set => _native.numericTranslation.Culture = value;
+            get => _native._numericTranslation.Culture;
+            set => _native._numericTranslation.Culture = value;
         }
 
         /// <summary>
@@ -101,6 +101,16 @@ namespace SharpOrm.DataTranslation
         {
             get => _native.EnumSerialization;
             set => _native.EnumSerialization = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the behavior when an invalid value is encountered during Guid or Enum conversion.
+        /// </summary>
+        /// <value>Default is <see cref="InvalidValueBehavior.ThrowException"/>.</value>
+        public InvalidValueBehavior InvalidValueBehavior
+        {
+            get => _native.InvalidValueBehavior;
+            set => _native.InvalidValueBehavior = value;
         }
 
         /// <summary>
@@ -158,7 +168,7 @@ namespace SharpOrm.DataTranslation
         /// <returns><c>true</c> if the type is a date or time type; otherwise, <c>false</c>.</returns>
         public bool IsDateOrTime(Type type)
         {
-            return _native.dateTranslation.CanWork(type);
+            return _native._dateTranslation.CanWork(type);
         }
 
         /// <summary>

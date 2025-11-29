@@ -109,6 +109,9 @@ namespace SharpOrm
                 {
                     var tempTableColumns = GetColumns((Query)q, toCheckColumnsExp);
 
+                    if (tempTableColumns.Length != targetColumns.Length)
+                        throw new ArgumentException($"Mismatch between temp table columns ({tempTableColumns.Length}) and target columns ({targetColumns.Length}).");
+
                     for (int i = 0; i < tempTableColumns.Length; i++)
                         q.Where(tempTableColumns[i], targetColumns[i]);
                 }, "INNER");

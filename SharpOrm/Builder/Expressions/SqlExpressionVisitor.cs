@@ -100,9 +100,20 @@ namespace SharpOrm.Builder.Expressions
 
             Expression currentExp = methodCallExp;
             var methods = new List<SqlMemberInfo>();
+            var visitedExpressions = new HashSet<Expression>();
+            const int maxIterations = 1000;
+            int iterationCount = 0;
 
             while (currentExp is MethodCallExpression)
             {
+                if (iterationCount++ >= maxIterations)
+                    throw new InvalidOperationException("Method call chain exceeds maximum depth. Possible circular reference in expression tree.");
+
+                if (visitedExpressions.Contains(currentExp))
+                    throw new InvalidOperationException("Circular reference detected in method call expression tree.");
+
+                visitedExpressions.Add(currentExp);
+
                 var currentMethodCall = (MethodCallExpression)currentExp;
                 methods.Insert(0, CreateMethodInfo(currentMethodCall));
 

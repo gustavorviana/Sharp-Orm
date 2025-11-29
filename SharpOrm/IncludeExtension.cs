@@ -15,7 +15,10 @@ namespace SharpOrm
             Expression<Func<TEntity, TProperty>> navigationPropertyPath)
             where TEntity : class
         {
-            return InternalInclude<TEntity, TProperty>((source as IIncludable).Register, navigationPropertyPath);
+            if (!(source is IIncludable includable))
+                throw new ArgumentException("Source must implement IIncludable interface", nameof(source));
+
+            return InternalInclude<TEntity, TProperty>(includable.Register, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
@@ -23,7 +26,10 @@ namespace SharpOrm
             Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
             where TEntity : class
         {
-            return InternalInclude<TEntity, TProperty>((source as IIncludable).Node, navigationPropertyPath);
+            if (!(source is IIncludable includable))
+                throw new ArgumentException("Source must implement IIncludable interface", nameof(source));
+
+            return InternalInclude<TEntity, TProperty>(includable.Node, navigationPropertyPath);
         }
 
         public static IIncludable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(
@@ -31,7 +37,10 @@ namespace SharpOrm
             Expression<Func<TPreviousProperty, TProperty>> navigationPropertyPath)
             where TEntity : class
         {
-            return InternalInclude<TEntity, TProperty>((source as IIncludable).Node, navigationPropertyPath);
+            if (!(source is IIncludable includable))
+                throw new ArgumentException("Source must implement IIncludable interface", nameof(source));
+
+            return InternalInclude<TEntity, TProperty>(includable.Node, navigationPropertyPath);
         }
 
         internal static IIncludable<TEntity, TProperty> InternalInclude<TEntity, TProperty>(ForeignKeyNodeBase parent, LambdaExpression expression)

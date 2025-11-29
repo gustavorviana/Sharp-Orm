@@ -169,13 +169,8 @@ namespace SharpOrm.Connection
             base.Dispose(disposing);
             CloseConnection(true);
 
-            try
-            {
-                if (disposing)
-                    _connection?.Dispose();
-            }
-            catch
-            { }
+            if (disposing)
+                DisposeUtils.SafeDispose(_connection, "SingleConnectionCreator.Dispose connection");
 
             _connection = null;
         }
@@ -185,12 +180,11 @@ namespace SharpOrm.Connection
             if (_connection == null)
                 return;
 
-            try
+            DisposeUtils.SafeExecute(() =>
             {
                 if (forceClose || (Management != ConnectionManagement.LeaveOpen && _connection.IsOpen()))
                     _connection.Close();
-            }
-            catch (Exception) { }
+            }, "SingleConnectionCreator.CloseConnection");
         }
 
         /// <summary>

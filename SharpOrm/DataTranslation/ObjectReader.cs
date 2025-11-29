@@ -98,7 +98,7 @@ namespace SharpOrm.DataTranslation
             var context = new ValidationContext(owner);
 
             foreach (var node in _columns.Nodes)
-                ReadObjectCells(context, builder, node);
+                ReadObjectCells(context, builder, node, visited);
 
             if (!Settings.IgnoreTimestamps && _hasCreateColumn && Settings.IsCreate)
                 builder.Add(_table.Timestamp.CreatedAtColumn, DateTime.UtcNow);
@@ -107,7 +107,7 @@ namespace SharpOrm.DataTranslation
                 builder.Add(_table.Timestamp.UpdatedAtColumn, DateTime.UtcNow);
         }
 
-        private void ReadObjectCells(ValidationContext context, RowBuilder builder, IColumnNode node)
+        private void ReadObjectCells(ValidationContext context, RowBuilder builder, IColumnNode node, HashSet<object> visited = null)
         {
             if (node.Nodes.Count == 0)
             {
@@ -117,10 +117,18 @@ namespace SharpOrm.DataTranslation
                 return;
             }
 
-            context = new ValidationContext(GetRawValue(node.Column, context.ObjectInstance));
+            var nestedObject = GetRawValue(node.Column, context.ObjectInstance);
+            
+            if (nestedObject != null && visited != null && visited.Contains(nestedObject))
+                return;
+
+            if (nestedObject != null && visited != null)
+                visited.Add(nestedObject);
+
+            context = new ValidationContext(nestedObject);
 
             foreach (var childNode in node.Nodes)
-                ReadObjectCells(context, builder, childNode);
+                ReadObjectCells(context, builder, childNode, visited);
         }
 
         private Cell GetCell(ValidationContext context, ColumnInfo column)
@@ -277,11 +285,20 @@ namespace SharpOrm.DataTranslation
 
                     for (int i = 1; i < member.Path.Length; i++)
                     {
-                        node = node.Nodes.First(x => x.Column.PropName == member.Path[0].Name);
-                        target = target.Add((node as IColumnNode).Column);
+                        var nextNode = node.Nodes.FirstOrDefault(x => x.Column.PropName == member.Path[i].Name);
+                        if (nextNode == null)
+                            throw new InvalidOperationException($"Column node not found for path member {member.Path[i].Name}");
+
+                        node = nextNode;
+                        if (node is IColumnNode columnNode)
+                            target = target.Add(columnNode.Column);
                     }
 
-                    var column = (node.Nodes.First(x => x.Column.PropName == member.Name) as IColumnNode).Column;
+                    var finalNode = node.Nodes.FirstOrDefault(x => x.Column.PropName == member.Name);
+                    if (!(finalNode is IColumnNode finalColumnNode))
+                        throw new InvalidOperationException($"Column node not found for member {member.Name}");
+
+                    var column = finalColumnNode.Column;
                     if (reader.CanReadColumn(column))
                         target.Add(column);
                 }

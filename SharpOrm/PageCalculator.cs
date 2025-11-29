@@ -37,10 +37,10 @@ namespace SharpOrm
             if (peerPage <= 0)
                 throw new ArgumentOutOfRangeException(nameof(peerPage));
 
-            this.PeerPage = peerPage;
-            this.Size = size;
+            PeerPage = peerPage;
+            Size = size;
 
-            this.Pages = CalcPages(size, peerPage);
+            Pages = CalcPages(size, peerPage);
         }
 
         /// <summary>
@@ -51,12 +51,12 @@ namespace SharpOrm
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the page number is less than 1 or greater than the total number of pages.</exception>
         public long GetSize(int page)
         {
-            this.CheckPage(page);
+            CheckPage(page);
 
-            if (page != this.Pages)
-                return this.PeerPage;
+            if (page != Pages)
+                return PeerPage;
 
-            return this.Size - this.CountTo(page - 1);
+            return Size - CountTo(page - 1);
         }
 
         /// <summary>
@@ -67,25 +67,25 @@ namespace SharpOrm
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the page number is less than 1 or greater than the total number of pages.</exception>
         public long GetStartIndex(int page)
         {
-            this.CheckPage(page);
+            CheckPage(page);
 
             if (page == 1)
                 return 0;
 
-            if (page < this.Pages)
-                return this.CountTo(page - 1);
+            if (page < Pages)
+                return CountTo(page - 1);
 
-            return (int)(this.Size - this.GetSize(page));
+            return Size - GetSize(page);
         }
 
         private long CountTo(int page)
         {
-            return this.PeerPage * page;
+            return PeerPage * page;
         }
 
         private void CheckPage(int page)
         {
-            if (page < 1 || page > this.Pages)
+            if (page < 1 || page > Pages)
                 throw new ArgumentOutOfRangeException(nameof(page));
         }
 
@@ -97,6 +97,15 @@ namespace SharpOrm
         /// <returns>The total number of pages.</returns>
         public static int CalcPages(long size, long peerPage)
         {
+            if (peerPage <= 0)
+                throw new ArgumentOutOfRangeException(nameof(peerPage));
+
+            if (size < 0)
+                throw new ArgumentOutOfRangeException(nameof(size));
+
+            if (size == 0)
+                return 0;
+
             return (int)Math.Ceiling(size / (double)peerPage);
         }
     }

@@ -21,12 +21,25 @@ namespace SharpOrm
         private readonly Cell[] _cells;
         private readonly string[] _names;
 
+        private void ValidateIndex(int index)
+        {
+            if (index < 0 || index >= _cells.Length)
+                throw new IndexOutOfRangeException($"Column index {index} is out of range. Valid range is 0 to {_cells.Length - 1}.");
+        }
+
         /// <summary>
         /// Gets or sets the cell at the specified index.
         /// </summary>
         /// <param name="index">The index of the cell to get or set.</param>
         /// <returns>The cell at the specified index.</returns>
-        public Cell this[int index] => _cells[index];
+        public Cell this[int index]
+        {
+            get
+            {
+                ValidateIndex(index);
+                return _cells[index];
+            }
+        }
 
         /// <summary>
         /// Gets an array of all cells in the row.
@@ -211,16 +224,32 @@ namespace SharpOrm
 
         int IDataRecord.FieldCount => _cells.Length;
 
-        object IDataRecord.this[int i] => _cells[i].Value;
+        object IDataRecord.this[int i]
+        {
+            get
+            {
+                ValidateIndex(i);
+                return _cells[i].Value;
+            }
+        }
 
         object IDataRecord.this[string name] => this[name];
 
-        bool IDataRecord.GetBoolean(int i) => Convert.ToBoolean(_cells[i].Value);
+        bool IDataRecord.GetBoolean(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToBoolean(_cells[i].Value);
+        }
 
-        byte IDataRecord.GetByte(int i) => Convert.ToByte(_cells[i].Value);
+        byte IDataRecord.GetByte(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToByte(_cells[i].Value);
+        }
 
         long IDataRecord.GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
+            ValidateIndex(i);
             var value = _cells[i].Value;
             if (value == null || value is DBNull)
                 return 0;
@@ -236,10 +265,15 @@ namespace SharpOrm
             return bytesToCopy;
         }
 
-        char IDataRecord.GetChar(int i) => Convert.ToChar(_cells[i].Value);
+        char IDataRecord.GetChar(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToChar(_cells[i].Value);
+        }
 
         long IDataRecord.GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
         {
+            ValidateIndex(i);
             var value = _cells[i].Value;
             if (value == null || value is DBNull)
                 return 0;
@@ -263,43 +297,78 @@ namespace SharpOrm
 
         string IDataRecord.GetDataTypeName(int i)
         {
+            ValidateIndex(i);
             var value = _cells[i].Value;
             if (value == null || value is DBNull)
                 return typeof(object).Name;
             return value.GetType().Name;
         }
 
-        DateTime IDataRecord.GetDateTime(int i) => Convert.ToDateTime(_cells[i].Value);
+        DateTime IDataRecord.GetDateTime(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToDateTime(_cells[i].Value);
+        }
 
-        decimal IDataRecord.GetDecimal(int i) => Convert.ToDecimal(_cells[i].Value);
+        decimal IDataRecord.GetDecimal(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToDecimal(_cells[i].Value);
+        }
 
-        double IDataRecord.GetDouble(int i) => Convert.ToDouble(_cells[i].Value);
+        double IDataRecord.GetDouble(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToDouble(_cells[i].Value);
+        }
 
         Type IDataRecord.GetFieldType(int i)
         {
+            ValidateIndex(i);
             var value = _cells[i].Value;
             if (value == null || value is DBNull)
                 return typeof(object);
             return value.GetType();
         }
 
-        float IDataRecord.GetFloat(int i) => Convert.ToSingle(_cells[i].Value);
+        float IDataRecord.GetFloat(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToSingle(_cells[i].Value);
+        }
 
         Guid IDataRecord.GetGuid(int i)
         {
+            ValidateIndex(i);
             var value = _cells[i].Value;
             if (value is Guid guid)
                 return guid;
             return Guid.Parse(value.ToString());
         }
 
-        short IDataRecord.GetInt16(int i) => Convert.ToInt16(_cells[i].Value);
+        short IDataRecord.GetInt16(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToInt16(_cells[i].Value);
+        }
 
-        int IDataRecord.GetInt32(int i) => Convert.ToInt32(_cells[i].Value);
+        int IDataRecord.GetInt32(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToInt32(_cells[i].Value);
+        }
 
-        long IDataRecord.GetInt64(int i) => Convert.ToInt64(_cells[i].Value);
+        long IDataRecord.GetInt64(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToInt64(_cells[i].Value);
+        }
 
-        string IDataRecord.GetName(int i) => _cells[i].Name;
+        string IDataRecord.GetName(int i)
+        {
+            ValidateIndex(i);
+            return _cells[i].Name;
+        }
 
         int IDataRecord.GetOrdinal(string name)
         {
@@ -308,12 +377,21 @@ namespace SharpOrm
                 if (_names[i].Equals(name, StringComparison.OrdinalIgnoreCase))
                     return i;
             }
-            throw new IndexOutOfRangeException($"Column '{name}' not found");
+
+            return -1;
         }
 
-        string IDataRecord.GetString(int i) => Convert.ToString(_cells[i].Value);
+        string IDataRecord.GetString(int i)
+        {
+            ValidateIndex(i);
+            return Convert.ToString(_cells[i].Value);
+        }
 
-        object IDataRecord.GetValue(int i) => _cells[i].Value;
+        object IDataRecord.GetValue(int i)
+        {
+            ValidateIndex(i);
+            return _cells[i].Value;
+        }
 
         int IDataRecord.GetValues(object[] values)
         {

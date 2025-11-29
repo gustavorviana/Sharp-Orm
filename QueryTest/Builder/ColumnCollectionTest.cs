@@ -334,5 +334,89 @@ namespace QueryTest.Builder
                 Assert.Same(leafNode.Column, flattened[0]);
             }
         }
+
+        [Fact]
+        public void MapChildren_WithCircularTypes_ShouldNotCauseStackOverflow()
+        {
+            // Arrange
+            var propertyA = typeof(NestedCircularA).GetProperty(nameof(NestedCircularA.NestedB));
+            var rootNode = new MemberTreeNode(propertyA, null);
+
+            // Act
+            var mappedNode = rootNode.MapChildren(propertyA, NestedMode.All);
+
+            // Assert
+            Assert.NotNull(mappedNode);
+            Assert.NotNull(mappedNode.Children);
+
+            var nodeA = mappedNode.Children.FirstOrDefault(n => n.Member.Name == nameof(NestedCircularB.NestedA));
+
+            Assert.True(mappedNode.Children.Count < 100, "Should have a reasonable limit of mapped nodes");
+        }
+
+        [Fact]
+        public void MapNode_WithCircularNestedTypes_ShouldPreventInfiniteRecursion()
+        {
+            // Arrange
+            var propertyA = typeof(NestedCircularA).GetProperty(nameof(NestedCircularA.NestedB));
+            var propertyB = typeof(NestedCircularB).GetProperty(nameof(NestedCircularB.NestedA));
+
+            // Act
+            var nodeA = MemberTreeNode.MapNode(propertyA, NestedMode.All);
+            var nodeB = MemberTreeNode.MapNode(propertyB, NestedMode.All);
+
+            // Assert
+            Assert.NotNull(nodeA);
+            Assert.NotNull(nodeB);
+        }
+
+        [Fact]
+        public void MapChildren_WithSelfReferencingType_ShouldHandleGracefully()
+        {
+            // Arrange
+            var propertyA = typeof(NestedCircularA).GetProperty(nameof(NestedCircularA.NestedB));
+            var rootNode = new MemberTreeNode(propertyA, null);
+
+            // Act
+            var mappedNode = rootNode.MapChildren(propertyA, NestedMode.All);
+
+            // Assert
+            Assert.NotNull(mappedNode);
+        }
+
+        private class NestedCircularA
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public NestedCircularB? NestedB { get; set; }
+        }
+
+        private class NestedCircularB
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public NestedCircularA? NestedA { get; set; }
+        }
+
+        [Fact]
+        public void ColumnTreeInfo_ToString_WithEmptyPath_ShouldHandleGracefully()
+        {
+            // Arrange
+            var registry = Config.Translation;
+            var tableInfo = registry.GetTable(typeof(Customer));
+            var columnInfo = tableInfo.GetColumn(nameof(Customer.Name));
+            
+            // Create a ColumnTreeInfo with empty path
+            var emptyPath = new System.Collections.Generic.List<System.Reflection.MemberInfo>();
+            emptyPath.Add(typeof(Customer).GetProperty(nameof(Customer.Name)));
+
+            // Act
+            var columnTreeInfo = new ColumnTreeInfo(emptyPath, columnInfo, registry);
+            var result = columnTreeInfo.ToString();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("System.String", result);
+        }
     }
 }

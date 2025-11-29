@@ -545,5 +545,79 @@ namespace QueryTest.DataTranslation
             public int Id { get; set; }
             public string? Name { get; set; }
         }
+
+        [Fact]
+        public void ReadCells_WithCircularObjectReference_ShouldNotCauseStackOverflow()
+        {
+            // Arrange
+            var registry = Translation;
+            var table = registry.GetTable(typeof(CircularObjectA));
+            var reader = new ObjectReader(table);
+
+            var objA = new CircularObjectA { Id = 1, Name = "A" };
+            var objB = new CircularObjectB { Id = 2, Name = "B" };
+            objA.ObjectB = objB;
+            objB.ObjectA = objA;
+
+            // Act
+            var cells = reader.ReadCells(objA).ToList();
+
+            // Assert
+            Assert.NotNull(cells);
+
+            Assert.True(cells.Count > 0);
+        }
+
+        [Fact]
+        public void ReadCells_WithNullNestedObject_ShouldHandleGracefully()
+        {
+            // Arrange
+            var registry = Translation;
+            var table = registry.GetTable(typeof(CircularObjectA));
+            var reader = new ObjectReader(table);
+
+            var objA = new CircularObjectA { Id = 1, Name = "A", ObjectB = null };
+
+            // Act
+            var cells = reader.ReadCells(objA).ToList();
+
+            // Assert
+            Assert.NotNull(cells);
+            Assert.True(cells.Count > 0, "Should return at least one cell");
+        }
+
+        [Fact]
+        public void ReadCells_WithDeepNesting_ShouldCompleteSuccessfully()
+        {
+            // Arrange
+            var registry = Translation;
+            var table = registry.GetTable(typeof(CircularObjectA));
+            var reader = new ObjectReader(table);
+
+            var objA = new CircularObjectA { Id = 1, Name = "A" };
+            var objB = new CircularObjectB { Id = 2, Name = "B" };
+            objA.ObjectB = objB;
+            objB.ObjectA = objA;
+
+            // Act
+            var cells = reader.ReadCells(objA).ToList();
+
+            // Assert
+            Assert.NotNull(cells);
+        }
+
+        private class CircularObjectA
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public CircularObjectB? ObjectB { get; set; }
+        }
+
+        private class CircularObjectB
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public CircularObjectA? ObjectA { get; set; }
+        }
     }
 }

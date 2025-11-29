@@ -550,7 +550,7 @@ namespace SharpOrm
             cmd.Disposed -= this.OnCommandDisposed;
 
             if (cmd.Transaction is null)
-                try { Creator.SafeDisposeConnection(cmd.Connection); } catch { }
+                DisposeUtils.SafeExecute(() => Creator.SafeDisposeConnection(cmd.Connection), "DbRepository.OnCommandDisposed.SafeDisposeConnection");
         }
 
         /// <summary>
@@ -564,10 +564,15 @@ namespace SharpOrm
 
             lock (_lock)
             {
-                if (useActiveTransaction && Transaction != null)
-                    return Transaction;
+                var transaction = Transaction;
+                if (useActiveTransaction && transaction != null)
+                    return transaction;
 
-                return GetExistingManager() ?? GetNewManager();
+                var existingManager = GetExistingManager();
+                if (existingManager != null)
+                    return existingManager;
+
+                return GetNewManager();
             }
         }
 

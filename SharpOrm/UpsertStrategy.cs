@@ -226,6 +226,9 @@ namespace SharpOrm
 
         private void ExtractUpsertModes(out List<Row> needNative, out List<Row> needNonNative)
         {
+            if (_rows == null || _rows.Length == 0)
+                throw new InvalidOperationException("Cannot extract upsert modes: rows collection is empty.");
+
             _updateColumns = FixUpdateColumns(_rows[0], _toCheckColumns, _updateColumns);
             _insertColumns = FixInsertColumns(_rows[0], _insertColumns, _excludeInserColumns);
 
