@@ -1692,6 +1692,28 @@ namespace SharpOrm
             return WriteCallback(callback, AND);
         }
 
+        /// <summary>
+        /// Adds a LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)Where(GetColumn(columnExp), "LIKE", value);
+        }
+
+        /// <summary>
+        /// Adds a NOT LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereNotLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)Where(GetColumn(columnExp), "NOT LIKE", value);
+        }
+
         #region OR
 
         /// <summary>
@@ -1926,6 +1948,28 @@ namespace SharpOrm
 
             WrapWithParentheses(qBase, whereType);
             return this;
+        }
+
+        /// <summary>
+        /// Adds an OR LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)OrWhere(GetColumn(columnExp), "LIKE", value);
+        }
+
+        /// <summary>
+        /// Adds an OR NOT LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNotLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)OrWhere(GetColumn(columnExp), "NOT LIKE", value);
         }
 
         #endregion
