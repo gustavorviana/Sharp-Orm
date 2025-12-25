@@ -174,48 +174,82 @@ namespace SharpOrm
         #region OrderBy
 
         /// <summary>
-        /// Applies an ascending sort.
+        /// Adds an ascending ordering to the query after an existing ORDER BY clause.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderBy(Expression<ColumnExpression<T>> expression)
+        {
+            return ThenOrderBy(SharpOrm.OrderBy.Asc, expression);
+        }
+
+        /// <summary>
+        /// Adds a descending ordering to the query after an existing ORDER BY clause.
+        /// </summary>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderByDesc(Expression<ColumnExpression<T>> expression)
+        {
+            return ThenOrderBy(SharpOrm.OrderBy.Desc, expression);
+        }
+
+        /// <summary>
+        /// Applies an ascending sort to the query.
+        /// </summary>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
         {
             return OrderBy(SharpOrm.OrderBy.Asc, expression);
         }
 
         /// <summary>
-        /// Applies descending sort.
+        /// Applies a descending sort to the query.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderByDesc(Expression<ColumnExpression<T>> expression)
         {
             return OrderBy(SharpOrm.OrderBy.Desc, expression);
         }
 
         /// <summary>
-        /// Applies an ascending sort.
+        /// Applies a sort to the query using the specified ordering direction.
         /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="order">The sort direction (ascending or descending).</param>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)OrderBy(order, GetColumns(expression));
         }
 
         /// <summary>
-        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// Adds an additional ordering clause to the query using the specified ordering direction.
         /// </summary>
-        /// <param name="columnNames">The column names by which the results should be grouped.</param>
-        /// <returns></returns>
+        /// <param name="order">The sort direction (ascending or descending).</param>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
+        {
+            var allOrders = new List<ColumnOrder>(Info.Orders);
+            allOrders.AddRange(GetColumns(expression).Select(x => new ColumnOrder(x, order)));
+            base.OrderBy(allOrders.ToArray());
+            return this;
+        }
+
+        /// <summary>
+        /// Groups the results of the query by the specified columns (adds a GROUP BY clause).
+        /// </summary>
+        /// <param name="expression">The column expression used for grouping.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> GroupBy(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.GroupBy(GetColumns(expression));
         }
 
         /// <summary>
-        /// Selects a column from the table using a column expression.
+        /// Selects a column from the table using a strongly typed column expression.
         /// </summary>
         /// <typeparam name="K">The type of the column value.</typeparam>
         /// <param name="column">The column expression to select.</param>
@@ -226,30 +260,30 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Select column of table by Column object.
+        /// Selects one or more columns from the table using a column expression.
         /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used to select columns.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.Select(GetColumns(expression));
         }
 
         /// <summary>
-        /// Select keys of table by table.
+        /// Selects columns from the table by their column names.
         /// </summary>
-        /// <param name="columnNames"></param>
-        /// <returns></returns>
+        /// <param name="columnNames">The names of the columns to select.</param>
+        /// <returns>The current query instance.</returns>
         public new Query<T> Select(params string[] columnNames)
         {
             return (Query<T>)base.Select(columnNames);
         }
 
         /// <summary>
-        /// Select column of table by Column object.
+        /// Selects columns from the table using Column objects.
         /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
+        /// <param name="columns">The columns to select.</param>
+        /// <returns>The current query instance.</returns>
         public new Query<T> Select(params Column[] columns)
         {
             return (Query<T>)base.Select(columns);
