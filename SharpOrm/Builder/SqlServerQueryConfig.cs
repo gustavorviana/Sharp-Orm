@@ -30,6 +30,12 @@ namespace SharpOrm.Builder
 
         }
 
+        public new SqlServerGrammarOptions DefaultGrammarOptions
+        {
+            get => base.DefaultGrammarOptions as SqlServerGrammarOptions;
+            set => base.DefaultGrammarOptions = value;
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlServerQueryConfig"/> class with a flag indicating if only safe modifications are allowed.
         /// </summary>

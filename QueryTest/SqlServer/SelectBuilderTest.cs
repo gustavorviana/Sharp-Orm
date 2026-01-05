@@ -175,10 +175,13 @@ namespace QueryTest.SqlServer
         public void DeleteWithNoLock()
         {
             using var query = new Query(new DbName(TestTableUtils.TABLE, "T"));
-            query.EnableNoLock();
-
-            QueryAssert.Equal("DELETE [T] FROM [TestTable] [T] WITH (NOLOCK)", query.Grammar().Delete());
+            query.GrammarOptions = new SqlServerGrammarOptions
+            {
+                ReadIsolation = SqlServerReadIsolationHint.NoLock
+            };
+            QueryAssert.Equal("DELETE FROM [TestTable] [T]", query.Grammar().Delete());
         }
+
         [Fact]
         public void SelectGroupByColumnName()
         {
@@ -245,6 +248,172 @@ namespace QueryTest.SqlServer
             query.OrderBy("Name");
 
             QueryAssert.Equal("SELECT * FROM [Address] ORDER BY [Name] ASC", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithReadIsolationNoLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { ReadIsolation = SqlServerReadIsolationHint.NoLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (NOLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithReadIsolationReadUncommitted()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { ReadIsolation = SqlServerReadIsolationHint.ReadUncommitted };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (READUNCOMMITTED)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithReadIsolationReadCommittedLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { ReadIsolation = SqlServerReadIsolationHint.ReadCommittedLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (READCOMMITTEDLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithReadIsolationHoldLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { ReadIsolation = SqlServerReadIsolationHint.HoldLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (HOLDLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithLockHintRowLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.RowLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (ROWLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithLockHintPagLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.PagLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (PAGLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithLockHintTabLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.TabLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (TABLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithLockHintTabLockX()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.TabLockX };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (TABLOCKX)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithConcurrencyReadPast()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.ReadPast };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (READPAST)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithConcurrencyUpdLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.UpdLock };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (UPDLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithConcurrencyNoWait()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.NoWait };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (NOWAIT)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithConcurrencyCombined()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions
+            {
+                Concurrency = SqlServerConcurrencyHint.ReadPast | SqlServerConcurrencyHint.UpdLock
+            };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (READPAST, UPDLOCK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithPlanHintForceSeek()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { PlanHint = SqlServerPlanHint.ForceSeek };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (FORCESEEK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithPlanHintForceScan()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { PlanHint = SqlServerPlanHint.ForceScan };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (FORCESCAN)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithIndex()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Index = "IX_TestTable_Id" };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (INDEX(IX_TestTable_Id))", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithMultipleHints()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions
+            {
+                ReadIsolation = SqlServerReadIsolationHint.NoLock,
+                LockHint = SqlServerLockHint.RowLock,
+                Concurrency = SqlServerConcurrencyHint.ReadPast,
+                PlanHint = SqlServerPlanHint.ForceSeek
+            };
+
+            QueryAssert.Equal("SELECT * FROM [TestTable] WITH (NOLOCK, ROWLOCK, READPAST, FORCESEEK)", query.Grammar().Select());
+        }
+
+        [Fact]
+        public void SelectWithIndexAndForceScanShouldThrow()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions
+            {
+                Index = "IX_TestTable_Id",
+                PlanHint = SqlServerPlanHint.ForceScan
+            };
+
+            Assert.Throws<InvalidOperationException>(() => query.Grammar().Select());
         }
     }
 }

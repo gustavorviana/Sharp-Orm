@@ -130,5 +130,106 @@ namespace QueryTest.SqlServer
                 sqlExpression
             );
         }
+
+        [Fact]
+        public void UpdateWithLockHintRowLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.RowLock };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (ROWLOCK)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithLockHintTabLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.TabLock };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (TABLOCK)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithConcurrencyReadPast()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.ReadPast };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (READPAST)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithConcurrencyNoWait()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.NoWait };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (NOWAIT)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithPlanHintForceSeek()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { PlanHint = SqlServerPlanHint.ForceSeek };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (FORCESEEK)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithIndex()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Index = "IX_TestTable_Id" };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (INDEX(IX_TestTable_Id))", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithMultipleHints()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions 
+            { 
+                LockHint = SqlServerLockHint.RowLock,
+                Concurrency = SqlServerConcurrencyHint.ReadPast | SqlServerConcurrencyHint.UpdLock,
+                PlanHint = SqlServerPlanHint.ForceSeek
+            };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (ROWLOCK, READPAST, UPDLOCK, FORCESEEK)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithHintsAlwaysUsesFrom()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.RowLock };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            // When hints are present, FROM clause is always added
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (ROWLOCK)", sqlExpression);
+        }
+
+        [Fact]
+        public void UpdateWithReadIsolationShouldNotIncludeInUpdate()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions 
+            { 
+                ReadIsolation = SqlServerReadIsolationHint.NoLock,
+                LockHint = SqlServerLockHint.RowLock
+            };
+
+            var sqlExpression = query.Grammar().Update([new Cell("name", "MyName")]);
+            // ReadIsolation should NOT appear in UPDATE, only LockHint
+            QueryAssert.Equal("UPDATE [TestTable] SET [name] = ? FROM [TestTable] WITH (ROWLOCK)", sqlExpression);
+        }
     }
 }

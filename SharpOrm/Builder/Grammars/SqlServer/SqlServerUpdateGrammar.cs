@@ -17,13 +17,14 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             ThrowOffsetNotSupported();
 
-            var needAlias = !string.IsNullOrEmpty(Info.TableName.Alias) || Query.IsNoLock();
+            var needAlias = !string.IsNullOrEmpty(Info.TableName.Alias) || HasGrammarOptions();
             using (var en = cells.GetEnumerator())
             {
                 if (!en.MoveNext())
                     throw new InvalidOperationException(Messages.NoColumnsInserted);
 
                 Builder.Add("UPDATE ").Add(FixTableName(needAlias ? Info.TableName.TryGetAlias() : Info.TableName.Name));
+
                 AddLimit();
                 Builder.Add(" SET ");
                 Builder.AddJoin(WriteUpdateCell, ", ", en);
@@ -32,8 +33,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             if (needAlias || Info.Joins.Any())
                 Builder.Add(" FROM ").Add(GetTableName(true));
 
-            if (Query.IsNoLock())
-                Builder.Add(" WITH (NOLOCK)");
+            WriteGrammarOptions(Query, false);
 
             ApplyJoins();
             WriteWhere(true);

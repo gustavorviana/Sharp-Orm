@@ -96,6 +96,14 @@ namespace SharpOrm.Builder
         }
 
         /// <summary>
+        /// Gets or sets the default grammar options used for parsing or generating language constructs.
+        /// </summary>
+        /// <remarks>Assigning a value to this property affects how grammar rules are interpreted
+        /// throughout the application. Ensure that the provided options are compatible with the expected grammar
+        /// framework.</remarks>
+        public IGrammarOptions DefaultGrammarOptions { get; set; }
+
+        /// <summary>
         /// Create an instance that allows only safe modifications.
         /// </summary>
         public QueryConfig() : this(true)
@@ -181,7 +189,7 @@ namespace SharpOrm.Builder
         {
             foreach (var prop in this.GetType().GetProperties(Bindings.Instance))
                 if (prop.CanRead && prop.CanWrite)
-                    ReflectionUtils.CopyPropTo(this, target, prop);
+                    prop.SetValue(target, prop.GetValue(this));
         }
 
         /// <summary>

@@ -71,8 +71,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
             Builder.Add(" FROM ").Add(GetTableName(true));
 
-            if (Query.IsNoLock())
-                Builder.Add(" WITH (NOLOCK)");
+            WriteGrammarOptions(Query, true);
 
             ApplyJoins();
             WriteWhere(configureWhereParams);
@@ -88,7 +87,7 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         {
             Builder.Add(" FROM ").Add(GetTableName(true));
 
-            WriteOptions();
+            WriteGrammarOptions(Query, true);
             ApplyJoins();
             WriteWhere(configureWhereParams);
             WriteGroupBy();
@@ -103,12 +102,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer
 
             if (Query.Limit >= 0)
                 Builder.Add(" FETCH NEXT ").Add(Query.Limit).Add(" ROWS ONLY");
-        }
-
-        private void WriteOptions()
-        {
-            if (Query.IsNoLock())
-                Builder.Add(" WITH (NOLOCK)");
         }
 
         private void ConfigureSelect(bool configureWhereParams, Column countColumn, bool isCount)
@@ -195,13 +188,18 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             base.ApplyOrderBy();
         }
 
-
         private string GetColumnName(ColumnInfo column)
         {
             if (string.IsNullOrEmpty(Query.Info.TableName.Alias) && Query.Info.Orders.Length == 0)
                 return column.Name;
 
             return string.Format("{0}.{1}", Query.Info.TableName.TryGetAlias(Config), column.Name);
+        }
+
+        protected override void WriteTable(QueryBase query)
+        {
+            base.WriteTable(query);
+            WriteGrammarOptions(query, true);
         }
     }
 }

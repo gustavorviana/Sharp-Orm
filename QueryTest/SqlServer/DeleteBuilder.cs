@@ -5,6 +5,7 @@ using QueryTest.Interfaces;
 using QueryTest.Utils;
 using SharpOrm;
 using SharpOrm.Builder;
+using SharpOrm.Builder.Grammars.SqlServer;
 using Xunit.Abstractions;
 
 namespace QueryTest.SqlServer
@@ -102,6 +103,116 @@ namespace QueryTest.SqlServer
             query.Where("t2.Id", 1);
 
             QueryAssert.Equal("DELETE [t1] FROM [TestTable] [t1] INNER JOIN [Table2] [t2] ON [t2].[Id] = [t1].[T2Id] WHERE [t2].[Id] = 1", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithLockHintRowLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.RowLock };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (ROWLOCK)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithLockHintTabLock()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.TabLock };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (TABLOCK)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithLockHintTabLockX()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.TabLockX };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (TABLOCKX)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithConcurrencyReadPast()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.ReadPast };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (READPAST)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithConcurrencyNoWait()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Concurrency = SqlServerConcurrencyHint.NoWait };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (NOWAIT)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithPlanHintForceSeek()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { PlanHint = SqlServerPlanHint.ForceSeek };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (FORCESEEK)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithPlanHintForceScan()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { PlanHint = SqlServerPlanHint.ForceScan };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (FORCESCAN)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithIndex()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { Index = "IX_TestTable_Id" };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (INDEX(IX_TestTable_Id))", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithMultipleHints()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions 
+            { 
+                LockHint = SqlServerLockHint.RowLock,
+                Concurrency = SqlServerConcurrencyHint.ReadPast | SqlServerConcurrencyHint.NoWait,
+                PlanHint = SqlServerPlanHint.ForceSeek
+            };
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (ROWLOCK, READPAST, NOWAIT, FORCESEEK)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithReadIsolationShouldNotIncludeInDelete()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions 
+            { 
+                ReadIsolation = SqlServerReadIsolationHint.NoLock,
+                LockHint = SqlServerLockHint.RowLock
+            };
+
+            // ReadIsolation should NOT appear in DELETE, only LockHint
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (ROWLOCK)", query.Grammar().Delete());
+        }
+
+        [Fact]
+        public void DeleteWithWhereAndHints()
+        {
+            using var query = new Query(TestTableUtils.TABLE);
+            query.GrammarOptions = new SqlServerGrammarOptions { LockHint = SqlServerLockHint.RowLock };
+            query.Where("id", "=", 1);
+
+            QueryAssert.Equal("DELETE FROM [TestTable] WITH (ROWLOCK) WHERE [id] = 1", query.Grammar().Delete());
         }
     }
 }

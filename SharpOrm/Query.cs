@@ -1243,7 +1243,7 @@ namespace SharpOrm
         /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
         /// <param name="grammarOptions">Optional grammar-specific options for the join operation.</param>
         /// <returns>The current query instance.</returns>
-        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
+        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             var members = ExpressionUtils<T>.GetMemberPath(table, false).Reverse().ToArray();
             var node = _foreignKeyRegister.Get(members);
@@ -1312,7 +1312,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public new Query<T> Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public new Query<T> Join(string table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return (Query<T>)base.Join(table, callback, type, grammarOptions);
         }
@@ -1337,7 +1337,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return (Query<T>)base.Join(table, callback, type, grammarOptions);
         }
@@ -2114,7 +2114,7 @@ namespace SharpOrm
     /// <summary>
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
-    public class Query : QueryBase, ICloneable, IGrammarOptions, IDisposable
+    public class Query : QueryBase, ICloneable, IWithGrammarOptions, IDisposable
     {
         #region Properties
         private bool _disposed = false;
@@ -2147,7 +2147,7 @@ namespace SharpOrm
         /// <summary>
         /// Options for Grammar to create an SQL script.
         /// </summary>
-        public object GrammarOptions { get; set; }
+        public IGrammarOptions GrammarOptions { get; set; }
         /// <summary>
         /// Settings used to build the SQL command.
         /// </summary>
@@ -2256,7 +2256,7 @@ namespace SharpOrm
 
         internal Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
         {
-
+            GrammarOptions = config.DefaultGrammarOptions;
         }
 
         #endregion
@@ -2332,7 +2332,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public Query Join(string table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return Join(new DbName(table), callback, type, grammarOptions);
         }
@@ -2357,7 +2357,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public Query Join(DbName table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             JoinQuery join = new JoinQuery(Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
             callback(join);

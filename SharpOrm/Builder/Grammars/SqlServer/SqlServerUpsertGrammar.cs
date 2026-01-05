@@ -2,6 +2,7 @@
 using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SharpOrm.Builder.Grammars.SqlServer
 {
@@ -43,7 +44,9 @@ namespace SharpOrm.Builder.Grammars.SqlServer
         private void WriteTargetHeader(UpsertQueryInfo target)
         {
             Builder.AddFormat("MERGE INTO {0}", target.GetFullName());
-            SqlServerGrammarOptions.WriteTo(Builder, Query);
+
+            if (Query.GrammarOptions is SqlServerGrammarOptions options && options.NoLock)
+                Builder.Add(" WITH (NOLOCK)");
         }
 
         private void WriteRows(IEnumerator<Row> rows, string[] insertColumns, string sourceAlias)
