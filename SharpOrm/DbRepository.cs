@@ -1,4 +1,4 @@
-﻿using SharpOrm.Builder;
+using SharpOrm.Builder;
 using SharpOrm.Builder.Tables;
 using SharpOrm.Collections;
 using SharpOrm.Connection;
@@ -675,6 +675,19 @@ namespace SharpOrm
         protected DbTable CreateTempTable<T>()
         {
             return DbTable.Create<T>(true, _options.Translation, GetManager());
+        }
+
+        /// <summary>
+        /// Creates a temporary table populated with the provided values.
+        /// </summary>
+        /// <typeparam name="TValue">The type of the values to store in the table.</typeparam>
+        /// <param name="values">The values to insert into the temporary table.</param>
+        /// <returns>A <see cref="DbTableValue{TValue}"/> representing the populated temporary table.</returns>
+        protected DbTableValue<TValue> CreateTableValue<TValue>(ICollection<TValue> values)
+        {
+            DbTable.ValidateConnectionManager(true, Options.ConnectionManagement);
+
+            return DbTableValue<TValue>.FromValues(GetManager(), values);
         }
 
         #endregion

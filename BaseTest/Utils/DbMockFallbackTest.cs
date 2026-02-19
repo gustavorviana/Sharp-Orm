@@ -1,4 +1,4 @@
-﻿using BaseTest.Fixtures;
+using BaseTest.Fixtures;
 using BaseTest.Mock;
 using SharpOrm;
 using SharpOrm.Builder;
@@ -11,6 +11,10 @@ namespace BaseTest.Utils
     public class DbMockFallbackTest : DbMockTest
     {
         public DbMockFallbackTest(ITestOutputHelper? output, DbFixtureBase connection) : base(output, connection)
+        {
+        }
+
+        public DbMockFallbackTest(QueryConfig config) : base(null, MockFixture.FromConfig(config))
         {
         }
 

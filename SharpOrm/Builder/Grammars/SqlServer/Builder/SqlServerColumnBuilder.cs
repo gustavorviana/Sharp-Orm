@@ -28,11 +28,15 @@ namespace SharpOrm.Builder.Grammars.SqlServer.Builder
             {
                 query.Add(" AS ").Add(GetComputedExpression());
 
-                if (GetIsVirtual())
+                if (!GetIsVirtual())
                     query.Add(" PERSISTED");
 
                 return query.ToExpression();
             }
+
+            var collation = GetCollation();
+            if (!string.IsNullOrEmpty(collation))
+                query.Add(" COLLATE ").Add(collation);
 
             query.Add(Column.AllowDBNull ? " NULL" : " NOT NULL");
 
@@ -42,10 +46,6 @@ namespace SharpOrm.Builder.Grammars.SqlServer.Builder
             var checkConstraint = GetCheckConstraint();
             if (!string.IsNullOrEmpty(checkConstraint))
                 query.AddFormat(" CHECK ({0})", checkConstraint);
-
-            var collation = GetCollation();
-            if (!string.IsNullOrEmpty(collation))
-                query.Add(" COLLATE ").Add(collation);
 
             return query.ToExpression();
         }

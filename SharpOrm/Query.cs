@@ -1,4 +1,4 @@
-﻿using SharpOrm.Builder;
+using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Builder.Grammars;
 using SharpOrm.Connection;
@@ -54,6 +54,17 @@ namespace SharpOrm
         TableInfo IWithTableInfo.TableInfo => TableInfo;
 
         #region Query
+
+        /// <summary>
+        /// Creates a read-only query for the specified table.
+        /// </summary>
+        /// <param name="name">The name of the table.</param>
+        /// <param name="config">The configuration for the query. If null, the default configuration is used.</param>
+        /// <returns>A read-only query for the specified table.</returns>
+        public static new Query<T> ReadOnly(DbName name, QueryConfig config = null)
+        {
+            return new Query<T>(name, config ?? ConnectionCreator.Default?.Config);
+        }
 
         /// <summary>
         /// Creates a read-only query for the specified table.
@@ -1645,6 +1656,17 @@ namespace SharpOrm
         public Query<T> WhereIn<K>(Expression<ColumnExpression<T>> columnExp, params K[] items)
         {
             return (Query<T>)base.Where(GetColumn(columnExp), "IN", items);
+        }
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the values
+        /// stored in the specified <see cref="IDbTableValue"/> temporary table.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="tableValue">The table value holding the values to check against.</param>
+        public Query<T> WhereIn(Expression<ColumnExpression<T>> columnExp, IDbTableValue tableValue)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "IN", tableValue);
         }
 
         /// <summary>
@@ -3325,6 +3347,18 @@ namespace SharpOrm
         }
 
         #endregion
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the values
+        /// stored in the specified <see cref="IDbTableValue"/> temporary table.
+        /// </summary>
+        /// <param name="column">The column name to compare.</param>
+        /// <param name="tableValue">The table value holding the values to check against.</param>
+        /// <returns>The current query instance.</returns>
+        public Query WhereIn(string column, IDbTableValue tableValue)
+        {
+            return (Query)base.Where(column, "IN", tableValue);
+        }
 
         /// <summary>
         /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
