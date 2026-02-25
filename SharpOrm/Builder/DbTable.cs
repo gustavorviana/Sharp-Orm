@@ -35,6 +35,11 @@ namespace SharpOrm.Builder
             return new DbTable<T>(DbTable.Create(builder.GetSchema(), query.Manager));
         }
 
+        public Query<T> GetQuery(string alias)
+        {
+            return OrmTable.GetQuery<T>(alias);
+        }
+
         public Query<T> GetQuery()
         {
             return OrmTable.GetQuery<T>();
@@ -297,11 +302,29 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Retrieves a query object for the table.
         /// </summary>
+        /// <returns></returns>
+        public Query GetQuery(string alias)
+        {
+            var query = new Query(new DbName(DbName.Name, alias), Manager);
+            ConfigureColumns(query);
+            return query;
+        }
+
+        /// <summary>
+        /// Retrieves a query object for the table.
+        /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public Query<T> GetQuery<T>()
         {
             var query = new Query<T>(DbName, Manager);
+            ConfigureColumns(query);
+            return query;
+        }
+
+        public Query<T> GetQuery<T>(string alias)
+        {
+            var query = new Query<T>(new DbName(DbName.Name, alias), Manager);
             ConfigureColumns(query);
             return query;
         }
@@ -487,7 +510,7 @@ namespace SharpOrm.Builder
             return manager.ExecuteScalar<int>(grammar.Exists()) > 0;
         }
 
-        internal static void ValidateConnectionManager(bool temporary, ConnectionManagement  management)
+        internal static void ValidateConnectionManager(bool temporary, ConnectionManagement management)
         {
             if (temporary && management != ConnectionManagement.LeaveOpen &&
                 management != ConnectionManagement.CloseOnManagerDispose &&

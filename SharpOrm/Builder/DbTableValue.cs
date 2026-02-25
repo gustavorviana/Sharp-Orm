@@ -86,11 +86,22 @@ namespace SharpOrm.Builder
             return CreateEqualsExpression((Column)column);
         }
 
+        public SqlExpression CreateNotEqualsExpression(Column column)
+        {
+            using (var query = _table.GetQuery())
+            {
+                query.WhereNot(string.Format("{0}.{1}", Table.Name, Column), column);
+                query.Select((Column)"1");
+                return query.ToSqlExpression();
+            }
+        }
+
         public SqlExpression CreateEqualsExpression(Column column)
         {
             using (var query = _table.GetQuery())
             {
                 query.Where(string.Format("{0}.{1}", Table.Name, Column), column);
+                query.Select((Column)"1");
                 return query.ToSqlExpression();
             }
         }

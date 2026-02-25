@@ -9,5 +9,10 @@ namespace SharpOrm.Builder
         /// Gets the name of the temporary table.
         /// </summary>
         DbName Table { get; }
+
+        string Column { get; }
+
+        SqlExpression CreateEqualsExpression(Column column);
+        SqlExpression CreateNotEqualsExpression(Column column);
     }
 }
