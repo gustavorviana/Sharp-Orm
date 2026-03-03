@@ -1,5 +1,6 @@
 ﻿using SharpOrm.Builder.Tables;
 using SharpOrm.DataTranslation;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -34,23 +35,40 @@ namespace SharpOrm.Builder
 
         internal MemberTreeNode MapChildren(MemberInfo parentMember, NestedMode mode)
         {
+            return MapChildren(parentMember, mode, new HashSet<Type>());
+        }
+
+        private MemberTreeNode MapChildren(MemberInfo parentMember, NestedMode mode, HashSet<Type> visitedTypes)
+        {
             var type = ReflectionUtils.GetMemberType(parentMember);
 
             if (IsValueMember(parentMember))
                 return this;
 
+            // Prevenir ciclos: se já visitamos este tipo, não mapear novamente
+            if (visitedTypes.Contains(type))
+                return this;
+
+            visitedTypes.Add(type);
+
             foreach (var member in type.GetProperties(Bindings.PublicInstance))
-                if (!Children.Any(x => x.Member == member) && MapNode(member, mode) is MemberTreeNode node)
+                if (!Children.Any(x => x.Member == member) && MapNode(member, mode, visitedTypes) is MemberTreeNode node)
                     Children.Add(node);
 
             foreach (var member in type.GetFields(Bindings.PublicInstance))
-                if (!Children.Any(x => x.Member == member) && MapNode(member, mode) is MemberTreeNode node)
+                if (!Children.Any(x => x.Member == member) && MapNode(member, mode, visitedTypes) is MemberTreeNode node)
                     Children.Add(node);
 
+            visitedTypes.Remove(type);
             return this;
         }
 
         internal static MemberTreeNode MapNode(MemberInfo memberInfo, NestedMode mode)
+        {
+            return MapNode(memberInfo, mode, new HashSet<Type>());
+        }
+
+        private static MemberTreeNode MapNode(MemberInfo memberInfo, NestedMode mode, HashSet<Type> visitedTypes)
         {
             if (!ColumnInfo.CanWork(memberInfo))
                 return null;
@@ -59,7 +77,7 @@ namespace SharpOrm.Builder
             if (attr == null && !IsValueMember(memberInfo) && !NeedMapNested(memberInfo, mode))
                 return null;
 
-            return new MemberTreeNode(memberInfo, attr).MapChildren(memberInfo, mode);
+            return new MemberTreeNode(memberInfo, attr).MapChildren(memberInfo, mode, visitedTypes);
         }
 
         private static bool NeedMapNested(MemberInfo member, NestedMode mode)

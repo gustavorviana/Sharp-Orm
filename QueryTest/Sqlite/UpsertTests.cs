@@ -54,5 +54,17 @@ namespace QueryTest.Sqlite
                 [Tables.Address.NAME, Tables.Address.CITY]
             ));
         }
+
+        [Fact]
+        public void UpsertStrategy_WithEmptyRows_ShouldThrowArgumentException()
+        {
+            // Arrange
+            using var query = new Query("TestTable");
+            var emptyRows = new Row[0];
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new UpsertStrategy(query, emptyRows));
+            Assert.Contains("Rows cannot be null or empty", ex.Message);
+        }
     }
 }

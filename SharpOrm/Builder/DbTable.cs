@@ -1,4 +1,5 @@
-﻿using SharpOrm.Builder.Grammars;
+﻿using SharpOrm.Builder.Expressions;
+using SharpOrm.Builder.Grammars;
 using SharpOrm.Builder.Tables;
 using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
@@ -7,11 +8,106 @@ using SharpOrm.Msg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharpOrm.Builder
 {
+    public class DbTable<T> : IDisposable
+    {
+        private bool _disposed;
+
+        public DbTable OrmTable { get; private set; }
+
+        public DbName Name => OrmTable.DbName;
+
+        public DbTable(DbTable ormTable)
+        {
+            OrmTable = ormTable;
+        }
+
+        public static DbTable<T> CreateTempTable(Query query)
+        {
+            var builder = new TableBuilder(typeof(T).Name, true);
+            builder.SetBasedQuery(query);
+
+            return new DbTable<T>(DbTable.Create(builder.GetSchema(), query.Manager));
+        }
+
+        public Query<T> GetQuery(string alias)
+        {
+            return OrmTable.GetQuery<T>(alias);
+        }
+
+        public Query<T> GetQuery()
+        {
+            return OrmTable.GetQuery<T>();
+        }
+
+        public T[] ToArray()
+        {
+            using (var query = GetQuery())
+            {
+                return query.ToArray();
+            }
+        }
+
+        public TValue[] ExecuteScalar<TValue>(Expression<ColumnExpression<T, TValue>> column)
+        {
+            using (var query = GetQuery())
+            {
+                query.SelectColumn(column);
+                return query.ExecuteArrayScalar<TValue>();
+            }
+        }
+
+        public DbTableValue<TValue> CreateTableValue<TValue>(Expression<ColumnExpression<T, TValue>> column)
+        {
+            using (var query = GetQuery())
+            {
+                query.SelectColumn(column);
+
+                var processor = new ExpressionProcessor<T>(query, ExpressionConfig.All);
+                return DbTableValue<TValue>.FromQuery(query, processor.ParseColumn(column).Name);
+            }
+        }
+
+        public long Count()
+        {
+            using (var query = GetQuery())
+            {
+                return query.Count();
+            }
+        }
+
+        #region IDisposable
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+                OrmTable.Dispose();
+
+            _disposed = true;
+        }
+
+        ~DbTable()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
+    }
+
     /// <summary>
     /// Represents a table in the database.
     /// </summary>
@@ -106,7 +202,7 @@ namespace SharpOrm.Builder
 
             var manager = new ConnectionManager() { Management = ConnectionManagement.CloseOnManagerDispose };
 
-            ValidateConnectionManager(schema, manager);
+            ValidateConnectionManager(schema.Temporary, manager.Management);
 
             var clone = schema.Clone();
 
@@ -131,7 +227,7 @@ namespace SharpOrm.Builder
             if (schema.Columns.Count == 0 && !schema.Metadata.HasKey(Metadatas.BasedQuery))
                 throw new InvalidOperationException("The schema does not contain any columns. At least one column is required.");
 
-            ValidateConnectionManager(schema, manager);
+            ValidateConnectionManager(schema.Temporary, manager.Management);
 
             var clone = schema.Clone();
 
@@ -206,11 +302,29 @@ namespace SharpOrm.Builder
         /// <summary>
         /// Retrieves a query object for the table.
         /// </summary>
+        /// <returns></returns>
+        public Query GetQuery(string alias)
+        {
+            var query = new Query(new DbName(DbName.Name, alias), Manager);
+            ConfigureColumns(query);
+            return query;
+        }
+
+        /// <summary>
+        /// Retrieves a query object for the table.
+        /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public Query<T> GetQuery<T>()
         {
             var query = new Query<T>(DbName, Manager);
+            ConfigureColumns(query);
+            return query;
+        }
+
+        public Query<T> GetQuery<T>(string alias)
+        {
+            var query = new Query<T>(new DbName(DbName.Name, alias), Manager);
             ConfigureColumns(query);
             return query;
         }
@@ -396,11 +510,11 @@ namespace SharpOrm.Builder
             return manager.ExecuteScalar<int>(grammar.Exists()) > 0;
         }
 
-        private static void ValidateConnectionManager(ITableSchema schema, ConnectionManager manager)
+        internal static void ValidateConnectionManager(bool temporary, ConnectionManagement management)
         {
-            if (schema.Temporary && manager.Management != ConnectionManagement.LeaveOpen &&
-                manager.Management != ConnectionManagement.CloseOnManagerDispose &&
-                manager.Management != ConnectionManagement.DisposeOnManagerDispose)
+            if (temporary && management != ConnectionManagement.LeaveOpen &&
+                management != ConnectionManagement.CloseOnManagerDispose &&
+                management != ConnectionManagement.DisposeOnManagerDispose)
                 throw new InvalidOperationException(Messages.Table.InvalidTempTableConnection);
         }
         #endregion

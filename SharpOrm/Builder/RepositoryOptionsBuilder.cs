@@ -1,4 +1,4 @@
-﻿using SharpOrm.Connection;
+using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 using System;
 using System.Diagnostics;
@@ -49,6 +49,8 @@ namespace SharpOrm.Builder
         /// <param name="translation">The translation registry to use.</param>
         /// <returns>The current builder instance for method chaining.</returns>
         IRepositoryOptionsBuilder SetTranslation(TranslationRegistry translation);
+
+        IRepositoryOptionsBuilder SetConnectionManagement(ConnectionManagement connectionManagement);
     }
 
     /// <summary>
@@ -59,6 +61,7 @@ namespace SharpOrm.Builder
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly RepositoryOptions _options = new RepositoryOptions();
+        private ConnectionManagement? _management = null;
 
         public IModelConfigurator Models { get; } = new ModelConfigurator();
 
@@ -110,8 +113,22 @@ namespace SharpOrm.Builder
             if (_options.ConnectionCreator == null)
                 throw new InvalidOperationException();
 
+            if (_management != null)
+            {
+                _options.ConnectionCreator = _options.ConnectionCreator.Clone();
+                _options.ConnectionCreator.Management = _management.Value;
+            }
+
+            _options.ConnectionManagement = _options.ConnectionCreator.Management;
+
             ((ModelConfigurator)Models).Configure(_options.Translation);
             return _options;
+        }
+
+        public IRepositoryOptionsBuilder SetConnectionManagement(ConnectionManagement connectionManagement)
+        {
+            _management = connectionManagement;
+            return this;
         }
     }
 }

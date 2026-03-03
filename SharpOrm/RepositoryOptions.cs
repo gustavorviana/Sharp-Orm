@@ -1,4 +1,4 @@
-﻿using SharpOrm.Connection;
+using SharpOrm.Connection;
 using SharpOrm.DataTranslation;
 
 namespace SharpOrm
@@ -32,6 +32,11 @@ namespace SharpOrm
         /// Gets the connection creator for database connections.
         /// </summary>
         ConnectionCreator ConnectionCreator { get; }
+
+        /// <summary>
+        /// Gets the connection management strategy used for database connections.
+        /// </summary>
+        ConnectionManagement ConnectionManagement { get; }
     }
 
     internal class RepositoryOptions : IRepositoryOptions
@@ -45,5 +50,7 @@ namespace SharpOrm
         public TranslationRegistry Translation { get; set; }
 
         public ConnectionCreator ConnectionCreator { get; set; }
+
+        public ConnectionManagement ConnectionManagement { get; set; }
     }
 }

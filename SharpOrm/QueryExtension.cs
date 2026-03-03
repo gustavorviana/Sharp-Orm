@@ -233,6 +233,34 @@ namespace SharpOrm
             return InternalWhereLikeIn(qBase, column, likeOptions);
         }
 
+        /// <summary>
+        /// Adds a NOT LIKE condition to the query.
+        /// </summary>
+        /// <typeparam name="Q">The query type.</typeparam>
+        /// <param name="qBase">The base query to which the condition will be applied.</param>
+        /// <param name="column">The column to be checked.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public static Q WhereNotLike<Q>(this Q qBase, object column, string value) where Q : QueryBase
+        {
+            qBase.Where(column, "NOT LIKE", value);
+            return qBase;
+        }
+
+        /// <summary>
+        /// Adds a LIKE condition to the query.
+        /// </summary>
+        /// <typeparam name="Q">The query type.</typeparam>
+        /// <param name="qBase">The base query to which the condition will be applied.</param>
+        /// <param name="column">The column to be checked.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public static Q WhereLike<Q>(this Q qBase, object column, string value) where Q : QueryBase
+        {
+            qBase.Where(column, "LIKE", value);
+            return qBase;
+        }
+
         #endregion
 
         #region Or
@@ -453,6 +481,34 @@ namespace SharpOrm
         {
             qBase.WriteWhereType(QueryBase.OR);
             return InternalWhereLikeIn(qBase, column, likeOptions);
+        }
+
+        /// <summary>
+        /// Adds a NOT LIKE condition to the query using an OR operator.
+        /// </summary>
+        /// <typeparam name="Q">The query type.</typeparam>
+        /// <param name="qBase">The base query to which the condition will be applied.</param>
+        /// <param name="column">The column to be checked.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public static Q OrWhereNotLike<Q>(this Q qBase, object column, string value) where Q : QueryBase
+        {
+            qBase.OrWhere(column, "NOT LIKE", value);
+            return qBase;
+        }
+
+        /// <summary>
+        /// Adds a LIKE condition to the query using an OR operator.
+        /// </summary>
+        /// <typeparam name="Q">The query type.</typeparam>
+        /// <param name="qBase">The base query to which the condition will be applied.</param>
+        /// <param name="column">The column to be checked.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public static Q OrWhereLike<Q>(this Q qBase, object column, string value) where Q : QueryBase
+        {
+            qBase.OrWhere(column, "LIKE", value);
+            return qBase;
         }
 
         #endregion

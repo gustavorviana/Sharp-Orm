@@ -29,7 +29,7 @@ namespace SharpOrm.Connection
         private bool _finishedTransaction = false;
         internal bool _autoCommit = false;
         private bool _isClone = false;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         /// <summary>
         /// Event that occurs when the ConnectionManager instance is disposed.
@@ -316,7 +316,7 @@ namespace SharpOrm.Connection
                 return;
 
             Connection.Open();
-            try { Connection.Close(); } catch { }
+            DisposeUtils.SafeExecute(() => Connection.Close(), "ConnectionManager.CheckConnection.Close");
         }
 
         /// <summary>
@@ -339,9 +339,9 @@ namespace SharpOrm.Connection
             }
 
 #if NET5_0_OR_GREATER
-            try { await Connection.CloseAsync(); } catch { }
+            await DisposeUtils.SafeExecuteAsync(() => Connection.CloseAsync(), "ConnectionManager.CheckConnectionAsync.CloseAsync");
 #else
-            try { Connection.Close(); } catch { }
+            DisposeUtils.SafeExecute(() => Connection.Close(), "ConnectionManager.CheckConnectionAsync.Close");
 #endif
         }
 
@@ -558,9 +558,9 @@ namespace SharpOrm.Connection
                 return;
 
             if (_autoCommit)
-                try { Commit(); } catch { }
+                DisposeUtils.SafeExecute(() => Commit(), "ConnectionManager.DisposeTransaction.Commit");
 
-            try { Transaction.Dispose(); } catch { }
+            DisposeUtils.SafeDispose(Transaction, "ConnectionManager.DisposeTransaction");
         }
 
         private void DisposeConnection()
@@ -591,13 +591,11 @@ namespace SharpOrm.Connection
 
         private void CloseConnection()
         {
-            try
+            DisposeUtils.SafeExecute(() =>
             {
                 if (Connection.State == System.Data.ConnectionState.Open)
                     Connection.Close();
-            }
-            catch
-            { }
+            }, "ConnectionManager.CloseConnection");
         }
 
         internal void CloseByHandle(Handle handle, ConnectionManagement reason)

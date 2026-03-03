@@ -12,15 +12,30 @@
                 Builder.Add(" TOP(").Add(limit).Add(')');
         }
 
-        protected override void WriteTable(QueryBase query)
+        protected void WriteGrammarOptions(QueryBase query, bool isSelect)
         {
-            base.WriteTable(query);
-            WriteGrammarOptions(query);
+            if (GetOptions(query) is SqlServerGrammarOptions options)
+                options.WriteTo(Builder, isSelect);
         }
 
-        protected void WriteGrammarOptions(QueryBase query)
+        protected bool HasGrammarOptions()
         {
-            SqlServerGrammarOptions.WriteTo(Builder, query);
+            return HasGrammarOptions(Query);
+        }
+
+        protected bool HasGrammarOptions(QueryBase query)
+        {
+            return GetOptions(query)?.HasHints() ?? false;
+        }
+
+        protected SqlServerGrammarOptions GetOptions()
+        {
+            return GetOptions(Query);
+        }
+
+        protected SqlServerGrammarOptions GetOptions(QueryBase query)
+        {
+            return (query as IWithGrammarOptions)?.GrammarOptions as SqlServerGrammarOptions;
         }
     }
 }

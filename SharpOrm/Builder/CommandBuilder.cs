@@ -505,9 +505,9 @@ namespace SharpOrm.Builder
 
             if (disposing)
             {
-                try { reader?.Dispose(); } catch { }
+                DisposeUtils.SafeDispose(reader, "CommandBuilder.Dispose reader");
                 if (!_leaveOpen)
-                    try { _command.Dispose(); } catch { }
+                    DisposeUtils.SafeDispose(_command, "CommandBuilder.Dispose command");
             }
 
             reader = null;
@@ -521,18 +521,10 @@ namespace SharpOrm.Builder
                 if (_tokenSource.IsCancellationRequested)
                     return;
 
-                try
-                {
-                    _tokenSource.Cancel();
-                }
-                catch { }
+                DisposeUtils.SafeExecute(() => _tokenSource.Cancel(), "CommandBuilder.CancelTokens.Cancel");
 
                 foreach (var item in _cancellationTokens)
-                    try
-                    {
-                        item.Dispose();
-                    }
-                    catch { }
+                    DisposeUtils.SafeDispose(item, "CommandBuilder.CancelTokens.Dispose");
 
                 _cancellationTokens.Clear();
             }

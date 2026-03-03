@@ -43,6 +43,9 @@ namespace SharpOrm.DataTranslation
                 throw new InvalidOperationException($"Column not found for member {member.Name} in table {TableInfo.Name}");
 
             var memberTableInfo = TableInfo._registry.GetTable(GetMemberType(member, out var isCollection));
+            if (memberTableInfo == null)
+                throw new InvalidOperationException($"Table not found for member type {GetMemberType(member, out _)} in registry");
+
             node = CreateNode(memberColumnInfo, memberTableInfo, isCollection, silent);
             _nodes.Add(node);
             return node;
@@ -101,14 +104,23 @@ namespace SharpOrm.DataTranslation
 
         public virtual IEnumerable<ForeignKeyNode> GetAllChildNodes(bool withCollection)
         {
+            return GetAllChildNodes(withCollection, new HashSet<ForeignKeyNode>());
+        }
+
+        private IEnumerable<ForeignKeyNode> GetAllChildNodes(bool withCollection, HashSet<ForeignKeyNode> visited)
+        {
             foreach (var child in _nodes)
             {
                 if (!withCollection && child.IsCollection)
                     continue;
 
+                if (visited.Contains(child))
+                    continue;
+
+                visited.Add(child);
                 yield return child;
 
-                foreach (var descendant in child.GetAllChildNodes(withCollection))
+                foreach (var descendant in child.GetAllChildNodes(withCollection, visited))
                     if (withCollection || !descendant.IsCollection)
                         yield return descendant;
             }

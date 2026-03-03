@@ -113,15 +113,13 @@ namespace SharpOrm.Collections
         {
             instance.Disposed += (sender, e) =>
             {
-                try
+                DisposeUtils.SafeExecute(() =>
                 {
                     if (CanClose()) _command.Connection.Close();
-                }
-                catch
-                { }
+                }, "DbCommandEnumerable.Disposed.CloseConnection");
 
                 if (DisposeCommand)
-                    try { _command.Dispose(); } catch { }
+                    DisposeUtils.SafeDispose(_command, "DbCommandEnumerable.Disposed.DisposeCommand");
             };
 
             return instance;

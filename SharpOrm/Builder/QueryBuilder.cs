@@ -292,7 +292,7 @@ namespace SharpOrm.Builder
 
         public QueryBuilder WriteQuery(Query query)
         {
-            return Add('(').Add(query.ToString()).Add(')').AddParameters(query.Info.Where.Parameters);
+            return Add('(').Add(query.ToSqlExpression()).Add(')');
         }
 
         /// <summary>

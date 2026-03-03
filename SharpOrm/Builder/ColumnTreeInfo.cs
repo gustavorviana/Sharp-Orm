@@ -26,7 +26,10 @@ namespace SharpOrm.Builder
             if (!string.IsNullOrEmpty(this.ParentPath))
                 builder.Append('.');
 
-            return builder.Append(this.Path[this.Path.Length - 1].Name).ToString();
+            if (this.Path != null && this.Path.Length > 0)
+                builder.Append(this.Path[this.Path.Length - 1].Name);
+
+            return builder.ToString();
         }
 
         public override object GetRaw(object owner)

@@ -5,9 +5,9 @@ namespace SharpOrm.DataTranslation
 {
     internal class NativeSqlTranslation : ISqlTranslation
     {
-        private static readonly BinaryTranslator binaryTranslator = new BinaryTranslator();
-        internal readonly NumericTranslation numericTranslation = new NumericTranslation();
-        internal readonly DateTranslation dateTranslation = new DateTranslation();
+        private static readonly BinaryTranslator _binaryTranslator = new BinaryTranslator();
+        internal readonly NumericTranslation _numericTranslation = new NumericTranslation();
+        internal readonly DateTranslation _dateTranslation = new DateTranslation();
         public EnumSerialization EnumSerialization { get; set; } = EnumSerialization.Value;
 
         /// <summary>
@@ -31,8 +31,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo DbTimeZone
         {
-            get => dateTranslation.DbTimeZone;
-            set => dateTranslation.DbTimeZone = value;
+            get => _dateTranslation.DbTimeZone;
+            set => _dateTranslation.DbTimeZone = value;
         }
 
         /// <summary>
@@ -41,8 +41,8 @@ namespace SharpOrm.DataTranslation
         /// <value><see cref="TimeZoneInfo.Local"/></value>
         public TimeZoneInfo TimeZone
         {
-            get => dateTranslation.CodeTimeZone;
-            set => dateTranslation.CodeTimeZone = value;
+            get => _dateTranslation.CodeTimeZone;
+            set => _dateTranslation.CodeTimeZone = value;
         }
 
         /// <summary>
@@ -50,7 +50,13 @@ namespace SharpOrm.DataTranslation
         /// </summary>
         public bool EmptyStringToNull { get; set; }
 
-        public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || binaryTranslator.CanWork(type) || dateTranslation.CanWork(type);
+        /// <summary>
+        /// Specifies the behavior when an invalid value is encountered during Guid or Enum conversion.
+        /// </summary>
+        /// <value>Default is <see cref="InvalidValueBehavior.ThrowException"/>.</value>
+        public InvalidValueBehavior InvalidValueBehavior { get; set; } = InvalidValueBehavior.ReturnDefault;
+
+        public bool CanWork(Type type) => TranslationUtils.IsNative(type, true) || _binaryTranslator.CanWork(type) || _dateTranslation.CanWork(type);
 
         /// <summary>
         /// Converts a SQL value to its equivalent .NET representation based on the expected data type.
@@ -73,27 +79,85 @@ namespace SharpOrm.DataTranslation
                 return this.ParseEnum(value, expectedType);
 
             if (expectedType == typeof(Guid))
-                return value is Guid guid ? guid : Guid.Parse((string)value);
+                return ParseGuid(value);
 
-            if (numericTranslation.CanWork(expectedType))
-                return numericTranslation.FromSqlValue(value, expectedType);
+            if (_numericTranslation.CanWork(expectedType))
+                return _numericTranslation.FromSqlValue(value, expectedType);
 
-            if (binaryTranslator.CanWork(expectedType))
-                return binaryTranslator.FromSqlValue(value, expectedType);
+            if (_binaryTranslator.CanWork(expectedType))
+                return _binaryTranslator.FromSqlValue(value, expectedType);
 
-            if (dateTranslation.CanWork(expectedType))
-                return dateTranslation.FromSqlValue(value, expectedType);
+            if (_dateTranslation.CanWork(expectedType))
+                return _dateTranslation.FromSqlValue(value, expectedType);
 
             return value;
         }
 
         private object ParseEnum(object value, Type expectedType)
         {
-            if (value is string strVal)
-                if (!IsNumericString(strVal)) return Enum.Parse(expectedType, strVal);
-                else value = int.Parse(strVal);
+            if (value is string strVal && !IsNumericString(strVal))
+            {
+                if (Enum.IsDefined(expectedType, value))
+                    return Enum.Parse(expectedType, strVal);
 
-            return Enum.ToObject(expectedType, value);
+                if (InvalidValueBehavior == InvalidValueBehavior.ReturnDefault)
+                    return Activator.CreateInstance(expectedType);
+
+                throw new ArgumentException(
+                    $"The value '{strVal}' is not a valid member of enum '{expectedType.Name}'.",
+                    nameof(value)
+                );
+            }
+
+            try
+            {
+                var underlying = Enum.GetUnderlyingType(expectedType);
+                value = Convert.ChangeType(value, underlying);
+            }
+            catch (FormatException)
+            {
+                if (InvalidValueBehavior == InvalidValueBehavior.ThrowException)
+                    throw;
+
+                return Activator.CreateInstance(expectedType);
+            }
+
+            if (Enum.IsDefined(expectedType, value))
+                return Enum.ToObject(expectedType, value);
+
+            if (InvalidValueBehavior == InvalidValueBehavior.ReturnDefault)
+                return Activator.CreateInstance(expectedType);
+
+            throw new ArgumentException(
+                $"The value '{value}' is not a valid member of enum '{expectedType.Name}'.",
+                nameof(value)
+            );
+        }
+
+        private Guid ParseGuid(object value)
+        {
+            if (value is Guid guid)
+                return guid;
+
+            if (value is string strGuid)
+            {
+                try
+                {
+                    return Guid.Parse(strGuid);
+                }
+                catch (FormatException)
+                {
+                    if (InvalidValueBehavior == InvalidValueBehavior.ReturnDefault)
+                        return default(Guid);
+
+                    throw new ArgumentException($"Cannot convert invalid value '{strGuid}' to Guid", nameof(value));
+                }
+            }
+
+            if (InvalidValueBehavior == InvalidValueBehavior.ReturnDefault)
+                return default(Guid);
+
+            throw new ArgumentException($"Cannot convert invalid value to Guid", nameof(value));
         }
 
         private static bool IsNumericString(string value)
@@ -124,14 +188,14 @@ namespace SharpOrm.DataTranslation
                 return vBool ? 1 : 0;
 
             if (IsNumeric(value, type))
-                return numericTranslation.ToSqlValue(value, type);
+                return _numericTranslation.ToSqlValue(value, type);
 
-            if (binaryTranslator.CanWork(type))
-                return binaryTranslator.ToSqlValue(value, type);
+            if (_binaryTranslator.CanWork(type))
+                return _binaryTranslator.ToSqlValue(value, type);
 
-            if (dateTranslation.CanWork(type))
+            if (_dateTranslation.CanWork(type))
             {
-                value = dateTranslation.ToSqlValue(value, type);
+                value = _dateTranslation.ToSqlValue(value, type);
                 if (value?.GetType() != typeof(string))
                     return value;
             }
@@ -141,7 +205,7 @@ namespace SharpOrm.DataTranslation
 
         private bool IsNumeric(object value, Type type)
         {
-            return numericTranslation.CanWork(type) && (!(value is string strVal) || TranslationUtils.IsNumericString(strVal));
+            return _numericTranslation.CanWork(type) && (!(value is string strVal) || TranslationUtils.IsNumericString(strVal));
         }
 
         private object StringToSql(object value)

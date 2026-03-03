@@ -18,13 +18,12 @@ namespace SharpOrm.Builder.Grammars.SqlServer
             Builder.Add("DELETE");
             AddLimit();
 
-            if (Query.IsNoLock() || Query.Info.Joins.Any())
+            if (Query.Info.Joins.Any())
                 Builder.Add(' ').Add(TryGetTableAlias(Query));
 
             Builder.Add(" FROM ").Add(GetTableName(true));
-
-            if (Query.IsNoLock())
-                Builder.Add(" WITH (NOLOCK)");
+            
+            WriteGrammarOptions(Query, false);
 
             ApplyJoins();
             WriteWhere(true);

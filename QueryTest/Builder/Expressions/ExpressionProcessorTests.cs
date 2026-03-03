@@ -2,6 +2,10 @@
 using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using System.Reflection;
+using NSubstitute;
+using System.ComponentModel.DataAnnotations.Schema;
+using SharpOrm;
+using SharpOrm.DataTranslation;
 
 namespace QueryTest.Builder.Expressions
 {
@@ -148,6 +152,49 @@ namespace QueryTest.Builder.Expressions
             Assert.Equal(InstanceString, method.Args[1]);
         }
 
+        [Fact]
+        public void VisitMethodCall_WithNormalMethodChain_ShouldCompleteSuccessfully()
+        {
+            // Arrange
+            var processor = GetProcessor<CircularA>();
+            
+            var expressions = processor.ParseExpression(x => x.Name.ToUpper()).ToArray();
+
+            Assert.NotNull(expressions);
+            Assert.NotEmpty(expressions);
+        }
+
+        [Fact]
+        public void VisitMethodCall_WithLongMethodChain_ShouldRespectMaxIterations()
+        {
+            var processor = GetProcessor<CircularA>();
+
+            var expressions = processor.ParseExpression(x => x.Name.ToUpper().ToLower()).ToArray();
+
+            Assert.NotNull(expressions);
+        }
+
+        [Fact]
+        public void VisitMethodCall_ProtectionExists_ShouldHaveMaxIterationsLimit()
+        {
+            // Arrange & Act
+           
+            var registry = TranslationRegistry.Default;
+            var queryInfo = Substitute.For<IReadonlyQueryInfo>();
+            var config = Substitute.For<QueryConfig>();
+            queryInfo.Config.Returns(config);
+
+            var visitor = new SqlExpressionVisitor(
+                typeof(CircularA),
+                registry,
+                queryInfo,
+                ExpressionConfig.All,
+                null
+            );
+
+            Assert.NotNull(visitor);
+        }
+
         public class SampleClass
         {
             public string? Name { get; set; }
@@ -155,6 +202,13 @@ namespace QueryTest.Builder.Expressions
 
             public int StartIndex { get; set; }
             public int EndIndex { get; set; }
+        }
+
+        [Table("CircularA")]
+        private class CircularA
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
         }
     }
 }

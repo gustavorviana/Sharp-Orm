@@ -11,6 +11,9 @@ namespace SharpOrm.DataTranslation
 
         public virtual object FromSqlValue(object value, Type expectedType)
         {
+            if (value == null || value == DBNull.Value)
+                return null;
+
             if (value.GetType() == expectedType)
                 return value;
 

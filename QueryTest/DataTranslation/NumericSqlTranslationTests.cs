@@ -76,5 +76,17 @@ namespace QueryTest.DataTranslation
             Assert.Equal(1.0d, translator.FromSqlValue(1.0d, typeof(double)));
             Assert.Equal(1.0m, translator.FromSqlValue(1.0m, typeof(decimal)));
         }
+
+        [Fact]
+        public void FromSqlValue_WithDBNull_ShouldReturnNull()
+        {
+            // Arrange
+            var translator = new NumericTranslation();
+
+            // Act & Assert
+            Assert.Null(translator.FromSqlValue(DBNull.Value, typeof(int)));
+            Assert.Null(translator.FromSqlValue(DBNull.Value, typeof(long)));
+            Assert.Null(translator.FromSqlValue(DBNull.Value, typeof(decimal)));
+        }
     }
 }

@@ -98,12 +98,6 @@ namespace SharpOrm.Builder
             return type;
         }
 
-        public static void CopyPropTo<T>(T source, T target, PropertyInfo srcProp)
-        {
-            if (target.GetType().GetProperty(srcProp.Name) is PropertyInfo targetProp && targetProp.CanWrite)
-                targetProp.SetValue(target, srcProp.GetValue(source));
-        }
-
         public static void CloneFields(object source, object target, params string[] exceptNames)
         {
             var type = source.GetType();

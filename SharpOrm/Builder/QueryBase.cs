@@ -153,8 +153,28 @@ namespace SharpOrm.Builder
         /// <returns></returns>
         public QueryBase Where(object column, string operation, object value)
         {
+            if (value is IDbTableValue tableValue)
+            {
+                if (operation != "=" && operation != "!=" && operation != "<>")
+                    throw new NotSupportedException($"Operation '{operation}' is not supported. Supported: '=', '!=', '<>'.");
+
+                return Where(column, operation == "=", tableValue);
+            }
+
             ValidateQueryValue(operation, ref value);
             return WriteWhere(column, operation, value, AND);
+        }
+
+        public QueryBase Where(object column, bool exists, IDbTableValue value)
+        {
+            if (column is null) throw new ArgumentNullException(nameof(column));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            var validColumn = column is Column col ? col : new Column($"{Info.TableName}.{column}");
+            if (exists)
+                return Exists(value.CreateEqualsExpression(validColumn));
+
+            return NotExists(value.CreateNotEqualsExpression(validColumn));
         }
 
         private static void ValidateQueryValue(string operation, ref object value)

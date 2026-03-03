@@ -108,10 +108,15 @@ namespace SharpOrm.Builder.Grammars
                 .Add(' ')
                 .Add(join.Type)
                 .Add(" JOIN ");
-            WriteTable(join);
+            WriteJoinTable(join);
             Builder.Add(" ON ");
 
             WriteWhereContent(join.Info);
+        }
+
+        protected virtual void WriteJoinTable(JoinQuery join)
+        {
+            WriteTable(join);
         }
 
         /// <summary>

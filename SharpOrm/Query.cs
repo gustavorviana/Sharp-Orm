@@ -1,4 +1,4 @@
-﻿using SharpOrm.Builder;
+using SharpOrm.Builder;
 using SharpOrm.Builder.Expressions;
 using SharpOrm.Builder.Grammars;
 using SharpOrm.Connection;
@@ -54,6 +54,17 @@ namespace SharpOrm
         TableInfo IWithTableInfo.TableInfo => TableInfo;
 
         #region Query
+
+        /// <summary>
+        /// Creates a read-only query for the specified table.
+        /// </summary>
+        /// <param name="name">The name of the table.</param>
+        /// <param name="config">The configuration for the query. If null, the default configuration is used.</param>
+        /// <returns>A read-only query for the specified table.</returns>
+        public static new Query<T> ReadOnly(DbName name, QueryConfig config = null)
+        {
+            return new Query<T>(name, config ?? ConnectionCreator.Default?.Config);
+        }
 
         /// <summary>
         /// Creates a read-only query for the specified table.
@@ -174,48 +185,82 @@ namespace SharpOrm
         #region OrderBy
 
         /// <summary>
-        /// Applies an ascending sort.
+        /// Adds an ascending ordering to the query after an existing ORDER BY clause.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderBy(Expression<ColumnExpression<T>> expression)
+        {
+            return ThenOrderBy(SharpOrm.OrderBy.Asc, expression);
+        }
+
+        /// <summary>
+        /// Adds a descending ordering to the query after an existing ORDER BY clause.
+        /// </summary>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderByDesc(Expression<ColumnExpression<T>> expression)
+        {
+            return ThenOrderBy(SharpOrm.OrderBy.Desc, expression);
+        }
+
+        /// <summary>
+        /// Applies an ascending sort to the query.
+        /// </summary>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderBy(Expression<ColumnExpression<T>> expression)
         {
             return OrderBy(SharpOrm.OrderBy.Asc, expression);
         }
 
         /// <summary>
-        /// Applies descending sort.
+        /// Applies a descending sort to the query.
         /// </summary>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderByDesc(Expression<ColumnExpression<T>> expression)
         {
             return OrderBy(SharpOrm.OrderBy.Desc, expression);
         }
 
         /// <summary>
-        /// Applies an ascending sort.
+        /// Applies a sort to the query using the specified ordering direction.
         /// </summary>
-        /// <param name="order">Field ordering.</param>
-        /// <param name="columns">Columns that must be ordered.</param>
-        /// <returns></returns>
+        /// <param name="order">The sort direction (ascending or descending).</param>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> OrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)OrderBy(order, GetColumns(expression));
         }
 
         /// <summary>
-        /// Group the results of the query by the specified criteria (Add a GROUP BY clause to the query.).
+        /// Adds an additional ordering clause to the query using the specified ordering direction.
         /// </summary>
-        /// <param name="columnNames">The column names by which the results should be grouped.</param>
-        /// <returns></returns>
+        /// <param name="order">The sort direction (ascending or descending).</param>
+        /// <param name="expression">The column expression used for ordering.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> ThenOrderBy(OrderBy order, Expression<ColumnExpression<T>> expression)
+        {
+            var allOrders = new List<ColumnOrder>(Info.Orders);
+            allOrders.AddRange(GetColumns(expression).Select(x => new ColumnOrder(x, order)));
+            base.OrderBy(allOrders.ToArray());
+            return this;
+        }
+
+        /// <summary>
+        /// Groups the results of the query by the specified columns (adds a GROUP BY clause).
+        /// </summary>
+        /// <param name="expression">The column expression used for grouping.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> GroupBy(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.GroupBy(GetColumns(expression));
         }
 
         /// <summary>
-        /// Selects a column from the table using a column expression.
+        /// Selects a column from the table using a strongly typed column expression.
         /// </summary>
         /// <typeparam name="K">The type of the column value.</typeparam>
         /// <param name="column">The column expression to select.</param>
@@ -226,30 +271,30 @@ namespace SharpOrm
         }
 
         /// <summary>
-        /// Select column of table by Column object.
+        /// Selects one or more columns from the table using a column expression.
         /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
+        /// <param name="expression">The column expression used to select columns.</param>
+        /// <returns>The current query instance.</returns>
         public Query<T> Select(Expression<ColumnExpression<T>> expression)
         {
             return (Query<T>)base.Select(GetColumns(expression));
         }
 
         /// <summary>
-        /// Select keys of table by table.
+        /// Selects columns from the table by their column names.
         /// </summary>
-        /// <param name="columnNames"></param>
-        /// <returns></returns>
+        /// <param name="columnNames">The names of the columns to select.</param>
+        /// <returns>The current query instance.</returns>
         public new Query<T> Select(params string[] columnNames)
         {
             return (Query<T>)base.Select(columnNames);
         }
 
         /// <summary>
-        /// Select column of table by Column object.
+        /// Selects columns from the table using Column objects.
         /// </summary>
-        /// <param name="columns"></param>
-        /// <returns></returns>
+        /// <param name="columns">The columns to select.</param>
+        /// <returns>The current query instance.</returns>
         public new Query<T> Select(params Column[] columns)
         {
             return (Query<T>)base.Select(columns);
@@ -1209,7 +1254,7 @@ namespace SharpOrm
         /// <param name="type">The type of join (e.g., "INNER", "LEFT").</param>
         /// <param name="grammarOptions">Optional grammar-specific options for the join operation.</param>
         /// <returns>The current query instance.</returns>
-        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", object grammarOptions = null)
+        public Query<T> Join<R>(Expression<ColumnExpression<T, R>> table, Expression<ColumnExpression<R>> column1, string operation, Expression<ColumnExpression<T>> column2, string alias = null, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             var members = ExpressionUtils<T>.GetMemberPath(table, false).Reverse().ToArray();
             var node = _foreignKeyRegister.Get(members);
@@ -1278,7 +1323,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public new Query<T> Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public new Query<T> Join(string table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return (Query<T>)base.Join(table, callback, type, grammarOptions);
         }
@@ -1303,7 +1348,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public new Query<T> Join(DbName table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return (Query<T>)base.Join(table, callback, type, grammarOptions);
         }
@@ -1614,6 +1659,17 @@ namespace SharpOrm
         }
 
         /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the values
+        /// stored in the specified <see cref="IDbTableValue"/> temporary table.
+        /// </summary>
+        /// <param name="columnExp">The column expression to compare.</param>
+        /// <param name="tableValue">The table value holding the values to check against.</param>
+        public Query<T> WhereIn(Expression<ColumnExpression<T>> columnExp, IDbTableValue tableValue)
+        {
+            return (Query<T>)base.Where(GetColumn(columnExp), "IN", tableValue);
+        }
+
+        /// <summary>
         /// Adds a WHERE clause using the "NOT IN" operator to check if the column value is not among the specified items.
         /// </summary>
         /// <typeparam name="K">The type of items to compare.</typeparam>
@@ -1656,6 +1712,28 @@ namespace SharpOrm
         public Query<T> Where(QueryCallback<T> callback)
         {
             return WriteCallback(callback, AND);
+        }
+
+        /// <summary>
+        /// Adds a LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)Where(GetColumn(columnExp), "LIKE", value);
+        }
+
+        /// <summary>
+        /// Adds a NOT LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> WhereNotLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)Where(GetColumn(columnExp), "NOT LIKE", value);
         }
 
         #region OR
@@ -1894,6 +1972,28 @@ namespace SharpOrm
             return this;
         }
 
+        /// <summary>
+        /// Adds an OR LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)OrWhere(GetColumn(columnExp), "LIKE", value);
+        }
+
+        /// <summary>
+        /// Adds an OR NOT LIKE condition to the query.
+        /// </summary>
+        /// <param name="columnExp">The column expression to be evaluated.</param>
+        /// <param name="value">The value used in the NOT LIKE comparison.</param>
+        /// <returns>The current query instance.</returns>
+        public Query<T> OrWhereNotLike(Expression<ColumnExpression<T>> columnExp, string value)
+        {
+            return (Query<T>)OrWhere(GetColumn(columnExp), "NOT LIKE", value);
+        }
+
         #endregion
 
         #endregion
@@ -2036,7 +2136,7 @@ namespace SharpOrm
     /// <summary>
     /// Class responsible for interacting with the data of a database table.
     /// </summary>
-    public class Query : QueryBase, ICloneable, IGrammarOptions, IDisposable
+    public class Query : QueryBase, ICloneable, IWithGrammarOptions, IDisposable
     {
         #region Properties
         private bool _disposed = false;
@@ -2069,7 +2169,7 @@ namespace SharpOrm
         /// <summary>
         /// Options for Grammar to create an SQL script.
         /// </summary>
-        public object GrammarOptions { get; set; }
+        public IGrammarOptions GrammarOptions { get; set; }
         /// <summary>
         /// Settings used to build the SQL command.
         /// </summary>
@@ -2178,7 +2278,7 @@ namespace SharpOrm
 
         internal Query(DbName table, QueryConfig config) : base(new QueryInfo(config, table))
         {
-
+            GrammarOptions = config.DefaultGrammarOptions;
         }
 
         #endregion
@@ -2254,7 +2354,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public Query Join(string table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public Query Join(string table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             return Join(new DbName(table), callback, type, grammarOptions);
         }
@@ -2279,7 +2379,7 @@ namespace SharpOrm
         /// <param name="grammarOptions">Options of the grammar for the tables.</param>
         /// <param name="type">Type of tables between the tables.</param>
         /// <returns></returns>
-        public Query Join(DbName table, QueryCallback callback, string type = "INNER", object grammarOptions = null)
+        public Query Join(DbName table, QueryCallback callback, string type = "INNER", IGrammarOptions grammarOptions = null)
         {
             JoinQuery join = new JoinQuery(Info.Config, table) { Type = type, GrammarOptions = grammarOptions };
             callback(join);
@@ -3247,6 +3347,18 @@ namespace SharpOrm
         }
 
         #endregion
+
+        /// <summary>
+        /// Adds a WHERE clause using the "IN" operator to check if the column value is among the values
+        /// stored in the specified <see cref="IDbTableValue"/> temporary table.
+        /// </summary>
+        /// <param name="column">The column name to compare.</param>
+        /// <param name="tableValue">The table value holding the values to check against.</param>
+        /// <returns>The current query instance.</returns>
+        public Query WhereIn(string column, IDbTableValue tableValue)
+        {
+            return (Query)base.Where(column, "IN", tableValue);
+        }
 
         /// <summary>
         /// Adds an EXISTS clause to the WHERE statement, specifying a subquery to check the existence of a record.
